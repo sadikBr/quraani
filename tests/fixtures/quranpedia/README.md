@@ -1,0 +1,23 @@
+# Quranpedia response samples
+
+Source: https://api.quranpedia.net/v1, inspected 2026-10-08.
+These small samples are regression fixtures, not a bundled Quran corpus.
+App content is fetched live and periodically refreshed.
+
+- `warsh-metadata.json`: metadata from `/mushafs/4` without the surah corpus.
+- `mushafs.json`: edition catalog from `/mushafs`, including nullable descriptions.
+- `warsh-fatiha.json`: `/mushafs/4/1`; partition fields are absent here.
+- `warsh-page2-ayahs.json`: the first four ayahs from surah 2 in `/mushafs/4`.
+- `warsh-page1-regions.json`: `001.json` from the official Warsh SVG archive.
+- `warsh-typography.json`: source ayahs for pages 1, 3, 48, 604 and the opening of
+  surah 9, used to verify reader sectioning and Bismillah placement.
+
+Quranpedia source: https://quranpedia.net
+
+- `warsh-ayah-markers.json`: public `/api/page/warsh/29` and `/api/page/warsh/604`
+  SVGs inspected 2026-10-09. Keeps original verse polygons, ornament paths and
+  transforms; omits Quran text and number glyph paths. Tests matching reversed
+  marker order and repeated ayah numbers on a page spanning three surahs.
+- `warsh-ayah-markers.json` also includes `/api/page/warsh/86`: its first polygon
+  and number belong to 4:44, continued from page 85. The page metadata starts at
+  4:45. This verifies continuation handling without relaxing other page checks.

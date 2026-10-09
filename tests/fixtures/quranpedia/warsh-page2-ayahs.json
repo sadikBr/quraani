@@ -1,0 +1,106 @@
+[
+  {
+    "id": 68494,
+    "number": 1,
+    "surah": "2",
+    "page_number": 2,
+    "text": "أَلَٓمِّٓۖ ذَٰلِكَ اَ۬لْكِتَٰبُ لَا رَيْبَۖ فِيهِ هُدىٗ لِّلْمُتَّقِينَ",
+    "marker": "ﰀ",
+    "juz": 1,
+    "hizb": 1,
+    "ruku": 2,
+    "manzil": 1,
+    "options": [
+      "tafsir",
+      "meanings",
+      "similar",
+      "qiraat",
+      "topics",
+      "e3rab",
+      "notes",
+      "asbab",
+      "translations",
+      "sayings"
+    ],
+    "number_in_hafs": [
+      1,
+      2
+    ]
+  },
+  {
+    "id": 68495,
+    "number": 2,
+    "surah": "2",
+    "page_number": 2,
+    "text": "اَ۬لذِينَ يُومِنُونَ بِالْغَيْبِ وَيُقِيمُونَ اَ۬لصَّلَوٰةَ وَمِمَّا رَزَقْنَٰهُمْ يُنفِقُونَۖ",
+    "marker": "ﰁ",
+    "juz": 1,
+    "hizb": 1,
+    "ruku": 2,
+    "manzil": 1,
+    "options": [
+      "tafsir",
+      "meanings",
+      "similar",
+      "topics",
+      "e3rab",
+      "notes",
+      "translations",
+      "sayings"
+    ],
+    "number_in_hafs": [
+      3
+    ]
+  },
+  {
+    "id": 68496,
+    "number": 3,
+    "surah": "2",
+    "page_number": 2,
+    "text": "وَالذِينَ يُومِنُونَ بِمَآ أُنزِلَ إِلَيْكَ وَمَآ أُنزِلَ مِن قَبْلِكَ وَبِالَاخِرَةِ هُمْ يُوقِنُونَ",
+    "marker": "ﰂ",
+    "juz": 1,
+    "hizb": 1,
+    "ruku": 2,
+    "manzil": 1,
+    "options": [
+      "tafsir",
+      "meanings",
+      "similar",
+      "topics",
+      "e3rab",
+      "notes",
+      "translations",
+      "sayings"
+    ],
+    "number_in_hafs": [
+      4
+    ]
+  },
+  {
+    "id": 68497,
+    "number": 4,
+    "surah": "2",
+    "page_number": 2,
+    "text": "أُوْلَٰٓئِكَ عَلَىٰ هُدىٗ مِّن رَّبِّهِمْۖ وَأُوْلَٰٓئِكَ هُمُ اُ۬لْمُفْلِحُونَۖ",
+    "marker": "ﰃ",
+    "juz": 1,
+    "hizb": 1,
+    "ruku": 2,
+    "manzil": 1,
+    "options": [
+      "tafsir",
+      "meanings",
+      "similar",
+      "topics",
+      "fatwa",
+      "e3rab",
+      "notes",
+      "translations",
+      "sayings"
+    ],
+    "number_in_hafs": [
+      5
+    ]
+  }
+]

@@ -1,0 +1,952 @@
+[
+  {
+    "id": 1,
+    "name": "سورة الفاتحة",
+    "coded_name": "ﮍ",
+    "ayahs": [
+      {
+        "id": 68487,
+        "number": 1,
+        "surah": "1",
+        "page_number": 1,
+        "text": "اِ۬لْحَمْدُ لِلهِ رَبِّ اِ۬لْعَٰلَمِينَ",
+        "marker": "ﰀ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 1,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "topics",
+          "fatwa",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          1,
+          2
+        ]
+      },
+      {
+        "id": 68488,
+        "number": 2,
+        "surah": "1",
+        "page_number": 1,
+        "text": "اَ۬لرَّحْمَٰنِ اِ۬لرَّحِيمِ",
+        "marker": "ﰁ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 1,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "similar",
+          "qiraat",
+          "topics",
+          "fatwa",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          3
+        ]
+      },
+      {
+        "id": 68489,
+        "number": 3,
+        "surah": "1",
+        "page_number": 1,
+        "text": "مَلِكِ يَوْمِ اِ۬لدِّينِۖ",
+        "marker": "ﰂ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 1,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "topics",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          4
+        ]
+      },
+      {
+        "id": 68490,
+        "number": 4,
+        "surah": "1",
+        "page_number": 1,
+        "text": "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُۖ",
+        "marker": "ﰃ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 1,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "meanings",
+          "topics",
+          "fatwa",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          5
+        ]
+      },
+      {
+        "id": 68491,
+        "number": 5,
+        "surah": "1",
+        "page_number": 1,
+        "text": "اُ۪هْدِنَا اَ۬لصِّرَٰطَ اَ۬لْمُسْتَقِيمَ",
+        "marker": "ﰄ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 1,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "fatwa",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          6
+        ]
+      },
+      {
+        "id": 68492,
+        "number": 6,
+        "surah": "1",
+        "page_number": 1,
+        "text": "صِرَٰطَ اَ۬لذِينَ أَنْعَمْتَ عَلَيْهِمْ",
+        "marker": "ﰅ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 1,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "fatwa",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          7
+        ]
+      },
+      {
+        "id": 68493,
+        "number": 7,
+        "surah": "1",
+        "page_number": 1,
+        "text": "غَيْرِ اِ۬لْمَغْضُوبِ عَلَيْهِمْ وَلَا اَ۬لضَّآلِّينَۖ",
+        "marker": "ﰆ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 1,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "fatwa",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          7
+        ]
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "name": "سورة البقرة",
+    "coded_name": "ﮎ",
+    "ayahs": [
+      {
+        "id": 68498,
+        "number": 5,
+        "surah": "2",
+        "page_number": 3,
+        "text": "إِنَّ اَ۬لذِينَ كَفَرُواْ سَوَآءٌ عَلَيْهِمُۥٓ ءَآنذَرْتَهُمُۥٓ أَمْ لَمْ تُنذِرْهُمْ لَا يُومِنُونَۖ",
+        "marker": "ﰄ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 2,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "topics",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          6
+        ]
+      },
+      {
+        "id": 68499,
+        "number": 6,
+        "surah": "2",
+        "page_number": 3,
+        "text": "خَتَمَ اَ۬للَّهُ عَلَىٰ قُلُوبِهِمْ وَعَلَىٰ سَمْعِهِمْۖ وَعَلَىٰٓ أَبْصٰ۪رِهِمْ غِشَٰوَةٞۖ وَلَهُمْ عَذَابٌ عَظِيمٞۖ",
+        "marker": "ﰅ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 2,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "topics",
+          "e3rab",
+          "notes",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          7
+        ]
+      },
+      {
+        "id": 68500,
+        "number": 7,
+        "surah": "2",
+        "page_number": 3,
+        "text": "وَمِنَ اَ۬لنَّاسِ مَنْ يَّقُولُ ءَامَنَّا بِاللَّهِ وَبِالْيَوْمِ اِ۬لَاخِرِ وَمَا هُم بِمُومِنِينَۖ",
+        "marker": "ﰆ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 2,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "topics",
+          "e3rab",
+          "notes",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          8
+        ]
+      },
+      {
+        "id": 68501,
+        "number": 8,
+        "surah": "2",
+        "page_number": 3,
+        "text": "يُخَٰدِعُونَ اَ۬للَّهَ وَالذِينَ ءَامَنُواْۖ وَمَا يُخَٰدِعُونَ إِلَّآ أَنفُسَهُمْ وَمَا يَشْعُرُونَۖ",
+        "marker": "ﰇ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 3,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "topics",
+          "e3rab",
+          "notes",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          9
+        ]
+      },
+      {
+        "id": 68502,
+        "number": 9,
+        "surah": "2",
+        "page_number": 3,
+        "text": "فِے قُلُوبِهِم مَّرَضٞۖ فَزَادَهُمُ اُ۬للَّهُ مَرَضاٗۖ وَلَهُمْ عَذَابٌ اَلِيمُۢ بِمَا كَانُواْ يُكَذِّبُونَۖ",
+        "marker": "ﰈ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 3,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "topics",
+          "fatwa",
+          "e3rab",
+          "notes",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          10
+        ]
+      },
+      {
+        "id": 68503,
+        "number": 10,
+        "surah": "2",
+        "page_number": 3,
+        "text": "وَإِذَا قِيلَ لَهُمْ لَا تُفْسِدُواْ فِے اِ۬لَارْضِ قَالُوٓاْ إِنَّمَا نَحْنُ مُصْلِحُونَۖ",
+        "marker": "ﰉ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 3,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "topics",
+          "e3rab",
+          "notes",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          11
+        ]
+      },
+      {
+        "id": 68504,
+        "number": 11,
+        "surah": "2",
+        "page_number": 3,
+        "text": "أَلَآ إِنَّهُمْ هُمُ اُ۬لْمُفْسِدُونَ وَلَٰكِن لَّا يَشْعُرُونَۖ",
+        "marker": "ﰊ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 3,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "similar",
+          "qiraat",
+          "e3rab",
+          "notes",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          12
+        ]
+      },
+      {
+        "id": 68505,
+        "number": 12,
+        "surah": "2",
+        "page_number": 3,
+        "text": "وَإِذَا قِيلَ لَهُمُۥٓ ءَامِنُواْ كَمَآ ءَامَنَ اَ۬لنَّاسُ قَالُوٓاْ أَنُومِنُ كَمَآ ءَامَنَ اَ۬لسُّفَهَآءُۖ اَ۬لَآ إِنَّهُمْ هُمُ اُ۬لسُّفَهَآءُ وَلَٰكِن لَّا يَعْلَمُونَۖ",
+        "marker": "ﰋ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 3,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "topics",
+          "e3rab",
+          "notes",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          13
+        ]
+      },
+      {
+        "id": 68506,
+        "number": 13,
+        "surah": "2",
+        "page_number": 3,
+        "text": "وَإِذَا لَقُواْ اُ۬لذِينَ ءَامَنُواْ قَالُوٓاْ ءَامَنَّاۖ وَإِذَا خَلَوِاْ اِلَىٰ شَيَٰطِينِهِمْ قَالُوٓاْ إِنَّا مَعَكُمُۥٓ إِنَّمَا نَحْنُ مُسْتَهْزِءُونَۖ",
+        "marker": "ﰌ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 3,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "topics",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          14
+        ]
+      },
+      {
+        "id": 68507,
+        "number": 14,
+        "surah": "2",
+        "page_number": 3,
+        "text": "اَ۬للَّهُ يَسْتَهْزِےـُٔ بِهِمْ وَيَمُدُّهُمْ فِے طُغْيَٰنِهِمْ يَعْمَهُونَۖ",
+        "marker": "ﰍ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 3,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "e3rab",
+          "notes",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          15
+        ]
+      },
+      {
+        "id": 68508,
+        "number": 15,
+        "surah": "2",
+        "page_number": 3,
+        "text": "أُوْلَٰٓئِكَ اَ۬لذِينَ اَ۪شْتَرَوُاْ اُ۬لضَّلَٰلَةَ بِالْهُد۪ىٰ فَمَا رَبِحَت تِّجَٰرَتُهُمْ وَمَا كَانُواْ مُهْتَدِينَۖ",
+        "marker": "ﰎ",
+        "juz": 1,
+        "hizb": 1,
+        "ruku": 3,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "topics",
+          "e3rab",
+          "notes",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          16
+        ]
+      },
+      {
+        "id": 68774,
+        "number": 281,
+        "surah": "2",
+        "page_number": 48,
+        "text": "يَٰٓأَيُّهَا اَ۬لذِينَ ءَامَنُوٓاْ إِذَا تَدَايَنتُم بِدَيْنٍ اِلَىٰٓ أَجَلٖ مُّسَمّىٗ فَاكْتُبُوهُۖ وَلْيَكْتُب بَّيْنَكُمْ كَاتِبُۢ بِالْعَدْلِۖ وَلَا يَابَ كَاتِبٌ اَنْ يَّكْتُبَۖ كَمَا عَلَّمَهُ اُ۬للَّهُ فَلْيَكْتُبْۖ وَلْيُمْلِلِ اِ۬لذِے عَلَيْهِ اِ۬لْحَقُّ وَلْيَتَّقِ اِ۬للَّهَ رَبَّهُۥ وَلَا يَبْخَسْ مِنْهُ شَيْــٔاٗۖ فَإِن كَانَ اَ۬لذِے عَلَيْهِ اِ۬لْحَقُّ سَفِيهاً اَوْ ضَعِيفاً اَوْ لَا يَسْتَطِيعُ أَنْ يُّمِلَّ هُوَ فَلْيُمْلِلْ وَلِيُّهُۥ بِالْعَدْلِۖ وَاسْتَشْهِدُواْ شَهِيدَيْنِ مِن رِّجَالِكُمْۖ فَإِن لَّمْ يَكُونَا رَجُلَيْنِ فَرَجُلٞ وَامْرَأَتَٰنِ مِمَّن تَرْضَوْنَ مِنَ اَ۬لشُّهَدَآءِ اَ۬ن تَضِلَّ إِحْد۪يٰهُمَا فَتُذَكِّرَ إِحْد۪يٰهُمَا اَ۬لُاخْر۪ىٰۖ وَلَا يَابَ اَ۬لشُّهَدَآءُ اِ۪ذَا مَا دُعُواْۖ وَلَا تَسْــَٔمُوٓاْ أَن تَكْتُبُوهُ صَغِيراً اَوْ كَبِيراً اِلَىٰٓ أَجَلِهِۦۖ ذَٰلِكُمُۥٓ أَقْسَطُ عِندَ اَ۬للَّهِ وَأَقْوَمُ لِلشَّهَٰدَةِ وَأَدْن۪ىٰٓ أَلَّا تَرْتَابُوٓاْ إِلَّآ أَن تَكُونَ تِجَٰرَةٌ حَاضِرَةٞ تُدِيرُونَهَا بَيْنَكُمْ فَلَيْسَ عَلَيْكُمْ جُنَاحٌ اَلَّا تَكْتُبُوهَاۖ وَأَشْهِدُوٓاْ إِذَا تَبَايَعْتُمْۖ وَلَا يُضَآرَّ كَاتِبٞ وَلَا شَهِيدٞۖ وَإِن تَفْعَلُواْ فَإِنَّهُۥ فُسُوقُۢ بِكُمْۖ وَاتَّقُواْ اُ۬للَّهَۖ وَيُعَلِّمُكُمُ اُ۬للَّهُۖ وَاللَّهُ بِكُلِّ شَےْءٍ عَلِيمٞۖ",
+        "marker": "ﴘ",
+        "juz": 3,
+        "hizb": 19,
+        "ruku": 39,
+        "manzil": 1,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "topics",
+          "fatwa",
+          "e3rab",
+          "notes",
+          "nasekh",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          282
+        ]
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "name": "سورة التوبة",
+    "coded_name": "ﮕ",
+    "ayahs": [
+      {
+        "id": 69725,
+        "number": 1,
+        "surah": "9",
+        "page_number": 187,
+        "text": "بَرَآءَةٞ مِّنَ اَ۬للَّهِ وَرَسُولِهِۦٓ إِلَى اَ۬لذِينَ عَٰهَدتُّم مِّنَ اَ۬لْمُشْرِكِينَۖ",
+        "marker": "ﰀ",
+        "juz": 10,
+        "hizb": 75,
+        "ruku": 156,
+        "manzil": 2,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "topics",
+          "fatwa",
+          "e3rab",
+          "notes",
+          "nasekh",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          1
+        ]
+      }
+    ]
+  },
+  {
+    "id": 112,
+    "name": "سورة الإخلاص",
+    "coded_name": "ﰝ",
+    "ayahs": [
+      {
+        "id": 74685,
+        "number": 1,
+        "surah": "112",
+        "page_number": 604,
+        "text": "قُلْ هُوَ اَ۬للَّهُ أَحَدٌۖ",
+        "marker": "ﰀ",
+        "juz": 30,
+        "hizb": 240,
+        "ruku": 554,
+        "manzil": 7,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "fatwa",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          1
+        ]
+      },
+      {
+        "id": 74686,
+        "number": 2,
+        "surah": "112",
+        "page_number": 604,
+        "text": "اِ۬للَّهُ اُ۬لصَّمَدُۖ",
+        "marker": "ﰁ",
+        "juz": 30,
+        "hizb": 240,
+        "ruku": 554,
+        "manzil": 7,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "fatwa",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          2
+        ]
+      },
+      {
+        "id": 74687,
+        "number": 3,
+        "surah": "112",
+        "page_number": 604,
+        "text": "لَمْ يَلِدْ وَلَمْ يُولَدْۖ",
+        "marker": "ﰂ",
+        "juz": 30,
+        "hizb": 240,
+        "ruku": 554,
+        "manzil": 7,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          3
+        ]
+      },
+      {
+        "id": 74688,
+        "number": 4,
+        "surah": "112",
+        "page_number": 604,
+        "text": "وَلَمْ يَكُن لَّهُۥ كُفُؤاً اَحَدٞۖ",
+        "marker": "ﰃ",
+        "juz": 30,
+        "hizb": 240,
+        "ruku": 554,
+        "manzil": 7,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          4
+        ]
+      }
+    ]
+  },
+  {
+    "id": 113,
+    "name": "سورة الفلق",
+    "coded_name": "ﰞ",
+    "ayahs": [
+      {
+        "id": 74689,
+        "number": 1,
+        "surah": "113",
+        "page_number": 604,
+        "text": "قُلَ اَعُوذُ بِرَبِّ اِ۬لْفَلَقِ",
+        "marker": "ﰀ",
+        "juz": 30,
+        "hizb": 240,
+        "ruku": 555,
+        "manzil": 7,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          1
+        ]
+      },
+      {
+        "id": 74690,
+        "number": 2,
+        "surah": "113",
+        "page_number": 604,
+        "text": "مِن شَرِّ مَا خَلَقَ",
+        "marker": "ﰁ",
+        "juz": 30,
+        "hizb": 240,
+        "ruku": 555,
+        "manzil": 7,
+        "options": [
+          "tafsir",
+          "similar",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          2
+        ]
+      },
+      {
+        "id": 74691,
+        "number": 3,
+        "surah": "113",
+        "page_number": 604,
+        "text": "وَمِن شَرِّ غَاسِقٍ اِذَا وَقَبَ",
+        "marker": "ﰂ",
+        "juz": 30,
+        "hizb": 240,
+        "ruku": 555,
+        "manzil": 7,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "fatwa",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          3
+        ]
+      },
+      {
+        "id": 74692,
+        "number": 4,
+        "surah": "113",
+        "page_number": 604,
+        "text": "وَمِن شَرِّ اِ۬لنَّفَّٰثَٰتِ فِے اِ۬لْعُقَدِ",
+        "marker": "ﰃ",
+        "juz": 30,
+        "hizb": 240,
+        "ruku": 555,
+        "manzil": 7,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          4
+        ]
+      },
+      {
+        "id": 74693,
+        "number": 5,
+        "surah": "113",
+        "page_number": 604,
+        "text": "وَمِن شَرِّ حَاسِدٍ اِذَا حَسَدَۖ",
+        "marker": "ﰄ",
+        "juz": 30,
+        "hizb": 240,
+        "ruku": 555,
+        "manzil": 7,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          5
+        ]
+      }
+    ]
+  },
+  {
+    "id": 114,
+    "name": "سورة الناس",
+    "coded_name": "ﰟ",
+    "ayahs": [
+      {
+        "id": 74694,
+        "number": 1,
+        "surah": "114",
+        "page_number": 604,
+        "text": "قُلَ اَعُوذُ بِرَبِّ اِ۬لنَّاسِ",
+        "marker": "ﰀ",
+        "juz": 30,
+        "hizb": 240,
+        "ruku": 556,
+        "manzil": 7,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "e3rab",
+          "notes",
+          "asbab",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          1
+        ]
+      },
+      {
+        "id": 74695,
+        "number": 2,
+        "surah": "114",
+        "page_number": 604,
+        "text": "مَلِكِ اِ۬لنَّاسِ",
+        "marker": "ﰁ",
+        "juz": 30,
+        "hizb": 240,
+        "ruku": 556,
+        "manzil": 7,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "e3rab",
+          "notes",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          2
+        ]
+      },
+      {
+        "id": 74696,
+        "number": 3,
+        "surah": "114",
+        "page_number": 604,
+        "text": "إِلَٰهِ اِ۬لنَّاسِ",
+        "marker": "ﰂ",
+        "juz": 30,
+        "hizb": 240,
+        "ruku": 556,
+        "manzil": 7,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "e3rab",
+          "notes",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          3
+        ]
+      },
+      {
+        "id": 74697,
+        "number": 4,
+        "surah": "114",
+        "page_number": 604,
+        "text": "مِن شَرِّ اِ۬لْوَسْوَاسِ اِ۬لْخَنَّاسِ",
+        "marker": "ﰃ",
+        "juz": 30,
+        "hizb": 240,
+        "ruku": 556,
+        "manzil": 7,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "e3rab",
+          "notes",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          4
+        ]
+      },
+      {
+        "id": 74698,
+        "number": 5,
+        "surah": "114",
+        "page_number": 604,
+        "text": "اِ۬لذِے يُوَسْوِسُ فِے صُدُورِ اِ۬لنَّاسِ",
+        "marker": "ﰄ",
+        "juz": 30,
+        "hizb": 240,
+        "ruku": 556,
+        "manzil": 7,
+        "options": [
+          "tafsir",
+          "similar",
+          "qiraat",
+          "e3rab",
+          "notes",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          5
+        ]
+      },
+      {
+        "id": 74699,
+        "number": 6,
+        "surah": "114",
+        "page_number": 604,
+        "text": "مِنَ اَ۬لْجِنَّةِ وَالنَّاسِۖ",
+        "marker": "ﰅ",
+        "juz": 30,
+        "hizb": 240,
+        "ruku": 556,
+        "manzil": 7,
+        "options": [
+          "tafsir",
+          "meanings",
+          "similar",
+          "qiraat",
+          "e3rab",
+          "notes",
+          "translations",
+          "sayings"
+        ],
+        "number_in_hafs": [
+          6
+        ]
+      }
+    ]
+  }
+]

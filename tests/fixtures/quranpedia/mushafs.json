@@ -1,0 +1,290 @@
+[
+  {
+    "id": 1,
+    "name": "مصحف حفص",
+    "short_name": "مجمع الملك فهد",
+    "description": "القرآن الكريم برواية حفص عن عاصم، موافق لطبعة مجمع الملك فهد لطباعة المصحف الشريف",
+    "image": null,
+    "bismillah": "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ",
+    "font_file": null,
+    "images": "https://quranpedia.net/api-quran-svg/hafs.zip",
+    "images_png": null,
+    "rawi": {
+      "id": 10,
+      "full_name": "بن سليمان بن المغيرة، أبو عمر الأسدي الكوفي الغاضري البزاز",
+      "name": "حفص",
+      "qiraa": {
+        "id": 5,
+        "short_name": "عاصم",
+        "full_name": "عاصم بن أبي النَّجود الأسدي الكوفي",
+        "count": {
+          "id": 6,
+          "name": "الكوفي"
+        }
+      }
+    }
+  },
+  {
+    "id": 2,
+    "name": "مصحف حفص نسخة نصية",
+    "short_name": null,
+    "description": "المصحف الكريم برواية حفص عن عاصم بالخط العثماني من إصدار مجمع الملك فهد لطباعة المصحف الشريف، غير موافق للمطبوع",
+    "image": null,
+    "bismillah": "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ",
+    "font_file": "https://quranpedia.net/assets/fonts/arabic/UthmanicHafs_V22.ttf",
+    "rawi": {
+      "id": 10,
+      "full_name": "بن سليمان بن المغيرة، أبو عمر الأسدي الكوفي الغاضري البزاز",
+      "name": "حفص",
+      "qiraa": {
+        "id": 5,
+        "short_name": "عاصم",
+        "full_name": "عاصم بن أبي النَّجود الأسدي الكوفي",
+        "count": {
+          "id": 6,
+          "name": "الكوفي"
+        }
+      }
+    }
+  },
+  {
+    "id": 3,
+    "name": "مصحف حفص نستعليق",
+    "short_name": null,
+    "description": "المصحف الكريم برواية حفص عن عاصم مكتوب بخط النسخ المعلق (نستعليق)، وهو المعتمد في عدد من دول آسيا مثل الهند وباكستان. من إصدار مجمع الملك فهد لطباعة المصحف الشريف، غير موافق للمطبوع",
+    "image": null,
+    "bismillah": "بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ ؀",
+    "font_file": "https://quranpedia.net/assets/fonts/arabic/HafsNastaleeqVer10.otf",
+    "rawi": {
+      "id": 10,
+      "full_name": "بن سليمان بن المغيرة، أبو عمر الأسدي الكوفي الغاضري البزاز",
+      "name": "حفص",
+      "qiraa": {
+        "id": 5,
+        "short_name": "عاصم",
+        "full_name": "عاصم بن أبي النَّجود الأسدي الكوفي",
+        "count": {
+          "id": 6,
+          "name": "الكوفي"
+        }
+      }
+    }
+  },
+  {
+    "id": 4,
+    "name": "مصحف ورش",
+    "short_name": "مجمع الملك فهد",
+    "description": "المصحف الكريم برواية ورش عن نافع بالخط العثماني من إصدار مجمع الملك فهد لطباعة المصحف الشريف، نسخة موافقة للمطبوع",
+    "image": null,
+    "bismillah": "بِسْمِ اِ۬للَّهِ اِ۬لرَّحْمَٰنِ اِ۬لرَّحِيمِ ",
+    "font_file": "https://quranpedia.net/assets/fonts/arabic/UthmanicWarsh_V21.ttf",
+    "images": "https://quranpedia.net/api-quran-svg/warsh.zip",
+    "images_png": null,
+    "rawi": {
+      "id": 2,
+      "full_name": "عثمان بن سعيد بن عبد الله، أبو سعيد المصري، لقبه نافع (ورشا) لبياضه، والورش شيء أبيض يصنع من اللبن، وقيل غير ذلك، وغلب عليه هذا اللقب حتى صار لا يعرف إلا به",
+      "name": "ورش",
+      "qiraa": {
+        "id": 1,
+        "short_name": "نافع",
+        "full_name": "نافع بن عبد الرحمن بن أبي نعيم المدني",
+        "count": {
+          "id": 2,
+          "name": "المدني الأخير"
+        }
+      }
+    }
+  },
+  {
+    "id": 5,
+    "name": "مصحف البزي",
+    "short_name": null,
+    "description": "المصحف الكريم برواية البزي عن ابن كثير عن عاصم بالخط العثماني من إصدار مجمع الملك فهد لطباعة المصحف الشريف، غير موافق للمطبوع",
+    "image": null,
+    "bismillah": "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ",
+    "font_file": "https://quranpedia.net/assets/fonts/arabic/UthmanicBazzi1Ver06.otf",
+    "rawi": {
+      "id": 3,
+      "full_name": "أحمد بن محمد بن عبد الله بن القاسم بن نافع بن أبي بزة",
+      "name": "البزي",
+      "qiraa": {
+        "id": 2,
+        "short_name": "ابن كثير",
+        "full_name": "عبد الله بن كثير الداري المكي",
+        "count": {
+          "id": 3,
+          "name": "المكي"
+        }
+      }
+    }
+  },
+  {
+    "id": 6,
+    "name": "مصحف الدوري",
+    "short_name": "مجمع الملك فهد",
+    "description": "المصحف الكريم برواية الدوري بالخط العثماني من إصدار مجمع الملك فهد لطباعة المصحف الشريف، نسخة موافقة للمطبوع",
+    "image": null,
+    "bismillah": "بِسۡمِ اِ۬للَّهِ اِ۬لرَّحۡمَٰنِ اِ۬لرَّحِيمِ ",
+    "font_file": "https://quranpedia.net/assets/fonts/arabic/UthmanicDouri_V20.ttf",
+    "images": "https://quranpedia.net/api-quran-svg/douri.zip",
+    "images_png": null,
+    "rawi": {
+      "id": 5,
+      "full_name": "حفص بن عمر بن عبد العزيز، أبو عمر الدوري النحوي، والدوري نسبة إلى الدور، موضع ببغداد.",
+      "name": "الدوري",
+      "qiraa": {
+        "id": 3,
+        "short_name": "أبو عمرو",
+        "full_name": "أبو عمرو بن العلاء البصري",
+        "count": {
+          "id": 1,
+          "name": "المدني الأول"
+        }
+      }
+    }
+  },
+  {
+    "id": 7,
+    "name": "مصحف قالون",
+    "short_name": "مجمع الملك فهد",
+    "description": "المصحف الكريم برواية قالون عن نافع بالخط العثماني من إصدار مجمع الملك فهد لطباعة المصحف الشريف، نسخة موافقة للمطبوع",
+    "image": null,
+    "bismillah": "بِسْمِ اِ۬للَّهِ اِ۬لرَّحْمَٰنِ اِ۬لرَّحِيمِ",
+    "font_file": "https://quranpedia.net/assets/fonts/arabic/UthmanicQaloun_V21.ttf",
+    "images": "https://quranpedia.net/api-quran-svg/qalon.zip",
+    "images_png": null,
+    "rawi": {
+      "id": 1,
+      "full_name": "عيسى بن مينا بن وردان بن عيسى الزرقي (أبو موسى) مولى بني زهرة ومعلم العربية وقارئ المدينة ونحويّها، لقبه نافع (قالون) لجودة قراءته لأن معناها بلغة الروم (جيد)",
+      "name": "قالون",
+      "qiraa": {
+        "id": 1,
+        "short_name": "نافع",
+        "full_name": "نافع بن عبد الرحمن بن أبي نعيم المدني",
+        "count": {
+          "id": 2,
+          "name": "المدني الأخير"
+        }
+      }
+    }
+  },
+  {
+    "id": 8,
+    "name": "مصحف قنبل",
+    "short_name": null,
+    "description": "المصحف الكريم برواية قنبل عن ابن كثير بالخط العثماني من إصدار مجمع الملك فهد لطباعة المصحف الشريف، غير موافق للمطبوع",
+    "image": null,
+    "bismillah": "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ",
+    "font_file": "https://quranpedia.net/assets/fonts/arabic/UthmanicQumbul1Ver05.otf",
+    "rawi": {
+      "id": 4,
+      "full_name": "محمد بن عبد الرحمن بن خالد المخزومي مولاهم، أبو عمر المكي ، شيخ القراء بالحجاز في زمانه، لقبه (قنبل) لأنه من أهل بيت بمكة يعرفون بالقنابلة.",
+      "name": "قنبل",
+      "qiraa": {
+        "id": 2,
+        "short_name": "ابن كثير",
+        "full_name": "عبد الله بن كثير الداري المكي",
+        "count": {
+          "id": 3,
+          "name": "المكي"
+        }
+      }
+    }
+  },
+  {
+    "id": 9,
+    "name": "مصحف شعبة",
+    "short_name": "مجمع الملك فهد",
+    "description": "المصحف الكريم برواية شعبة عن عاصم بالخط العثماني من إصدار مجمع الملك فهد لطباعة المصحف الشريف، نسخة موافقة للمطبوع",
+    "image": null,
+    "bismillah": "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ",
+    "font_file": "https://quranpedia.net/assets/fonts/arabic/UthmanicShuba_V20.ttf",
+    "images": "https://quranpedia.net/api-quran-svg/shubah.zip",
+    "images_png": null,
+    "rawi": {
+      "id": 9,
+      "full_name": "أبو بكر بن عياش بن سالم الكوفي الأسدي الحنّاط",
+      "name": "شعبة",
+      "qiraa": {
+        "id": 5,
+        "short_name": "عاصم",
+        "full_name": "عاصم بن أبي النَّجود الأسدي الكوفي",
+        "count": {
+          "id": 6,
+          "name": "الكوفي"
+        }
+      }
+    }
+  },
+  {
+    "id": 10,
+    "name": "مصحف السوسي",
+    "short_name": null,
+    "description": "المصحف الكريم برواية السوسي عن أبي عمر بالخط العثماني من إصدار مجمع الملك فهد لطباعة المصحف الشريف، غير موافق للمطبوع",
+    "image": null,
+    "bismillah": "بِسۡمِ اِ۬للَّهِ اِ۬لرَّحۡمَٰنِ اِ۬لرَّحِيمِ",
+    "font_file": "https://quranpedia.net/assets/fonts/arabic/UthmanicSousi_V20.ttf",
+    "rawi": {
+      "id": 6,
+      "full_name": "عن يحيى بن المبارك اليزيدي عن أبي عمرو البصري",
+      "name": "السوسي",
+      "qiraa": {
+        "id": 3,
+        "short_name": "أبو عمرو",
+        "full_name": "أبو عمرو بن العلاء البصري",
+        "count": {
+          "id": 1,
+          "name": "المدني الأول"
+        }
+      }
+    }
+  },
+  {
+    "id": 11,
+    "name": "مصحف التجويد الملوّن",
+    "short_name": null,
+    "description": null,
+    "image": "https://quranpedia.net/front/assets/img/mushafs/",
+    "bismillah": "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ",
+    "font_file": null,
+    "rawi": {
+      "id": 10,
+      "full_name": "بن سليمان بن المغيرة، أبو عمر الأسدي الكوفي الغاضري البزاز",
+      "name": "حفص",
+      "qiraa": {
+        "id": 5,
+        "short_name": "عاصم",
+        "full_name": "عاصم بن أبي النَّجود الأسدي الكوفي",
+        "count": {
+          "id": 6,
+          "name": "الكوفي"
+        }
+      }
+    }
+  },
+  {
+    "id": 12,
+    "name": "مصحف الأوقاف الليبية (قالون)",
+    "short_name": "الأوقاف الليبية",
+    "description": "مصحف دولة ليبيا للأوقاف برواية قالون عن نافع — نسخة متجهة (SVG) مولّدة من صور المصحف.",
+    "image": "https://quranpedia.net/front/assets/img/mushafs/",
+    "bismillah": "بِسْمِ اِ۬للَّهِ اِ۬لرَّحْمَٰنِ اِ۬لرَّحِيمِ",
+    "font_file": "https://quranpedia.net/assets/fonts/arabic/UthmanicQaloun_V21.ttf",
+    "images": "https://quranpedia.net/api-quran-svg/qalon-awqaf.zip",
+    "images_png": null,
+    "rawi": {
+      "id": 1,
+      "full_name": "عيسى بن مينا بن وردان بن عيسى الزرقي (أبو موسى) مولى بني زهرة ومعلم العربية وقارئ المدينة ونحويّها، لقبه نافع (قالون) لجودة قراءته لأن معناها بلغة الروم (جيد)",
+      "name": "قالون",
+      "qiraa": {
+        "id": 1,
+        "short_name": "نافع",
+        "full_name": "نافع بن عبد الرحمن بن أبي نعيم المدني",
+        "count": {
+          "id": 2,
+          "name": "المدني الأخير"
+        }
+      }
+    }
+  }
+]

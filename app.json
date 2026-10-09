@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "quran-mobile",
+    "name": "قراني",
     "slug": "quran-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,7 +8,10 @@
     "scheme": "quranmobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "CFBundleDevelopmentRegion": "ar"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -31,6 +34,17 @@
           "backgroundColor": "#208AEF",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      "expo-sqlite",
+      [
+        "expo-localization",
+        {
+          "supportedLocales": [
+            "ar"
+          ],
+          "supportsRTL": true,
+          "forcesRTL": true
         }
       ]
     ],

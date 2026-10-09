@@ -1,0 +1,23 @@
+{
+  "id": 4,
+  "name": "مصحف ورش",
+  "description": "المصحف الكريم برواية ورش عن نافع بالخط العثماني من إصدار مجمع الملك فهد لطباعة المصحف الشريف، نسخة موافقة للمطبوع",
+  "image": "https://quranpedia.net/front/assets/img/mushafs/Warsh.jpg",
+  "bismillah": "بِسْمِ اِ۬للَّهِ اِ۬لرَّحْمَٰنِ اِ۬لرَّحِيمِ ",
+  "font_file": "https://quranpedia.net/assets/fonts/arabic/UthmanicWarsh_V21.ttf",
+  "images": "https://quranpedia.net/api-quran-svg/warsh.zip",
+  "images_png": null,
+  "rawi": {
+    "id": 2,
+    "name": "ورش",
+    "full_name": "عثمان بن سعيد بن عبد الله، أبو سعيد المصري، لقبه نافع (ورشا) لبياضه، والورش شيء أبيض يصنع من اللبن، وقيل غير ذلك، وغلب عليه هذا اللقب حتى صار لا يعرف إلا به",
+    "qiraa": {
+      "id": 1,
+      "name": null,
+      "count": {
+        "id": 2,
+        "name": "المدني الأخير"
+      }
+    }
+  }
+}

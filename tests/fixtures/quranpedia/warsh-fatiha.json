@@ -1,0 +1,163 @@
+[
+  {
+    "id": 68487,
+    "number": 1,
+    "surah": "1",
+    "page_number": 1,
+    "text": "اِ۬لْحَمْدُ لِلهِ رَبِّ اِ۬لْعَٰلَمِينَ",
+    "marker": "ﰀ",
+    "options": [
+      "tafsir",
+      "meanings",
+      "similar",
+      "qiraat",
+      "topics",
+      "fatwa",
+      "e3rab",
+      "notes",
+      "asbab",
+      "translations",
+      "sayings"
+    ],
+    "number_in_hafs": [
+      1,
+      2
+    ]
+  },
+  {
+    "id": 68488,
+    "number": 2,
+    "surah": "1",
+    "page_number": 1,
+    "text": "اَ۬لرَّحْمَٰنِ اِ۬لرَّحِيمِ",
+    "marker": "ﰁ",
+    "options": [
+      "tafsir",
+      "similar",
+      "qiraat",
+      "topics",
+      "fatwa",
+      "e3rab",
+      "notes",
+      "asbab",
+      "translations",
+      "sayings"
+    ],
+    "number_in_hafs": [
+      3
+    ]
+  },
+  {
+    "id": 68489,
+    "number": 3,
+    "surah": "1",
+    "page_number": 1,
+    "text": "مَلِكِ يَوْمِ اِ۬لدِّينِۖ",
+    "marker": "ﰂ",
+    "options": [
+      "tafsir",
+      "meanings",
+      "similar",
+      "topics",
+      "e3rab",
+      "notes",
+      "asbab",
+      "translations",
+      "sayings"
+    ],
+    "number_in_hafs": [
+      4
+    ]
+  },
+  {
+    "id": 68490,
+    "number": 4,
+    "surah": "1",
+    "page_number": 1,
+    "text": "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُۖ",
+    "marker": "ﰃ",
+    "options": [
+      "tafsir",
+      "meanings",
+      "topics",
+      "fatwa",
+      "e3rab",
+      "notes",
+      "asbab",
+      "translations",
+      "sayings"
+    ],
+    "number_in_hafs": [
+      5
+    ]
+  },
+  {
+    "id": 68491,
+    "number": 5,
+    "surah": "1",
+    "page_number": 1,
+    "text": "اُ۪هْدِنَا اَ۬لصِّرَٰطَ اَ۬لْمُسْتَقِيمَ",
+    "marker": "ﰄ",
+    "options": [
+      "tafsir",
+      "meanings",
+      "similar",
+      "qiraat",
+      "fatwa",
+      "e3rab",
+      "notes",
+      "asbab",
+      "translations",
+      "sayings"
+    ],
+    "number_in_hafs": [
+      6
+    ]
+  },
+  {
+    "id": 68492,
+    "number": 6,
+    "surah": "1",
+    "page_number": 1,
+    "text": "صِرَٰطَ اَ۬لذِينَ أَنْعَمْتَ عَلَيْهِمْ",
+    "marker": "ﰅ",
+    "options": [
+      "tafsir",
+      "meanings",
+      "similar",
+      "qiraat",
+      "fatwa",
+      "e3rab",
+      "notes",
+      "asbab",
+      "translations",
+      "sayings"
+    ],
+    "number_in_hafs": [
+      7
+    ]
+  },
+  {
+    "id": 68493,
+    "number": 7,
+    "surah": "1",
+    "page_number": 1,
+    "text": "غَيْرِ اِ۬لْمَغْضُوبِ عَلَيْهِمْ وَلَا اَ۬لضَّآلِّينَۖ",
+    "marker": "ﰆ",
+    "options": [
+      "tafsir",
+      "meanings",
+      "similar",
+      "qiraat",
+      "fatwa",
+      "e3rab",
+      "notes",
+      "asbab",
+      "translations",
+      "sayings"
+    ],
+    "number_in_hafs": [
+      7
+    ]
+  }
+]
