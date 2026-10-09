@@ -1,6 +1,7 @@
 import type { Surah } from '@/lib/quranpedia/types';
 import { contentStorage } from '../storage/content-storage';
 import { decodeTajweedPrintedSurah, decodeTajweedSurah } from '../utils/tajweed';
+import { loadWarshTajweed } from './warsh-tajweed-service';
 
 const pending = new Map<string, Promise<unknown>>();
 const memory = new Map<string, { fetchedAt: number; html: string; surah?: Surah; data?: unknown }>();
@@ -42,7 +43,11 @@ async function load<T>(surah: Surah, format: 'tajweed' | 'tajweed-uthmani', deco
   pending.set(key, task);
   return task;
 }
-export const loadTajweedSurah = (surah: Surah) => load(surah, 'tajweed', decodeTajweedSurah);
+export async function loadTajweedSurah(surah: Surah, mushafId = 2) {
+  if (mushafId === 4) return loadWarshTajweed(surah);
+  if (mushafId !== 2) throw new Error('Unsupported tajweed edition');
+  return load(surah, 'tajweed', decodeTajweedSurah);
+}
 export const loadTajweedPrintedSurah = (surah: Surah) => load(surah, 'tajweed-uthmani', decodeTajweedPrintedSurah);
 
 const fonts = new Map<number, Promise<string>>();

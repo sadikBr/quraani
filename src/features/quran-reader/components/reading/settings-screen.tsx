@@ -8,6 +8,7 @@ import { useReadingPreferences } from '../../state/reading-preferences-provider'
 import { ReaderSettings } from './reader-settings';
 import { ReaderIcon, ScreenHeading, SectionHeading, Segments } from '../ui/reader-chrome';
 import { readerLayout, readerShape } from '../../design';
+import { WarshTajweedLegend } from './warsh-tajweed-legend';
 
 export function SettingsScreen() {
   const { preferences, update, palette, dark } = useReadingPreferences();
@@ -21,13 +22,17 @@ export function SettingsScreen() {
         <Segments palette={palette} options={[{ value: 'warsh', label: 'ورش عن نافع' }, { value: 'hafs', label: 'حفص عن عاصم' }]}
           value={riwayah} onChange={(value) => update({ riwayah: value })} />
         <Text style={{ color: palette.muted, fontSize: 12 }}>ورش هي الرواية الافتراضية.</Text>
-        {riwayah === 'hafs' && <Pressable accessibilityRole="switch" accessibilityState={{ checked: tajweed }} aria-checked={tajweed} accessibilityLabel="ألوان التجويد"
+        <Pressable accessibilityRole="switch" accessibilityState={{ checked: tajweed }} aria-checked={tajweed} accessibilityLabel="ألوان التجويد"
           onPress={() => update({ tajweed: !tajweed })} style={[styles.tajweed, { backgroundColor: palette.paper, borderColor: tajweed ? palette.accent : palette.border }]}>
           <View style={{ flex: 1, gap: 3 }}><Text style={{ color: palette.text, fontSize: 15, fontWeight: '600' }}>ألوان التجويد</Text>
-            <Text style={{ color: palette.muted, fontSize: 12 }}>من مصحف التجويد في الموسوعة القرآنية</Text></View>
+            <Text style={{ color: palette.muted, fontSize: 12 }}>{riwayah === 'warsh' ? 'ورش من طريق الأزرق · في النص القرآني' : 'من مصحف التجويد في الموسوعة القرآنية'}</Text></View>
           <View style={{ flexDirection: 'row', gap: 4 }}>{['#537fff', '#dd0008', '#169200'].map((color) => <View key={color} style={{ width: 6, height: 22, backgroundColor: color, borderRadius: 2 }} />)}</View>
           <View style={[styles.check, { borderColor: palette.accent, backgroundColor: tajweed ? palette.accent : 'transparent' }]}>{tajweed && <ReaderIcon name="check" size={12} color={palette.paper} />}</View>
-        </Pressable>}
+        </Pressable>
+        {riwayah === 'warsh' && tajweed && <Text style={{ color: palette.muted, fontSize: 12, lineHeight: 22 }}>
+          تظهر الألوان في تنسيقي النص القرآني، على أساس الوقف عند نهاية كل آية. صفحات المصحف المطبوع تبقى كما هي.
+        </Text>}
+        {riwayah === 'warsh' && tajweed && <WarshTajweedLegend palette={palette} dark={dark} />}
       </View>
       <View style={[styles.section, { borderColor: palette.border }]}>
 

@@ -26,3 +26,9 @@ Hafs samples added 2026-10-09: original edition-2 metadata, Al-Fatiha and the
 first 32 Baqarah ayahs; matching public tajweed HTML extracts; seven Fatiha
 colored glyph lines and page-3 SVG selection polygons. Small regression samples
 only, not a frozen corpus for app distribution. Source: https://quranpedia.net
+# Warsh tajweed regression sample
+
+`warsh-tajweed-sample.json` contains unmodified selected ayahs from Quranpedia
+mushaf 4, retrieved 2026-10-09, including Al-Fatiha, the beginning of Al-Baqarah,
+Ta-Ha's opening, Al-Mulk 9–10's canonical encoding variants, and An-Nas. See
+`assets/tajweed/README.md` for the annotation source and full-corpus validation.

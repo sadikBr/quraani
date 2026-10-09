@@ -11,20 +11,29 @@ identities. Existing Warsh saves/cache entries remain usable. Search, the index,
 copying, related content and share cards use the selected edition and font.
 Hafs Fatiha includes its numbered basmala once, with no extra opening inserted.
 
-The Hafs-only **ألوان التجويد** switch applies to printed pages and both Quran text
-layouts. Text annotations come on demand from Quranpedia's `/surah/1/{surah}/tajweed`.
+The **ألوان التجويد** switch supports both riwayat. For Hafs it applies to printed
+pages and both Quran text layouts. Hafs text annotations come on demand from Quranpedia's `/surah/1/{surah}/tajweed`.
 Only known color tags are parsed, without executing source HTML. The colored text
 must match the Unicode corpus exactly; repeated presentation tatweel is the sole
 permitted difference and is mapped back onto the unchanged corpus characters.
 Colored Unicode text uses a locally constructed WebView document on phones and
 the same sandboxed document in the browser. This preserves Arabic shaping across
 color boundaries, which native Android attributed text was breaking. The bundled
-Hafs V22 font is read once, cached and embedded; source text is never replaced by
+edition's font (Hafs V22 or Warsh V21) is read once, separately cached and embedded; source text is never replaced by
 presentation characters or modified with synthetic joiners. Both text layouts
 keep one inline text flow. Practice updates word visibility and selection through
 the bridge without reloading the document; hidden words retain their layout but
 are also hidden from accessibility. A color load failure leaves complete plain
 text available and offers retry.
+
+Warsh colors apply to both text layouts, practice and the live preview. The user
+chose to leave printed Warsh pages unchanged. Its separately generated **al-Azraq**
+annotations are bundled offline, checked against all 6,214 original ayahs and
+validated against the exact original spelling at runtime. Hafs rules are never
+reused for Warsh. The settings explain the stop-at-each-ayah policy and provide
+a color legend. The pinned QUD annotator, research sources, reproducible generator,
+known scope and alignment checks are documented in `assets/tajweed/README.md`.
+These generated annotations are not presented as a publisher-certified mushaf.
 
 Colored printed pages use the exact QPC V4 glyphs, line groups and verse targets
 published at `/surah/1/{surah}/tajweed-uthmani`. A minimal locally constructed,
@@ -126,10 +135,10 @@ Legacy in-between saved sizes snap to the nearest stop when restored.
 
 The preview uses the first two original Al-Fatiha ayahs of the selected riwayah from the cached reader
 content, the bundled Quran font, and the same line-height calculation as the reader.
-It follows separate/continuous text layout, spacing and theme. With Hafs tajweed
+It follows separate/continuous text layout, spacing and theme. With tajweed
 enabled, it reuses the reader's cached color rules and joined-text renderer in a
 compact, non-interactive preview, including light/dark colors. Disabling tajweed
-returns to plain text; Warsh never receives Hafs color rules. It wraps without
+returns to plain text; each riwayah uses its own annotations and font. It wraps without
 clipping at larger sizes, stacks below controls on phones, and sits alongside them
 when the settings panel has at least 620 points of width. Printed-page mode keeps
 its fixed typography. Native gesture and screen-reader acceptance need device QA.

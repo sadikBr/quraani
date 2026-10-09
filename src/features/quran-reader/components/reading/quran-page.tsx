@@ -139,7 +139,7 @@ export const QuranPage = memo(function QuranPage({
                 { backgroundColor: palette.paper },
             ]}
         >
-            {tajweed && quran.id === 2 && coloring.error && <View style={{ gap: 8, padding: 12 }}><ArabicText style={{ color: palette.muted }}>تعذر تحميل ألوان التجويد. النص الكامل ظاهر دون ألوان.</ArabicText><ReaderButton palette={palette} onPress={coloring.retry}>إعادة المحاولة</ReaderButton></View>}
+            {tajweed && coloring.error && <View style={{ gap: 8, padding: 12 }}><ArabicText style={{ color: palette.muted }}>تعذر تحميل ألوان التجويد. النص الكامل ظاهر دون ألوان.</ArabicText><ReaderButton palette={palette} onPress={coloring.retry}>إعادة المحاولة</ReaderButton></View>}
             {sections.map((section) => (
                 <View key={section.surah.number} style={styles.section} onLayout={(event) => {
                     if (section.surah.number === selectedAyah?.surahNumber) { offsets.current.section = event.nativeEvent.layout.y; reportTarget(); }
@@ -147,7 +147,7 @@ export const QuranPage = memo(function QuranPage({
                 }}>
                     {section.opensSurah && <SurahOpening number={section.surah.number} name={section.surah.name}
                         bismillah={section.showBismillah ? quran.bismillah : undefined} fontSize={fontSize} palette={palette} />}
-                    {tajweed && quran.id === 2 ? <View onLayout={(event) => {
+                    {tajweed ? <View onLayout={(event) => {
                         if (section.surah.number === selectedAyah?.surahNumber) { offsets.current.ayahs = event.nativeEvent.layout.y; reportTarget(); }
                         if (onAyahOffset) { practiceOffsets.current.groups.set(section.surah.number, event.nativeEvent.layout.y); reportPracticeOffsets(); }
                     }}>

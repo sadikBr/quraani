@@ -9,6 +9,13 @@ const colors: Record<string, [string, string]> = {
   ham_wasl: ['#888888', '#aaaaaa'], madda_necessary: ['#000ebc', '#4d6aff'],
   madda_obligatory: ['#2144c1', '#5b78f0'], madda_pbligatory: ['#2144c1', '#5b78f0'],
   madda_permissible: ['#4050ff', '#6b7fff'], madda_normal: ['#537fff', '#7b9fff'], idgh_mus: ['#888888', '#b8b8b8'],
+  // App palette for the separately annotated Warsh/al-Azraq corpus.
+  warsh_badal: ['#4050ff', '#6b7fff'], warsh_leen: ['#4050ff', '#6b7fff'],
+  warsh_madd_stop: ['#537fff', '#7b9fff'],
+  warsh_naql: ['#007c80', '#4ddad3'], warsh_ibdal: ['#007c80', '#4ddad3'],
+  warsh_tashil: ['#9655a8', '#dba2ee'], warsh_taqlil: ['#ad5700', '#ffba63'],
+  warsh_imala: ['#ad5700', '#ffba63'], warsh_ra: ['#a54475', '#ef92c5'],
+  warsh_lam: ['#866100', '#e8c45e'],
 };
 export function tajweedColor(rule: string | undefined, dark: boolean, fallback: string) {
   return rule ? colors[rule]?.[dark ? 1 : 0] ?? fallback : fallback;

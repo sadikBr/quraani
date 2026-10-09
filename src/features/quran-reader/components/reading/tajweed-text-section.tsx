@@ -4,7 +4,8 @@ import type { Ayah, AyahReference } from '@/lib/quranpedia/types';
 import type { ReaderTextLayout } from '../../types/reader';
 import type { ReaderPalette } from '../../theme';
 import type { TajweedSurah } from '../../utils/tajweed';
-import { loadHafsDocumentFont } from '../../services/hafs-document-font';
+import { loadQuranDocumentFont } from '../../services/quran-document-font';
+import { editionForMushaf } from '../../riwayat';
 import { tajweedTextDocument, tajweedTextState } from '../../utils/tajweed-text-document';
 import { ayahKey } from '../../utils/references';
 import { TajweedSurface } from './tajweed-surface';
@@ -20,20 +21,24 @@ interface Props {
 }
 
 export const TajweedTextSection = memo(function TajweedTextSection({ ayahs, pageNumber, layout, fontSize, spacious, palette, dark, runs, selectedAyah, visibleWords, preview = false, onTap, onSelect, onOffset, onNavigate }: Props) {
-  const [font, setFont] = useState<string>();
+  const mushafId = ayahs[0].mushafId;
+  const edition = editionForMushaf(mushafId);
+  const [loadedFont, setFont] = useState<{ mushafId: number; uri: string }>();
+  const font = loadedFont?.mushafId === mushafId ? loadedFont.uri : undefined;
   const [height, setHeight] = useState(() => preview ? readerTextLineHeight(fontSize, spacious) * 3 : 600);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let active = true;
-    void loadHafsDocumentFont().then((value) => { if (active) setFont(value); }).catch(() => { if (active) setError(true); });
+    setError(false);
+    void loadQuranDocumentFont(mushafId).then((uri) => { if (active) setFont({ mushafId, uri }); }).catch(() => { if (active) setError(true); });
     return () => { active = false; };
-  }, [attempt]);
+  }, [attempt, mushafId]);
   const html = useMemo(() => font ? tajweedTextDocument(ayahs, layout, font, fontSize, spacious, palette, preview) : '', [ayahs, layout, font, fontSize, spacious, palette, preview]);
   const update = useMemo(() => tajweedTextState(ayahs, runs, dark, palette, selectedAyah, visibleWords), [ayahs, runs, dark, palette, selectedAyah, visibleWords]);
   if (error) return <View style={{ padding: 24, gap: 12 }}><ArabicText style={{ color: palette.muted }}>تعذر عرض النص القرآني.</ArabicText><ReaderButton palette={palette} onPress={() => { setError(false); setAttempt((n) => n + 1); }}>إعادة المحاولة</ReaderButton></View>;
   if (!font) return <ActivityIndicator color={palette.accent} accessibilityLabel="جارٍ تحميل خط القرآن" style={{ marginVertical: 40 }} />;
-  return <TajweedSurface key={attempt} title={preview ? 'معاينة نص حفص بألوان التجويد' : `نص حفص بألوان التجويد · صفحة ${pageNumber} · سورة ${ayahs[0].surahNumber}`} pageNumber={pageNumber} html={html} update={update} height={height} onError={() => setError(true)} onMessage={(raw) => {
+  return <TajweedSurface key={`${mushafId}:${attempt}`} title={preview ? `معاينة نص ${edition.name} بألوان التجويد` : `نص ${edition.name} بألوان التجويد · صفحة ${pageNumber} · سورة ${ayahs[0].surahNumber}`} pageNumber={pageNumber} html={html} update={update} height={height} onError={() => setError(true)} onMessage={(raw) => {
     try {
       const message = JSON.parse(raw);
       if (message.source !== 'quranni-tajweed-text') return;
