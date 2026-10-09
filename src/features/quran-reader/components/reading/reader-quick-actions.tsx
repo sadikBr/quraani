@@ -2,8 +2,8 @@ import { readerShape } from '../../design';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Link } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { SURAH_NAME_FONT_FAMILY } from '../../config';
-import { useWarshFont } from '../../hooks/use-warsh-font';
+import { calligraphyStyle, surahNameGlyph } from '../../utils/reader-typography';
+import { useQuranFont } from '../../hooks/use-quran-font';
 import type { ReaderPalette } from '../../theme';
 import type { QuranPage } from '../../types/reader';
 import { pageDivisions } from '../../utils/page-divisions';
@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function ReaderQuickActions({ page, surahName, palette }: Props) {
-  const font = useWarshFont();
+  const font = useQuranFont();
   const surahNumber = page.ayahs[0]?.surahNumber;
   const calligraphy = font.loaded && !!surahNumber;
   const divisions = pageDivisions(page);
@@ -42,7 +42,7 @@ export function ReaderQuickActions({ page, surahName, palette }: Props) {
           <View style={styles.locationText}>
             <Text accessibilityLabel={surahName} numberOfLines={1}
               style={[styles.surah, calligraphy && styles.surahCalligraphy, { color: palette.text }]}>
-              {calligraphy ? String(surahNumber).replace(/\d/g, (digit) => '٠١٢٣٤٥٦٧٨٩'[Number(digit)]) : surahName}
+              {calligraphy ? surahNameGlyph(surahNumber!) : surahName}
             </Text>
             <Text numberOfLines={1} style={[styles.divisions, { color: palette.muted }]}>{location}</Text>
           </View>
@@ -62,6 +62,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', paddingHorizontal: 12, paddingVertical: 2, borderWidth: 1, borderRadius: readerShape.control },
   locationText: { flex: 1, minWidth: 0, alignItems: 'center' },
   surah: { fontSize: 13, lineHeight: 21, fontWeight: '600' },
-  surahCalligraphy: { fontFamily: SURAH_NAME_FONT_FAMILY, fontSize: 28, lineHeight: 28, fontWeight: '400', includeFontPadding: false },
+  surahCalligraphy: { ...calligraphyStyle(28), lineHeight: 28 },
   divisions: { fontSize: 10, lineHeight: 17 },
 });

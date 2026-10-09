@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test';
 import { ayahDestination, nearbyPageNumbers, parseReaderNumber, restoreReadingPosition, swipePageDelta } from '../src/features/quran-reader/utils/navigation';
 const ayah = { mushafId: 4, surahNumber: 2, ayahNumber: 1, pageNumber: 2, hafsAyahNumbers: [1, 2] };
-const content = { pages: [{ number: 1, mushafId: 4, ayahs: [] }, { number: 2, mushafId: 4, ayahs: [ayah] }, { number: 3, mushafId: 4, ayahs: [] }], quran: { surahs: [{ number: 2, ayahs: [ayah] }] } };
+const content = { pages: [{ number: 1, mushafId: 4, ayahs: [] }, { number: 2, mushafId: 4, ayahs: [ayah] }, { number: 3, mushafId: 4, ayahs: [] }], quran: { id: 4, surahs: [{ number: 2, ayahs: [ayah] }] } };
 
 test('jump inputs accept both digit forms and reject partial or decimal numbers', () => {
   expect(parseReaderNumber(' 604 ')).toBe(604);
@@ -39,6 +39,6 @@ test('preloading prioritizes immediate neighbors and never crosses the mushaf ed
 test('reopening a selected continuation retains the page being read, not the verse start page', () => {
   const start = { mushafId: 4, surahNumber: 4, ayahNumber: 44, pageNumber: 85 };
   const continuedContent = { pages: [{ mushafId: 4, number: 85, ayahs: [start] }, { mushafId: 4, number: 86, ayahs: [], previousAyah: start }],
-    quran: { surahs: [{ number: 4, ayahs: [start] }] } };
+    quran: { id: 4, surahs: [{ number: 4, ayahs: [start] }] } };
   expect(restoreReadingPosition(JSON.stringify({ mushafId: 4, pageNumber: 86, ayah: start, scrollY: 12 }), continuedContent).pageNumber).toBe(86);
 });

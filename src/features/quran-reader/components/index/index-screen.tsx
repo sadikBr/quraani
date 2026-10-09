@@ -1,3 +1,4 @@
+import { editionForMushaf } from '../../riwayat';
 import { useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
@@ -5,12 +6,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { useReaderContent } from '../../hooks/use-reader-content';
-import { useWarshFont } from '../../hooks/use-warsh-font';
+import { useQuranFont } from '../../hooks/use-quran-font';
 import { useReadingPreferences } from '../../state/reading-preferences-provider';
-import { SURAH_NAME_FONT_FAMILY } from '../../config';
+import { calligraphyStyle, surahNameGlyph } from '../../utils/reader-typography';
 import { readerIndexItems, type IndexKind, type ReaderIndexItem } from '../../utils/reader-index';
 import { ReaderButton } from '../reading/reader-button';
-import { QuranSeal, ReaderIcon, ScreenHeading, Segments } from '../ui/reader-chrome';
+import { ReaderIcon, ScreenHeading, Segments } from '../ui/reader-chrome';
+import { QuranniLogo } from '../ui/quranni-logo';
 import { readerLayout, readerShape } from '../../design';
 
 const tabs = [
@@ -20,7 +22,7 @@ export function IndexScreen() {
   const { height } = useWindowDimensions();
   const { content, loading, error, refresh } = useReaderContent();
   const { palette, dark } = useReadingPreferences();
-  const font = useWarshFont();
+  const font = useQuranFont();
   const [kind, setKind] = useState<IndexKind>('surah');
   const [query, setQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
@@ -42,11 +44,11 @@ export function IndexScreen() {
         {height >= 700 && <Pressable accessibilityRole="button" accessibilityLabel="متابعة القراءة من آخر موضع" onPress={back}
           style={({ pressed }) => [styles.hero, { backgroundColor: palette.hero, opacity: pressed ? 0.9 : 1 }]}>
           <View style={styles.heroCopy}>
-            <Text style={{ color: palette.heroMuted, fontSize: 11 }}>رواية ورش عن نافع</Text>
+            <Text style={{ color: palette.heroMuted, fontSize: 11 }}>رواية {content ? editionForMushaf(content.data.quran.id).label : '…'}</Text>
             <Text style={{ color: palette.onHero, fontSize: 23, lineHeight: 38, fontWeight: '600' }}>وقتٌ للقرآن</Text>
             <View style={styles.resume}><Text style={{ color: palette.onHero, fontSize: 13 }}>متابعة القراءة</Text><ReaderIcon name="chevron" color={palette.onHero} size={16} /></View>
           </View>
-          <View style={styles.heroArt}><QuranSeal color={palette.heroMuted} size={76} /></View>
+          <View style={styles.heroArt}><QuranniLogo color={palette.heroMuted} size={76} /></View>
         </Pressable>}
         <Segments options={tabs} value={kind} onChange={setKind} palette={palette} />
         {kind === 'surah' && <View style={[styles.search, { backgroundColor: palette.paper, borderColor: searchFocused ? palette.accent : palette.border }]}>
@@ -74,9 +76,9 @@ export function IndexScreen() {
         style={({ pressed }) => [styles.item, { borderColor: palette.border, backgroundColor: pressed ? palette.accentSoft : 'transparent' }]}>
         <View style={[styles.number, { backgroundColor: palette.accentSoft }]}><Text style={{ color: palette.accent, fontSize: 14, fontWeight: '600', textAlign: 'center' }}>{item.number}</Text></View>
         <View style={styles.name}>
-          <Text accessibilityLabel={item.title} style={{ color: palette.text, fontSize: kind === 'surah' && font.loaded ? 31 : 19,
-            ...(kind === 'surah' && font.loaded ? { fontFamily: SURAH_NAME_FONT_FAMILY, lineHeight: 43 } : {}) }}>
-            {kind === 'surah' && font.loaded ? String(item.number).replace(/\d/g, (digit) => '٠١٢٣٤٥٦٧٨٩'[Number(digit)]) : item.title}
+          <Text accessibilityLabel={item.title} style={{ color: palette.text, fontSize: 19,
+            ...(kind === 'surah' && font.loaded ? calligraphyStyle(34) : {}) }}>
+            {kind === 'surah' && font.loaded ? surahNameGlyph(item.number) : item.title}
           </Text>
           <Text style={{ color: palette.muted, fontSize: 12 }}>{item.detail}</Text>
         </View>

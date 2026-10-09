@@ -1,9 +1,11 @@
+import { useReadingPreferences } from '../../state/reading-preferences-provider';
+import { useTajweed } from '../../hooks/use-tajweed';
+import { ReaderButton } from './reader-button';
 import { readerShape } from '../../design';
 import { ArabicText } from '@/components/arabic-text';
-import { memo, useRef } from 'react';
+import { memo, useMemo, useRef } from 'react';
 import { Platform, StyleSheet, Text, type TextStyle, View } from "react-native";
 import type { Ayah, AyahReference, Quran } from "@/lib/quranpedia/types";
-import { SURAH_NAME_FONT_FAMILY } from "../../config";
 import type { ReaderPalette } from "../../theme";
 import type { QuranPage as Page, ReaderTextLayout } from "../../types/reader";
 import { pageSections } from "../../utils/page-sections";
@@ -11,6 +13,9 @@ import { ayahKey } from "../../utils/references";
 import { ayahWords } from '../../utils/page-practice';
 import { flowingAyahOffset } from '../../utils/flowing-ayah-offset';
 import { AyahTextAction } from './ayah-text-action';
+import { readerTextLineHeight } from '../../utils/reader-typography';
+import { TajweedTextSection } from './tajweed-text-section';
+import { SurahOpening } from './surah-opening';
 
 interface Props {
     page: Page;
@@ -23,14 +28,10 @@ interface Props {
     selectedAyah: AyahReference | null;
     onTap: (ayah: Ayah) => void;
     onSelect: (ayah: Ayah) => void;
+    onNavigate?: (page: number) => void;
     onTargetOffset?: (y: number) => void;
     onAyahOffset?: (ayah: Ayah, y: number) => void;
     visibleWords?: ReadonlyMap<string, number>;
-}
-
-// This font substitutes Arabic-Indic number sequences with complete calligraphy.
-function headingGlyph(number: number) {
-    return String(number).replace(/[0-9]/g, (digit) => "٠١٢٣٤٥٦٧٨٩"[Number(digit)]);
 }
 
 export const QuranPage = memo(function QuranPage({
@@ -44,10 +45,13 @@ export const QuranPage = memo(function QuranPage({
     selectedAyah,
     onTap,
     onSelect,
+    onNavigate,
     onTargetOffset,
     onAyahOffset,
     visibleWords,
 }: Props) {
+    const { preferences: { tajweed }, dark } = useReadingPreferences();
+    const coloring = useTajweed(page, quran, tajweed);
     const pageRef = useRef<View>(null);
     const flowingRefs = useRef(new Map<string, { ayah: Ayah; node: Text }>());
     const measureWebAyah = (ayah: Ayah) => {
@@ -76,15 +80,11 @@ export const QuranPage = memo(function QuranPage({
         const { section, ayahs, row } = offsets.current;
         if (section !== undefined && ayahs !== undefined && row !== undefined) onTargetOffset?.(22 + section + ayahs + row);
     };
-    const sections = pageSections(page, quran);
-    // These whole-word calligraphy glyphs have a smaller visible height than
-    // the ayah font. Scale them separately, without inheriting verse spacing.
-    const surahNameSize = Math.round(fontSize * 1.75);
-    const bismillahSize = Math.round(fontSize * 1.5);
+    const sections = useMemo(() => pageSections(page, quran), [page, quran]);
     const arabicStyle: TextStyle = {
         fontFamily,
         fontSize,
-        lineHeight: Math.ceil(fontSize * (spacious ? 2.25 : 1.9)),
+        lineHeight: readerTextLineHeight(fontSize, spacious),
         color: palette.text,
         fontWeight: "400",
         writingDirection: "rtl",
@@ -114,11 +114,13 @@ export const QuranPage = memo(function QuranPage({
                     hint="اضغط لإظهار أدوات القراءة، واضغط مطولاً لفتح إجراءات الآية">
                     {/* Keep hidden runs the same color as the page as well as transparent:
                         native nested text can inherit ink instead of honoring transparency. */}
-                    {words ? words.map((word, index) => <Text key={index}
-                        style={{ color: index < revealed! ? palette.text : palette.paper, opacity: index < revealed! ? 1 : 0 }}
-                        accessibilityElementsHidden={index >= revealed!}
-                        importantForAccessibility={index >= revealed! ? 'no-hide-descendants' : 'auto'}
-                        aria-hidden={index >= revealed!}>{word}</Text>) : ayah.text}
+                    {words ? words.map((word, index) => {
+                        const hidden = index >= revealed!;
+                        return <Text key={index} style={{ color: hidden ? palette.paper : palette.text, opacity: hidden ? 0 : 1 }}
+                            accessibilityElementsHidden={hidden} importantForAccessibility={hidden ? 'no-hide-descendants' : 'auto'} aria-hidden={hidden}>
+                            {word}
+                        </Text>;
+                    }) : ayah.text}
                 </AyahTextAction>
                 {"\u00A0"}
                 <AyahTextAction color={palette.ornament} onPress={() => onSelect(ayah)}
@@ -137,38 +139,25 @@ export const QuranPage = memo(function QuranPage({
                 { backgroundColor: palette.paper },
             ]}
         >
+            {tajweed && quran.id === 2 && coloring.error && <View style={{ gap: 8, padding: 12 }}><ArabicText style={{ color: palette.muted }}>تعذر تحميل ألوان التجويد. النص الكامل ظاهر دون ألوان.</ArabicText><ReaderButton palette={palette} onPress={coloring.retry}>إعادة المحاولة</ReaderButton></View>}
             {sections.map((section) => (
                 <View key={section.surah.number} style={styles.section} onLayout={(event) => {
                     if (section.surah.number === selectedAyah?.surahNumber) { offsets.current.section = event.nativeEvent.layout.y; reportTarget(); }
                     if (onAyahOffset) { practiceOffsets.current.sections.set(section.surah.number, event.nativeEvent.layout.y); reportPracticeOffsets(); }
                 }}>
-                    {section.opensSurah && <View style={styles.surahHeader}>
-                        <Text
-                            accessibilityRole="header"
-                            accessibilityLabel={section.surah.name}
-                            style={[arabicStyle, styles.surahName, {
-                                fontFamily: SURAH_NAME_FONT_FAMILY,
-                                fontSize: surahNameSize,
-                                lineHeight: Math.ceil(surahNameSize * 1.15),
-                                color: palette.ornament,
-                            }]}
-                        >
-                            {headingGlyph(section.surah.number)}
-                        </Text>
-                    </View>}
-                    {section.showBismillah && (
-                        <Text
-                            accessibilityLabel={quran.bismillah}
-                            style={[arabicStyle, styles.bismillah, {
-                                fontFamily: SURAH_NAME_FONT_FAMILY,
-                                fontSize: bismillahSize,
-                                lineHeight: Math.ceil(bismillahSize * 1.3),
-                            }]}
-                        >
-                            {headingGlyph(115)}
-                        </Text>
-                    )}
-                    {layout === 'flowing' ? (
+                    {section.opensSurah && <SurahOpening number={section.surah.number} name={section.surah.name}
+                        bismillah={section.showBismillah ? quran.bismillah : undefined} fontSize={fontSize} palette={palette} />}
+                    {tajweed && quran.id === 2 ? <View onLayout={(event) => {
+                        if (section.surah.number === selectedAyah?.surahNumber) { offsets.current.ayahs = event.nativeEvent.layout.y; reportTarget(); }
+                        if (onAyahOffset) { practiceOffsets.current.groups.set(section.surah.number, event.nativeEvent.layout.y); reportPracticeOffsets(); }
+                    }}>
+                        <TajweedTextSection ayahs={section.ayahs} pageNumber={page.number} layout={layout} fontSize={fontSize} spacious={spacious}
+                            palette={palette} dark={dark} runs={coloring.data[section.surah.number]} selectedAyah={selectedAyah} visibleWords={visibleWords}
+                            onTap={onTap} onSelect={onSelect} onNavigate={onNavigate} onOffset={(ayah, y) => {
+                                if (selectedAyah && ayahKey(selectedAyah) === ayahKey(ayah)) { offsets.current.row = y; reportTarget(); }
+                                if (onAyahOffset) { practiceOffsets.current.rows.set(ayahKey(ayah), { ayah, y }); reportPracticeOffsets(); }
+                            }} />
+                    </View> : layout === 'flowing' ? (
                         <View onLayout={(event) => {
                             if (section.surah.number === selectedAyah?.surahNumber) { offsets.current.ayahs = event.nativeEvent.layout.y; reportTarget(); }
                             if (onAyahOffset) { practiceOffsets.current.groups.set(section.surah.number, event.nativeEvent.layout.y); reportPracticeOffsets(); }
@@ -235,14 +224,6 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
     },
     section: { marginBottom: 12 },
-    surahHeader: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        marginBottom: 24,
-    },
-    surahName: { flexShrink: 1, textAlign: "center", paddingVertical: 4 },
-    bismillah: { textAlign: "center", paddingVertical: 10, marginBottom: 10 },
     paragraph: { paddingVertical: 8 },
     ayahs: { gap: 14 },
     ayahRow: { paddingBottom: 18, borderBottomWidth: StyleSheet.hairlineWidth },

@@ -1,3 +1,4 @@
+import { editionForMushaf } from '../riwayat';
 import { printedPageAyah } from './printed-page-ayahs';
 import type { QuranPage } from '../types/reader';
 import { svgPathBbox } from 'svg-path-bbox';
@@ -18,7 +19,7 @@ export interface PrintedPage {
 }
 
 export function decodePrintedPage(xml: string, page: QuranPage): PrintedPage {
-  if (page.mushafId !== 4 || !xml.match(/<svg\b[^>]*viewBox="[^"]+"/)) throw new Error('Invalid Warsh page artwork');
+  if (![4, 2].includes(page.mushafId) || !xml.match(/<svg\b[^>]*viewBox="[^"]+"/)) throw new Error('Invalid mushaf page artwork');
   // The endpoint pads the two opening pages into a full-page canvas. Keep their
   // smaller original artwork bounds so the opening text is readable on a phone.
   const viewBox = page.number <= 2 ? '-6 0 235 235' : xml.match(/<svg\b[^>]*viewBox="([^"]+)"/)?.[1];
@@ -34,7 +35,7 @@ export function decodePrintedPage(xml: string, page: QuranPage): PrintedPage {
     const ayah = Number(tag.match(/\bayah="(\d+)"/)?.[1]);
     const path = tag.match(/\bd="([^"]+)"/)?.[1];
     if (!path || !printedPageAyah(page, { surahNumber: surah, ayahNumber: ayah })) {
-      throw new Error('Artwork does not match this Warsh page');
+      throw new Error('Artwork does not match this mushaf page');
     }
     regions.push({ surah, ayah, path });
     return '';
@@ -59,7 +60,7 @@ export function decodePrintedPage(xml: string, page: QuranPage): PrintedPage {
     return { surah: region.surah, y: top - lineHeight * (region.surah === 9 ? 1 : 2), height: lineHeight };
   }).filter((heading) => Number.isFinite(heading.y) && heading.y >= 0);
   const markers = findAyahMarkers(artwork, regions);
-  return { cacheKey: `warsh-layout-v2-${page.number}-${pageFingerprint(xml)}`, xml: spacedAyahMarkers(artwork).replace(/viewBox="[^"]+"/, `viewBox="${centeredViewBox}"`), viewBox: centeredViewBox, width: dimensions[2], height: dimensions[3], regions, headings, markers };
+  return { cacheKey: `${editionForMushaf(page.mushafId).pageSource}-layout-v2-${page.number}-${pageFingerprint(xml)}`, xml: spacedAyahMarkers(artwork).replace(/viewBox="[^"]+"/, `viewBox="${centeredViewBox}"`), viewBox: centeredViewBox, width: dimensions[2], height: dimensions[3], regions, headings, markers };
 }
 
 /** Change ink only; every original glyph outline and position stays intact. */

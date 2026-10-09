@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>قرآني — الهوية البصرية</title>
+<style>
+@font-face{font-family:Naskh;src:url('../fonts/NotoNaskhArabic-Regular.ttf')}
+*{box-sizing:border-box}body{margin:0;background:#f4f1e8;color:#153e35;font-family:Naskh,serif}
+main{max-width:1080px;margin:auto;padding:36px}header{display:flex;justify-content:space-between;align-items:center;padding-bottom:22px;border-bottom:1px solid #d8d5c8;margin-bottom:28px}
+h1{font-size:36px;font-weight:400;margin:0;line-height:1.5}header p{margin:0;font-size:14px;color:#68776d}.tag{font:10px sans-serif;letter-spacing:3px;color:#8c7746;direction:ltr}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;direction:ltr}section{direction:rtl;min-width:0}h2{font-size:17px;font-weight:400;margin:0 0 12px}.stage{height:470px;border:1px solid #dedbd0;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#faf8f1;gap:24px;padding:24px}
+.logo{width:150px;height:150px;object-fit:contain}.lockup{display:flex;align-items:center;gap:12px}.lockup img{width:40px;height:40px}.lockup span{font-size:26px}.mini{display:flex;align-items:center;gap:22px;margin-top:12px}.mini img{width:28px;height:28px}.mini img+img{width:44px;height:44px}.dark{background:#103e35;color:#f7efd9}.icon{width:162px;height:162px;border-radius:34px;box-shadow:0 12px 24px #103e351a}.masks{display:flex;gap:18px}.mask{width:58px;height:58px;background:#103e35;overflow:hidden;border-radius:50%;position:relative}.mask img{width:88px;height:88px;max-width:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}.mask.squircle{border-radius:15px}.mask.themed{background:#e2e8df}.mask.themed img{filter:brightness(0) saturate(100%) invert(20%) sepia(25%) saturate(1000%) hue-rotate(113deg)}
+.phone{height:440px;width:210px;border:6px solid #182e28;border-radius:30px;background:#103e35;position:relative;overflow:hidden;display:grid;place-items:center;box-shadow:0 16px 35px #122d351c}.phone:before{content:'';position:absolute;top:10px;left:calc(50% - 4px);width:8px;height:8px;background:#031e19;border-radius:50%}.phone:after{content:'';position:absolute;bottom:9px;width:70px;height:3px;background:#eff1e5;border-radius:2px}.splash{width:146px;height:146px}.caption{font-size:12px;color:#7c826f;text-align:center;margin:0}.screen-stage{padding:12px;background:#e9e8df}.name{font-size:32px;margin-top:-18px}.swatches{display:flex;gap:8px;margin-top:16px}.swatches i{width:24px;height:5px;background:#103e35}.swatches i+i{background:#daba6a}.swatches i+i+i{background:#ece2c9}
+footer{font-size:11px;color:#7c826f;margin-top:24px;text-align:center}
+@media(max-width:720px){main{padding:24px}.grid{grid-template-columns:1fr}.stage{height:400px}header{align-items:flex-start}.tag{font-size:8px;letter-spacing:1px}}
+</style>
+<main>
+<header><div><h1>قرآني</h1><p>هوية هادئة، تليق بمساحة القرآن</p></div><span class="tag">QURANNI / BRAND IDENTITY</span></header>
+<div class="grid">
+<section><h2>الشعار</h2><div class="stage dark"><img class="logo" src="logo.png" alt="شعار قرآني — كتاب مفتوح وقوس"><div class="name">قرآني</div><div class="mini"><img src="logo.png" alt="الشعار بحجم صغير"><img src="logo.png" alt="الشعار بحجم متوسط"></div></div></section>
+<section><h2>أيقونة التطبيق</h2><div class="stage"><img class="icon" src="icon.png" alt="أيقونة قرآني"><div class="masks"><div class="mask"><img src="adaptive-foreground.png" alt="أيقونة دائرية"></div><div class="mask squircle"><img src="adaptive-foreground.png" alt="أيقونة مربعة"></div><div class="mask themed"><img src="adaptive-monochrome.png" alt="أيقونة أحادية اللون"></div></div><div class="swatches"><i></i><i></i><i></i></div></div></section>
+<section><h2>شاشة البداية</h2><div class="stage screen-stage"><div class="phone"><img class="splash" src="splash.png" alt="قرآني مع المد فوق الألف"></div></div></section>
+</div>
+<footer>الشعار يتكيّف مع ألوان التطبيق · معاينة لشاشة البداية والأيقونات</footer>
+</main>
+</html>

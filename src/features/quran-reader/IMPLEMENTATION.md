@@ -1,4 +1,70 @@
-# Warsh reader foundation
+# Quran reader foundation
+
+## Riwayah selection — 2026-10-09
+
+Settings persist `riwayah: warsh | hafs`, with Warsh retained for new and legacy
+installs. Hafs uses Quranpedia edition **2** (Unicode text with UthmanicHafs V22);
+its 6,236 ayahs and 604 page boundaries were compared with printed edition **1**.
+Warsh remains edition **4**, with its original numbering. The two riwayat have
+separate saved positions, bookmark stores, request keys, decoded pages and image
+identities. Existing Warsh saves/cache entries remain usable. Search, the index,
+copying, related content and share cards use the selected edition and font.
+Hafs Fatiha includes its numbered basmala once, with no extra opening inserted.
+
+The Hafs-only **ألوان التجويد** switch applies to printed pages and both Quran text
+layouts. Text annotations come on demand from Quranpedia's `/surah/1/{surah}/tajweed`.
+Only known color tags are parsed, without executing source HTML. The colored text
+must match the Unicode corpus exactly; repeated presentation tatweel is the sole
+permitted difference and is mapped back onto the unchanged corpus characters.
+Colored Unicode text uses a locally constructed WebView document on phones and
+the same sandboxed document in the browser. This preserves Arabic shaping across
+color boundaries, which native Android attributed text was breaking. The bundled
+Hafs V22 font is read once, cached and embedded; source text is never replaced by
+presentation characters or modified with synthetic joiners. Both text layouts
+keep one inline text flow. Practice updates word visibility and selection through
+the bridge without reloading the document; hidden words retain their layout but
+are also hidden from accessibility. A color load failure leaves complete plain
+text available and offers retry.
+
+Colored printed pages use the exact QPC V4 glyphs, line groups and verse targets
+published at `/surah/1/{surah}/tajweed-uthmani`. A minimal locally constructed,
+network-isolated document renders its COLR/CPAL page font through WebView on native
+and a sandboxed frame on web; no publisher scripts or markup are embedded.
+Only validated page/ayah messages can open actions. Number taps, long press,
+toolbar taps, paging and text practice retain the existing behavior.
+The page font comes from QUL's CORS-enabled CDN. Page 1 was verified byte-for-byte
+against Quranpedia's font (SHA-256
+`3ced9c0f79a08a533ca30c226d5d0eff470645b12dcad53091ce2e36575df62c`).
+The font's built-in dark palette is used on dark themes. Unicode text and glyph
+font data are never interchanged.
+Surah names and unnumbered basmalas use the shared native `SurahOpening` component
+and the same calligraphic font as Warsh. Printed colored pages reserve measured
+spaces for these headings, keeping them aligned with their surah sections.
+The shared calligraphy scale relates titles and basmalas to the current Quran
+body size and caps their width on narrow screens. Tajweed pages report their
+fitted font size instead of using a fixed opening size. Text previews and share
+cards use the same optical proportions; compact index, toolbar and action-sheet
+labels share the font metrics. Printed SVG ayahs/basmalas retain their original
+relative proportions, with opening headings sized to the artwork's scale.
+
+Tajweed surahs load only as needed, deduplicate concurrent work, keep a bounded
+parsed memory cache and a 24-hour persistent source cache. Page fonts have bounded
+memory and versioned persistent caching. The colored reader warms five nearby
+fonts and skips the unused monochrome SVG preload runway. It does not download
+all 604 fonts or crawl all surahs. Initial uncached tajweed loading needs a network
+connection; previously loaded content and fonts remain available offline.
+
+Checked live against Al-Fatiha, Al-Baqarah and An-Nas plus printed pages 1, 3 and
+604. Browser checks cover both text layouts, light/dark color contrast, ayah-number
+actions, word/ayah reveal, and preferences. Android/iOS exports verify packaging;
+physical-device gesture, Arabic shaping and accessibility QA remain necessary.
+
+Sources: [Hafs Unicode corpus](https://api.quranpedia.net/v1/mushafs/2),
+[Hafs printed corpus](https://api.quranpedia.net/v1/mushafs/1),
+[Quranpedia colored text](https://quranpedia.net/surah/1/1/tajweed),
+[Quranpedia colored Mushaf](https://quranpedia.net/surah/1/1/tajweed-uthmani),
+[QUL QPC V4 font](https://qul.tarteel.ai/resources/font/240),
+[Expo SDK 57 WebView](https://docs.expo.dev/versions/v57.0.0/sdk/webview/).
 
 ## Reading format and interactions
 
@@ -11,7 +77,7 @@
   This mode scales to page width; adjustable text size belongs to text mode.
 - Alternative mode: **text**, labelled **النص القرآني**. Its saved `textLayout`
   selects separate ayah rows (**آيات منفصلة**) or a justified continuous paragraph
-  (**نص متصل**) per surah section. Both use the bundled Warsh font and adjustable
+  (**نص متصل**) per surah section. Both use the bundled font for the selected riwayah and adjustable
   text size and line spacing. Continuous text wraps to the available width, with
   inline ayah markers and no fixed line count. Original `text` and `marker` remain
   separate and unchanged. Old `mode: ayah` preferences migrate to separate rows.
@@ -24,9 +90,12 @@
   translations. Printed hit regions preserve the artwork geometry.
 - The page number and jump action belong to the animated bottom toolbar. Focus
   mode has no persistent page footer, and toggling tools does not resize the text.
-  The page viewport is clipped below a reserved native top safe area, including
-  the camera cutout. Late larger measurements are accepted; hiding system bars
-  never reduces the reserved top or bottom space during a portrait session.
+  The scroll viewport reaches the top edge in focus mode. The camera safe area
+  is starting padding inside the scroll content, so it does not mask lines as
+  they scroll upward. Only the visible top toolbar paints a surface behind the
+  status bar, and that surface animates away with the tools. Late larger safe-area
+  measurements are accepted; hiding system bars never reduces the reserved
+  content padding during a portrait session.
 - The bottom toolbar starts page practice in the current text layout, preserving
   the mounted page and scroll position for both separate rows and continuous text.
   Printed artwork temporarily uses separate ayah rows for word-level practice.
@@ -44,6 +113,26 @@
   either modal is open. Native screen-reader acceptance requires device testing.
 - Runtime interaction state lives in `components/reading/reader-screen.tsx`;
   framework-independent selection helpers remain in `state/reader-state.ts`.
+
+## Text comfort settings
+
+Text mode offers seven font sizes (24–48 in steps of four) through an RTL slider.
+Native uses the SDK-compatible community slider with tap-to-seek and accessibility
+adjustments. Its native layout is explicitly LTR with `inverted` enabled so the
+minimum stays on the right independently of app/device RTL. Web uses an RTL
+keyboard-accessible range input. Dragging updates a local
+preview immediately and saves on release, avoiding repeated reader/storage updates.
+Legacy in-between saved sizes snap to the nearest stop when restored.
+
+The preview uses the first two original Al-Fatiha ayahs of the selected riwayah from the cached reader
+content, the bundled Quran font, and the same line-height calculation as the reader.
+It follows separate/continuous text layout, spacing and theme. With Hafs tajweed
+enabled, it reuses the reader's cached color rules and joined-text renderer in a
+compact, non-interactive preview, including light/dark colors. Disabling tajweed
+returns to plain text; Warsh never receives Hafs color rules. It wraps without
+clipping at larger sizes, stacks below controls on phones, and sits alongside them
+when the settings panel has at least 620 points of width. Printed-page mode keeps
+its fixed typography. Native gesture and screen-reader acceptance need device QA.
 
 ## Live response and asset validation
 
@@ -94,7 +183,7 @@ artwork remains readable if an expired-page refresh fails. Cache corrections
 replace the entire artwork rather than modifying Quran outlines.
 
 The matching font is bundled unchanged with its embedded license in
-`assets/fonts/`. `useWarshFont` loads it at runtime on mobile and web. Cmap
+`assets/fonts/`. `useQuranFont` loads it at runtime on mobile and web. Cmap
 coverage and asset structure are verified; shaping, clipping, and visual layout
 still need verification on Android/iOS devices. The prototype has been visually
 checked in a browser; see `PROTOTYPE_QA.md` for exact coverage and remaining checks.
@@ -153,7 +242,7 @@ endpoint is not required for this cache strategy.
 
 - `services/reader-service.ts`: persistent client and default-edition loader.
 - `hooks/use-reader-content.ts`: loading, error, stale data, and manual refresh.
-- `hooks/use-warsh-font.ts`: bundled Warsh font readiness.
+- `hooks/use-quran-font.ts`: bundled Warsh font readiness.
 - `state/reader-state.ts`: reversible selection and hide/reveal behavior.
 - `utils/search.ts`: local Quran and surah-name search.
 

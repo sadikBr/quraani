@@ -22,7 +22,7 @@ export async function prepareAyahCard(view: View, width: number, height: number,
     // The image is prepared before the tap so Web Share retains user activation.
     share: async () => {
       if (canShare) {
-        try { await navigator.share({ files: [file], title: 'بطاقة آية · قراني' }); return 'shared'; }
+        try { await navigator.share({ files: [file], title: 'بطاقة آية · قرآني' }); return 'shared'; }
         catch (error) { if (error instanceof Error && error.name === 'AbortError') return 'cancelled'; }
       }
       download(); return 'downloaded';

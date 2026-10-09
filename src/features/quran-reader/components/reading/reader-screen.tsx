@@ -1,10 +1,12 @@
+import { loadTajweedFont } from '../../services/tajweed-service';
+import { TajweedQuranPage } from './tajweed-quran-page';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Animated, Easing, PanResponder, Platform, ScrollView, StatusBar as NativeStatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaView, initialWindowMetrics, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useReaderContent } from '../../hooks/use-reader-content';
-import { useWarshFont } from '../../hooks/use-warsh-font';
+import { useQuranFont } from '../../hooks/use-quran-font';
 import { useReadingPosition } from '../../hooks/use-reading-position';
 import { deferPrintedPagePreparation, getCachedPrintedPage, preloadPrintedPages, setPrintedPageInteraction, waitForPagePreparation } from '../../services/printed-page-service';
 import { preloadPrintedImage } from '../../services/printed-page-render';
@@ -24,6 +26,11 @@ import { createPagePractice, practiceVisibility, revealNext } from '../../utils/
 import { reserveReadingInsets } from '../../utils/reading-insets';
 
 export function ReaderScreen() {
+  const { preferences: { riwayah } } = useReadingPreferences();
+  return <RiwayahReaderScreen key={riwayah} />;
+}
+
+function RiwayahReaderScreen() {
   const focused = useIsFocused();
   const insets = useSafeAreaInsets();
   // Initial metrics can precede Android's camera-cutout measurement. Accept later
@@ -38,8 +45,8 @@ export function ReaderScreen() {
   const bottomInset = Platform.OS === 'web' ? insets.bottom : reservedInsets.bottom;
   const { surah: targetSurah, ayah: targetAyah } = useLocalSearchParams<{ surah?: string; ayah?: string }>();
   const { content, error, refresh } = useReaderContent();
-  const font = useWarshFont();
-  const { preferences: { mode, textLayout, fontSize, spacious }, palette, dark } = useReadingPreferences();
+  const font = useQuranFont();
+  const { preferences: { mode, textLayout, fontSize, spacious, tajweed, riwayah }, palette, dark } = useReadingPreferences();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [actionsVisible, setActionsVisible] = useState(false);
   const [controlsProgress] = useState(() => new Animated.Value(0));
@@ -117,7 +124,7 @@ export function ReaderScreen() {
     if (ayah) {
       setJumpRevision((value) => value + 1);
     }
-    move({ mushafId: 4, pageNumber: number, ayah: ayah ? { mushafId: 4, surahNumber: ayah.surahNumber, ayahNumber: ayah.ayahNumber } : null, scrollY: 0 });
+    move({ mushafId: content!.data.quran.id, pageNumber: number, ayah: ayah ? { mushafId: content!.data.quran.id, surahNumber: ayah.surahNumber, ayahNumber: ayah.ayahNumber } : null, scrollY: 0 });
     scroll.current?.scrollTo({ y: 0, animated: false });
   }, [ready, content, move]);
   useEffect(() => {
@@ -140,9 +147,9 @@ export function ReaderScreen() {
     suppressClick.current = Date.now() + 500;
     setDrawerOpen(false);
     setActionsVisible(false);
-    move({ ...position, ayah: { mushafId: 4, surahNumber: ayah.surahNumber, ayahNumber: ayah.ayahNumber } }, true);
+    move({ ...position, ayah: { mushafId: content!.data.quran.id, surahNumber: ayah.surahNumber, ayahNumber: ayah.ayahNumber } }, true);
     setActionAyah(ayah);
-  }, [position, move]);
+  }, [position, move, content]);
   const togglePractice = () => {
     if (!page) return;
     setActionAyah(null);
@@ -226,6 +233,12 @@ export function ReaderScreen() {
   }), [ready, drawerOpen, actionAyah, swipeGrant, swipeMove, swipeRelease, settleSwipe]);
   useEffect(() => {
     if (!ready || !content || mode !== 'page') return;
+    if (tajweed && riwayah === 'hafs') {
+      // Page neighbors load their own data. Warm only a few small font files;
+      // don't also download the unused monochrome SVG runway.
+      for (const number of preloadPageNumbers(pageNumber, content.data.pages.length, readingDirection.current).slice(0, 5)) void loadTajweedFont(number).catch(() => {});
+      return;
+    }
     let active = true;
     const pages = content.data.pages;
     const runway = preloadPageNumbers(pageNumber, pages.length, readingDirection.current)
@@ -238,10 +251,10 @@ export function ReaderScreen() {
       }
     });
     return () => { active = false; };
-  }, [ready, content, pageNumber, mode, palette.text, palette.ornament]);
+  }, [ready, content, pageNumber, mode, palette.text, palette.ornament, tajweed, riwayah]);
 
   return (
-    <SafeAreaView edges={['left', 'right']} style={[styles.root, { backgroundColor: palette.paper, paddingTop: topInset }]}>
+    <SafeAreaView edges={['left', 'right']} style={[styles.root, { backgroundColor: palette.paper }]}>
       {/* Let iOS manage transient home-indicator visibility without changing its
           policy (and safe-area layout) every time the reader tools are toggled. */}
       <Stack.Screen options={{ navigationBarHidden: immersive, autoHideHomeIndicator: true }} />
@@ -277,39 +290,45 @@ export function ReaderScreen() {
           }
         }}
         onTouchCancel={() => { tapStart.current = null; }}>
+      {/* The safe starting space scrolls with the page. Padding the viewport
+          itself would create an opaque strip that cuts off text below the camera. */}
       <ScrollView ref={isCurrent ? scroll : undefined} scrollEnabled={isCurrent} scrollEventThrottle={100} onScroll={(event) => { if (isCurrent && ready) { deferPrintedPagePreparation(); if (practicing) practiceScrollY.current = event.nativeEvent.contentOffset.y; else { readingScrollY.current = event.nativeEvent.contentOffset.y; recordScroll(event.nativeEvent.contentOffset.y); } } }}
         automaticallyAdjustContentInsets={false} contentInsetAdjustmentBehavior="never"
         onContentSizeChange={() => { if (isCurrent && ready && !jumpPending.current) scroll.current?.scrollTo({ y: practicing ? practiceScrollY.current : position.scrollY, animated: false }); }} onScrollBeginDrag={() => { tapStart.current = null; }} showsVerticalScrollIndicator={false} style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, practicing && mode === 'page' && styles.practiceContent, { paddingBottom: (practicing ? 124 : 8) + bottomInset }]}>
+        contentContainerStyle={[styles.scrollContent, {
+          paddingTop: topInset + (practicing && mode === 'page' ? 64 : 8),
+          paddingBottom: (practicing ? 124 : 8) + bottomInset,
+        }]}>
         <View style={[styles.content, mode === 'page' && !practicing && styles.centeredContent]}>
           {font.error || (error && !content) ? (
             <View accessibilityRole="alert" style={styles.status}>
               <Text style={[styles.statusTitle, { color: palette.text }]}>{font.error ? 'تعذر تحميل خط المصحف' : 'تعذر تحميل القرآن'}</Text>
-              <Text style={[styles.statusText, { color: palette.muted }]}>{font.error ? 'أعد فتح التطبيق لتحميل خط مصحف ورش.' : 'تحقق من الاتصال ثم أعد المحاولة.'}</Text>
+              <Text style={[styles.statusText, { color: palette.muted }]}>{font.error ? 'أعد فتح التطبيق لتحميل خط المصحف.' : 'تحقق من الاتصال ثم أعد المحاولة.'}</Text>
               {!font.error && <ReaderButton palette={palette} onPress={refresh}>إعادة المحاولة</ReaderButton>}
             </View>
           ) : !font.loaded || !content || !ready ? (
             <View style={styles.status} accessibilityLiveRegion="polite">
               <ActivityIndicator color={palette.accent} size="large" />
               <Text style={[styles.statusTitle, { color: palette.text }]}>جارٍ تجهيز المصحف</Text>
-              <Text style={[styles.statusText, { color: palette.muted }]}>جارٍ تحميل مصحف ورش وخطه.</Text>
+              <Text style={[styles.statusText, { color: palette.muted }]}>جارٍ تحميل الرواية المختارة وخطها.</Text>
             </View>
           ) : displayPage ? (
+            mode === 'page' && !practicing && tajweed && riwayah === 'hafs' ? <TajweedQuranPage key={`${displayPage.number}:${jumpRevision}`} page={displayPage} quran={content.data.quran} palette={palette} dark={dark} selectedAyah={isCurrent ? position.ayah : null} onTap={toggleActions} onSelect={select} onNavigate={navigate} onTargetOffset={isCurrent ? targetOffset : undefined} /> :
             mode === 'page' && !practicing ? <PrintedQuranPage key={`${displayPage.number}:${jumpRevision}`} page={displayPage} palette={palette}
               selectedAyah={isCurrent ? position.ayah : null} onTap={tapAyah} onSelect={select} onTargetOffset={isCurrent ? targetOffset : undefined} /> :
               <QuranPage key={`${displayPage.number}:${jumpRevision}:${mode === 'page' ? 'practice' : textLayout}`} page={practicing && practicePlan ? practicePlan.page : displayPage} quran={content.data.quran} layout={mode === 'page' ? 'ayah' : textLayout} fontFamily={font.fontFamily}
                 visibleWords={practicing ? visibleWords : undefined} fontSize={fontSize} spacious={spacious} palette={palette} selectedAyah={isCurrent ? position.ayah : null}
-                onTap={tapAyah} onSelect={select} onTargetOffset={isCurrent ? targetOffset : undefined}
+                onTap={tapAyah} onSelect={select} onNavigate={navigate} onTargetOffset={isCurrent ? targetOffset : undefined}
                 onAyahOffset={isCurrent ? recordPracticeOffset : undefined} />
           ) : <Text accessibilityRole="alert" style={{ color: palette.warning }}>هذه الصفحة غير متوفرة.</Text>}
         </View>
       </ScrollView>
       </View>
       {ready && displayPage && content && <ReaderControls visible={actionsVisible} progress={controlsProgress}
-        page={displayPage} totalPages={totalPages} surahName={surahName ?? 'قراني'} palette={palette}
+        page={displayPage} totalPages={totalPages} surahName={surahName ?? 'قرآني'} palette={palette}
         previous={content.data.pages.find((value) => value.number === displayNumber - 1)}
         next={content.data.pages.find((value) => value.number === displayNumber + 1)}
-        topOffset={0} toolbarHeight={toolbarHeight} onToolbarHeight={setToolbarHeight}
+        topInset={topInset} toolbarHeight={toolbarHeight} onToolbarHeight={setToolbarHeight}
         bottomInset={bottomInset} practiceActive={practicing}
         practiceComplete={!!practicePlan && !!practice && practice.revealed >= practicePlan.totalWords}
         onNavigate={navigate} onJump={() => setDrawerOpen(true)} onPractice={togglePractice}
@@ -329,8 +348,7 @@ const styles = StyleSheet.create({
   pager: { flex: 1, overflow: 'hidden' },
   readingSurface: { flex: 1, overflow: 'hidden' },
   scroll: { flex: 1 },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 6, paddingVertical: 8 },
-  practiceContent: { paddingTop: 64 },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 6 },
   content: { width: '100%', maxWidth: 700, alignSelf: 'center', flexGrow: 1 },
   centeredContent: { justifyContent: 'center' },
   status: { paddingVertical: 64, paddingHorizontal: 20, alignItems: 'center', gap: 16 },

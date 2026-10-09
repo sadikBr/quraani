@@ -1,0 +1,1061 @@
+{
+  "id": 2,
+  "name": "مصحف حفص نسخة نصية",
+  "description": "المصحف الكريم برواية حفص عن عاصم بالخط العثماني من إصدار مجمع الملك فهد لطباعة المصحف الشريف، غير موافق للمطبوع",
+  "image": "https://quranpedia.net/front/assets/img/mushafs/Standard-70.jpg",
+  "bismillah": "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ",
+  "font_file": "https://quranpedia.net/assets/fonts/arabic/UthmanicHafs_V22.ttf",
+  "images": null,
+  "images_png": null,
+  "rawi": {
+    "id": 10,
+    "name": "حفص",
+    "full_name": "بن سليمان بن المغيرة، أبو عمر الأسدي الكوفي الغاضري البزاز",
+    "qiraa": {
+      "id": 5,
+      "name": null,
+      "count": {
+        "id": 6,
+        "name": "الكوفي"
+      }
+    }
+  },
+  "surahs": [
+    {
+      "id": 1,
+      "name": "سورة الفاتحة",
+      "coded_name": "ﮍ",
+      "ayahs": [
+        {
+          "id": 62251,
+          "number": 1,
+          "surah": "1",
+          "page_number": 1,
+          "text": "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ",
+          "marker": "ﰀ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 1,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "fatwa",
+            "e3rab",
+            "notes",
+            "asbab",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            1
+          ]
+        },
+        {
+          "id": 62252,
+          "number": 2,
+          "surah": "1",
+          "page_number": 1,
+          "text": "ٱلۡحَمۡدُ لِلَّهِ رَبِّ ٱلۡعَٰلَمِينَ",
+          "marker": "ﰁ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 1,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "fatwa",
+            "e3rab",
+            "notes",
+            "asbab",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            2
+          ]
+        },
+        {
+          "id": 62253,
+          "number": 3,
+          "surah": "1",
+          "page_number": 1,
+          "text": "ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ",
+          "marker": "ﰂ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 1,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "similar",
+            "qiraat",
+            "topics",
+            "fatwa",
+            "e3rab",
+            "notes",
+            "asbab",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            3
+          ]
+        },
+        {
+          "id": 62254,
+          "number": 4,
+          "surah": "1",
+          "page_number": 1,
+          "text": "مَٰلِكِ يَوۡمِ ٱلدِّينِ",
+          "marker": "ﰃ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 1,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "topics",
+            "e3rab",
+            "notes",
+            "asbab",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            4
+          ]
+        },
+        {
+          "id": 62255,
+          "number": 5,
+          "surah": "1",
+          "page_number": 1,
+          "text": "إِيَّاكَ نَعۡبُدُ وَإِيَّاكَ نَسۡتَعِينُ",
+          "marker": "ﰄ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 1,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "topics",
+            "fatwa",
+            "e3rab",
+            "notes",
+            "asbab",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            5
+          ]
+        },
+        {
+          "id": 62256,
+          "number": 6,
+          "surah": "1",
+          "page_number": 1,
+          "text": "ٱهۡدِنَا ٱلصِّرَٰطَ ٱلۡمُسۡتَقِيمَ",
+          "marker": "ﰅ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 1,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "fatwa",
+            "e3rab",
+            "notes",
+            "asbab",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            6
+          ]
+        },
+        {
+          "id": 62257,
+          "number": 7,
+          "surah": "1",
+          "page_number": 1,
+          "text": "صِرَٰطَ ٱلَّذِينَ أَنۡعَمۡتَ عَلَيۡهِمۡ غَيۡرِ ٱلۡمَغۡضُوبِ عَلَيۡهِمۡ وَلَا ٱلضَّآلِّينَ",
+          "marker": "ﰆ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 1,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "fatwa",
+            "e3rab",
+            "notes",
+            "asbab",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            7
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "سورة البقرة",
+      "coded_name": "ﮎ",
+      "ayahs": [
+        {
+          "id": 62258,
+          "number": 1,
+          "surah": "2",
+          "page_number": 2,
+          "text": "الٓمٓ",
+          "marker": "ﰀ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 2,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "e3rab",
+            "notes",
+            "asbab",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            1
+          ]
+        },
+        {
+          "id": 62259,
+          "number": 2,
+          "surah": "2",
+          "page_number": 2,
+          "text": "ذَٰلِكَ ٱلۡكِتَٰبُ لَا رَيۡبَۛ فِيهِۛ هُدٗى لِّلۡمُتَّقِينَ",
+          "marker": "ﰁ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 2,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "fatwa",
+            "e3rab",
+            "notes",
+            "asbab",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            2
+          ]
+        },
+        {
+          "id": 62260,
+          "number": 3,
+          "surah": "2",
+          "page_number": 2,
+          "text": "ٱلَّذِينَ يُؤۡمِنُونَ بِٱلۡغَيۡبِ وَيُقِيمُونَ ٱلصَّلَوٰةَ وَمِمَّا رَزَقۡنَٰهُمۡ يُنفِقُونَ",
+          "marker": "ﰂ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 2,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            3
+          ]
+        },
+        {
+          "id": 62261,
+          "number": 4,
+          "surah": "2",
+          "page_number": 2,
+          "text": "وَٱلَّذِينَ يُؤۡمِنُونَ بِمَآ أُنزِلَ إِلَيۡكَ وَمَآ أُنزِلَ مِن قَبۡلِكَ وَبِٱلۡأٓخِرَةِ هُمۡ يُوقِنُونَ",
+          "marker": "ﰃ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 2,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            4
+          ]
+        },
+        {
+          "id": 62262,
+          "number": 5,
+          "surah": "2",
+          "page_number": 2,
+          "text": "أُوْلَٰٓئِكَ عَلَىٰ هُدٗى مِّن رَّبِّهِمۡۖ وَأُوْلَٰٓئِكَ هُمُ ٱلۡمُفۡلِحُونَ",
+          "marker": "ﰄ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 2,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "topics",
+            "fatwa",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            5
+          ]
+        },
+        {
+          "id": 62263,
+          "number": 6,
+          "surah": "2",
+          "page_number": 3,
+          "text": "إِنَّ ٱلَّذِينَ كَفَرُواْ سَوَآءٌ عَلَيۡهِمۡ ءَأَنذَرۡتَهُمۡ أَمۡ لَمۡ تُنذِرۡهُمۡ لَا يُؤۡمِنُونَ",
+          "marker": "ﰅ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 2,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "e3rab",
+            "notes",
+            "asbab",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            6
+          ]
+        },
+        {
+          "id": 62264,
+          "number": 7,
+          "surah": "2",
+          "page_number": 3,
+          "text": "خَتَمَ ٱللَّهُ عَلَىٰ قُلُوبِهِمۡ وَعَلَىٰ سَمۡعِهِمۡۖ وَعَلَىٰٓ أَبۡصَٰرِهِمۡ غِشَٰوَةٞۖ وَلَهُمۡ عَذَابٌ عَظِيمٞ",
+          "marker": "ﰆ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 2,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            7
+          ]
+        },
+        {
+          "id": 62265,
+          "number": 8,
+          "surah": "2",
+          "page_number": 3,
+          "text": "وَمِنَ ٱلنَّاسِ مَن يَقُولُ ءَامَنَّا بِٱللَّهِ وَبِٱلۡيَوۡمِ ٱلۡأٓخِرِ وَمَا هُم بِمُؤۡمِنِينَ",
+          "marker": "ﰇ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 3,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            8
+          ]
+        },
+        {
+          "id": 62266,
+          "number": 9,
+          "surah": "2",
+          "page_number": 3,
+          "text": "يُخَٰدِعُونَ ٱللَّهَ وَٱلَّذِينَ ءَامَنُواْ وَمَا يَخۡدَعُونَ إِلَّآ أَنفُسَهُمۡ وَمَا يَشۡعُرُونَ",
+          "marker": "ﰈ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 3,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            9
+          ]
+        },
+        {
+          "id": 62267,
+          "number": 10,
+          "surah": "2",
+          "page_number": 3,
+          "text": "فِي قُلُوبِهِم مَّرَضٞ فَزَادَهُمُ ٱللَّهُ مَرَضٗاۖ وَلَهُمۡ عَذَابٌ أَلِيمُۢ بِمَا كَانُواْ يَكۡذِبُونَ",
+          "marker": "ﰉ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 3,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "fatwa",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            10
+          ]
+        },
+        {
+          "id": 62268,
+          "number": 11,
+          "surah": "2",
+          "page_number": 3,
+          "text": "وَإِذَا قِيلَ لَهُمۡ لَا تُفۡسِدُواْ فِي ٱلۡأَرۡضِ قَالُوٓاْ إِنَّمَا نَحۡنُ مُصۡلِحُونَ",
+          "marker": "ﰊ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 3,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            11
+          ]
+        },
+        {
+          "id": 62269,
+          "number": 12,
+          "surah": "2",
+          "page_number": 3,
+          "text": "أَلَآ إِنَّهُمۡ هُمُ ٱلۡمُفۡسِدُونَ وَلَٰكِن لَّا يَشۡعُرُونَ",
+          "marker": "ﰋ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 3,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "similar",
+            "qiraat",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            12
+          ]
+        },
+        {
+          "id": 62270,
+          "number": 13,
+          "surah": "2",
+          "page_number": 3,
+          "text": "وَإِذَا قِيلَ لَهُمۡ ءَامِنُواْ كَمَآ ءَامَنَ ٱلنَّاسُ قَالُوٓاْ أَنُؤۡمِنُ كَمَآ ءَامَنَ ٱلسُّفَهَآءُۗ أَلَآ إِنَّهُمۡ هُمُ ٱلسُّفَهَآءُ وَلَٰكِن لَّا يَعۡلَمُونَ",
+          "marker": "ﰌ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 3,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            13
+          ]
+        },
+        {
+          "id": 62271,
+          "number": 14,
+          "surah": "2",
+          "page_number": 3,
+          "text": "وَإِذَا لَقُواْ ٱلَّذِينَ ءَامَنُواْ قَالُوٓاْ ءَامَنَّا وَإِذَا خَلَوۡاْ إِلَىٰ شَيَٰطِينِهِمۡ قَالُوٓاْ إِنَّا مَعَكُمۡ إِنَّمَا نَحۡنُ مُسۡتَهۡزِءُونَ",
+          "marker": "ﰍ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 3,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "e3rab",
+            "notes",
+            "asbab",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            14
+          ]
+        },
+        {
+          "id": 62272,
+          "number": 15,
+          "surah": "2",
+          "page_number": 3,
+          "text": "ٱللَّهُ يَسۡتَهۡزِئُ بِهِمۡ وَيَمُدُّهُمۡ فِي طُغۡيَٰنِهِمۡ يَعۡمَهُونَ",
+          "marker": "ﰎ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 3,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            15
+          ]
+        },
+        {
+          "id": 62273,
+          "number": 16,
+          "surah": "2",
+          "page_number": 3,
+          "text": "أُوْلَٰٓئِكَ ٱلَّذِينَ ٱشۡتَرَوُاْ ٱلضَّلَٰلَةَ بِٱلۡهُدَىٰ فَمَا رَبِحَت تِّجَٰرَتُهُمۡ وَمَا كَانُواْ مُهۡتَدِينَ",
+          "marker": "ﰏ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 3,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            16
+          ]
+        },
+        {
+          "id": 62274,
+          "number": 17,
+          "surah": "2",
+          "page_number": 4,
+          "text": "مَثَلُهُمۡ كَمَثَلِ ٱلَّذِي ٱسۡتَوۡقَدَ نَارٗا فَلَمَّآ أَضَآءَتۡ مَا حَوۡلَهُۥ ذَهَبَ ٱللَّهُ بِنُورِهِمۡ وَتَرَكَهُمۡ فِي ظُلُمَٰتٖ لَّا يُبۡصِرُونَ",
+          "marker": "ﰐ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 3,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            17
+          ]
+        },
+        {
+          "id": 62275,
+          "number": 18,
+          "surah": "2",
+          "page_number": 4,
+          "text": "صُمُّۢ بُكۡمٌ عُمۡيٞ فَهُمۡ لَا يَرۡجِعُونَ",
+          "marker": "ﰑ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 3,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            18
+          ]
+        },
+        {
+          "id": 62276,
+          "number": 19,
+          "surah": "2",
+          "page_number": 4,
+          "text": "أَوۡ كَصَيِّبٖ مِّنَ ٱلسَّمَآءِ فِيهِ ظُلُمَٰتٞ وَرَعۡدٞ وَبَرۡقٞ يَجۡعَلُونَ أَصَٰبِعَهُمۡ فِيٓ ءَاذَانِهِم مِّنَ ٱلصَّوَٰعِقِ حَذَرَ ٱلۡمَوۡتِۚ وَٱللَّهُ مُحِيطُۢ بِٱلۡكَٰفِرِينَ",
+          "marker": "ﰒ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 3,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            19
+          ]
+        },
+        {
+          "id": 62277,
+          "number": 20,
+          "surah": "2",
+          "page_number": 4,
+          "text": "يَكَادُ ٱلۡبَرۡقُ يَخۡطَفُ أَبۡصَٰرَهُمۡۖ كُلَّمَآ أَضَآءَ لَهُم مَّشَوۡاْ فِيهِ وَإِذَآ أَظۡلَمَ عَلَيۡهِمۡ قَامُواْۚ وَلَوۡ شَآءَ ٱللَّهُ لَذَهَبَ بِسَمۡعِهِمۡ وَأَبۡصَٰرِهِمۡۚ إِنَّ ٱللَّهَ عَلَىٰ كُلِّ شَيۡءٖ قَدِيرٞ",
+          "marker": "ﰓ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 3,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            20
+          ]
+        },
+        {
+          "id": 62278,
+          "number": 21,
+          "surah": "2",
+          "page_number": 4,
+          "text": "يَٰٓأَيُّهَا ٱلنَّاسُ ٱعۡبُدُواْ رَبَّكُمُ ٱلَّذِي خَلَقَكُمۡ وَٱلَّذِينَ مِن قَبۡلِكُمۡ لَعَلَّكُمۡ تَتَّقُونَ",
+          "marker": "ﰔ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 4,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "e3rab",
+            "notes",
+            "asbab",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            21
+          ]
+        },
+        {
+          "id": 62279,
+          "number": 22,
+          "surah": "2",
+          "page_number": 4,
+          "text": "ٱلَّذِي جَعَلَ لَكُمُ ٱلۡأَرۡضَ فِرَٰشٗا وَٱلسَّمَآءَ بِنَآءٗ وَأَنزَلَ مِنَ ٱلسَّمَآءِ مَآءٗ فَأَخۡرَجَ بِهِۦ مِنَ ٱلثَّمَرَٰتِ رِزۡقٗا لَّكُمۡۖ فَلَا تَجۡعَلُواْ لِلَّهِ أَندَادٗا وَأَنتُمۡ تَعۡلَمُونَ",
+          "marker": "ﰕ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 4,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            22
+          ]
+        },
+        {
+          "id": 62280,
+          "number": 23,
+          "surah": "2",
+          "page_number": 4,
+          "text": "وَإِن كُنتُمۡ فِي رَيۡبٖ مِّمَّا نَزَّلۡنَا عَلَىٰ عَبۡدِنَا فَأۡتُواْ بِسُورَةٖ مِّن مِّثۡلِهِۦ وَٱدۡعُواْ شُهَدَآءَكُم مِّن دُونِ ٱللَّهِ إِن كُنتُمۡ صَٰدِقِينَ",
+          "marker": "ﰖ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 4,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            23
+          ]
+        },
+        {
+          "id": 62281,
+          "number": 24,
+          "surah": "2",
+          "page_number": 4,
+          "text": "فَإِن لَّمۡ تَفۡعَلُواْ وَلَن تَفۡعَلُواْ فَٱتَّقُواْ ٱلنَّارَ ٱلَّتِي وَقُودُهَا ٱلنَّاسُ وَٱلۡحِجَارَةُۖ أُعِدَّتۡ لِلۡكَٰفِرِينَ",
+          "marker": "ﰗ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 4,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "fatwa",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            24
+          ]
+        },
+        {
+          "id": 62282,
+          "number": 25,
+          "surah": "2",
+          "page_number": 5,
+          "text": "وَبَشِّرِ ٱلَّذِينَ ءَامَنُواْ وَعَمِلُواْ ٱلصَّٰلِحَٰتِ أَنَّ لَهُمۡ جَنَّٰتٖ تَجۡرِي مِن تَحۡتِهَا ٱلۡأَنۡهَٰرُۖ كُلَّمَا رُزِقُواْ مِنۡهَا مِن ثَمَرَةٖ رِّزۡقٗا قَالُواْ هَٰذَا ٱلَّذِي رُزِقۡنَا مِن قَبۡلُۖ وَأُتُواْ بِهِۦ مُتَشَٰبِهٗاۖ وَلَهُمۡ فِيهَآ أَزۡوَٰجٞ مُّطَهَّرَةٞۖ وَهُمۡ فِيهَا خَٰلِدُونَ",
+          "marker": "ﰘ",
+          "juz": 1,
+          "hizb": 1,
+          "ruku": 4,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "topics",
+            "fatwa",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            25
+          ]
+        },
+        {
+          "id": 62283,
+          "number": 26,
+          "surah": "2",
+          "page_number": 5,
+          "text": "۞ إِنَّ ٱللَّهَ لَا يَسۡتَحۡيِۦٓ أَن يَضۡرِبَ مَثَلٗا مَّا بَعُوضَةٗ فَمَا فَوۡقَهَاۚ فَأَمَّا ٱلَّذِينَ ءَامَنُواْ فَيَعۡلَمُونَ أَنَّهُ ٱلۡحَقُّ مِن رَّبِّهِمۡۖ وَأَمَّا ٱلَّذِينَ كَفَرُواْ فَيَقُولُونَ مَاذَآ أَرَادَ ٱللَّهُ بِهَٰذَا مَثَلٗاۘ يُضِلُّ بِهِۦ كَثِيرٗا وَيَهۡدِي بِهِۦ كَثِيرٗاۚ وَمَا يُضِلُّ بِهِۦٓ إِلَّا ٱلۡفَٰسِقِينَ",
+          "marker": "ﰙ",
+          "juz": 1,
+          "hizb": 2,
+          "ruku": 4,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "topics",
+            "fatwa",
+            "e3rab",
+            "notes",
+            "asbab",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            26
+          ]
+        },
+        {
+          "id": 62284,
+          "number": 27,
+          "surah": "2",
+          "page_number": 5,
+          "text": "ٱلَّذِينَ يَنقُضُونَ عَهۡدَ ٱللَّهِ مِنۢ بَعۡدِ مِيثَٰقِهِۦ وَيَقۡطَعُونَ مَآ أَمَرَ ٱللَّهُ بِهِۦٓ أَن يُوصَلَ وَيُفۡسِدُونَ فِي ٱلۡأَرۡضِۚ أُوْلَٰٓئِكَ هُمُ ٱلۡخَٰسِرُونَ",
+          "marker": "ﰚ",
+          "juz": 1,
+          "hizb": 2,
+          "ruku": 4,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            27
+          ]
+        },
+        {
+          "id": 62285,
+          "number": 28,
+          "surah": "2",
+          "page_number": 5,
+          "text": "كَيۡفَ تَكۡفُرُونَ بِٱللَّهِ وَكُنتُمۡ أَمۡوَٰتٗا فَأَحۡيَٰكُمۡۖ ثُمَّ يُمِيتُكُمۡ ثُمَّ يُحۡيِيكُمۡ ثُمَّ إِلَيۡهِ تُرۡجَعُونَ",
+          "marker": "ﰛ",
+          "juz": 1,
+          "hizb": 2,
+          "ruku": 4,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            28
+          ]
+        },
+        {
+          "id": 62286,
+          "number": 29,
+          "surah": "2",
+          "page_number": 5,
+          "text": "هُوَ ٱلَّذِي خَلَقَ لَكُم مَّا فِي ٱلۡأَرۡضِ جَمِيعٗا ثُمَّ ٱسۡتَوَىٰٓ إِلَى ٱلسَّمَآءِ فَسَوَّىٰهُنَّ سَبۡعَ سَمَٰوَٰتٖۚ وَهُوَ بِكُلِّ شَيۡءٍ عَلِيمٞ",
+          "marker": "ﰜ",
+          "juz": 1,
+          "hizb": 2,
+          "ruku": 4,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            29
+          ]
+        },
+        {
+          "id": 62287,
+          "number": 30,
+          "surah": "2",
+          "page_number": 6,
+          "text": "وَإِذۡ قَالَ رَبُّكَ لِلۡمَلَٰٓئِكَةِ إِنِّي جَاعِلٞ فِي ٱلۡأَرۡضِ خَلِيفَةٗۖ قَالُوٓاْ أَتَجۡعَلُ فِيهَا مَن يُفۡسِدُ فِيهَا وَيَسۡفِكُ ٱلدِّمَآءَ وَنَحۡنُ نُسَبِّحُ بِحَمۡدِكَ وَنُقَدِّسُ لَكَۖ قَالَ إِنِّيٓ أَعۡلَمُ مَا لَا تَعۡلَمُونَ",
+          "marker": "ﰝ",
+          "juz": 1,
+          "hizb": 2,
+          "ruku": 5,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "fatwa",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            30
+          ]
+        },
+        {
+          "id": 62288,
+          "number": 31,
+          "surah": "2",
+          "page_number": 6,
+          "text": "وَعَلَّمَ ءَادَمَ ٱلۡأَسۡمَآءَ كُلَّهَا ثُمَّ عَرَضَهُمۡ عَلَى ٱلۡمَلَٰٓئِكَةِ فَقَالَ أَنۢبِــُٔونِي بِأَسۡمَآءِ هَٰٓؤُلَآءِ إِن كُنتُمۡ صَٰدِقِينَ",
+          "marker": "ﰞ",
+          "juz": 1,
+          "hizb": 2,
+          "ruku": 5,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "qiraat",
+            "topics",
+            "fatwa",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            31
+          ]
+        },
+        {
+          "id": 62289,
+          "number": 32,
+          "surah": "2",
+          "page_number": 6,
+          "text": "قَالُواْ سُبۡحَٰنَكَ لَا عِلۡمَ لَنَآ إِلَّا مَا عَلَّمۡتَنَآۖ إِنَّكَ أَنتَ ٱلۡعَلِيمُ ٱلۡحَكِيمُ",
+          "marker": "ﰟ",
+          "juz": 1,
+          "hizb": 2,
+          "ruku": 5,
+          "manzil": 1,
+          "options": [
+            "tafsir",
+            "meanings",
+            "similar",
+            "topics",
+            "e3rab",
+            "notes",
+            "translations",
+            "sayings"
+          ],
+          "number_in_hafs": [
+            32
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -11,7 +11,8 @@ import type { PrintedPage } from '../../utils/printed-page';
 import { getCachedPrintedImage, loadPrintedImage, type PrintedImage } from '../../services/printed-page-render';
 import { ReaderButton } from './reader-button';
 import { AyahPageRegions } from './ayah-page-regions';
-import { SURAH_NAME_FONT_FAMILY } from '../../config';
+import { SurahOpening } from './surah-opening';
+import { calligraphyStyle, surahNameGlyph } from '../../utils/reader-typography';
 
 interface Props {
   page: QuranPage;
@@ -31,6 +32,7 @@ export const PrintedQuranPage = memo(function PrintedQuranPage({ page, palette, 
   const [error, setError] = useState(false);
   const [retry, setRetry] = useState(0);
   const [renderHeight, setRenderHeight] = useState(0);
+  const [renderWidth, setRenderWidth] = useState(0);
   useEffect(() => {
     let active = true;
     loadPrintedPage(page).then(async (artwork) => ({ artwork, image: await loadPrintedImage(artwork, palette.text, palette.ornament) }))
@@ -46,18 +48,16 @@ export const PrintedQuranPage = memo(function PrintedQuranPage({ page, palette, 
   const { artwork, image } = rendered;
   // Prioritize readable, full-width text. The surrounding scroll view handles
   // short screens without shrinking the page or changing its printed proportions.
-  return <View style={{ width: '100%' }}>
-    {page.number <= 2 && <Text accessibilityRole="header" accessibilityLabel={page.number === 1 ? 'سورة الفاتحة' : 'سورة البقرة'}
-      style={{ fontFamily: SURAH_NAME_FONT_FAMILY, fontSize: 42, lineHeight: 80, textAlign: 'center', color: palette.ornament, marginBottom: 24 }}>
-      {page.number === 1 ? '١' : '٢'}
-    </Text>}
+  return <View style={{ width: '100%' }} onLayout={(event) => setRenderWidth(event.nativeEvent.layout.width)}>
+    {page.number <= 2 && <SurahOpening number={page.number} name={page.number === 1 ? 'سورة الفاتحة' : 'سورة البقرة'}
+      fontSize={renderWidth ? renderWidth / artwork.width * (36.5 / 1.9) : 32} palette={palette} />}
     <View style={{ width: '100%', aspectRatio: artwork.width / artwork.height }} onLayout={(event) => {
       setRenderHeight(event.nativeEvent.layout.height);
       const region = artwork.regions.find((value) => value.surah === selectedAyah?.surahNumber && value.ayah === selectedAyah?.ayahNumber);
       if (region && onTargetOffset) {
         const bounds = svgPathBbox(region.path);
         const viewBoxY = Number(artwork.viewBox.split(' ')[1]);
-        onTargetOffset((bounds[1] - viewBoxY) / artwork.height * event.nativeEvent.layout.height + (page.number <= 2 ? 104 : 0));
+        onTargetOffset((bounds[1] - viewBoxY) / artwork.height * event.nativeEvent.layout.height + event.nativeEvent.layout.y);
       }
     }}>
     <Image source={image} style={StyleSheet.absoluteFill}
@@ -71,9 +71,9 @@ export const PrintedQuranPage = memo(function PrintedQuranPage({ page, palette, 
       return <View key={heading.surah} pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0,
         top: `${heading.y / artwork.height * 100}%`, height, backgroundColor: palette.paper, justifyContent: 'center' }}>
         <Text accessibilityRole="header" accessibilityLabel={`السورة ${heading.surah}`}
-          style={{ fontFamily: SURAH_NAME_FONT_FAMILY, fontSize: height * 1.05, lineHeight: height,
+          style={{ ...calligraphyStyle(height * 1.05), lineHeight: height,
             textAlign: 'center', color: palette.ornament, includeFontPadding: false }}>
-          {String(heading.surah).replace(/\d/g, (digit) => '٠١٢٣٤٥٦٧٨٩'[Number(digit)])}
+          {surahNameGlyph(heading.surah)}
         </Text>
       </View>;
     })}

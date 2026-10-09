@@ -21,3 +21,8 @@ Quranpedia source: https://quranpedia.net
 - `warsh-ayah-markers.json` also includes `/api/page/warsh/86`: its first polygon
   and number belong to 4:44, continued from page 85. The page metadata starts at
   4:45. This verifies continuation handling without relaxing other page checks.
+
+Hafs samples added 2026-10-09: original edition-2 metadata, Al-Fatiha and the
+first 32 Baqarah ayahs; matching public tajweed HTML extracts; seven Fatiha
+colored glyph lines and page-3 SVG selection polygons. Small regression samples
+only, not a frozen corpus for app distribution. Source: https://quranpedia.net

@@ -17,7 +17,7 @@ interface Props {
   palette: ReaderPalette;
   visible: boolean;
   progress: Animated.Value;
-  topOffset: number;
+  topInset: number;
   toolbarHeight: number;
   onToolbarHeight: (height: number) => void;
   bottomInset: number;
@@ -33,7 +33,7 @@ interface Props {
 
 /** Both edges use the same animation, over a reading surface that never resizes. */
 export function ReaderControls({ page, totalPages, previous, next, surahName, palette, visible, progress,
-  topOffset, toolbarHeight, onToolbarHeight, bottomInset, practiceActive, practiceComplete, onNavigate, onJump, onPractice, onRevealWord, onRevealAyah, onDismiss }: Props) {
+  topInset, toolbarHeight, onToolbarHeight, bottomInset, practiceActive, practiceComplete, onNavigate, onJump, onPractice, onRevealWord, onRevealAyah, onDismiss }: Props) {
   const [bottomHeight, setBottomHeight] = useState(60 + bottomInset);
   const hiddenProps = {
     accessibilityElementsHidden: !visible,
@@ -58,10 +58,10 @@ export function ReaderControls({ page, totalPages, previous, next, surahName, pa
     </Pressable>
   );
   return <>
-    <View pointerEvents="box-none" style={[styles.edge, { top: topOffset }]}>
+    <View pointerEvents="box-none" style={[styles.edge, { top: 0 }]}>
       {/* Also fade the surface so a fractional-pixel border cannot remain at the clipped edge. */}
-      <Animated.View style={{ backgroundColor: palette.paper, opacity: progress,
-        transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [-toolbarHeight, 0] }) }] }}>
+      <Animated.View style={{ backgroundColor: palette.paper, opacity: progress, paddingTop: topInset,
+        transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [-(topInset + toolbarHeight), 0] }) }] }}>
         <View {...hiddenProps} pointerEvents={visible ? 'auto' : 'none'}
           onLayout={(event) => onToolbarHeight(event.nativeEvent.layout.height)}
           style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderColor: palette.border }}>

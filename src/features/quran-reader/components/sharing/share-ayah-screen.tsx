@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArabicText as Text } from '@/components/arabic-text';
 import type { Ayah } from '@/lib/quranpedia/types';
 import { useReaderContent } from '../../hooks/use-reader-content';
-import { useWarshFont } from '../../hooks/use-warsh-font';
+import { useQuranFont } from '../../hooks/use-quran-font';
 import { useReadingPreferences } from '../../state/reading-preferences-provider';
 import { quranpedia } from '../../services/reader-service';
 import { prepareAyahCard, type PreparedAyahCard } from '../../services/ayah-card-export';
@@ -21,7 +21,7 @@ import type { ReaderPalette } from '../../theme';
 export function ShareAyahScreen() {
   const { surah, ayah: number } = useLocalSearchParams<{ surah?: string; ayah?: string }>();
   const { content, loading, error, refresh } = useReaderContent();
-  const { loaded: fontsLoaded, error: fontError } = useWarshFont();
+  const { loaded: fontsLoaded, error: fontError } = useQuranFont();
   const { palette, dark } = useReadingPreferences();
   const chapter = content?.data.quran.surahs.find((item) => item.number === Number(surah));
   const ayah = chapter?.ayahs.find((item) => item.ayahNumber === Number(number));
@@ -46,6 +46,7 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
   const [theme, setTheme] = useState<AyahCardTheme>('emerald');
   const [format, setFormat] = useState<AyahCardFormat>('status');
   const [showBrand, setShowBrand] = useState(true);
+  const [brandReady, setBrandReady] = useState(false);
   const [language, setLanguage] = useState<'none' | 'fr' | 'en'>('none');
   const [revision, setRevision] = useState(0);
   const [translation, setTranslation] = useState<{ key: string; value: CardTranslation | null; error: boolean } | null>(null);
@@ -62,7 +63,7 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
   const [sharing, setSharing] = useState(false);
   const [message, setMessage] = useState('');
   const exportKey = `${theme}:${format}:${showBrand}:${translationKey}:${width}:${height}:${exportRevision}`;
-  const ready = prepared?.key === exportKey && !translating && !translationError;
+  const ready = prepared?.key === exportKey && !translating && !translationError && (!showBrand || brandReady);
   const busy = useRef(false);
 
   useEffect(() => {
@@ -77,7 +78,7 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
   }, [ayah, language, translationKey]);
 
   useEffect(() => {
-    if (!height || translating || translationError) return;
+    if (!height || translating || translationError || (showBrand && !brandReady)) return;
     let active = true;
     let image: PreparedAyahCard | undefined;
     // Let the latest font and layout commit before capturing, and coalesce edits.
@@ -93,7 +94,7 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
       });
     }, 200);
     return () => { active = false; clearTimeout(timer); image?.dispose(); };
-  }, [exportKey, height, width, translating, translationError, ayah]);
+  }, [exportKey, height, width, translating, translationError, ayah, showBrand, brandReady]);
 
   const share = async () => {
     if (!ready || !prepared || busy.current) return;
@@ -115,6 +116,7 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
             <Text style={{ color: palette.muted, fontSize: 10 }}>{height ? `1080 × ${Math.round(1080 * height / width)}` : ''}</Text></View>
           <View style={styles.cardShadow}>
             <AyahShareCard cardRef={card} ayah={ayah} surahName={surahName} theme={theme} format={format}
+              brandRevision={exportRevision} onBrandReady={() => setBrandReady(true)} onBrandError={() => { setBrandReady(false); setExportError('تعذر تحميل شعار التطبيق. أعد المحاولة.'); }}
               showBrand={showBrand} translation={displayedTranslation} width={width} onLayout={(event) => setHeight(event.nativeEvent.layout.height)} />
             {ready && <View pointerEvents="none" style={StyleSheet.absoluteFill}><Image testID="exported-ayah-card" source={{ uri: prepared.image.uri }} resizeMode="contain" accessible={false} style={StyleSheet.absoluteFill} /></View>}
           </View>
@@ -131,7 +133,7 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
           </View>
         </View>
         <View style={[styles.options, { borderColor: palette.border }]}>
-          <Toggle label="إظهار اسم قراني" value={showBrand} onChange={() => setShowBrand(!showBrand)} palette={palette} />
+          <Toggle label="إظهار شعار قرآني" value={showBrand} onChange={() => { setBrandReady(false); setShowBrand(!showBrand); }} palette={palette} />
           <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: palette.border }} />
           <Toggle label="إضافة ترجمة المعاني" value={language !== 'none'} onChange={() => setLanguage(language === 'none' ? 'fr' : 'none')} palette={palette} />
           {language !== 'none' && <View style={{ gap: 10, paddingTop: 6 }}>

@@ -25,7 +25,7 @@ export function ReaderJump({ content, currentPage, palette, onJump }: {
       onJump(number);
     } else {
       const target = ayahDestination(content, parseReaderNumber(surah), parseReaderNumber(ayah));
-      if (!target) { setError('تحقق من رقم السورة والآية في مصحف ورش.'); return; }
+      if (!target) { setError('تحقق من رقم السورة والآية في الرواية المختارة.'); return; }
       onJump(target.pageNumber, target);
     }
   };

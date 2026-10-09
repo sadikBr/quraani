@@ -63,7 +63,7 @@ export function pageAssetEntries(pageNumber: number) {
         pageNumber < 1 ||
         pageNumber > 604
     ) {
-        throw new RangeError("Invalid Warsh page");
+        throw new RangeError("Invalid mushaf page");
     }
     const stem = String(pageNumber).padStart(3, "0");
     // Archive entries, not invented public URLs. Extraction belongs to the page renderer.

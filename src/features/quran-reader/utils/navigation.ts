@@ -3,7 +3,7 @@ import type { AyahReference } from '@/lib/quranpedia/types';
 import type { ReaderContent } from '../types/reader';
 
 export interface ReadingPosition {
-  mushafId: 4;
+  mushafId: number;
   pageNumber: number;
   ayah: AyahReference | null;
   scrollY: number;
@@ -19,15 +19,15 @@ export function ayahDestination(content: ReaderContent, surah: number, ayah: num
 }
 
 export function restoreReadingPosition(raw: string | null, content: ReaderContent): ReadingPosition {
-  const fallback: ReadingPosition = { mushafId: 4, pageNumber: content.pages[0].number, ayah: null, scrollY: 0 };
+  const fallback: ReadingPosition = { mushafId: content.quran.id, pageNumber: content.pages[0].number, ayah: null, scrollY: 0 };
   try {
     const saved = JSON.parse(raw ?? 'null');
-    if (saved?.mushafId !== 4 || !content.pages.some((page) => page.number === saved.pageNumber)) return fallback;
-    const target = saved.ayah?.mushafId === 4 ? ayahDestination(content, saved.ayah.surahNumber, saved.ayah.ayahNumber) : undefined;
+    if (saved?.mushafId !== content.quran.id || !content.pages.some((page) => page.number === saved.pageNumber)) return fallback;
+    const target = saved.ayah?.mushafId === content.quran.id ? ayahDestination(content, saved.ayah.surahNumber, saved.ayah.ayahNumber) : undefined;
     const savedPage = content.pages.find((page) => page.number === saved.pageNumber)!;
     const onSavedPage = target && printedPageAyah(savedPage, target);
-    return { mushafId: 4, pageNumber: onSavedPage ? saved.pageNumber : target?.pageNumber ?? saved.pageNumber,
-      ayah: target ? { mushafId: 4, surahNumber: target.surahNumber, ayahNumber: target.ayahNumber } : null,
+    return { mushafId: content.quran.id, pageNumber: onSavedPage ? saved.pageNumber : target?.pageNumber ?? saved.pageNumber,
+      ayah: target ? { mushafId: content.quran.id, surahNumber: target.surahNumber, ayahNumber: target.ayahNumber } : null,
       scrollY: Number.isFinite(saved.scrollY) && saved.scrollY >= 0 ? Math.min(saved.scrollY, 100000) : 0 };
   } catch { return fallback; }
 }

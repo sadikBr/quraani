@@ -4,9 +4,13 @@ import { contentStorage } from '../storage/content-storage';
 import type { ReaderContent } from '../types/reader';
 import { restoreReadingPosition, type ReadingPosition } from '../utils/navigation';
 
-const KEY = 'warsh:reading-position:v1';
+import { RIWAYAT, readingPositionKey } from '../riwayat';
+import { useReadingPreferences } from '../state/reading-preferences-provider';
 export function useReadingPosition(content: ReaderContent | undefined) {
-  const [position, setPosition] = useState<ReadingPosition>({ mushafId: 4, pageNumber: 1, ayah: null, scrollY: 0 });
+  const { preferences: { riwayah } } = useReadingPreferences();
+  const mushafId = RIWAYAT[riwayah].mushafId;
+  const KEY = readingPositionKey(mushafId);
+  const [position, setPosition] = useState<ReadingPosition>({ mushafId, pageNumber: 1, ayah: null, scrollY: 0 });
   const [ready, setReady] = useState(false);
   const writes = useRef(Promise.resolve());
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -19,11 +23,11 @@ export function useReadingPosition(content: ReaderContent | undefined) {
       if (active) { setPosition(restoreReadingPosition(raw, content)); setReady(true); }
     });
     return () => { active = false; };
-  }, [content, ready]);
+  }, [content, ready, KEY]);
   useEffect(() => {
     latestPosition.current = ready ? position : null;
     if (ready) writes.current = writes.current.then(() => contentStorage.setItem(KEY, JSON.stringify(position))).catch(() => {});
-  }, [position, ready]);
+  }, [position, ready, KEY]);
   useEffect(() => {
     const flush = () => {
       if (latestScroll.current !== null) {
@@ -41,7 +45,7 @@ export function useReadingPosition(content: ReaderContent | undefined) {
         writes.current = writes.current.then(() => contentStorage.setItem(KEY, JSON.stringify(saved))).catch(() => {});
       }
     };
-  }, []);
+  }, [KEY]);
   const move = useCallback((next: ReadingPosition, preserveScroll = false) => {
     if (timer.current) clearTimeout(timer.current);
     if (preserveScroll && latestScroll.current !== null) next = { ...next, scrollY: latestScroll.current };

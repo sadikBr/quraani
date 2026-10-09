@@ -19,7 +19,7 @@ if (Platform.OS !== 'web') {
 
 export default function RootLayout() {
   return <>
-    {Platform.OS === 'web' && <Head><title>قراني</title></Head>}
+    {Platform.OS === 'web' && <Head><title>قرآني</title></Head>}
     <ReadingPreferencesProvider><BookmarksProvider><RootNavigator /></BookmarksProvider></ReadingPreferencesProvider>
   </>;
 }

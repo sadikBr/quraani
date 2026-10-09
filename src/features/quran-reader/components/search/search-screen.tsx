@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { useReaderContent } from '../../hooks/use-reader-content';
-import { useWarshFont } from '../../hooks/use-warsh-font';
+import { useQuranFont } from '../../hooks/use-quran-font';
 import { useBookmarks } from '../../state/bookmarks-provider';
 import { useReadingPreferences } from '../../state/reading-preferences-provider';
 import { createQuranSearch, normalizeArabicSearch, type QuranSearchResult } from '../../utils/search';
@@ -17,7 +17,7 @@ export function SearchScreen({ saved = false }: { saved?: boolean }) {
   const { palette } = useReadingPreferences();
   const { content, error, refresh } = useReaderContent();
   const { bookmarks, ready, error: storageError } = useBookmarks();
-  const font = useWarshFont();
+  const font = useQuranFont();
   const [query, setQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [debounced, setDebounced] = useState('');
@@ -41,7 +41,7 @@ export function SearchScreen({ saved = false }: { saved?: boolean }) {
     <FlatList data={font.loaded ? matches.items : []} keyExtractor={(item) => ayahKey(item.reference)} initialNumToRender={10} maxToRenderPerBatch={10} windowSize={7}
       keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}
       ListHeaderComponent={<View style={styles.header}>
-        <ScreenHeading title={saved ? 'العلامات المحفوظة' : 'البحث في القرآن'} subtitle={saved ? 'عُد إلى الآيات التي اخترتها.' : 'ابحث في مصحف ورش، مع التشكيل أو بدونه.'} palette={palette} onBack={() => router.dismissTo('/')} />
+        <ScreenHeading title={saved ? 'العلامات المحفوظة' : 'البحث في القرآن'} subtitle={saved ? 'عُد إلى الآيات التي اخترتها.' : 'ابحث في الرواية المختارة، مع التشكيل أو بدونه.'} palette={palette} onBack={() => router.dismissTo('/')} />
         {!saved && <View style={[styles.search, { backgroundColor: palette.paper, borderColor: searchFocused ? palette.accent : palette.border }]}>
           <ReaderIcon name="search" color={searchFocused ? palette.accent : palette.muted} size={20} />
           <TextInput accessibilityLabel="البحث في نص القرآن" placeholder="ابحث عن كلمة أو عبارة" placeholderTextColor={palette.muted} value={query}

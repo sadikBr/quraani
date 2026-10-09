@@ -1,3 +1,4 @@
+import { pageIdentity } from '../riwayat';
 import type { QuranPage } from '../types/reader';
 import type { PrintedPage } from '../utils/printed-page';
 
@@ -17,15 +18,15 @@ export function createPrintedPageLoader(fetchPage: (page: QuranPage) => Promise<
   const byteBudget = options.byteBudget ?? 32 * 1024 * 1024;
   const ttl = options.ttl ?? 24 * 60 * 60 * 1000;
   const now = options.now ?? Date.now;
-  const memory = new Map<number, { page: PrintedPage; savedAt: number; bytes: number }>();
-  const pending = new Map<number, Job>();
+  const memory = new Map<string, { page: PrintedPage; savedAt: number; bytes: number }>();
+  const pending = new Map<string, Job>();
   let bytes = 0;
   let active = 0;
   let backgroundActive = 0;
-  const valid = (page: QuranPage) => page.mushafId === 4 && Number.isInteger(page.number) && page.number >= 1 && page.number <= 604;
-  const peek = (page: QuranPage) => valid(page) ? memory.get(page.number)?.page : undefined;
-  const touch = (number: number) => { const entry = memory.get(number); if (entry) { memory.delete(number); memory.set(number, entry); } return entry; };
-  const remember = (number: number, page: PrintedPage) => {
+  const valid = (page: QuranPage) => [4, 2].includes(page.mushafId) && Number.isInteger(page.number) && page.number >= 1 && page.number <= 604;
+  const peek = (page: QuranPage) => valid(page) ? memory.get(pageIdentity(page))?.page : undefined;
+  const touch = (number: string) => { const entry = memory.get(number); if (entry) { memory.delete(number); memory.set(number, entry); } return entry; };
+  const remember = (number: string, page: PrintedPage) => {
     bytes -= memory.get(number)?.bytes ?? 0;
     memory.delete(number);
     const size = page.xml.length * 2;
@@ -43,25 +44,25 @@ export function createPrintedPageLoader(fetchPage: (page: QuranPage) => Promise<
       job.started = true;
       const background = job.priority === 'prefetch';
       active++; if (background) backgroundActive++;
-      void Promise.resolve().then(() => fetchPage(job.page)).then((page) => { remember(job.page.number, page); job.resolve(page); }, job.reject).finally(() => {
-        pending.delete(job.page.number); active--; if (background) backgroundActive--; pump();
+      void Promise.resolve().then(() => fetchPage(job.page)).then((page) => { remember(pageIdentity(job.page), page); job.resolve(page); }, job.reject).finally(() => {
+        pending.delete(pageIdentity(job.page)); active--; if (background) backgroundActive--; pump();
       });
     }
   };
   const enqueue = (page: QuranPage, priority: Priority): Promise<PrintedPage> => {
-    const running = pending.get(page.number);
+    const running = pending.get(pageIdentity(page));
     if (running) {
       if (priority === 'visible') running.priority = priority;
       pump(); return running.promise;
     }
     let resolve!: Job['resolve']; let reject!: Job['reject'];
     const promise = new Promise<PrintedPage>((yes, no) => { resolve = yes; reject = no; });
-    pending.set(page.number, { page, priority, started: false, promise, resolve, reject });
+    pending.set(pageIdentity(page), { page, priority, started: false, promise, resolve, reject });
     pump(); return promise;
   };
   const load = (page: QuranPage, priority: Priority = 'visible'): Promise<PrintedPage> => {
-    if (!valid(page)) return Promise.reject(new Error('Warsh mushaf page is unavailable'));
-    const cached = touch(page.number);
+    if (!valid(page)) return Promise.reject(new Error('Selected mushaf page is unavailable'));
+    const cached = touch(pageIdentity(page));
     if (cached) {
       // Never remove readable artwork while a refresh is in flight.
       if (now() - cached.savedAt >= ttl) void enqueue(page, priority).catch(() => {});
@@ -70,7 +71,7 @@ export function createPrintedPageLoader(fetchPage: (page: QuranPage) => Promise<
     return enqueue(page, priority);
   };
   const prefetch = (pages: QuranPage[], onReady?: (artwork: PrintedPage, page: QuranPage) => void) => {
-    const wanted = new Set(pages.map((page) => page.number));
+    const wanted = new Set(pages.map(pageIdentity));
     // A jump/direction change replaces queued work; already-running downloads are reusable.
     for (const [number, job] of pending) {
       if (!job.started && job.priority === 'prefetch' && !wanted.has(number)) {
@@ -82,7 +83,7 @@ export function createPrintedPageLoader(fetchPage: (page: QuranPage) => Promise<
   // A disk-cache refresh updates an already warm page without filling memory
   // with pages the reader has since left behind.
   const update = (page: QuranPage, artwork: PrintedPage) => {
-    if (memory.has(page.number)) remember(page.number, artwork);
+    if (memory.has(pageIdentity(page))) remember(pageIdentity(page), artwork);
   };
   return { peek, load, prefetch, update };
 }

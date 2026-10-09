@@ -38,7 +38,7 @@ export function ReaderDrawer({ onClose, palette, content, currentPage, onJump }:
             <View style={styles.title}>
               <View style={{ gap: 4 }}>
                 <Text accessibilityRole="header" style={{ color: palette.text, fontSize: 23, fontWeight: '700' }}>انتقال سريع</Text>
-                <Text style={{ color: palette.muted, fontSize: 12 }}>ورش عن نافع · صفحة {currentPage}</Text>
+                <Text style={{ color: palette.muted, fontSize: 12 }}>{content?.quran.riwayah.name} · صفحة {currentPage}</Text>
               </View>
             </View>
             <Pressable accessibilityRole="button" accessibilityLabel="إغلاق القائمة" onPress={onClose} style={[styles.close, { backgroundColor: palette.background }]}><ReaderIcon name="close" color={palette.muted} /></Pressable>

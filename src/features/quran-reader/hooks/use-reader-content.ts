@@ -1,9 +1,12 @@
+import { useReadingPreferences } from '../state/reading-preferences-provider';
+import { RIWAYAT } from '../riwayat';
 import { useEffect, useState } from "react";
 import type { ContentResult } from "@/lib/quranpedia/client";
 import { loadReaderContent } from "../services/reader-service";
 import type { ReaderContent } from "../types/reader";
 
 export function useReaderContent() {
+    const { preferences: { riwayah } } = useReadingPreferences();
     const [content, setContent] = useState<ContentResult<ReaderContent> | null>(
         null,
     );
@@ -13,10 +16,11 @@ export function useReaderContent() {
 
     useEffect(() => {
         let active = true;
-        void loadReaderContent({ forceRefresh: revision > 0 })
+        void loadReaderContent({ forceRefresh: revision > 0 }, riwayah)
             .then((result) => {
                 if (active) {
                     setContent(result);
+                    setError(null);
                     setLoading(false);
                 }
             })
@@ -33,12 +37,13 @@ export function useReaderContent() {
         return () => {
             active = false;
         };
-    }, [revision]);
+    }, [revision, riwayah]);
 
     const refresh = () => {
         setLoading(true);
         setError(null);
         setRevision((value) => value + 1);
     };
-    return { content, error, loading, refresh };
+    const matches = content?.data.quran.id === RIWAYAT[riwayah].mushafId;
+    return { content: matches ? content : null, error, loading: loading || (!matches && !error), refresh };
 }

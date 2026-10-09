@@ -1,3 +1,4 @@
+import { editionForMushaf } from '../../riwayat';
 import { readerShape } from '../../design';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text as NativeText, View } from 'react-native';
@@ -14,7 +15,7 @@ import { ayahShareText, parallelAyahs } from '../../utils/ayah-actions';
 import type { ReaderPalette } from '../../theme';
 import { ReaderButton } from './reader-button';
 import { ReaderIcon, type ReaderIconName, Segments } from '../ui/reader-chrome';
-import { SURAH_NAME_FONT_FAMILY } from '../../config';
+import { calligraphyStyle, surahNameGlyph } from '../../utils/reader-typography';
 
 export function AyahActionSheet({ ayah, quran, palette, onClose }: { ayah: Ayah; quran: Quran; palette: ReaderPalette; onClose: () => void }) {
   const close = useRef<View>(null);
@@ -44,7 +45,7 @@ export function AyahActionSheet({ ayah, quran, palette, onClose }: { ayah: Ayah;
           <View style={styles.title}>
             <Text accessibilityRole="header" accessibilityLabel={`${surahName} · الآية ${ayah.ayahNumber}`}
               style={[styles.surah, { color: palette.text }]}>
-              {String(ayah.surahNumber).replace(/\d/g, (digit) => '٠١٢٣٤٥٦٧٨٩'[Number(digit)])}
+              {surahNameGlyph(ayah.surahNumber)}
             </Text>
             <Text style={[styles.reference, { color: palette.muted }]}>الآية {ayah.ayahNumber} · صفحة {ayah.pageNumber}</Text>
           </View>
@@ -71,7 +72,7 @@ export function AyahActionSheet({ ayah, quran, palette, onClose }: { ayah: Ayah;
             <RelatedAction palette={palette} icon="translate" label="ترجمة المعاني" detail="بالفرنسية والإنجليزية" expanded={kind === 'translation'} onPress={() => setKind(kind === 'translation' ? null : 'translation')} />
             {kind === 'translation' && <View style={styles.relatedContent}><RelatedContent ayah={ayah} kind="translation" palette={palette} /></View>}
           </View>
-          <Text style={[styles.edition, { color: palette.muted }]}>رواية ورش عن نافع</Text>
+          <Text style={[styles.edition, { color: palette.muted }]}>رواية {editionForMushaf(quran.id).label}</Text>
         </ScrollView>
       </SafeAreaView>
       </View>
@@ -139,7 +140,7 @@ const styles = StyleSheet.create({
     ...Platform.select({ native: { direction: 'rtl' as const } }) },
   heading: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 20, paddingTop: 18, paddingBottom: 16 },
   title: { flex: 1, minWidth: 0, gap: 2 },
-  surah: { fontFamily: SURAH_NAME_FONT_FAMILY, fontSize: 38, lineHeight: 40, includeFontPadding: false },
+  surah: calligraphyStyle(38),
   reference: { fontSize: 12 },
   close: { width: 44, height: 44, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
   content: { paddingHorizontal: 20, paddingBottom: 18 },

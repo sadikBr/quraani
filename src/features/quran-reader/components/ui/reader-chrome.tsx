@@ -3,6 +3,7 @@ import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { ArabicText as Text } from '@/components/arabic-text';
 import type { ReaderPalette } from '../../theme';
 import { readerShape } from '../../design';
+import { QuranniLogo } from './quranni-logo';
 
 export type ReaderIconName = 'back' | 'search' | 'book' | 'settings' | 'jump' | 'close' | 'sun' | 'moon' | 'system' | 'lines' | 'check' | 'chevron' | 'bookmark' | 'eye' | 'eye-off' | 'word' | 'copy' | 'share' | 'translate';
 export function ReaderIcon({ name, color, size = 22 }: { name: ReaderIconName; color: string; size?: number }) {
@@ -29,17 +30,6 @@ export function ReaderIcon({ name, color, size = 22 }: { name: ReaderIconName; c
   </Svg></View>;
 }
 
-/** A small geometric seal, shared by the index and reading chrome. */
-export function QuranSeal({ color, size = 44 }: { color: string; size?: number }) {
-  return <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden>
-    <Svg width={size} height={size} viewBox="0 0 80 80" fill="none" stroke={color} strokeWidth={1.2}>
-      <Path d="m40 3 11 11h15v15l11 11-11 11v15H51L40 77 29 66H14V51L3 40l11-11V14h15Z" />
-      <Path d="m40 13 8 9h10v10l9 8-9 8v10H48l-8 9-8-9H22V48l-9-8 9-8V22h10Z" />
-      <Path d="M40 29v25M26 28c5-1 10 1 14 4 4-3 9-5 14-4v23c-5-1-10 1-14 4-4-3-9-5-14-4Z" strokeWidth={1.7} />
-    </Svg>
-  </View>;
-}
-
 export function IconButton({ name, label, onPress, palette }: { name: ReaderIconName; label: string; onPress: () => void; palette: ReaderPalette }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
     style={({ pressed }) => [styles.iconButton, { backgroundColor: pressed ? palette.accentSoft : palette.paper, borderColor: palette.border }]}>
@@ -50,7 +40,7 @@ export function IconButton({ name, label, onPress, palette }: { name: ReaderIcon
 export function ScreenHeading({ title, subtitle, palette, onBack }: { title: string; subtitle: string; palette: ReaderPalette; onBack: () => void }) {
   return <View style={styles.heading}>
     <View style={[styles.bar, { borderColor: palette.border }]}>
-      <View style={styles.brand}><QuranSeal color={palette.ornament} size={28} /><Text style={{ color: palette.text, fontSize: 18, fontWeight: '600' }}>قراني</Text></View>
+      <View style={styles.brand}><QuranniLogo color={palette.ornament} size={30} /><Text style={{ color: palette.text, fontSize: 18, fontWeight: '600' }}>قرآني</Text></View>
       <IconButton name="back" label="العودة إلى القراءة" onPress={onBack} palette={palette} />
     </View>
     <Text accessibilityRole="header" style={{ color: palette.text, fontSize: 28, fontWeight: '700', lineHeight: 44 }}>{title}</Text>

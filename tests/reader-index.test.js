@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import { readerIndexItems, indexRouteDestination } from '../src/features/quran-reader/utils/reader-index';
 const first = { mushafId: 4, surahNumber: 2, ayahNumber: 1, pageNumber: 2, hafsAyahNumbers: [1, 2] };
 const boundary = { mushafId: 4, surahNumber: 2, ayahNumber: 10, pageNumber: 3 };
-const content = { quran: { surahs: [
+const content = { quran: { id: 4, surahs: [
   { number: 2, name: 'سُورَة الْبَقَرَة', ayahs: [first, boundary] },
   { number: 17, name: 'سورة الإسراء', ayahs: [{ mushafId: 4, surahNumber: 17, ayahNumber: 1, pageNumber: 282 }] },
 ] }, juzIndex: [{ number: 2, pageNumber: 3, start: boundary }], hizbIndex: [{ number: 3, pageNumber: 3, start: boundary }] };

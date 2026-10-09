@@ -1,3 +1,4 @@
+import { RIWAYAT } from '../../riwayat';
 import { router } from 'expo-router';
 import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,12 +11,26 @@ import { readerLayout, readerShape } from '../../design';
 
 export function SettingsScreen() {
   const { preferences, update, palette, dark } = useReadingPreferences();
-  const { appearance, mode, textLayout, fontSize, spacious } = preferences;
+  const { appearance, mode, textLayout, fontSize, spacious, riwayah, tajweed } = preferences;
   return <SafeAreaView style={[styles.root, { backgroundColor: palette.background }]}>
     <StatusBar style={dark ? 'light' : 'dark'} />
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
       <ScreenHeading title="إعدادات القراءة" subtitle="مساحتك للقراءة، بالألوان والطريقة التي تحبها." palette={palette} onBack={() => router.dismissTo('/')} />
       <View style={[styles.section, { borderColor: palette.border }]}>
+        <SectionHeading title="رواية القرآن" description="اختر الرواية التي تقرأ بها. نحتفظ بموضعك وعلاماتك لكل رواية." icon="book" palette={palette} />
+        <Segments palette={palette} options={[{ value: 'warsh', label: 'ورش عن نافع' }, { value: 'hafs', label: 'حفص عن عاصم' }]}
+          value={riwayah} onChange={(value) => update({ riwayah: value })} />
+        <Text style={{ color: palette.muted, fontSize: 12 }}>ورش هي الرواية الافتراضية.</Text>
+        {riwayah === 'hafs' && <Pressable accessibilityRole="switch" accessibilityState={{ checked: tajweed }} aria-checked={tajweed} accessibilityLabel="ألوان التجويد"
+          onPress={() => update({ tajweed: !tajweed })} style={[styles.tajweed, { backgroundColor: palette.paper, borderColor: tajweed ? palette.accent : palette.border }]}>
+          <View style={{ flex: 1, gap: 3 }}><Text style={{ color: palette.text, fontSize: 15, fontWeight: '600' }}>ألوان التجويد</Text>
+            <Text style={{ color: palette.muted, fontSize: 12 }}>من مصحف التجويد في الموسوعة القرآنية</Text></View>
+          <View style={{ flexDirection: 'row', gap: 4 }}>{['#537fff', '#dd0008', '#169200'].map((color) => <View key={color} style={{ width: 6, height: 22, backgroundColor: color, borderRadius: 2 }} />)}</View>
+          <View style={[styles.check, { borderColor: palette.accent, backgroundColor: tajweed ? palette.accent : 'transparent' }]}>{tajweed && <ReaderIcon name="check" size={12} color={palette.paper} />}</View>
+        </Pressable>}
+      </View>
+      <View style={[styles.section, { borderColor: palette.border }]}>
+
         <SectionHeading title="طريقة القراءة" description="صفحات المصحف الأصلية أو نص قرآني بتنسيق مرن." icon="book" palette={palette} />
         <View style={styles.row}>
           {([{ value: 'page', label: 'صفحات المصحف', detail: 'كما في المصحف المطبوع' }, { value: 'text', label: 'النص القرآني', detail: 'آيات منفصلة أو نص متصل' }] as const).map((option) => {
@@ -44,11 +59,11 @@ export function SettingsScreen() {
           {mode === 'page' ? 'حجم النص والتباعد ثابتان للحفاظ على تنسيق المصحف الأصلي.' : 'يمكنك الآن تخصيص حجم النص والتباعد في إعدادات راحة النص.'}
         </Text>
       </View>
-      <ReaderSettings palette={palette} fixedPage={mode === 'page'} appearance={appearance} setAppearance={(value) => update({ appearance: value })}
+      <ReaderSettings palette={palette} fixedPage={mode === 'page'} textLayout={textLayout} appearance={appearance} setAppearance={(value) => update({ appearance: value })}
         fontSize={fontSize} setFontSize={(value) => update({ fontSize: value })} spacious={spacious} setSpacious={(value) => update({ spacious: value })} />
       <View style={[styles.footer, { borderColor: palette.border }]}>
         <View style={styles.saved}><ReaderIcon name="check" color={palette.accent} size={15} /><Text style={{ color: palette.muted, fontSize: 12 }}>تُحفظ تفضيلاتك تلقائيًا</Text></View>
-        <View style={styles.saved}><Text style={{ color: palette.text, fontSize: 17, fontWeight: '600' }}>قراني</Text><Text style={{ color: palette.muted, fontSize: 12 }}>· برواية ورش عن نافع</Text></View>
+        <View style={styles.saved}><Text style={{ color: palette.text, fontSize: 17, fontWeight: '600' }}>قرآني</Text><Text style={{ color: palette.muted, fontSize: 12 }}>· برواية {RIWAYAT[riwayah].label}</Text></View>
         <Pressable accessibilityRole="link" accessibilityLabel="المحتوى القرآني من الموسوعة القرآنية" onPress={() => void Linking.openURL('https://quranpedia.net')} style={styles.source}>
           <Text style={{ color: palette.ornament, fontSize: 12, textAlign: 'center' }}>المحتوى من الموسوعة القرآنية ↗</Text>
         </Pressable>
@@ -58,6 +73,7 @@ export function SettingsScreen() {
 }
 const styles = StyleSheet.create({
   root: { flex: 1 }, content: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: readerLayout.gutter, paddingTop: 12, paddingBottom: 28, gap: readerLayout.sectionGap },
+  tajweed: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderWidth: 1, borderRadius: readerShape.card },
   section: { gap: 16, paddingTop: 20, borderTopWidth: 1 }, row: { flexDirection: 'row', gap: 12 },
   textLayout: { gap: 10 },
   choice: { flex: 1, padding: 14, borderWidth: 1, borderRadius: readerShape.card, gap: 4 }, choiceHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 6 },
