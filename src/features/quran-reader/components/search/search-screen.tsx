@@ -41,7 +41,7 @@ export function SearchScreen({ saved = false }: { saved?: boolean }) {
     <FlatList data={font.loaded ? matches.items : []} keyExtractor={(item) => ayahKey(item.reference)} initialNumToRender={10} maxToRenderPerBatch={10} windowSize={7}
       keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}
       ListHeaderComponent={<View style={styles.header}>
-        <ScreenHeading title={saved ? 'العلامات المحفوظة' : 'البحث في القرآن'} subtitle={saved ? 'عُد إلى الآيات التي اخترتها.' : 'ابحث في الرواية المختارة، مع التشكيل أو بدونه.'} palette={palette} onBack={() => router.dismissTo('/')} />
+        <ScreenHeading title={saved ? 'العلامات المحفوظة' : 'البحث في القرآن'} subtitle={saved ? 'عُد إلى الآيات التي اخترتها.' : 'ابحث في الرواية المختارة، مع التشكيل أو بدونه.'} palette={palette} onBack={() => router.canGoBack() ? router.back() : router.replace('/')} />
         {!saved && <View style={[styles.search, { backgroundColor: palette.paper, borderColor: searchFocused ? palette.accent : palette.border }]}>
           <ReaderIcon name="search" color={searchFocused ? palette.accent : palette.muted} size={20} />
           <TextInput accessibilityLabel="البحث في نص القرآن" placeholder="ابحث عن كلمة أو عبارة" placeholderTextColor={palette.muted} value={query}
@@ -62,7 +62,7 @@ export function SearchScreen({ saved = false }: { saved?: boolean }) {
         <View style={[styles.emptyIcon, { backgroundColor: palette.paper, borderColor: palette.border }]}><ReaderIcon name={saved ? 'bookmark' : 'search'} color={palette.ornament} size={26} /></View>
         <Text accessibilityRole="header" style={{ color: palette.text, fontSize: 20, fontWeight: '600', textAlign: 'center' }}>{saved ? 'احتفظ بآياتك المفضّلة' : hasSearch ? 'لم نعثر على نتائج' : 'ابدأ بكلمة من الآية'}</Text>
         <Text style={{ color: palette.muted, fontSize: 13, textAlign: 'center', maxWidth: 280 }}>{hint}</Text>
-        {saved && <ReaderButton palette={palette} onPress={() => router.dismissTo('/')}>العودة إلى المصحف</ReaderButton>}
+        {saved && <ReaderButton palette={palette} onPress={() => router.canGoBack() ? router.back() : router.replace('/')}>العودة إلى المصحف</ReaderButton>}
       </View>}
       onEndReachedThreshold={0.5} onEndReached={() => { if (!saved && limit < matches.total) setLimit((v) => Math.min(v + 50, matches.total)); }}
       renderItem={({ item }) => <Pressable accessibilityRole="button" accessibilityLabel={`${item.surahName}، الآية ${item.reference.ayahNumber}، صفحة ${item.pageNumber}. ${item.text}`} accessibilityHint="فتح الآية وتحديدها في المصحف" onPress={() => router.dismissTo({ pathname: '/', params: { surah: String(item.reference.surahNumber), ayah: String(item.reference.ayahNumber) } })}

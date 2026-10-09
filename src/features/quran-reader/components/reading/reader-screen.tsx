@@ -25,10 +25,15 @@ import { indexRouteDestination } from '../../utils/reader-index';
 import { ReaderControls } from './reader-controls';
 import { createPagePractice, practiceVisibility, revealNext } from '../../utils/page-practice';
 import { reserveReadingInsets } from '../../utils/reading-insets';
+import { PlanReadingControls, PlanReadingEnd, PlanReadingOpening, usePlanReadingActions } from '@/features/plans/plan-reading-controls';
+import { usePlans } from '@/features/plans/provider';
+import { createReadingSession } from '@/features/plans/reading-session';
+import { arabicNumber } from '@/features/plans/presentation';
 
 export function ReaderScreen() {
   const { preferences: { riwayah } } = useReadingPreferences();
-  return <RiwayahReaderScreen key={riwayah} />;
+  const { plan, planCycle, planSlot } = useLocalSearchParams<{ plan?: string; planCycle?: string; planSlot?: string }>();
+  return <RiwayahReaderScreen key={`${riwayah}:${plan ?? ''}:${planCycle ?? ''}:${planSlot ?? ''}`} />;
 }
 
 function RiwayahReaderScreen() {
@@ -44,8 +49,21 @@ function RiwayahReaderScreen() {
   if (Platform.OS !== 'web' && reservedInsets !== readingInsets) setReadingInsets(reservedInsets);
   const topInset = Platform.OS === 'web' ? insets.top : reservedInsets.top;
   const bottomInset = Platform.OS === 'web' ? insets.bottom : reservedInsets.bottom;
-  const { surah: targetSurah, ayah: targetAyah } = useLocalSearchParams<{ surah?: string; ayah?: string }>();
+  const { surah: targetSurah, ayah: targetAyah, plan: planId, planCycle, planSlot } = useLocalSearchParams<{ surah?: string; ayah?: string; plan?: string; planCycle?: string; planSlot?: string }>();
   const { content, error, refresh } = useReaderContent();
+  const { plans, ready: plansReady, today, error: plansError, retry: retryPlans } = usePlans();
+  const plan = plans.find(p => p.id === planId);
+  const reading = useMemo(() => {
+    if (!planId || !plansReady || !content) return {};
+    if (!plan) return { error: 'هذا الهدف لم يعد متاحًا.' };
+    try { return { session: createReadingSession(plan, content.data, planCycle, planSlot, today) }; }
+    catch (e) { return { error: e instanceof Error ? e.message : 'تعذر فتح الورد.' }; }
+  }, [planId, plansReady, content, plan, planCycle, planSlot, today]);
+  const session = reading.session;
+  const planActions = usePlanReadingActions(session);
+  const readerPages = session?.pages ?? content?.data.pages;
+  const firstPage = session?.firstPage ?? 1;
+  const lastPageNumber = session?.lastPage ?? content?.data.pages.at(-1)?.number ?? 604;
   const font = useQuranFont();
   const { preferences: { mode, textLayout, fontSize, spacious, tajweed, riwayah }, palette, dark } = useReadingPreferences();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -57,8 +75,9 @@ function RiwayahReaderScreen() {
   const practiceScrollY = useRef(0);
   const readingScrollY = useRef(0);
   const practiceOffsets = useRef(new Map<string, number>());
-  const { position, ready, move, recordScroll } = useReadingPosition(content?.data);
-  const pageNumber = position.pageNumber;
+  const { position, ready: positionReady, move, recordScroll } = useReadingPosition(planId ? session?.content : content?.data);
+  const ready = positionReady && (!planId || !!session);
+  const pageNumber = Math.max(firstPage, Math.min(lastPageNumber, position.pageNumber));
   const [jumpRevision, setJumpRevision] = useState(0);
   const jumpPending = useRef(false);
   const [pageTranslation] = useState(() => new Animated.Value(0));
@@ -96,11 +115,12 @@ function RiwayahReaderScreen() {
   useEffect(() => () => setPrintedPageInteraction(false), []);
   const suppressClick = useRef(0);
   const scroll = useRef<ScrollView>(null);
+  const openingHeight = useRef(0);
   const tapStart = useRef<{ x: number; y: number } | null>(null);
-  const page = ready ? content?.data.pages.find((value) => value.number === pageNumber) : undefined;
+  const page = ready ? (session?.content.pages ?? readerPages)?.find((value) => value.number === pageNumber) : undefined;
   const practiceActive = practice?.pageNumber === pageNumber;
   const practicePlan = useMemo(() => page ? createPagePractice(page,
-    mode === 'page' && practiceActive ? getCachedPrintedPage(page)?.regions : undefined) : null, [page, mode, practiceActive]);
+    mode === 'page' && practiceActive && !session ? getCachedPrintedPage(page)?.regions : undefined) : null, [page, mode, practiceActive, session]);
   const visibleWords = useMemo(() => practiceActive && practicePlan && practice
     ? practiceVisibility(practicePlan, practice.revealed) : undefined, [practiceActive, practicePlan, practice]);
   const practiceTarget = practiceActive && practice && practice.revealed > 0
@@ -111,15 +131,16 @@ function RiwayahReaderScreen() {
     const y = practiceTargetKey ? practiceOffsets.current.get(practiceTargetKey) : undefined;
     if (y === undefined) return;
     const contentTop = mode === 'page' ? 64 : 8;
-    practiceScrollY.current = Math.max(0, y + contentTop - toolbarHeight - 12);
+    const openingOffset = session && pageNumber === firstPage ? openingHeight.current : 0;
+    practiceScrollY.current = Math.max(0, y + contentTop + openingOffset - toolbarHeight - 12);
     scroll.current?.scrollTo({ y: practiceScrollY.current, animated: !reduceMotion });
-  }, [practiceTargetKey, reduceMotion, mode, toolbarHeight]);
+  }, [practiceTargetKey, reduceMotion, mode, toolbarHeight, session, pageNumber, firstPage]);
   const totalPages = content?.data.pages.length ?? 604;
   const overlayOpen = drawerOpen || menuOpen || !!actionAyah;
   const immersive = ready && !actionsVisible && !overlayOpen;
 
   const navigate = useCallback((number: number, ayah?: AyahReference) => {
-    if (!ready || !content?.data.pages.some((value) => value.number === number)) return;
+    if (!ready || !readerPages?.some((value) => value.number === number) || (ayah && session && !session.contains(ayah))) return;
     setDrawerOpen(false);
     setActionAyah(null);
     setPractice(null);
@@ -129,16 +150,20 @@ function RiwayahReaderScreen() {
     }
     move({ mushafId: content!.data.quran.id, pageNumber: number, ayah: ayah ? { mushafId: content!.data.quran.id, surahNumber: ayah.surahNumber, ayahNumber: ayah.ayahNumber } : null, scrollY: 0 });
     scroll.current?.scrollTo({ y: 0, animated: false });
-  }, [ready, content, move]);
+  }, [ready, content, readerPages, session, move]);
   useEffect(() => {
     if (!ready || !content || (!targetSurah && !targetAyah)) return;
-    const target = indexRouteDestination(content.data, targetSurah, targetAyah);
+    const target = indexRouteDestination(session?.content ?? content.data, targetSurah, targetAyah);
     // Apply an external Router command once the saved reader position is ready.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (target) navigate(target.pageNumber, target);
+    if (target) {
+      const pageStart = content.data.pages.find(p => p.number === target.pageNumber)?.ayahs[0];
+      const beginsPage = session && pageStart && ayahKey(pageStart) === ayahKey(target);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      navigate(target.pageNumber, beginsPage ? undefined : target);
+    }
     // Consume the jump so subsequent reloads restore the latest reading position.
     router.setParams({ surah: undefined, ayah: undefined });
-  }, [ready, content, targetSurah, targetAyah, navigate]);
+  }, [ready, content, session, targetSurah, targetAyah, navigate]);
   const toggleActions = useCallback(() => {
     if (Date.now() < suppressClick.current) return;
     // A native text press and its enclosing touch-end can describe the same tap.
@@ -147,12 +172,13 @@ function RiwayahReaderScreen() {
   }, []);
   const tapAyah = toggleActions;
   const select = useCallback((ayah: Ayah) => {
+    if (session && !session.contains(ayah)) return;
     suppressClick.current = Date.now() + 500;
     setDrawerOpen(false);
     setActionsVisible(false);
     move({ ...position, ayah: { mushafId: content!.data.quran.id, surahNumber: ayah.surahNumber, ayahNumber: ayah.ayahNumber } }, true);
     setActionAyah(ayah);
-  }, [position, move, content]);
+  }, [position, move, content, session]);
   const togglePractice = () => {
     if (!page) return;
     setActionAyah(null);
@@ -180,9 +206,10 @@ function RiwayahReaderScreen() {
   const targetOffset = useCallback((y: number) => {
     if (!jumpPending.current) return;
     jumpPending.current = false;
-    scroll.current?.scrollTo({ y: Math.max(0, y - 12), animated: false });
-    recordScroll(Math.max(0, y - 12));
-  }, [recordScroll]);
+    const offset = y + (session && pageNumber === firstPage ? openingHeight.current : 0);
+    scroll.current?.scrollTo({ y: Math.max(0, offset - 12), animated: false });
+    recordScroll(Math.max(0, offset - 12));
+  }, [recordScroll, session, pageNumber, firstPage]);
   const settleSwipe = useCallback(() => {
     gestureActive.current = false;
     swipeDestination.current = null;
@@ -206,22 +233,22 @@ function RiwayahReaderScreen() {
   }, [pageTranslation, navigate]);
   const swipeMove = useCallback((_: unknown, gesture: { dx: number }) => {
     if (reduceMotion) return;
-    const blocked = gesture.dx > 0 ? swipeOrigin.current === totalPages : swipeOrigin.current === 1;
+    const blocked = gesture.dx > 0 ? swipeOrigin.current >= lastPageNumber : swipeOrigin.current <= firstPage;
     const offset = gesture.dx * (blocked ? 0.18 : 1);
     pageTranslation.setValue(Math.max(-swipeWidth.current, Math.min(swipeWidth.current, offset)));
-  }, [totalPages, pageTranslation, reduceMotion]);
+  }, [firstPage, lastPageNumber, pageTranslation, reduceMotion]);
   const swipeRelease = useCallback((_: unknown, gesture: { dx: number; dy: number; vx: number }) => {
     gestureActive.current = false;
     suppressClick.current = Date.now() + 120;
     const delta = swipePageDelta(gesture.dx, gesture.dy, gesture.vx);
     const destination = swipeOrigin.current + delta;
-    if (!delta || destination < 1 || destination > totalPages) { settleSwipe(); return; }
+    if (!delta || destination < firstPage || destination > lastPageNumber) { settleSwipe(); return; }
     if (reduceMotion) { setPrintedPageInteraction(false); navigate(destination); return; }
     swipeDestination.current = destination;
     Animated.timing(pageTranslation, { toValue: delta * swipeWidth.current, duration: 90, useNativeDriver: Platform.OS !== 'web' }).start(({ finished }) => {
       if (finished) navigate(destination);
     });
-  }, [navigate, totalPages, pageTranslation, reduceMotion, settleSwipe]);
+  }, [navigate, firstPage, lastPageNumber, pageTranslation, reduceMotion, settleSwipe]);
   // PanResponder stores these callbacks; it does not invoke them during render.
   // eslint-disable-next-line react-hooks/refs
   const swipe = useMemo(() => PanResponder.create({
@@ -239,12 +266,12 @@ function RiwayahReaderScreen() {
     if (tajweed && riwayah === 'hafs') {
       // Page neighbors load their own data. Warm only a few small font files;
       // don't also download the unused monochrome SVG runway.
-      for (const number of preloadPageNumbers(pageNumber, content.data.pages.length, readingDirection.current).slice(0, 5)) void loadTajweedFont(number).catch(() => {});
+      for (const number of preloadPageNumbers(pageNumber, lastPageNumber, readingDirection.current).filter(n => n >= firstPage).slice(0, 5)) void loadTajweedFont(number).catch(() => {});
       return;
     }
     let active = true;
     const pages = content.data.pages;
-    const runway = preloadPageNumbers(pageNumber, pages.length, readingDirection.current)
+    const runway = preloadPageNumbers(pageNumber, lastPageNumber, readingDirection.current).filter(n => n >= firstPage)
       .map((number) => pages[number - 1]).filter((value) => !!value);
     const imageRunway = new Set(runway.slice(0, 5).map((value) => value.number));
     preloadPrintedPages(runway, async (artwork, target) => {
@@ -254,7 +281,16 @@ function RiwayahReaderScreen() {
       }
     });
     return () => { active = false; };
-  }, [ready, content, pageNumber, mode, palette.text, palette.ornament, tajweed, riwayah]);
+  }, [ready, content, pageNumber, firstPage, lastPageNumber, mode, palette.text, palette.ornament, tajweed, riwayah]);
+
+  if (planId && (reading.error || plansError)) return <SafeAreaView style={[styles.root, { backgroundColor: palette.paper }]}>
+    <View style={styles.status}>
+      <Text accessibilityRole="alert" style={[styles.statusTitle, { color: palette.text }]}>{reading.error || plansError}</Text>
+      {!!plansError && <ReaderButton palette={palette} onPress={retryPlans}>إعادة المحاولة</ReaderButton>}
+      <ReaderButton palette={palette} selected onPress={() => router.replace({ pathname: '/plans/[id]', params: { id: planId } })}>العودة إلى الهدف</ReaderButton>
+      <ReaderButton palette={palette} onPress={() => router.replace('/')}>فتح المصحف</ReaderButton>
+    </View>
+  </SafeAreaView>;
 
   return (
     <SafeAreaView edges={['left', 'right']} style={[styles.root, { backgroundColor: palette.paper }]}>
@@ -267,7 +303,8 @@ function RiwayahReaderScreen() {
         onLayout={(event) => { swipeWidth.current = event.nativeEvent.layout.width; setPageWidth(event.nativeEvent.layout.width); }} {...swipe.panHandlers}>
       {(page && content && font.loaded ? [-1, 0, 1] : [0]).map((offset) => {
         const displayNumber = pageNumber + offset;
-        const displayPage = content?.data.pages.find((value) => value.number === displayNumber);
+        const displayPage = readerPages?.find((value) => value.number === displayNumber);
+        const textPage = session?.content.pages.find(p => p.number === displayNumber) ?? displayPage;
         const surahName = content?.data.quran.surahs.find((surah) => surah.number === displayPage?.ayahs[0]?.surahNumber)?.name;
         const isCurrent = offset === 0;
         const practicing = isCurrent && practiceActive;
@@ -303,6 +340,7 @@ function RiwayahReaderScreen() {
           paddingBottom: (practicing ? 124 : 8) + bottomInset,
         }]}>
         <View style={[styles.content, mode === 'page' && !practicing && styles.centeredContent]}>
+          {ready && session && displayNumber === firstPage && <View onLayout={isCurrent ? event => { openingHeight.current = event.nativeEvent.layout.height; } : undefined}><PlanReadingOpening session={session} /></View>}
           {font.error || (error && !content) ? (
             <View accessibilityRole="alert" style={styles.status}>
               <Text style={[styles.statusTitle, { color: palette.text }]}>{font.error ? 'تعذر تحميل خط المصحف' : 'تعذر تحميل القرآن'}</Text>
@@ -319,20 +357,23 @@ function RiwayahReaderScreen() {
             mode === 'page' && !practicing && tajweed && riwayah === 'hafs' ? <TajweedQuranPage key={`${displayPage.number}:${jumpRevision}`} page={displayPage} quran={content.data.quran} palette={palette} dark={dark} selectedAyah={isCurrent ? position.ayah : null} onTap={toggleActions} onSelect={select} onNavigate={navigate} onTargetOffset={isCurrent ? targetOffset : undefined} /> :
             mode === 'page' && !practicing ? <PrintedQuranPage key={`${displayPage.number}:${jumpRevision}`} page={displayPage} palette={palette}
               selectedAyah={isCurrent ? position.ayah : null} onTap={tapAyah} onSelect={select} onTargetOffset={isCurrent ? targetOffset : undefined} /> :
-              <QuranPage key={`${displayPage.number}:${jumpRevision}:${mode === 'page' ? 'practice' : textLayout}`} page={practicing && practicePlan ? practicePlan.page : displayPage} quran={content.data.quran} layout={mode === 'page' ? 'ayah' : textLayout} fontFamily={font.fontFamily}
+              <QuranPage key={`${displayPage.number}:${jumpRevision}:${mode === 'page' ? 'practice' : textLayout}`} page={practicing && practicePlan ? practicePlan.page : textPage!} quran={content.data.quran} layout={mode === 'page' ? 'ayah' : textLayout} fontFamily={font.fontFamily}
                 visibleWords={practicing ? visibleWords : undefined} fontSize={fontSize} spacious={spacious} palette={palette} selectedAyah={isCurrent ? position.ayah : null}
                 onTap={tapAyah} onSelect={select} onNavigate={navigate} onTargetOffset={isCurrent ? targetOffset : undefined}
                 onAyahOffset={isCurrent ? recordPracticeOffset : undefined} />
           ) : <Text accessibilityRole="alert" style={{ color: palette.warning }}>هذه الصفحة غير متوفرة.</Text>}
+          {ready && session && displayNumber === lastPageNumber && <PlanReadingEnd session={session} actions={planActions} />}
         </View>
       </ScrollView>
       </View>
       {ready && displayPage && content && <ReaderControls visible={actionsVisible} progress={controlsProgress}
         page={displayPage} totalPages={totalPages} surahName={surahName ?? 'قرآني'} palette={palette}
-        previous={content.data.pages.find((value) => value.number === displayNumber - 1)}
-        next={content.data.pages.find((value) => value.number === displayNumber + 1)}
+        previous={readerPages?.find((value) => value.number === displayNumber - 1)}
+        next={readerPages?.find((value) => value.number === displayNumber + 1)}
+        pageLabel={session ? `${arabicNumber(displayNumber - firstPage + 1)} من ${arabicNumber(session.pages.length)} · ص ${arabicNumber(displayNumber)}` : undefined}
         topInset={topInset} toolbarHeight={toolbarHeight} onToolbarHeight={setToolbarHeight}
         bottomInset={bottomInset} practiceActive={practicing}
+        planControls={session ? <PlanReadingControls session={session} pageNumber={displayNumber} actions={planActions} /> : undefined}
         practiceComplete={!!practicePlan && !!practice && practice.revealed >= practicePlan.totalWords}
         onNavigate={navigate} onJump={() => setDrawerOpen(true)} onMenu={() => setMenuOpen(true)} onPractice={togglePractice}
         onRevealWord={() => reveal('word')} onRevealAyah={() => reveal('ayah')}
@@ -341,7 +382,7 @@ function RiwayahReaderScreen() {
       })}
       </View>
       {actionAyah && content && <AyahActionSheet key={ayahKey(actionAyah)} ayah={actionAyah} quran={content.data.quran} palette={palette} onClose={() => setActionAyah(null)} />}
-      {drawerOpen && <ReaderDrawer content={content?.data} currentPage={pageNumber} onJump={navigate} onClose={() => setDrawerOpen(false)} palette={palette} />}
+      {drawerOpen && <ReaderDrawer content={session?.content ?? content?.data} limited={!!session} currentPage={pageNumber} onJump={navigate} onClose={() => setDrawerOpen(false)} palette={palette} />}
       {menuOpen && <ReaderMenu onClose={() => setMenuOpen(false)} palette={palette} />}
     </SafeAreaView>
   );

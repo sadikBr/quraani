@@ -30,7 +30,7 @@ export function IndexScreen() {
   const open = (item: ReaderIndexItem) => router.dismissTo({ pathname: '/', params: {
     surah: String(item.start.surahNumber), ayah: String(item.start.ayahNumber),
   } });
-  const back = () => router.dismissTo('/');
+  const back = () => router.canGoBack() ? router.back() : router.replace('/');
   // Web scrolls when filtering resizes the list, so only dismiss on native drags.
   return <SafeAreaView style={[styles.root, { backgroundColor: palette.background }]}>
     <StatusBar style={dark ? 'light' : 'dark'} />

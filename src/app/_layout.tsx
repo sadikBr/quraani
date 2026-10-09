@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
 import { I18nManager, Platform, View } from 'react-native';
+import { PlansProvider, PlanNotificationObserver } from '@/features/plans/provider';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -20,7 +21,7 @@ if (Platform.OS !== 'web') {
 export default function RootLayout() {
   return <>
     {Platform.OS === 'web' && <Head><title>قرآني</title></Head>}
-    <ReadingPreferencesProvider><BookmarksProvider><RootNavigator /></BookmarksProvider></ReadingPreferencesProvider>
+    <ReadingPreferencesProvider><BookmarksProvider><PlansProvider><RootNavigator /></PlansProvider></BookmarksProvider></ReadingPreferencesProvider>
   </>;
 }
 
@@ -40,6 +41,7 @@ function RootNavigator() {
         <StatusBar style={dark ? 'light' : 'dark'} hidden={false} />
         <ThemeProvider value={{ ...baseTheme, colors: { ...baseTheme.colors, background: palette.background, card: palette.paper, text: palette.text, border: palette.border, primary: palette.accent } }}>
           <Stack screenOptions={{ headerShown: false }} />
+          <PlanNotificationObserver />
         </ThemeProvider>
       </View>
     </LocaleProvider>

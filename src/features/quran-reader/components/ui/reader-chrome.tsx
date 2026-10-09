@@ -5,7 +5,7 @@ import type { ReaderPalette } from '../../theme';
 import { readerShape } from '../../design';
 import { QuranniLogo } from './quranni-logo';
 
-export type ReaderIconName = 'back' | 'search' | 'book' | 'settings' | 'menu' | 'index' | 'jump' | 'close' | 'sun' | 'moon' | 'system' | 'lines' | 'check' | 'chevron' | 'bookmark' | 'eye' | 'eye-off' | 'word' | 'copy' | 'share' | 'translate';
+export type ReaderIconName = 'back' | 'search' | 'book' | 'settings' | 'menu' | 'index' | 'calendar' | 'jump' | 'close' | 'sun' | 'moon' | 'system' | 'lines' | 'check' | 'chevron' | 'bookmark' | 'eye' | 'eye-off' | 'word' | 'copy' | 'share' | 'translate' | 'trash' | 'restore' | 'archive';
 export function ReaderIcon({ name, color, size = 22, strokeWidth = 1.65 }: { name: ReaderIconName; color: string; size?: number; strokeWidth?: number }) {
   return <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden><Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
     {name === 'back' && <Path d="m9 5 7 7-7 7M16 12H4" />}
@@ -16,6 +16,9 @@ export function ReaderIcon({ name, color, size = 22, strokeWidth = 1.65 }: { nam
     {name === 'share' && <Path d="M12 16V3m-4 4 4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />}
     {name === 'translate' && <Path d="M3 5h12M9 3v2m4 0c-1 5-5 8-9 10m2-8c1 3 4 6 7 7m1 6 4-10 4 10m-7-3h6" />}
     {name === 'close' && <Path d="m6 6 12 12M6 18 18 6" />}
+    {name === 'trash' && <Path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7" />}
+    {name === 'restore' && <Path d="M4 4v6h6M4.5 10a8 8 0 1 1-.1 5" />}
+    {name === 'archive' && <><Rect x="3" y="3" width="18" height="5" rx="1" /><Path d="M5 8v13h14V8M9 12h6" /></>}
     {name === 'search' && <><Circle cx="10.5" cy="10.5" r="6.5" /><Path d="m16 16 5 5" /></>}
     {name === 'book' && <Path d="M12 5v15M3 4c3-1 6 0 9 2 3-2 6-3 9-2v15c-3-1-6 0-9 2-3-2-6-3-9-2V4Z" />}
     {name === 'lines' && <Path d="M4 5h16M4 10h16M4 15h16M10 20h10" />}
@@ -24,6 +27,7 @@ export function ReaderIcon({ name, color, size = 22, strokeWidth = 1.65 }: { nam
     {name === 'eye-off' && <><Path d="m3 3 18 18M10 5.2c.7-.1 1.3-.2 2-.2 6.5 0 10 7 10 7a20 20 0 0 1-3.2 4.2M6.2 6.2A23 23 0 0 0 2 12s3.5 7 10 7c1.9 0 3.6-.6 5.1-1.4M9.9 9.9a3 3 0 0 0 4.2 4.2" /></>}
     {name === 'settings' && <><Path d="m9.5 3-.6 2.2-1.5.9-2.2-.6-2.5 4.3 1.6 1.6v1.8l-1.6 1.6 2.5 4.3 2.2-.6 1.5.9.6 2.2h5l.6-2.2 1.5-.9 2.2.6 2.5-4.3-1.6-1.6v-1.8l1.6-1.6-2.5-4.3-2.2.6-1.5-.9-.6-2.2h-5Z" /><Circle cx="12" cy="12" r="3" /></>}
     {name === 'menu' && <Path d="M4 6h16M4 12h16M4 18h16" />}
+    {name === 'calendar' && <><Rect x="3" y="5" width="18" height="16" rx="2" /><Path d="M7 3v4m10-4v4M3 11h18m-13 5 2 2 5-4" /></>}
     {name === 'index' && <><Path d="M4 6h10M4 12h10M4 18h10" /><Circle cx="19" cy="6" r="1" /><Circle cx="19" cy="12" r="1" /><Circle cx="19" cy="18" r="1" /></>}
     {name === 'jump' && <Path d="M5 5h14v14H5zM8 12h8m-3-3 3 3-3 3" />}
     {name === 'sun' && <><Circle cx="12" cy="12" r="4" /><Path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" /></>}

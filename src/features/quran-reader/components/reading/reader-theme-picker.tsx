@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { readerThemeOptions, readerThemes, type ReaderAppearance, type ReaderPalette } from '../../theme';
-import { ReaderIcon, SectionHeading } from '../ui/reader-chrome';
-import { readerShape } from '../../design';
+import { ReaderIcon } from '../ui/reader-chrome';
+import { SettingsSelection } from './settings-ui';
 
 interface Props {
   appearance: ReaderAppearance;
@@ -11,72 +11,72 @@ interface Props {
   palette: ReaderPalette;
 }
 
-/** Small native views preview each palette without loading Quran artwork. */
-function ThemePreview({ palette, split = false }: { palette: ReaderPalette; split?: boolean }) {
-  return <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden
-    style={[styles.preview, { backgroundColor: palette.background, borderColor: palette.border }]}>
-    <View style={[styles.previewPage, { backgroundColor: palette.paper }]}>
-      <View style={[styles.previewTitle, { backgroundColor: palette.ornament }]} />
-      <View style={[styles.previewLine, { backgroundColor: palette.text }]} />
-      <View style={[styles.previewLine, { backgroundColor: palette.text, width: '84%' }]} />
-      <View style={[styles.previewSelection, { backgroundColor: palette.accentSoft, borderColor: palette.border }]}>
-        <View style={[styles.previewLine, { backgroundColor: palette.accent, width: '72%' }]} />
-      </View>
+/** A small reading surface shows paper, Quran ink, ornament and toolbar colors. */
+function ThemePreview({ palette }: { palette: ReaderPalette }) {
+  return <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden style={[styles.preview, { backgroundColor: palette.background }]}>
+    <View style={[styles.previewPage, { backgroundColor: palette.paper, borderColor: palette.border }]}>
+      <View style={styles.ornamentRow}><View style={[styles.rule, { backgroundColor: palette.ornament }]} /><View style={[styles.ornament, { borderColor: palette.ornament }]} /><View style={[styles.rule, { backgroundColor: palette.ornament }]} /></View>
+      {[100, 100, 100, 72].map((width, i) => <View key={i} style={{ width: `${width}%`, flexDirection: 'row', alignSelf: 'center', gap: 3, alignItems: 'center' }}>
+        <View style={{ width: 4, height: 4, borderRadius: 2, borderWidth: 1, borderColor: palette.ornament }} />
+        <View style={[styles.previewLine, { backgroundColor: palette.text }]} />
+      </View>)}
+      <View style={[styles.previewToolbar, { backgroundColor: palette.accentSoft }]}><View style={[styles.previewDot, { backgroundColor: palette.accent }]} /><View style={{ width: 22, height: 3, borderRadius: 2, backgroundColor: palette.accent, opacity: 0.45 }} /><View style={[styles.previewDot, { backgroundColor: palette.accent }]} /></View>
     </View>
-    <View style={[styles.previewRail, { backgroundColor: palette.accentSoft }]}>
-      <View style={[styles.previewDot, { backgroundColor: palette.accent }]} />
-      <View style={[styles.previewDot, { backgroundColor: palette.muted, opacity: 0.5 }]} />
-      <View style={[styles.previewDot, { backgroundColor: palette.muted, opacity: 0.5 }]} />
-    </View>
-    {split && <View style={[styles.systemHalf, { backgroundColor: readerThemes.dark.paper }]}>
-      <ReaderIcon name="moon" size={24} color={readerThemes.dark.ornament} />
-    </View>}
   </View>;
 }
 
 export function ReaderThemePicker({ appearance, onChange, palette }: Props) {
   const [width, setWidth] = useState(0);
-  const columns = width >= 600 ? 4 : width >= 420 ? 3 : width >= 240 ? 2 : 1;
-  const cardWidth = width ? Math.floor((width - (columns - 1) * 10) / columns) : undefined;
-  return <View style={[styles.panel, { borderColor: palette.border }]}>
-    <SectionHeading title="مظهر التطبيق" description="اختر ألوانك. تُطبّق على التطبيق والمصحف مباشرةً." icon="sun" palette={palette} />
-    <View accessibilityRole="radiogroup" accessibilityLabel="مظهر التطبيق" style={styles.grid}
-      onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
-      {readerThemeOptions.map((option) => {
-        const selected = appearance === option.id;
-        const sample = option.id === 'system' ? readerThemes.light : readerThemes[option.id];
-        return <Pressable key={option.id} accessibilityRole="radio" accessibilityLabel={option.label}
-          accessibilityState={{ checked: selected }} aria-checked={selected} accessibilityHint="يُطبّق على التطبيق والمصحف ويُحفظ تلقائيًا"
-          onPress={() => onChange(option.id)}
-          style={({ pressed }) => [styles.card, { width: cardWidth, borderColor: selected ? palette.accent : palette.border,
-            backgroundColor: selected ? palette.accentSoft : palette.paper, opacity: pressed ? 0.75 : 1 }]}>
-          <ThemePreview palette={sample} split={option.id === 'system'} />
-          {selected && <View style={[styles.check, { backgroundColor: palette.accent }]}>
-            <ReaderIcon name="check" color={palette.paper} size={13} />
-          </View>}
-          <View style={styles.labelRow}>
-            <ReaderIcon name={option.id === 'system' ? 'system' : option.dark ? 'moon' : 'sun'} size={14} color={selected ? palette.accent : palette.muted} />
-            <Text style={[styles.label, { color: selected ? palette.accent : palette.text }]}>{option.label}</Text>
-          </View>
-        </Pressable>;
-      })}
+  const columns = width >= 560 ? 3 : 2;
+  const cardWidth = width ? Math.floor((width - (columns - 1) * 12) / columns) : undefined;
+  const selectedLabel = readerThemeOptions.find(option => option.id === appearance)?.label;
+  return <View accessibilityRole="radiogroup" accessibilityLabel="مظهر التطبيق" style={styles.panel}>
+    <View style={styles.current}>
+      <View style={[styles.currentDot, { backgroundColor: palette.accent }]} />
+      <Text style={{ color: palette.muted, fontSize: 12 }}>المظهر الحالي: <Text style={{ color: palette.text, fontWeight: '600' }}>{selectedLabel}</Text></Text>
+    </View>
+    <Pressable accessibilityRole="radio" accessibilityLabel="حسب الجهاز" accessibilityState={{ checked: appearance === 'system' }} aria-checked={appearance === 'system'}
+      onPress={() => onChange('system')} style={({ pressed }) => [styles.system, { backgroundColor: palette.paper, borderColor: appearance === 'system' ? palette.accent : palette.border, opacity: pressed ? 0.7 : 1 }]}>
+      <View style={[styles.systemIcon, { backgroundColor: palette.accentSoft }]}><ReaderIcon name="system" color={palette.accent} size={24} /></View>
+      <View style={{ flex: 1 }}><Text style={{ color: palette.text, fontSize: 16, fontWeight: '600' }}>حسب الجهاز</Text><Text style={{ color: palette.muted, fontSize: 11 }}>يتبدّل تلقائيًا بين الفاتح والداكن.</Text></View>
+      <SettingsSelection selected={appearance === 'system'} palette={palette} />
+    </Pressable>
+    <View style={{ gap: 22 }} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
+      {[false, true].map(dark => <View key={String(dark)} style={{ gap: 12 }}>
+        <View style={styles.groupHeading}><ReaderIcon name={dark ? 'moon' : 'sun'} color={palette.muted} size={17} /><Text accessibilityRole="header" style={{ color: palette.text, fontSize: 16, fontWeight: '600' }}>{dark ? 'درجات داكنة' : 'درجات فاتحة'}</Text><View style={[styles.groupRule, { backgroundColor: palette.border }]} /></View>
+        <View style={styles.grid}>{readerThemeOptions.filter(option => option.id !== 'system' && option.dark === dark).map(option => {
+          if (option.id === 'system') return null;
+          const selected = appearance === option.id;
+          const sample = readerThemes[option.id];
+          return <Pressable key={option.id} accessibilityRole="radio" accessibilityLabel={option.label}
+            accessibilityState={{ checked: selected }} aria-checked={selected} accessibilityHint="يُطبّق على التطبيق والمصحف ويُحفظ تلقائيًا"
+            onPress={() => onChange(option.id)}
+            style={({ pressed }) => [styles.card, { width: cardWidth, borderColor: selected ? palette.accent : palette.border,
+              backgroundColor: selected ? palette.accentSoft : palette.paper, opacity: pressed ? 0.7 : 1 }]}>
+            <ThemePreview palette={sample} />
+            <View style={styles.labelRow}><Text style={[styles.label, { color: selected ? palette.accent : palette.text }]}>{option.label}</Text><SettingsSelection selected={selected} palette={palette} /></View>
+          </Pressable>;
+        })}</View>
+      </View>)}
     </View>
   </View>;
 }
 
 const styles = StyleSheet.create({
-  panel: { paddingTop: 20, gap: 16, borderTopWidth: 1 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  card: { padding: 6, borderWidth: 1, borderRadius: readerShape.card, gap: 6 },
-  preview: { height: 82, borderRadius: readerShape.detail, borderWidth: 1, padding: 8, flexDirection: 'row', gap: 6, overflow: 'hidden' },
-  previewPage: { flex: 1, padding: 6, borderRadius: 2, alignItems: 'center', justifyContent: 'center', gap: 6 },
-  previewTitle: { width: '56%', height: 5, borderRadius: 2 },
-  previewLine: { width: '100%', height: 3, borderRadius: 2, opacity: 0.5 },
-  previewSelection: { width: '100%', height: 16, borderRadius: 2, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-  previewRail: { width: '18%', borderRadius: 2, alignItems: 'center', paddingTop: 9, gap: 9 },
-  previewDot: { width: 5, height: 5, borderRadius: 3 },
-  systemHalf: { position: 'absolute', top: 0, right: 0, bottom: 0, width: '50%', alignItems: 'center', justifyContent: 'center' },
-  check: { position: 'absolute', top: 11, left: 11, width: 21, height: 21, borderRadius: readerShape.detail, alignItems: 'center', justifyContent: 'center' },
-  labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, minHeight: 28 },
-  label: { fontSize: 12, lineHeight: 21, fontWeight: '600', textAlign: 'center', flexShrink: 1 },
+  panel: { gap: 20 }, current: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 4 },
+  currentDot: { width: 6, height: 6, borderRadius: 3 },
+  system: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderWidth: 1, borderRadius: 18 },
+  systemIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  groupHeading: { flexDirection: 'row', alignItems: 'center', gap: 8 }, groupRule: { height: StyleSheet.hairlineWidth, flex: 1, marginStart: 4 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  card: { padding: 7, borderWidth: 1.5, borderRadius: 17, gap: 6 },
+  preview: { height: 108, borderRadius: 10, padding: 10, overflow: 'hidden' },
+  previewPage: { flex: 1, padding: 9, borderRadius: 5, borderWidth: 1, gap: 6, overflow: 'hidden' },
+  ornamentRow: { flexDirection: 'row', alignSelf: 'center', alignItems: 'center', gap: 7, marginBottom: 3 },
+  rule: { width: 14, height: 1, opacity: 0.5 }, ornament: { width: 8, height: 8, borderWidth: 1, transform: [{ rotate: '45deg' }] },
+  previewLine: { flex: 1, height: 2, borderRadius: 2, opacity: 0.48 },
+  previewToolbar: { height: 12, position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  previewDot: { width: 3, height: 3, borderRadius: 2 },
+  labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6, minHeight: 38, paddingHorizontal: 4, paddingVertical: 3 },
+  label: { flex: 1, fontSize: 12, fontWeight: '600' },
 });

@@ -15,11 +15,12 @@ interface Props {
   palette: ReaderPalette;
   content?: ReaderContent;
   currentPage: number;
+  limited?: boolean;
   onJump: (page: number, ayah?: AyahReference) => void;
 
 }
 
-export function ReaderDrawer({ onClose, palette, content, currentPage, onJump }: Props) {
+export function ReaderDrawer({ onClose, palette, content, currentPage, onJump, limited }: Props) {
   const [translation] = useState(() => new Animated.Value(500));
   const show = () => {
     translation.setValue(500);
@@ -37,13 +38,13 @@ export function ReaderDrawer({ onClose, palette, content, currentPage, onJump }:
           <View style={styles.heading}>
             <View style={styles.title}>
               <View style={{ gap: 4 }}>
-                <Text accessibilityRole="header" style={{ color: palette.text, fontSize: 23, fontWeight: '700' }}>انتقال سريع</Text>
+                <Text accessibilityRole="header" style={{ color: palette.text, fontSize: 23, fontWeight: '700' }}>{limited ? 'انتقال داخل الورد' : 'انتقال سريع'}</Text>
                 <Text style={{ color: palette.muted, fontSize: 12 }}>{content?.quran.riwayah.name} · صفحة {currentPage}</Text>
               </View>
             </View>
             <Pressable accessibilityRole="button" accessibilityLabel="إغلاق القائمة" onPress={onClose} style={[styles.close, { backgroundColor: palette.background }]}><ReaderIcon name="close" color={palette.muted} /></Pressable>
           </View>
-          {content && <View style={[styles.jump, { backgroundColor: palette.background }]}><ReaderJump key={currentPage} content={content} currentPage={currentPage} palette={palette} onJump={onJump} /></View>}
+          {content && <View style={[styles.jump, { backgroundColor: palette.background }]}><ReaderJump key={currentPage} content={content} currentPage={currentPage} palette={palette} onJump={onJump} limited={limited} /></View>}
           <ReaderButton palette={palette} onPress={onClose}>متابعة القراءة</ReaderButton>
           </ScrollView>
         </Animated.View>

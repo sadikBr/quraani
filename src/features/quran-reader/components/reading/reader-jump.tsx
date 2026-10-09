@@ -9,23 +9,25 @@ import { ayahDestination, parseReaderNumber } from '../../utils/navigation';
 import { ReaderButton } from './reader-button';
 import { Segments } from '../ui/reader-chrome';
 
-export function ReaderJump({ content, currentPage, palette, onJump }: {
-  content: ReaderContent; currentPage: number; palette: ReaderPalette; onJump: (page: number, ayah?: AyahReference) => void;
+export function ReaderJump({ content, currentPage, palette, onJump, limited = false }: {
+  content: ReaderContent; currentPage: number; palette: ReaderPalette; onJump: (page: number, ayah?: AyahReference) => void; limited?: boolean;
 }) {
   const [kind, setKind] = useState<'page' | 'ayah'>('page');
   const [page, setPage] = useState(String(currentPage));
   const [surah, setSurah] = useState('1');
   const [ayah, setAyah] = useState('1');
   const [error, setError] = useState('');
+  const firstPage = content.pages[0].number;
+  const lastPage = content.pages.at(-1)!.number;
   const selectedSurah = content.quran.surahs.find((value) => value.number === parseReaderNumber(surah));
   const submit = () => {
     if (kind === 'page') {
       const number = parseReaderNumber(page);
-      if (!content.pages.some((value) => value.number === number)) { setError(`أدخل رقم صفحة بين 1 و${content.pages.length}.`); return; }
+      if (!content.pages.some((value) => value.number === number)) { setError(`اختر صفحة بين ${firstPage} و${lastPage}.`); return; }
       onJump(number);
     } else {
       const target = ayahDestination(content, parseReaderNumber(surah), parseReaderNumber(ayah));
-      if (!target) { setError('تحقق من رقم السورة والآية في الرواية المختارة.'); return; }
+      if (!target) { setError(limited ? 'اختر آية ضمن الورد المحدد.' : 'تحقق من رقم السورة والآية في الرواية المختارة.'); return; }
       onJump(target.pageNumber, target);
     }
   };
@@ -38,9 +40,9 @@ export function ReaderJump({ content, currentPage, palette, onJump }: {
   return <View style={styles.form}>
     <Text accessibilityRole="header" style={{ color: palette.text, fontSize: 16, fontWeight: '600' }}>إلى أين تحب أن تنتقل؟</Text>
     <Segments palette={palette} options={[{ value: 'page', label: 'صفحة' }, { value: 'ayah', label: 'آية' }]} value={kind} onChange={(value) => { setKind(value); setError(''); }} />
-    {kind === 'page' ? <>{input('رقم الصفحة', page, setPage)}<Text style={{ color: palette.muted, fontSize: 12 }}>اختر صفحة من 1 إلى {content.pages.length}</Text></> : <>
+    {kind === 'page' ? <>{input('رقم الصفحة', page, setPage)}<Text style={{ color: palette.muted, fontSize: 12 }}>{limited ? 'صفحات وردك' : 'اختر صفحة'}: من {firstPage} إلى {lastPage}</Text></> : <>
       <View style={styles.row}>{input('رقم السورة', surah, setSurah)}{input('رقم الآية', ayah, setAyah)}</View>
-      <Text style={{ color: palette.muted }}>{selectedSurah ? `${selectedSurah.name} · ${selectedSurah.ayahs.length} آية` : 'رقم السورة من 1 إلى 114'}</Text>
+      <Text style={{ color: palette.muted }}>{selectedSurah ? `${selectedSurah.name} · ${limited ? `الآيات ${selectedSurah.ayahs[0].ayahNumber}–${selectedSurah.ayahs.at(-1)!.ayahNumber}` : `${selectedSurah.ayahs.length} آية`}` : limited ? 'اختر سورة ضمن الورد المحدد' : 'رقم السورة من 1 إلى 114'}</Text>
     </>}
     {!!error && <Text accessibilityRole="alert" style={{ color: palette.warning }}>{error}</Text>}
     <ReaderButton palette={palette} selected onPress={submit}>الانتقال إلى الموضع</ReaderButton>

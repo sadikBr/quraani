@@ -1,5 +1,5 @@
 import { readerShape } from '../../design';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Link } from 'expo-router';
 import type { ReaderPalette } from '../../theme';
@@ -30,11 +30,13 @@ interface Props {
   onRevealWord: () => void;
   onRevealAyah: () => void;
   onDismiss: () => void;
+  planControls?: ReactNode;
+  pageLabel?: string;
 }
 
 /** Both edges use the same animation, over a reading surface that never resizes. */
 export function ReaderControls({ page, totalPages, previous, next, surahName, palette, visible, progress,
-  topInset, toolbarHeight, onToolbarHeight, bottomInset, practiceActive, practiceComplete, onNavigate, onJump, onMenu, onPractice, onRevealWord, onRevealAyah, onDismiss }: Props) {
+  topInset, toolbarHeight, onToolbarHeight, bottomInset, practiceActive, practiceComplete, onNavigate, onJump, onMenu, onPractice, onRevealWord, onRevealAyah, onDismiss, planControls, pageLabel }: Props) {
   const [bottomHeight, setBottomHeight] = useState(60 + bottomInset);
   const hiddenProps = {
     accessibilityElementsHidden: !visible,
@@ -76,6 +78,7 @@ export function ReaderControls({ page, totalPages, previous, next, surahName, pa
       <Animated.View accessibilityLabel="التنقل في المصحف" onLayout={(event) => setBottomHeight(event.nativeEvent.layout.height)}
         style={{ backgroundColor: palette.paper, opacity: progress, paddingBottom: bottomInset, borderTopWidth: StyleSheet.hairlineWidth,
           borderColor: palette.border, transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [bottomHeight, 0] }) }] }}>
+        {planControls && <View style={styles.content}>{planControls}</View>}
         {practiceActive && <View style={[styles.content, styles.practice]} accessibilityLabel="أدوات مراجعة الصفحة">
           {practiceButton('eye', 'إظهار الكل', 'إظهار الصفحة كاملة وإنهاء المراجعة', onPractice)}
           {practiceButton('word', 'كلمة', 'إظهار الكلمة التالية', onRevealWord, practiceComplete)}
@@ -88,9 +91,9 @@ export function ReaderControls({ page, totalPages, previous, next, surahName, pa
             </Pressable>
           </Link>
           {button('chevron', 'انتقل إلى الصفحة التالية', () => next && onNavigate(next.number), !next)}
-          <Pressable accessibilityRole="button" accessibilityLabel={`الصفحة ${page.number} من ${totalPages}، الانتقال إلى صفحة أو آية`}
+          <Pressable accessibilityRole="button" accessibilityLabel={`${pageLabel ?? `الصفحة ${page.number} من ${totalPages}`}، الانتقال إلى صفحة أو آية`}
             onPress={onJump} style={({ pressed }) => [styles.page, { opacity: pressed ? 0.5 : 1 }]}>
-            <Text style={{ color: palette.muted, fontSize: 12, lineHeight: 22, writingDirection: 'rtl' }}>صفحة {page.number}</Text>
+            <Text style={{ color: palette.muted, fontSize: 12, lineHeight: 22, writingDirection: 'rtl', textAlign: 'center' }}>{pageLabel ?? `صفحة ${page.number}`}</Text>
           </Pressable>
           {button('chevron', 'انتقل إلى الصفحة السابقة', () => previous && onNavigate(previous.number), !previous, true)}
           {practiceActive

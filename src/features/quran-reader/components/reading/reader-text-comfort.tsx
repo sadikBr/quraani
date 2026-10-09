@@ -9,9 +9,9 @@ import { useReaderContent } from '../../hooks/use-reader-content';
 import { useQuranFont } from '../../hooks/use-quran-font';
 import { useTajweed } from '../../hooks/use-tajweed';
 import { useReadingPreferences } from '../../state/reading-preferences-provider';
-import { readerShape } from '../../design';
 import { readerFontLabels, readerFontStep, readerFontSteps, readerTextLineHeight, snapReaderFontSize } from '../../utils/reader-typography';
-import { SectionHeading, Segments } from '../ui/reader-chrome';
+import { Segments } from '../ui/reader-chrome';
+import { SettingsCardHeading, settingsStyles } from './settings-ui';
 import { ReaderFontSlider } from './reader-font-slider';
 import { ReaderButton } from './reader-button';
 import { SurahOpening } from './surah-opening';
@@ -32,8 +32,8 @@ export function ReaderTextComfort({ palette, fontSize, setFontSize, spacious, se
     const size = readerFontSteps[Math.max(0, Math.min(6, Math.round(step)))];
     if (size !== fontSize) setFontSize(size);
   };
-  return <View style={[styles.panel, { borderColor: palette.border }]} onLayout={(event) => setWide(event.nativeEvent.layout.width >= 620)}>
-    <SectionHeading title="راحة النص" description="اختر الحجم والتباعد، وشاهد النتيجة مباشرةً." icon="lines" palette={palette} />
+  return <View style={[settingsStyles.card, { backgroundColor: palette.paper, borderColor: palette.border }]} onLayout={(event) => setWide(event.nativeEvent.layout.width >= 620)}>
+    <SettingsCardHeading title="راحة النص" detail="اضبط الحجم والتباعد، وشاهد الفرق مباشرةً." icon="lines" palette={palette} />
     <View style={[styles.body, wide && styles.wide]}>
       <View style={[styles.controls, wide && { flex: 1 }]}>
         <View style={styles.sizeHeading}>
@@ -100,12 +100,12 @@ function TajweedPreview({ content, ayahs, palette, dark, fontSize, spacious, tex
 }
 
 const styles = StyleSheet.create({
-  panel: { borderTopWidth: 1, paddingTop: 20, gap: 20 }, body: { gap: 24 }, wide: { flexDirection: 'row', alignItems: 'flex-start' },
+  body: { gap: 20 }, wide: { flexDirection: 'row', alignItems: 'flex-start' },
   controls: { minWidth: 0, gap: 8 }, sizeHeading: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  sizeLabel: { fontSize: 12, paddingHorizontal: 12, paddingVertical: 2, borderRadius: readerShape.detail, overflow: 'hidden', textAlign: 'center' },
+  sizeLabel: { fontSize: 12, paddingHorizontal: 12, paddingVertical: 2, borderRadius: 20, overflow: 'hidden', textAlign: 'center' },
   slider: { paddingHorizontal: 2 }, ticks: { flexDirection: 'row-reverse', ...Platform.select({ native: { direction: 'ltr' as const } }), justifyContent: 'space-between', marginHorizontal: 12, marginTop: -2 },
   tick: { width: 4, height: 4, borderRadius: 2 }, rangeLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
-  preview: { borderWidth: 1, borderRadius: readerShape.card, padding: 16, gap: 16 }, previewHeading: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
+  preview: { borderWidth: 1, borderRadius: 14, padding: 14, gap: 14 }, previewHeading: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
   live: { flexDirection: 'row', alignItems: 'center', gap: 6 }, liveDot: { width: 5, height: 5, borderRadius: 3 },
   caption: { fontSize: 10, borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 10 },
 });

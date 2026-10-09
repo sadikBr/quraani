@@ -65,6 +65,60 @@ export const readerThemes = {
     selected: '#664834', warning: '#F0B58A',
     hero: '#483023', onHero: '#FFF0DD', heroMuted: '#DFC0A4', goldSoft: '#4A3827',
   },
+  porcelain: {
+    background: '#EDF3F9', paper: '#F8FCFF', text: '#253F59', muted: '#5B7086',
+    accent: '#38638F', accentSoft: '#DFEAF5', border: '#C5D6E8', ornament: '#7F683D',
+    selected: '#CEDFF0', warning: '#9A4F2F',
+    hero: '#294B70', onHero: '#F4F9FF', heroMuted: '#C1D7EB', goldSoft: '#EDE9DC',
+  },
+  apricot: {
+    background: '#F9EEE5', paper: '#FFF9F2', text: '#533B2E', muted: '#806655',
+    accent: '#995136', accentSoft: '#F5E1D2', border: '#E8CCB7', ornament: '#98602E',
+    selected: '#EDD0BB', warning: '#995025',
+    hero: '#6B3D2C', onHero: '#FFF5E6', heroMuted: '#EACBB4', goldSoft: '#F5E6CB',
+  },
+  silver: {
+    background: '#121418', paper: '#1D2026', text: '#ECEDEF', muted: '#ADB2BD',
+    accent: '#CFD5E3', accentSoft: '#343A45', border: '#414854', ornament: '#BBC9DA',
+    selected: '#475160', warning: '#F0BD95',
+    hero: '#2A3039', onHero: '#F3F6FA', heroMuted: '#BFC8D6', goldSoft: '#363B43',
+  },
+  garnet: {
+    background: '#28151F', paper: '#391F2D', text: '#FBEAF1', muted: '#D1AFBF',
+    accent: '#F1B4BA', accentSoft: '#573145', border: '#73485D', ornament: '#E7C796',
+    selected: '#704159', warning: '#F6B79C',
+    hero: '#4C283C', onHero: '#FFF1EB', heroMuted: '#E4BFCE', goldSoft: '#533A3B',
+  },
+  pearl: {
+    background: '#0D242B', paper: '#14343D', text: '#E5F3F3', muted: '#A1C2C9',
+    accent: '#84DADB', accentSoft: '#244A54', border: '#3C5D68', ornament: '#E0CEA4',
+    selected: '#345F6C', warning: '#F1BE95',
+    hero: '#1B434F', onHero: '#F2FBF7', heroMuted: '#B3D6D8', goldSoft: '#364B49',
+  },
+  manuscript: {
+    background: '#F3F0E7', paper: '#FFFCF3', text: '#303449', muted: '#68697C',
+    accent: '#55548A', accentSoft: '#E9E5EF', border: '#D8D2D9', ornament: '#85682F',
+    selected: '#DCD8E8', warning: '#97502D',
+    hero: '#333754', onHero: '#FFFAE9', heroMuted: '#D1CCDE', goldSoft: '#EFE4C9',
+  },
+  marble: {
+    background: '#F2F2F0', paper: '#FCFCF9', text: '#344447', muted: '#5D6D70',
+    accent: '#A34D49', accentSoft: '#F2E3DF', border: '#D9DDDA', ornament: '#9B6452',
+    selected: '#E9CCC5', warning: '#9C4D28',
+    hero: '#425658', onHero: '#FFF7EE', heroMuted: '#D0DCDA', goldSoft: '#F0E5D8',
+  },
+  amber: {
+    background: '#141512', paper: '#23251D', text: '#F4F0DE', muted: '#BBBCA5',
+    accent: '#E4CD86', accentSoft: '#3E412D', border: '#54573D', ornament: '#E4CD86',
+    selected: '#55583B', warning: '#F0B68C',
+    hero: '#323524', onHero: '#FFFAE5', heroMuted: '#D5D6B6', goldSoft: '#41432D',
+  },
+  andalus: {
+    background: '#0F1D28', paper: '#172B3A', text: '#EDF1F1', muted: '#A6BCC9',
+    accent: '#F1B297', accentSoft: '#443B3B', border: '#405466', ornament: '#E6BE85',
+    selected: '#5A4843', warning: '#F3BD8D',
+    hero: '#263E50', onHero: '#FFF5EA', heroMuted: '#CAD8DB', goldSoft: '#3F3D35',
+  },
 } as const;
 
 export type ReaderPalette = { [K in keyof typeof readerThemes.light]: string };
@@ -84,6 +138,15 @@ export const readerThemeOptions = [
   { id: 'sea', label: 'زجاج البحر', dark: false },
   { id: 'lavender', label: 'فجر الوستيريا', dark: false },
   { id: 'copper', label: 'ليل النحاس', dark: true },
+  { id: 'porcelain', label: 'خزف سماوي', dark: false },
+  { id: 'apricot', label: 'مشمش وعاج', dark: false },
+  { id: 'silver', label: 'حبر وفضة', dark: true },
+  { id: 'garnet', label: 'مخمل الرمان', dark: true },
+  { id: 'pearl', label: 'لؤلؤ الأعماق', dark: true },
+  { id: 'manuscript', label: 'رقّ ونيلي', dark: false },
+  { id: 'marble', label: 'رخام ومرجان', dark: false },
+  { id: 'amber', label: 'زيتون وعنبر', dark: true },
+  { id: 'andalus', label: 'زليج أندلسي', dark: true },
 ] as const satisfies readonly { id: ReaderAppearance; label: string; dark: boolean }[];
 
 export function isReaderAppearance(value: unknown): value is ReaderAppearance {
