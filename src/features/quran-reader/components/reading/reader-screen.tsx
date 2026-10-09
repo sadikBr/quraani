@@ -18,6 +18,7 @@ import { QuranPage } from './quran-page';
 import { PrintedQuranPage } from './printed-quran-page';
 import { ReaderButton } from './reader-button';
 import { ReaderDrawer } from './reader-drawer';
+import { ReaderMenu } from './reader-menu';
 import { useReadingPreferences } from '../../state/reading-preferences-provider';
 import { Stack, router, useIsFocused, useLocalSearchParams } from 'expo-router';
 import { indexRouteDestination } from '../../utils/reader-index';
@@ -48,6 +49,7 @@ function RiwayahReaderScreen() {
   const font = useQuranFont();
   const { preferences: { mode, textLayout, fontSize, spacious, tajweed, riwayah }, palette, dark } = useReadingPreferences();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [actionsVisible, setActionsVisible] = useState(false);
   const [controlsProgress] = useState(() => new Animated.Value(0));
   const [actionAyah, setActionAyah] = useState<Ayah | null>(null);
@@ -76,8 +78,8 @@ function RiwayahReaderScreen() {
   }, []);
   useEffect(() => {
     const animation = Animated.timing(controlsProgress, {
-      toValue: actionsVisible ? 1 : 0, duration: reduceMotion ? 0 : 220,
-      easing: Easing.out(Easing.cubic), useNativeDriver: Platform.OS !== 'web',
+      toValue: actionsVisible ? 1 : 0, duration: reduceMotion ? 0 : 320,
+      easing: Easing.inOut(Easing.cubic), useNativeDriver: Platform.OS !== 'web',
     });
     animation.start();
     return () => animation.stop();
@@ -113,7 +115,8 @@ function RiwayahReaderScreen() {
     scroll.current?.scrollTo({ y: practiceScrollY.current, animated: !reduceMotion });
   }, [practiceTargetKey, reduceMotion, mode, toolbarHeight]);
   const totalPages = content?.data.pages.length ?? 604;
-  const immersive = ready && !actionsVisible && !drawerOpen && !actionAyah;
+  const overlayOpen = drawerOpen || menuOpen || !!actionAyah;
+  const immersive = ready && !actionsVisible && !overlayOpen;
 
   const navigate = useCallback((number: number, ayah?: AyahReference) => {
     if (!ready || !content?.data.pages.some((value) => value.number === number)) return;
@@ -222,15 +225,15 @@ function RiwayahReaderScreen() {
   // PanResponder stores these callbacks; it does not invoke them during render.
   // eslint-disable-next-line react-hooks/refs
   const swipe = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponderCapture: () => ready && !drawerOpen && !actionAyah && swipeDestination.current !== null,
-    onMoveShouldSetPanResponderCapture: (_, gesture) => ready && !drawerOpen && !actionAyah && gesture.numberActiveTouches === 1 &&
+    onStartShouldSetPanResponderCapture: () => ready && !overlayOpen && swipeDestination.current !== null,
+    onMoveShouldSetPanResponderCapture: (_, gesture) => ready && !overlayOpen && gesture.numberActiveTouches === 1 &&
       Math.abs(gesture.dx) > 12 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5,
     onPanResponderGrant: swipeGrant,
     onPanResponderMove: swipeMove,
     onPanResponderRelease: swipeRelease,
     onPanResponderTerminate: settleSwipe,
     onPanResponderTerminationRequest: () => true,
-  }), [ready, drawerOpen, actionAyah, swipeGrant, swipeMove, swipeRelease, settleSwipe]);
+  }), [ready, overlayOpen, swipeGrant, swipeMove, swipeRelease, settleSwipe]);
   useEffect(() => {
     if (!ready || !content || mode !== 'page') return;
     if (tajweed && riwayah === 'hafs') {
@@ -260,7 +263,7 @@ function RiwayahReaderScreen() {
       <Stack.Screen options={{ navigationBarHidden: immersive, autoHideHomeIndicator: true }} />
       {focused && <StatusBar style={dark ? 'light' : 'dark'} hidden={immersive} animated={!reduceMotion}
         hideTransitionAnimation={reduceMotion ? 'none' : 'slide'} />}
-      <View style={styles.pager} accessibilityElementsHidden={!!actionAyah || drawerOpen} importantForAccessibility={actionAyah || drawerOpen ? 'no-hide-descendants' : 'auto'} {...(Platform.OS === 'web' ? { 'aria-hidden': !!actionAyah || drawerOpen } : {})}
+      <View style={styles.pager} accessibilityElementsHidden={overlayOpen} importantForAccessibility={overlayOpen ? 'no-hide-descendants' : 'auto'} {...(Platform.OS === 'web' ? { 'aria-hidden': overlayOpen } : {})}
         onLayout={(event) => { swipeWidth.current = event.nativeEvent.layout.width; setPageWidth(event.nativeEvent.layout.width); }} {...swipe.panHandlers}>
       {(page && content && font.loaded ? [-1, 0, 1] : [0]).map((offset) => {
         const displayNumber = pageNumber + offset;
@@ -331,7 +334,7 @@ function RiwayahReaderScreen() {
         topInset={topInset} toolbarHeight={toolbarHeight} onToolbarHeight={setToolbarHeight}
         bottomInset={bottomInset} practiceActive={practicing}
         practiceComplete={!!practicePlan && !!practice && practice.revealed >= practicePlan.totalWords}
-        onNavigate={navigate} onJump={() => setDrawerOpen(true)} onPractice={togglePractice}
+        onNavigate={navigate} onJump={() => setDrawerOpen(true)} onMenu={() => setMenuOpen(true)} onPractice={togglePractice}
         onRevealWord={() => reveal('word')} onRevealAyah={() => reveal('ayah')}
         onDismiss={() => setActionsVisible(false)} />}
       </Animated.View>;
@@ -339,6 +342,7 @@ function RiwayahReaderScreen() {
       </View>
       {actionAyah && content && <AyahActionSheet key={ayahKey(actionAyah)} ayah={actionAyah} quran={content.data.quran} palette={palette} onClose={() => setActionAyah(null)} />}
       {drawerOpen && <ReaderDrawer content={content?.data} currentPage={pageNumber} onJump={navigate} onClose={() => setDrawerOpen(false)} palette={palette} />}
+      {menuOpen && <ReaderMenu onClose={() => setMenuOpen(false)} palette={palette} />}
     </SafeAreaView>
   );
 }

@@ -5,9 +5,9 @@ import type { ReaderPalette } from '../../theme';
 import { readerShape } from '../../design';
 import { QuranniLogo } from './quranni-logo';
 
-export type ReaderIconName = 'back' | 'search' | 'book' | 'settings' | 'jump' | 'close' | 'sun' | 'moon' | 'system' | 'lines' | 'check' | 'chevron' | 'bookmark' | 'eye' | 'eye-off' | 'word' | 'copy' | 'share' | 'translate';
-export function ReaderIcon({ name, color, size = 22 }: { name: ReaderIconName; color: string; size?: number }) {
-  return <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden><Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.65} strokeLinecap="round" strokeLinejoin="round">
+export type ReaderIconName = 'back' | 'search' | 'book' | 'settings' | 'menu' | 'index' | 'jump' | 'close' | 'sun' | 'moon' | 'system' | 'lines' | 'check' | 'chevron' | 'bookmark' | 'eye' | 'eye-off' | 'word' | 'copy' | 'share' | 'translate';
+export function ReaderIcon({ name, color, size = 22, strokeWidth = 1.65 }: { name: ReaderIconName; color: string; size?: number; strokeWidth?: number }) {
+  return <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden><Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
     {name === 'back' && <Path d="m9 5 7 7-7 7M16 12H4" />}
     {name === 'chevron' && <Path d="m14 6-6 6 6 6" />}
     {name === 'check' && <Path d="m5 12 4 4L19 6" />}
@@ -22,7 +22,9 @@ export function ReaderIcon({ name, color, size = 22 }: { name: ReaderIconName; c
     {name === 'word' && <Path d="M4 8h16M12 13h8M16 18h4m-11-4-4 4 4 4" />}
     {name === 'eye' && <><Path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><Circle cx="12" cy="12" r="3" /></>}
     {name === 'eye-off' && <><Path d="m3 3 18 18M10 5.2c.7-.1 1.3-.2 2-.2 6.5 0 10 7 10 7a20 20 0 0 1-3.2 4.2M6.2 6.2A23 23 0 0 0 2 12s3.5 7 10 7c1.9 0 3.6-.6 5.1-1.4M9.9 9.9a3 3 0 0 0 4.2 4.2" /></>}
-    {name === 'settings' && <><Path d="M4 6h16M4 12h16M4 18h16" /><Circle cx="8" cy="6" r="2" /><Circle cx="16" cy="12" r="2" /><Circle cx="9" cy="18" r="2" /></>}
+    {name === 'settings' && <><Path d="m9.5 3-.6 2.2-1.5.9-2.2-.6-2.5 4.3 1.6 1.6v1.8l-1.6 1.6 2.5 4.3 2.2-.6 1.5.9.6 2.2h5l.6-2.2 1.5-.9 2.2.6 2.5-4.3-1.6-1.6v-1.8l1.6-1.6-2.5-4.3-2.2.6-1.5-.9-.6-2.2h-5Z" /><Circle cx="12" cy="12" r="3" /></>}
+    {name === 'menu' && <Path d="M4 6h16M4 12h16M4 18h16" />}
+    {name === 'index' && <><Path d="M4 6h10M4 12h10M4 18h10" /><Circle cx="19" cy="6" r="1" /><Circle cx="19" cy="12" r="1" /><Circle cx="19" cy="18" r="1" /></>}
     {name === 'jump' && <Path d="M5 5h14v14H5zM8 12h8m-3-3 3 3-3 3" />}
     {name === 'sun' && <><Circle cx="12" cy="12" r="4" /><Path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" /></>}
     {name === 'moon' && <Path d="M20 14A8 8 0 0 1 10 4a8 8 0 1 0 10 10Z" />}

@@ -1,5 +1,5 @@
 import { readerShape } from '../../design';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Link } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { calligraphyStyle, surahNameGlyph } from '../../utils/reader-typography';
@@ -13,9 +13,10 @@ interface Props {
   page: QuranPage;
   surahName: string;
   palette: ReaderPalette;
+  onMenu: () => void;
 }
 
-export function ReaderQuickActions({ page, surahName, palette }: Props) {
+export function ReaderQuickActions({ page, surahName, palette, onMenu }: Props) {
   const font = useQuranFont();
   const surahNumber = page.ayahs[0]?.surahNumber;
   const calligraphy = font.loaded && !!surahNumber;
@@ -26,13 +27,14 @@ export function ReaderQuickActions({ page, surahName, palette }: Props) {
     <Link href={href} asChild style={styles.iconLink}>
       <Pressable accessibilityRole="link" accessibilityLabel={label}>
         {({ pressed }) => <View style={[styles.icon, { backgroundColor: pressed ? palette.accentSoft : 'transparent' }]}>
-          <ReaderIcon name={icon} color={palette.text} size={20} />
+          <ReaderIcon name={icon} color={palette.text} size={32} strokeWidth={2.1} />
         </View>}
       </Pressable>
     </Link>
   );
-  return <View accessibilityLabel="أدوات القراءة" style={styles.toolbar}>
+  return <View accessibilityLabel="أدوات القراءة" style={styles.toolbar} {...(Platform.OS === 'web' ? { dir: 'ltr' } : {})}>
     {iconLink('/settings', 'settings', 'إعدادات القراءة')}
+    {iconLink('/search', 'search', 'البحث في القرآن')}
     <Link href="/quran-index" asChild style={styles.location}>
       <Pressable accessibilityRole="link" accessibilityLabel={`${surahName}، ${location}، فتح الفهرس`}>
         {({ pressed }) => <View style={[styles.locationContent, {
@@ -49,12 +51,16 @@ export function ReaderQuickActions({ page, surahName, palette }: Props) {
         </View>}
       </Pressable>
     </Link>
-    {iconLink('/search', 'search', 'البحث في القرآن')}
+    <Pressable accessibilityRole="button" accessibilityLabel="فتح قائمة التطبيق" onPress={onMenu}
+      style={({ pressed }) => [styles.icon, { backgroundColor: pressed ? palette.accentSoft : 'transparent' }]}>
+      <ReaderIcon name="menu" color={palette.text} size={32} strokeWidth={2.1} />
+    </Pressable>
   </View>;
 }
 
 const styles = StyleSheet.create({
-  toolbar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, gap: 6 },
+  toolbar: { ...Platform.select({ native: { direction: 'ltr' as const } }), flexDirection: 'row', alignItems: 'center',
+    width: '100%', maxWidth: 420, alignSelf: 'center', paddingHorizontal: 4, paddingVertical: 4, gap: 4 },
   iconLink: { width: 44, minHeight: 44, justifyContent: 'center' },
   icon: { width: 44, height: 44, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
   location: { flex: 1, minWidth: 0, minHeight: 44, justifyContent: 'center' },
@@ -63,5 +69,5 @@ const styles = StyleSheet.create({
   locationText: { flex: 1, minWidth: 0, alignItems: 'center' },
   surah: { fontSize: 13, lineHeight: 21, fontWeight: '600' },
   surahCalligraphy: { ...calligraphyStyle(28), lineHeight: 28 },
-  divisions: { fontSize: 10, lineHeight: 17 },
+  divisions: { fontSize: 10, lineHeight: 17, writingDirection: 'rtl' },
 });

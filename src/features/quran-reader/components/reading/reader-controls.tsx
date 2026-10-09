@@ -25,6 +25,7 @@ interface Props {
   practiceComplete: boolean;
   onNavigate: (page: number) => void;
   onJump: () => void;
+  onMenu: () => void;
   onPractice: () => void;
   onRevealWord: () => void;
   onRevealAyah: () => void;
@@ -33,7 +34,7 @@ interface Props {
 
 /** Both edges use the same animation, over a reading surface that never resizes. */
 export function ReaderControls({ page, totalPages, previous, next, surahName, palette, visible, progress,
-  topInset, toolbarHeight, onToolbarHeight, bottomInset, practiceActive, practiceComplete, onNavigate, onJump, onPractice, onRevealWord, onRevealAyah, onDismiss }: Props) {
+  topInset, toolbarHeight, onToolbarHeight, bottomInset, practiceActive, practiceComplete, onNavigate, onJump, onMenu, onPractice, onRevealWord, onRevealAyah, onDismiss }: Props) {
   const [bottomHeight, setBottomHeight] = useState(60 + bottomInset);
   const hiddenProps = {
     accessibilityElementsHidden: !visible,
@@ -66,7 +67,7 @@ export function ReaderControls({ page, totalPages, previous, next, surahName, pa
           onLayout={(event) => onToolbarHeight(event.nativeEvent.layout.height)}
           style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderColor: palette.border }}>
           <View style={styles.content}>
-            <ReaderQuickActions page={page} surahName={surahName} palette={palette} />
+            <ReaderQuickActions page={page} surahName={surahName} palette={palette} onMenu={onMenu} />
           </View>
         </View>
       </Animated.View>
