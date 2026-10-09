@@ -1,3 +1,4 @@
+import { readerShape } from '../../design';
 import { useState } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Link } from 'expo-router';
@@ -5,9 +6,11 @@ import type { ReaderPalette } from '../../theme';
 import type { QuranPage } from '../../types/reader';
 import { ReaderIcon, type ReaderIconName } from '../ui/reader-chrome';
 import { ReaderQuickActions } from './reader-quick-actions';
+import { ArabicText as Text } from '@/components/arabic-text';
 
 interface Props {
   page: QuranPage;
+  totalPages: number;
   previous?: QuranPage;
   next?: QuranPage;
   surahName: string;
@@ -19,14 +22,18 @@ interface Props {
   onToolbarHeight: (height: number) => void;
   bottomInset: number;
   practiceActive: boolean;
+  practiceComplete: boolean;
   onNavigate: (page: number) => void;
+  onJump: () => void;
   onPractice: () => void;
+  onRevealWord: () => void;
+  onRevealAyah: () => void;
   onDismiss: () => void;
 }
 
 /** Both edges use the same animation, over a reading surface that never resizes. */
-export function ReaderControls({ page, previous, next, surahName, palette, visible, progress,
-  topOffset, toolbarHeight, onToolbarHeight, bottomInset, practiceActive, onNavigate, onPractice, onDismiss }: Props) {
+export function ReaderControls({ page, totalPages, previous, next, surahName, palette, visible, progress,
+  topOffset, toolbarHeight, onToolbarHeight, bottomInset, practiceActive, practiceComplete, onNavigate, onJump, onPractice, onRevealWord, onRevealAyah, onDismiss }: Props) {
   const [bottomHeight, setBottomHeight] = useState(60 + bottomInset);
   const hiddenProps = {
     accessibilityElementsHidden: !visible,
@@ -42,9 +49,18 @@ export function ReaderControls({ page, previous, next, surahName, palette, visib
       </View>
     </Pressable>
   );
+  const practiceButton = (icon: ReaderIconName, text: string, label: string, onPress: () => void, disabled = false) => (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress}
+      style={({ pressed }) => [styles.practiceButton, { opacity: disabled ? 0.3 : pressed ? 0.55 : 1,
+        backgroundColor: icon === 'eye' || pressed ? palette.accentSoft : 'transparent' }]}>
+      <ReaderIcon name={icon} color={palette.accent} size={19} />
+      <Text style={{ fontSize: 13, color: palette.text }}>{text}</Text>
+    </Pressable>
+  );
   return <>
     <View pointerEvents="box-none" style={[styles.edge, { top: topOffset }]}>
-      <Animated.View style={{ backgroundColor: palette.paper,
+      {/* Also fade the surface so a fractional-pixel border cannot remain at the clipped edge. */}
+      <Animated.View style={{ backgroundColor: palette.paper, opacity: progress,
         transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [-toolbarHeight, 0] }) }] }}>
         <View {...hiddenProps} pointerEvents={visible ? 'auto' : 'none'}
           onLayout={(event) => onToolbarHeight(event.nativeEvent.layout.height)}
@@ -57,8 +73,13 @@ export function ReaderControls({ page, previous, next, surahName, palette, visib
     </View>
     <View {...hiddenProps} pointerEvents={visible ? 'box-none' : 'none'} style={[styles.edge, styles.bottom]}>
       <Animated.View accessibilityLabel="التنقل في المصحف" onLayout={(event) => setBottomHeight(event.nativeEvent.layout.height)}
-        style={{ backgroundColor: palette.paper, paddingBottom: bottomInset, borderTopWidth: StyleSheet.hairlineWidth,
+        style={{ backgroundColor: palette.paper, opacity: progress, paddingBottom: bottomInset, borderTopWidth: StyleSheet.hairlineWidth,
           borderColor: palette.border, transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [bottomHeight, 0] }) }] }}>
+        {practiceActive && <View style={[styles.content, styles.practice]} accessibilityLabel="أدوات مراجعة الصفحة">
+          {practiceButton('eye', 'إظهار الكل', 'إظهار الصفحة كاملة وإنهاء المراجعة', onPractice)}
+          {practiceButton('word', 'كلمة', 'إظهار الكلمة التالية', onRevealWord, practiceComplete)}
+          {practiceButton('lines', 'آية', 'إظهار الآية التالية كاملة', onRevealAyah, practiceComplete)}
+        </View>}
         <View style={[styles.content, styles.navigation]} {...(Platform.OS === 'web' ? { dir: 'ltr' } : {})}>
           <Link href="/bookmarks" asChild style={styles.icon}>
             <Pressable accessibilityRole="link" accessibilityLabel="العلامات المحفوظة">
@@ -66,12 +87,14 @@ export function ReaderControls({ page, previous, next, surahName, palette, visib
             </Pressable>
           </Link>
           {button('chevron', 'انتقل إلى الصفحة التالية', () => next && onNavigate(next.number), !next)}
-          {/* The reader's persistent page number stays centered above this gap. */}
-          <View style={styles.page} />
+          <Pressable accessibilityRole="button" accessibilityLabel={`الصفحة ${page.number} من ${totalPages}، الانتقال إلى صفحة أو آية`}
+            onPress={onJump} style={({ pressed }) => [styles.page, { opacity: pressed ? 0.5 : 1 }]}>
+            <Text style={{ color: palette.muted, fontSize: 12, lineHeight: 22, writingDirection: 'rtl' }}>صفحة {page.number}</Text>
+          </Pressable>
           {button('chevron', 'انتقل إلى الصفحة السابقة', () => previous && onNavigate(previous.number), !previous, true)}
           {practiceActive
-            ? button('book', 'إدارة المقطع المخفي', onPractice)
-            : button('close', 'إخفاء أدوات القراءة', onDismiss)}
+            ? button('close', 'إخفاء أدوات القراءة', onDismiss)
+            : button('eye-off', 'إخفاء آيات الصفحة للمراجعة', onPractice)}
         </View>
       </Animated.View>
     </View>
@@ -84,6 +107,8 @@ const styles = StyleSheet.create({
   content: { width: '100%', maxWidth: 700, alignSelf: 'center' },
   navigation: { ...Platform.select({ native: { direction: 'ltr' as const } }), flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 8, paddingVertical: 4, gap: 4 },
-  icon: { width: 44, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
+  icon: { width: 44, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.control },
   page: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  practice: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 6, paddingBottom: 4 },
+  practiceButton: { flex: 1, minHeight: 44, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.control },
 });

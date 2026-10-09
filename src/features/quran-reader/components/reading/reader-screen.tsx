@@ -1,12 +1,12 @@
 import { ArabicText as Text } from '@/components/arabic-text';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, ActivityIndicator, Animated, Easing, PanResponder, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, Animated, Easing, PanResponder, Platform, ScrollView, StatusBar as NativeStatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaView, initialWindowMetrics, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useReaderContent } from '../../hooks/use-reader-content';
 import { useWarshFont } from '../../hooks/use-warsh-font';
 import { useReadingPosition } from '../../hooks/use-reading-position';
-import { deferPrintedPagePreparation, preloadPrintedPages, setPrintedPageInteraction, waitForPagePreparation } from '../../services/printed-page-service';
+import { deferPrintedPagePreparation, getCachedPrintedPage, preloadPrintedPages, setPrintedPageInteraction, waitForPagePreparation } from '../../services/printed-page-service';
 import { preloadPrintedImage } from '../../services/printed-page-render';
 import { preloadPageNumbers, swipePageDelta } from '../../utils/navigation';
 import { AyahActionSheet } from './ayah-action-sheet';
@@ -15,40 +15,39 @@ import type { Ayah, AyahReference } from '@/lib/quranpedia/types';
 import { QuranPage } from './quran-page';
 import { PrintedQuranPage } from './printed-quran-page';
 import { ReaderButton } from './reader-button';
-import { ReaderDrawer, type ReaderDrawerSection } from './reader-drawer';
+import { ReaderDrawer } from './reader-drawer';
 import { useReadingPreferences } from '../../state/reading-preferences-provider';
 import { Stack, router, useIsFocused, useLocalSearchParams } from 'expo-router';
 import { indexRouteDestination } from '../../utils/reader-index';
 import { ReaderControls } from './reader-controls';
+import { createPagePractice, practiceVisibility, revealNext } from '../../utils/page-practice';
+import { reserveReadingInsets } from '../../utils/reading-insets';
 
 export function ReaderScreen() {
   const focused = useIsFocused();
   const insets = useSafeAreaInsets();
-  // This reader is portrait-only. Reserve its opening safe area for the whole
-  // reading session; system-bar visibility must not recenter the Quran or footer.
-  const [readingInsets] = useState(() => ({
-    top: Math.max(insets.top, initialWindowMetrics?.insets.top ?? 0),
+  // Initial metrics can precede Android's camera-cutout measurement. Accept later
+  // increases, but never shrink the reserved area when system bars disappear.
+  const [readingInsets, setReadingInsets] = useState(() => ({
+    top: Math.max(insets.top, initialWindowMetrics?.insets.top ?? 0, Platform.OS === 'android' ? NativeStatusBar.currentHeight ?? 0 : 0),
     bottom: Math.max(insets.bottom, initialWindowMetrics?.insets.bottom ?? 0),
   }));
-  const topInset = Platform.OS === 'web' ? insets.top : readingInsets.top;
-  const bottomInset = Platform.OS === 'web' ? insets.bottom : readingInsets.bottom;
+  const reservedInsets = reserveReadingInsets(readingInsets, insets);
+  if (Platform.OS !== 'web' && reservedInsets !== readingInsets) setReadingInsets(reservedInsets);
+  const topInset = Platform.OS === 'web' ? insets.top : reservedInsets.top;
+  const bottomInset = Platform.OS === 'web' ? insets.bottom : reservedInsets.bottom;
   const { surah: targetSurah, ayah: targetAyah } = useLocalSearchParams<{ surah?: string; ayah?: string }>();
   const { content, error, refresh } = useReaderContent();
   const font = useWarshFont();
-  const { preferences: { mode, fontSize, spacious }, palette, dark } = useReadingPreferences();
-  const [drawerSection, setDrawerSection] = useState<ReaderDrawerSection | null>(null);
-  const drawerOpen = drawerSection !== null;
+  const { preferences: { mode, textLayout, fontSize, spacious }, palette, dark } = useReadingPreferences();
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [actionsVisible, setActionsVisible] = useState(false);
   const [controlsProgress] = useState(() => new Animated.Value(0));
   const [actionAyah, setActionAyah] = useState<Ayah | null>(null);
-  const [hiddenAyahs, setHiddenAyahs] = useState<ReadonlySet<string>>(new Set());
-  const [practiceAyahs, setPracticeAyahs] = useState<ReadonlySet<string>>(new Set());
-  const hideAyahs = (ayahs: Ayah[]) => {
-    const keys = ayahs.map(ayahKey);
-    setHiddenAyahs((old) => new Set([...old, ...keys]));
-    setPracticeAyahs((old) => new Set([...old, ...keys]));
-    setActionAyah(null); setDrawerSection(null);
-  };
+  const [practice, setPractice] = useState<{ pageNumber: number; revealed: number } | null>(null);
+  const practiceScrollY = useRef(0);
+  const readingScrollY = useRef(0);
+  const practiceOffsets = useRef(new Map<string, number>());
   const { position, ready, move, recordScroll } = useReadingPosition(content?.data);
   const pageNumber = position.pageNumber;
   const [jumpRevision, setJumpRevision] = useState(0);
@@ -90,17 +89,33 @@ export function ReaderScreen() {
   const scroll = useRef<ScrollView>(null);
   const tapStart = useRef<{ x: number; y: number } | null>(null);
   const page = ready ? content?.data.pages.find((value) => value.number === pageNumber) : undefined;
+  const practiceActive = practice?.pageNumber === pageNumber;
+  const practicePlan = useMemo(() => page ? createPagePractice(page,
+    mode === 'page' && practiceActive ? getCachedPrintedPage(page)?.regions : undefined) : null, [page, mode, practiceActive]);
+  const visibleWords = useMemo(() => practiceActive && practicePlan && practice
+    ? practiceVisibility(practicePlan, practice.revealed) : undefined, [practiceActive, practicePlan, practice]);
+  const practiceTarget = practiceActive && practice && practice.revealed > 0
+    ? practicePlan?.ayahs.find((entry) => entry.end >= practice.revealed)?.ayah : undefined;
+  const practiceTargetKey = practiceTarget ? ayahKey(practiceTarget) : null;
+  const recordPracticeOffset = useCallback((ayah: Ayah, y: number) => { practiceOffsets.current.set(ayahKey(ayah), y); }, []);
+  useEffect(() => {
+    const y = practiceTargetKey ? practiceOffsets.current.get(practiceTargetKey) : undefined;
+    if (y === undefined) return;
+    const contentTop = mode === 'page' ? 64 : 8;
+    practiceScrollY.current = Math.max(0, y + contentTop - toolbarHeight - 12);
+    scroll.current?.scrollTo({ y: practiceScrollY.current, animated: !reduceMotion });
+  }, [practiceTargetKey, reduceMotion, mode, toolbarHeight]);
   const totalPages = content?.data.pages.length ?? 604;
   const immersive = ready && !actionsVisible && !drawerOpen && !actionAyah;
 
   const navigate = useCallback((number: number, ayah?: AyahReference) => {
     if (!ready || !content?.data.pages.some((value) => value.number === number)) return;
-    setDrawerSection(null);
+    setDrawerOpen(false);
     setActionAyah(null);
+    setPractice(null);
     jumpPending.current = !!ayah;
     if (ayah) {
       setJumpRevision((value) => value + 1);
-      setHiddenAyahs((old) => { const next = new Set(old); next.delete(ayahKey(ayah)); return next; });
     }
     move({ mushafId: 4, pageNumber: number, ayah: ayah ? { mushafId: 4, surahNumber: ayah.surahNumber, ayahNumber: ayah.ayahNumber } : null, scrollY: 0 });
     scroll.current?.scrollTo({ y: 0, animated: false });
@@ -120,23 +135,38 @@ export function ReaderScreen() {
     suppressClick.current = Date.now() + 100;
     setActionsVisible((visible) => !visible);
   }, []);
-  const tapAyah = useCallback((ayah: Ayah) => {
-    if (Date.now() < suppressClick.current) return;
-    if (hiddenAyahs.has(ayahKey(ayah))) {
-      suppressClick.current = Date.now() + 100;
-      setHiddenAyahs((old) => { const next = new Set(old); next.delete(ayahKey(ayah)); return next; });
-    } else toggleActions();
-  }, [hiddenAyahs, toggleActions]);
+  const tapAyah = toggleActions;
   const select = useCallback((ayah: Ayah) => {
     suppressClick.current = Date.now() + 500;
-    setDrawerSection(null);
+    setDrawerOpen(false);
     setActionsVisible(false);
-    if (hiddenAyahs.has(ayahKey(ayah))) {
-      setHiddenAyahs((old) => { const next = new Set(old); next.delete(ayahKey(ayah)); return next; });
-    }
     move({ ...position, ayah: { mushafId: 4, surahNumber: ayah.surahNumber, ayahNumber: ayah.ayahNumber } }, true);
     setActionAyah(ayah);
-  }, [hiddenAyahs, position, move]);
+  }, [position, move]);
+  const togglePractice = () => {
+    if (!page) return;
+    setActionAyah(null);
+    setActionsVisible(true);
+    if (practiceActive) {
+      // Text practice shares the reading surface, so keep the current place.
+      if (mode === 'text') {
+        readingScrollY.current = practiceScrollY.current;
+        move({ ...position, scrollY: practiceScrollY.current });
+      }
+      setPractice(null);
+      if (mode === 'page') scroll.current?.scrollTo({ y: position.scrollY, animated: false });
+    } else {
+      practiceScrollY.current = mode === 'text' ? readingScrollY.current : 0;
+      if (mode === 'page') practiceOffsets.current.clear();
+      setPractice({ pageNumber, revealed: 0 });
+      if (mode === 'page') scroll.current?.scrollTo({ y: 0, animated: false });
+    }
+  };
+  const reveal = (unit: 'word' | 'ayah') => {
+    if (!practicePlan) return;
+    setPractice((current) => current?.pageNumber === pageNumber
+      ? { ...current, revealed: revealNext(practicePlan, current.revealed, unit) } : current);
+  };
   const targetOffset = useCallback((y: number) => {
     if (!jumpPending.current) return;
     jumpPending.current = false;
@@ -211,7 +241,7 @@ export function ReaderScreen() {
   }, [ready, content, pageNumber, mode, palette.text, palette.ornament]);
 
   return (
-    <SafeAreaView edges={['left', 'right']} style={[styles.root, { backgroundColor: palette.paper }]}>
+    <SafeAreaView edges={['left', 'right']} style={[styles.root, { backgroundColor: palette.paper, paddingTop: topInset }]}>
       {/* Let iOS manage transient home-indicator visibility without changing its
           policy (and safe-area layout) every time the reader tools are toggled. */}
       <Stack.Screen options={{ navigationBarHidden: immersive, autoHideHomeIndicator: true }} />
@@ -224,6 +254,7 @@ export function ReaderScreen() {
         const displayPage = content?.data.pages.find((value) => value.number === displayNumber);
         const surahName = content?.data.quran.surahs.find((surah) => surah.number === displayPage?.ayahs[0]?.surahNumber)?.name;
         const isCurrent = offset === 0;
+        const practicing = isCurrent && practiceActive;
         if (!isCurrent && !displayPage) return null;
         // The complete page shares one horizontal transform. The top and bottom
         // overlays animate independently without changing the reading viewport.
@@ -233,7 +264,6 @@ export function ReaderScreen() {
           style={[StyleSheet.absoluteFill, { backgroundColor: palette.paper,
             transform: [{ translateX: Animated.add(pageTranslation, -offset * pageWidth) }] }]}>
       {/* Revealing tools overlays the page without resizing the Quran. */}
-      {ready && displayPage && <View style={{ height: topInset }} />}
       <View style={styles.readingSurface}
         {...(Platform.OS === 'web' ? { onClick: toggleActions } : {})}
         onTouchStart={Platform.OS === 'web' ? undefined : (event) => {
@@ -247,11 +277,11 @@ export function ReaderScreen() {
           }
         }}
         onTouchCancel={() => { tapStart.current = null; }}>
-      <ScrollView ref={isCurrent ? scroll : undefined} scrollEnabled={isCurrent} scrollEventThrottle={100} onScroll={(event) => { if (isCurrent && ready) { deferPrintedPagePreparation(); recordScroll(event.nativeEvent.contentOffset.y); } }}
+      <ScrollView ref={isCurrent ? scroll : undefined} scrollEnabled={isCurrent} scrollEventThrottle={100} onScroll={(event) => { if (isCurrent && ready) { deferPrintedPagePreparation(); if (practicing) practiceScrollY.current = event.nativeEvent.contentOffset.y; else { readingScrollY.current = event.nativeEvent.contentOffset.y; recordScroll(event.nativeEvent.contentOffset.y); } } }}
         automaticallyAdjustContentInsets={false} contentInsetAdjustmentBehavior="never"
-        onContentSizeChange={() => { if (isCurrent && ready && !jumpPending.current) scroll.current?.scrollTo({ y: position.scrollY, animated: false }); }} onScrollBeginDrag={() => { tapStart.current = null; }} showsVerticalScrollIndicator={false} style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}>
-        <View style={[styles.content, mode === 'page' && styles.centeredContent]}>
+        onContentSizeChange={() => { if (isCurrent && ready && !jumpPending.current) scroll.current?.scrollTo({ y: practicing ? practiceScrollY.current : position.scrollY, animated: false }); }} onScrollBeginDrag={() => { tapStart.current = null; }} showsVerticalScrollIndicator={false} style={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, practicing && mode === 'page' && styles.practiceContent, { paddingBottom: (practicing ? 124 : 8) + bottomInset }]}>
+        <View style={[styles.content, mode === 'page' && !practicing && styles.centeredContent]}>
           {font.error || (error && !content) ? (
             <View accessibilityRole="alert" style={styles.status}>
               <Text style={[styles.statusTitle, { color: palette.text }]}>{font.error ? 'تعذر تحميل خط المصحف' : 'تعذر تحميل القرآن'}</Text>
@@ -265,35 +295,31 @@ export function ReaderScreen() {
               <Text style={[styles.statusText, { color: palette.muted }]}>جارٍ تحميل مصحف ورش وخطه.</Text>
             </View>
           ) : displayPage ? (
-            mode === 'page' ? <PrintedQuranPage key={`${displayPage.number}:${jumpRevision}`} page={displayPage} palette={palette}
-              hiddenAyahs={hiddenAyahs} selectedAyah={isCurrent ? position.ayah : null} onTap={tapAyah} onSelect={select} onTargetOffset={isCurrent ? targetOffset : undefined} /> :
-              <QuranPage key={`${displayPage.number}:${jumpRevision}`} page={displayPage} quran={content.data.quran} mode={mode} fontFamily={font.fontFamily}
-                hiddenAyahs={hiddenAyahs} fontSize={fontSize} spacious={spacious} palette={palette} selectedAyah={isCurrent ? position.ayah : null}
-                onTap={tapAyah} onSelect={select} onTargetOffset={isCurrent ? targetOffset : undefined} />
+            mode === 'page' && !practicing ? <PrintedQuranPage key={`${displayPage.number}:${jumpRevision}`} page={displayPage} palette={palette}
+              selectedAyah={isCurrent ? position.ayah : null} onTap={tapAyah} onSelect={select} onTargetOffset={isCurrent ? targetOffset : undefined} /> :
+              <QuranPage key={`${displayPage.number}:${jumpRevision}:${mode === 'page' ? 'practice' : textLayout}`} page={practicing && practicePlan ? practicePlan.page : displayPage} quran={content.data.quran} layout={mode === 'page' ? 'ayah' : textLayout} fontFamily={font.fontFamily}
+                visibleWords={practicing ? visibleWords : undefined} fontSize={fontSize} spacious={spacious} palette={palette} selectedAyah={isCurrent ? position.ayah : null}
+                onTap={tapAyah} onSelect={select} onTargetOffset={isCurrent ? targetOffset : undefined}
+                onAyahOffset={isCurrent ? recordPracticeOffset : undefined} />
           ) : <Text accessibilityRole="alert" style={{ color: palette.warning }}>هذه الصفحة غير متوفرة.</Text>}
         </View>
       </ScrollView>
       </View>
-      {ready && displayPage && <View pointerEvents="box-none" style={[styles.pageFooter, { paddingBottom: bottomInset + 4 }]}>
-        <Pressable accessibilityRole="button" accessibilityLabel={`الصفحة ${displayNumber} من ${totalPages}، الانتقال إلى صفحة أو آية`}
-          accessibilityState={{ expanded: drawerSection === 'jump' }} onPress={() => setDrawerSection('jump')}
-          style={({ pressed }) => [styles.pageNumberButton, { opacity: pressed ? 0.5 : 1 }]}>
-          <Text style={[styles.pageNumber, { color: palette.muted }]}>صفحة {displayNumber}</Text>
-        </Pressable>
-      </View>}
       {ready && displayPage && content && <ReaderControls visible={actionsVisible} progress={controlsProgress}
-        page={displayPage} surahName={surahName ?? 'قراني'} palette={palette}
+        page={displayPage} totalPages={totalPages} surahName={surahName ?? 'قراني'} palette={palette}
         previous={content.data.pages.find((value) => value.number === displayNumber - 1)}
         next={content.data.pages.find((value) => value.number === displayNumber + 1)}
-        topOffset={topInset} toolbarHeight={toolbarHeight} onToolbarHeight={setToolbarHeight}
-        bottomInset={bottomInset} practiceActive={practiceAyahs.size > 0}
-        onNavigate={navigate} onPractice={() => setDrawerSection('practice')}
+        topOffset={0} toolbarHeight={toolbarHeight} onToolbarHeight={setToolbarHeight}
+        bottomInset={bottomInset} practiceActive={practicing}
+        practiceComplete={!!practicePlan && !!practice && practice.revealed >= practicePlan.totalWords}
+        onNavigate={navigate} onJump={() => setDrawerOpen(true)} onPractice={togglePractice}
+        onRevealWord={() => reveal('word')} onRevealAyah={() => reveal('ayah')}
         onDismiss={() => setActionsVisible(false)} />}
       </Animated.View>;
       })}
       </View>
-      {actionAyah && content && <AyahActionSheet key={ayahKey(actionAyah)} ayah={actionAyah} quran={content.data.quran} palette={palette} onClose={() => setActionAyah(null)} onHide={hideAyahs} />}
-      {drawerOpen && <ReaderDrawer section={drawerSection} hiddenCount={hiddenAyahs.size} practiceCount={practiceAyahs.size} onRevealAll={() => { setHiddenAyahs(new Set()); setDrawerSection(null); }} onResetHidden={() => { setHiddenAyahs(new Set(practiceAyahs)); setDrawerSection(null); }} onClearHidden={() => { setHiddenAyahs(new Set()); setPracticeAyahs(new Set()); setDrawerSection(null); }} content={content?.data} currentPage={pageNumber} onJump={navigate} onClose={() => setDrawerSection(null)} palette={palette} />}
+      {actionAyah && content && <AyahActionSheet key={ayahKey(actionAyah)} ayah={actionAyah} quran={content.data.quran} palette={palette} onClose={() => setActionAyah(null)} />}
+      {drawerOpen && <ReaderDrawer content={content?.data} currentPage={pageNumber} onJump={navigate} onClose={() => setDrawerOpen(false)} palette={palette} />}
     </SafeAreaView>
   );
 }
@@ -301,12 +327,10 @@ export function ReaderScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, ...Platform.select({ native: { direction: 'rtl' as const } }) },
   pager: { flex: 1, overflow: 'hidden' },
-  readingSurface: { flex: 1 },
+  readingSurface: { flex: 1, overflow: 'hidden' },
   scroll: { flex: 1 },
   scrollContent: { flexGrow: 1, paddingHorizontal: 6, paddingVertical: 8 },
-  pageFooter: { alignItems: 'center', paddingTop: 4, zIndex: 3 },
-  pageNumberButton: { minWidth: 80, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
-  pageNumber: { fontSize: 12, lineHeight: 22, writingDirection: 'rtl' },
+  practiceContent: { paddingTop: 64 },
   content: { width: '100%', maxWidth: 700, alignSelf: 'center', flexGrow: 1 },
   centeredContent: { justifyContent: 'center' },
   status: { paddingVertical: 64, paddingHorizontal: 20, alignItems: 'center', gap: 16 },

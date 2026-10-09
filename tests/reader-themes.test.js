@@ -4,7 +4,7 @@ import { readerThemeOptions, readerThemes, resolveReaderTheme } from '../src/fea
 
 test('every theme survives preference storage without losing reading settings', () => {
   for (const { id } of readerThemeOptions) {
-    const saved = { appearance: id, mode: 'ayah', fontSize: 36, spacious: true };
+    const saved = { appearance: id, mode: 'text', textLayout: 'flowing', fontSize: 36, spacious: true };
     expect(decodeReadingPreferences(JSON.stringify(saved))).toEqual(saved);
   }
   for (const appearance of ['toString', '__proto__', 'constructor', {}, null]) {

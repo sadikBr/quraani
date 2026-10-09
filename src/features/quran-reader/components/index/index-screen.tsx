@@ -11,6 +11,7 @@ import { SURAH_NAME_FONT_FAMILY } from '../../config';
 import { readerIndexItems, type IndexKind, type ReaderIndexItem } from '../../utils/reader-index';
 import { ReaderButton } from '../reading/reader-button';
 import { QuranSeal, ReaderIcon, ScreenHeading, Segments } from '../ui/reader-chrome';
+import { readerLayout, readerShape } from '../../design';
 
 const tabs = [
   { value: 'surah', label: 'السور' }, { value: 'juz', label: 'الأجزاء' }, { value: 'hizb', label: 'الأحزاب' },
@@ -45,7 +46,7 @@ export function IndexScreen() {
             <Text style={{ color: palette.onHero, fontSize: 23, lineHeight: 38, fontWeight: '600' }}>وقتٌ للقرآن</Text>
             <View style={styles.resume}><Text style={{ color: palette.onHero, fontSize: 13 }}>متابعة القراءة</Text><ReaderIcon name="chevron" color={palette.onHero} size={16} /></View>
           </View>
-          <View style={styles.heroArt}><QuranSeal color="#C7AF77" size={96} /></View>
+          <View style={styles.heroArt}><QuranSeal color={palette.heroMuted} size={76} /></View>
         </Pressable>}
         <Segments options={tabs} value={kind} onChange={setKind} palette={palette} />
         {kind === 'surah' && <View style={[styles.search, { backgroundColor: palette.paper, borderColor: searchFocused ? palette.accent : palette.border }]}>
@@ -70,8 +71,8 @@ export function IndexScreen() {
       </View>}
       renderItem={({ item }) => <Pressable accessibilityRole="button" accessibilityLabel={`${item.title}، ${item.detail}، الصفحة ${item.pageNumber}`}
         accessibilityHint="افتح المصحف عند بداية الموضع" onPress={() => open(item)}
-        style={({ pressed }) => [styles.item, { borderColor: palette.border, backgroundColor: pressed ? palette.accentSoft : palette.paper }]}>
-        <View style={[styles.number, { borderColor: palette.border, backgroundColor: palette.background }]}><Text style={{ color: palette.ornament, fontSize: 14, fontWeight: '600', textAlign: 'center' }}>{item.number}</Text></View>
+        style={({ pressed }) => [styles.item, { borderColor: palette.border, backgroundColor: pressed ? palette.accentSoft : 'transparent' }]}>
+        <View style={[styles.number, { backgroundColor: palette.accentSoft }]}><Text style={{ color: palette.accent, fontSize: 14, fontWeight: '600', textAlign: 'center' }}>{item.number}</Text></View>
         <View style={styles.name}>
           <Text accessibilityLabel={item.title} style={{ color: palette.text, fontSize: kind === 'surah' && font.loaded ? 31 : 19,
             ...(kind === 'surah' && font.loaded ? { fontFamily: SURAH_NAME_FONT_FAMILY, lineHeight: 43 } : {}) }}>
@@ -85,15 +86,15 @@ export function IndexScreen() {
   </SafeAreaView>;
 }
 const styles = StyleSheet.create({
-  root: { flex: 1 }, top: { paddingTop: 16, paddingBottom: 12, gap: 20 },
-  hero: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 22, padding: 22, overflow: 'hidden' },
-  heroCopy: { flex: 1, gap: 4 }, heroArt: { marginStart: 10, opacity: 0.85 }, resume: { flexDirection: 'row', gap: 9, alignItems: 'center', marginTop: 9 },
-  search: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 15, paddingHorizontal: 14, gap: 10 },
+  root: { flex: 1 }, top: { paddingTop: 12, paddingBottom: 8, gap: 20 },
+  hero: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: readerShape.card, padding: 18, overflow: 'hidden' },
+  heroCopy: { flex: 1, gap: 2 }, heroArt: { marginStart: 12, opacity: 0.6 }, resume: { flexDirection: 'row', gap: 9, alignItems: 'center', marginTop: 6 },
+  search: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: readerShape.control, paddingHorizontal: 14, gap: 10 },
   input: { flex: 1, minWidth: 0, minHeight: 52, fontFamily: 'ReaderNaskh', fontSize: 16, textAlign: Platform.OS === 'android' ? 'left' : 'right', ...Platform.select({ native: { direction: 'rtl' as const } }), writingDirection: 'rtl' },
-  clear: { width: 36, height: 44, justifyContent: 'center', alignItems: 'center' },
-  number: { width: 40, height: 44, borderRadius: 13, borderWidth: 1, justifyContent: 'center' }, page: { alignItems: 'center', minWidth: 30, gap: 2 },
+  clear: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  number: { width: 36, height: 40, borderRadius: readerShape.detail, justifyContent: 'center' }, page: { alignItems: 'center', minWidth: 30, gap: 0 },
   listHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  list: { flex: 1, width: '100%', maxWidth: 740, alignSelf: 'center' }, listContent: { paddingHorizontal: 22, paddingBottom: 24 },
-  item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 14, gap: 12, borderWidth: 1, borderRadius: 18, minHeight: 88, marginBottom: 8 },
+  list: { flex: 1, width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center' }, listContent: { paddingHorizontal: readerLayout.gutter, paddingBottom: 24 },
+  item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 2, gap: 12, borderBottomWidth: 1, minHeight: 88 },
   name: { flex: 1, gap: 2 }, status: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40, paddingHorizontal: 20, gap: 14 }, statusText: { textAlign: 'center', fontSize: 14, lineHeight: 24 },
 });

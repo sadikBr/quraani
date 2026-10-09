@@ -20,10 +20,9 @@ interface Props {
   onTap: (ayah: Ayah) => void;
   onSelect: (ayah: Ayah) => void;
   onTargetOffset?: (y: number) => void;
-  hiddenAyahs: ReadonlySet<string>;
 }
 
-export const PrintedQuranPage = memo(function PrintedQuranPage({ page, palette, selectedAyah, onTap, onSelect, onTargetOffset, hiddenAyahs }: Props) {
+export const PrintedQuranPage = memo(function PrintedQuranPage({ page, palette, selectedAyah, onTap, onSelect, onTargetOffset }: Props) {
   const [rendered, setRendered] = useState<{ artwork: PrintedPage; image: PrintedImage } | undefined>(() => {
     const artwork = getCachedPrintedPage(page);
     const image = artwork && getCachedPrintedImage(artwork, palette.text, palette.ornament);
@@ -78,7 +77,7 @@ export const PrintedQuranPage = memo(function PrintedQuranPage({ page, palette, 
         </Text>
       </View>;
     })}
-    <AyahPageRegions artwork={artwork} page={page} selectedAyah={selectedAyah} selectionColor={palette.accent} onTap={onTap} onSelect={onSelect} hiddenAyahs={hiddenAyahs} paperColor={palette.paper} />
+    <AyahPageRegions artwork={artwork} page={page} selectedAyah={selectedAyah} selectionColor={palette.accent} onTap={onTap} onSelect={onSelect} />
     </View>
   </View>;
 });

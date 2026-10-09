@@ -1,3 +1,4 @@
+import { readerShape } from '../../design';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
 import type { QuranPage } from '../../types/reader';
@@ -44,7 +45,7 @@ const styles = StyleSheet.create({
   // Keep physical page positions independent of the device's RTL swapping.
   header: { ...Platform.select({ native: { direction: 'ltr' as const } }), width: '100%', flexDirection: 'row', alignItems: 'center', marginBottom: 4, gap: 4 },
   neighbor: { flex: 1, minWidth: 0, minHeight: 44, justifyContent: 'center', gap: 3 },
-  current: { flex: 0.55, borderRadius: 9, paddingVertical: 5, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center' },
+  current: { flex: 0.55, borderRadius: readerShape.control, paddingVertical: 5, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center' },
   caption: { width: '100%', fontSize: 10, lineHeight: 17, writingDirection: 'rtl' },
   division: { width: '100%', fontSize: 10, lineHeight: 18, writingDirection: 'rtl' },
   juz: { textAlign: 'center', fontSize: 12, lineHeight: 22, fontWeight: '600', writingDirection: 'rtl' },

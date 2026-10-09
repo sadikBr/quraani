@@ -86,7 +86,7 @@ describe('Warsh data and reading behavior', () => {
     const hidden = readerReducer(initial, { type: 'hide', references: [reference] });
     expect(initial.hiddenAyahs.size).toBe(0);
     expect(hidden.hiddenAyahs.has('4:1:1')).toBe(true);
-    const flowing = readerReducer(hidden, { type: 'set-mode', mode: 'ayah' });
+    const flowing = readerReducer(hidden, { type: 'set-mode', mode: 'text' });
     expect(flowing.hiddenAyahs.has('4:1:1')).toBe(true);
     const revealed = readerReducer(flowing, { type: 'tap-ayah', reference });
     expect(revealed.selectedAyah).toEqual(reference);

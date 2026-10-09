@@ -1,6 +1,7 @@
 import type { Ayah, AyahReference, Quran } from "@/lib/quranpedia/types";
 
-export type ReaderMode = "page" | "ayah";
+export type ReaderMode = "page" | "text";
+export type ReaderTextLayout = "ayah" | "flowing";
 export type { AyahReference };
 
 export interface QuranPage {

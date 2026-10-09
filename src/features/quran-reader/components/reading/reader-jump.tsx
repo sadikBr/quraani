@@ -1,3 +1,4 @@
+import { readerShape } from '../../design';
 import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
@@ -47,5 +48,5 @@ export function ReaderJump({ content, currentPage, palette, onJump }: {
 }
 const styles = StyleSheet.create({
   form: { gap: 12 }, row: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 }, field: { flexGrow: 1, gap: 8 },
-  input: { minHeight: 56, borderWidth: 1, borderRadius: 14, padding: 12, fontFamily: 'ReaderNaskh', fontSize: 22, textAlign: 'center', writingDirection: 'ltr' },
+  input: { minHeight: 56, borderWidth: 1, borderRadius: readerShape.control, padding: 12, fontFamily: 'ReaderNaskh', fontSize: 22, textAlign: 'center', writingDirection: 'ltr' },
 });

@@ -8,28 +8,39 @@
   SVG outlines at their original aspect ratio, preserving printed justification
   and line breaks. Normal pages use the original 15-line layout; opening pages
   retain their smaller layout. No frame, border, decorative stars, or extra rules.
-  This mode scales to page width; adjustable text size belongs to ayah mode.
-- Alternative mode: **ayah**. Display selectable ayah rows with the bundled Warsh
-  font and adjustable text size. Keep the original `text` and `marker` separate.
+  This mode scales to page width; adjustable text size belongs to text mode.
+- Alternative mode: **text**, labelled **النص القرآني**. Its saved `textLayout`
+  selects separate ayah rows (**آيات منفصلة**) or a justified continuous paragraph
+  (**نص متصل**) per surah section. Both use the bundled Warsh font and adjustable
+  text size and line spacing. Continuous text wraps to the available width, with
+  inline ayah markers and no fixed line count. Original `text` and `marker` remain
+  separate and unchanged. Old `mode: ayah` preferences migrate to separate rows.
 - Bismillah is supplied by the mushaf metadata. Warsh Al-Fatiha's first numbered
   ayah is “الحمد…”, not Bismillah. The renderer should show Bismillah as an
   unnumbered opening at surah starts except surah 9; do not insert it into the
   ayah dataset. The traditional SVG already contains its printed opening.
-- Tap a visible ayah to highlight it and open its action sheet. Tap a hidden
-  ayah to reveal it; tap again to open actions. Printed hit regions preserve the
-  artwork geometry; flowing mode uses a full ayah text target.
-- Actions include persistent bookmarks, copy, native sharing, hiding one ayah or
-  an inclusive passage, tafsir, and translations. Passage endpoints use Warsh
-  references and may cross surah/page boundaries.
-- Hiding is session-only UI state, separate from memorization progress. The
-  reader drawer can reveal all, re-hide the remembered passage, or clear the
-  passage. It survives page navigation and reading-mode changes while the reader
-  is mounted. Explicit jumps reveal their destination so results remain visible.
-- Printed masks cover the selected polygons without changing line layout.
-  Flowing mode replaces hidden text with a reveal placeholder. Accessibility
-  labels for hidden ayahs omit their Quran text.
-- The action sheet supports focus, dismiss/back/escape, labelled controls and
-  48px-tall action buttons. The background is excluded from accessibility while
+- Tap the page to toggle reading tools; tap an ayah number or long-press its text
+  to open actions. Actions include bookmarks, copy, native sharing, tafsir and
+  translations. Printed hit regions preserve the artwork geometry.
+- The page number and jump action belong to the animated bottom toolbar. Focus
+  mode has no persistent page footer, and toggling tools does not resize the text.
+  The page viewport is clipped below a reserved native top safe area, including
+  the camera cutout. Late larger measurements are accepted; hiding system bars
+  never reduces the reserved top or bottom space during a portrait session.
+- The bottom toolbar starts page practice in the current text layout, preserving
+  the mounted page and scroll position for both separate rows and continuous text.
+  Printed artwork temporarily uses separate ayah rows for word-level practice.
+  Words are hidden without moving markers or line breaks; the next-word and
+  next-ayah controls reveal them in reading order. Wrapped-line positions on native
+  and measured inline text on web keep the revealed ayah in view. Show All restores
+  the words in place (or returns to printed artwork). Practice is session-only and resets on page
+  navigation. Hidden words use zero opacity and the paper color for native nested
+  text compatibility; their accessibility labels omit hidden Quran text.
+- The action sheet groups bookmark, copy and share into equal icon actions, with
+  separate expandable tafsir and translation rows. Its decorative surah heading
+  and close control stay visible while related content scrolls. The sheet extends
+  behind the home indicator with safely inset controls and a full-screen backdrop.
+  It supports focus, dismiss/back/escape and labelled touch controls. The background is excluded from accessibility while
   either modal is open. Native screen-reader acceptance requires device testing.
 - Runtime interaction state lives in `components/reading/reader-screen.tsx`;
   framework-independent selection helpers remain in `state/reader-state.ts`.
@@ -161,6 +172,34 @@ Sources: [Quranpedia API](https://api.quranpedia.net/),
 [Expo SDK 57 Font](https://docs.expo.dev/versions/v57.0.0/sdk/font/).
 
 ## On-demand tafsir and translations
+
+### Shareable ayah cards
+
+The ayah sheet's Share action opens `/share-ayah` with a validated Warsh surah
+and ayah reference. The designer offers emerald, paper and night palettes,
+9:16 Status and square presets, optional app branding, and optional French or
+English translation. Quran text and its original marker are never normalized,
+truncated or replaced; very long content expands the card with a visible notice
+instead of clipping text or making it illegible. The dimensions shown in the
+designer reflect that expanded export.
+
+Translation is fetched only on request, via the ayah's parallel Hafs references.
+One book must cover every mapped reference; missing parts or errors disable
+sharing until retried or translation is disabled. Source and Hafs numbering are
+included on the card. Requests cannot update a different ayah/language.
+
+The rendered card is captured as a 1080-pixel-wide PNG after fonts and layout
+settle. Native uses SDK-compatible view-shot and Expo Sharing; web uses
+html2canvas-pro and pre-prepared File sharing, with a local download fallback.
+Images are generated locally without uploads or photo-library permission.
+The preview displays the actual generated PNG when ready. Changes invalidate
+older captures and release temporary resources; dismissal of a share chooser
+does not produce an error. A custom development build predating these native
+dependencies needs rebuilding (both modules are included in SDK 57 Expo Go).
+
+Tests cover source consistency across mapped verses, missing translation parts,
+font sizing, and preset dimensions. Browser checks cover card customization and
+the exported PNG; native bundles are checked separately from device sharing.
 
 No related-content request runs until its action is selected. Tafsir currently
 uses book 2012 (التفسير الميسر); translations offer French and English and show

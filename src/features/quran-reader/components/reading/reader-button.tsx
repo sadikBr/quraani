@@ -1,3 +1,4 @@
+import { readerShape } from '../../design';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { Pressable, StyleSheet } from "react-native";
 import type { ReaderPalette } from "../../theme";
@@ -54,7 +55,7 @@ const styles = StyleSheet.create({
         minHeight: 48,
         minWidth: 44,
         borderWidth: 1,
-        borderRadius: 14,
+        borderRadius: readerShape.control,
         paddingHorizontal: 14,
         paddingVertical: 10,
         alignItems: "center",
