@@ -8,15 +8,15 @@ import { addDays, dateLabel } from './dates';
 import { ayahRangeLabel, nextPortion, rangeLabel, type PlanIndex } from './engine';
 import { d } from './plan-detail-components';
 import { arabicNumber, shortDate } from './presentation';
-import type { ReadingPlan } from './types';
+import type { SequentialPlan } from './types';
 
-export function PlanSchedule({ plan, index, today }: { plan: ReadingPlan; index: PlanIndex; today: string }) {
+export function PlanSchedule({ plan, index, today }: { plan: SequentialPlan; index: PlanIndex; today: string }) {
   const current = plan.cycle.sessions.findIndex(s => s.end > plan.cycle.cursor);
   // Follow progress to the current week, while keeping manual week navigation local.
   return <WeeklySchedule key={`${plan.cycle.number}:${current}`} plan={plan} index={index} today={today} current={current} />;
 }
 
-function WeeklySchedule({ plan, index, today, current }: { plan: ReadingPlan; index: PlanIndex; today: string; current: number }) {
+function WeeklySchedule({ plan, index, today, current }: { plan: SequentialPlan; index: PlanIndex; today: string; current: number }) {
   const { palette: p } = useReadingPreferences();
   const weeks = Math.ceil(plan.cycle.sessions.length / 7);
   const [week, setWeek] = useState(current < 0 ? weeks - 1 : Math.floor(current / 7));

@@ -3,6 +3,7 @@ import { localDate, validDate } from './dates';
 import type { ReadingPlan } from './types';
 import { enforceGoalLimit } from './goal-limit';
 import { maintainArchives, stampArchiveTransitions } from './archive';
+import { validateRecurringPlan } from './recurring';
 
 export const PLANS_KEY = 'plans:v1';
 export function decodePlans(raw: string | null): ReadingPlan[] {
@@ -13,7 +14,7 @@ export function decodePlans(raw: string | null): ReadingPlan[] {
   for (const p of saved.plans) {
     if (!p || typeof p.id !== 'string' || !/^plan-[a-z0-9-]+$/.test(p.id) || ids.has(p.id) || typeof p.name !== 'string' || !p.name.trim() ||
       !['warsh', 'hafs'].includes(p.riwayah) || !['active', 'paused', 'completed', 'archived'].includes(p.status) ||
-      !['pages', 'hizbs', 'juzs'].includes(p.unit) || !validDate(p.startDate) || typeof p.repeat !== 'boolean' ||
+      !validDate(p.startDate) ||
       typeof p.corpus !== 'string' || !Number.isInteger(p.totalAyahs) || p.totalAyahs < 1 || p.totalAyahs > 10000 ||
       !Array.isArray(p.weekdays) || !p.weekdays.length || p.weekdays.some((d: number) => !Number.isInteger(d) || d < 0 || d > 6) ||
       !p.reminder || typeof p.reminder.enabled !== 'boolean' || !Number.isInteger(p.reminder.hour) || p.reminder.hour < 0 || p.reminder.hour > 23 ||
@@ -21,6 +22,8 @@ export function decodePlans(raw: string | null): ReadingPlan[] {
       (p.pausedOn !== undefined && !validDate(p.pausedOn)) ||
       (p.archivedOn !== undefined && !validDate(p.archivedOn))) throw new Error('تعذر التحقق من بيانات الأهداف المحفوظة');
     ids.add(p.id);
+    if (p.goal?.type === 'recurring') { validateRecurringPlan(p); continue; }
+    if (!['pages', 'hizbs', 'juzs'].includes(p.unit) || typeof p.repeat !== 'boolean') throw new Error('إعدادات هدف غير صالحة');
     if (!p.goal || !['khatma', 'wird'].includes(p.goal.type) ||
       (p.goal.type === 'khatma' && (!Number.isInteger(p.goal.weeks) || p.goal.weeks < 1 || p.goal.weeks > 52)) ||
       (p.goal.type === 'wird' && (!Number.isFinite(p.goal.amount) || p.goal.amount <= 0))) throw new Error('نوع هدف غير صالح');

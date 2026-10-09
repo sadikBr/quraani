@@ -14,9 +14,10 @@ import { nextPortion, unitLabels } from './engine';
 import { dateLabel } from './dates';
 import { arabicNumber, shortDate } from './presentation';
 import { goalsOverview, type GoalsView } from './overview';
-import type { ReadingPlan } from './types';
+import { isRecurringPlan, type ReadingPlan } from './types';
+import { RecurringGoalCard } from './recurring-components';
+import { GoalCardFrame, GoalCardHeading } from './goal-card';
 import { PlanLoading, PlanNotice } from './components';
-import { currentGoal } from './goal-limit';
 import { ArchivedGoals } from './archive-components';
 
 export function PlansScreen() {
@@ -26,14 +27,14 @@ export function PlansScreen() {
   const overview = goalsOverview(plans, today);
   const shown = view === 'today' ? overview.due : overview[view];
   const create = () => router.push('/plans/new');
-  const canCreate = ready && !currentGoal(plans);
+  const canCreate = ready;
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <View style={s.navigation}>
       <Pressable accessibilityRole="button" accessibilityLabel="العودة إلى القراءة" onPress={() => router.dismissTo('/')}
         style={({ pressed }) => [s.back, { opacity: pressed ? 0.6 : 1 }]}>
         <ReaderIcon name="back" color={p.text} size={21} /><Text style={{ color: p.text, fontSize: 15 }}>المصحف</Text>
       </Pressable>
-      <Pressable accessibilityRole="button" accessibilityLabel={canCreate ? 'إنشاء هدف جديد' : 'إنشاء هدف جديد، متاح بعد إتمام هدفك الحالي أو أرشفته'} accessibilityState={{ disabled: !canCreate }} disabled={!canCreate} onPress={create}
+      <Pressable accessibilityRole="button" accessibilityLabel="إنشاء هدف جديد" accessibilityState={{ disabled: !canCreate }} disabled={!canCreate} onPress={create}
         style={({ pressed }) => [s.create, { backgroundColor: p.accentSoft, opacity: !canCreate ? 0.4 : pressed ? 0.7 : 1 }]}>
         <View style={{ transform: [{ rotate: '45deg' }] }}><ReaderIcon name="close" color={p.accent} size={20} strokeWidth={2} /></View>
         <Text style={{ color: p.accent, fontSize: 14, fontWeight: '600' }}>هدف جديد</Text>
@@ -42,7 +43,7 @@ export function PlansScreen() {
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
       <View>
         <Text accessibilityRole="header" style={{ fontSize: 31, fontWeight: '700', color: p.text }}>أهدافك القرآنية</Text>
-        <Text style={{ fontSize: 14, color: p.muted }}>وردٌ تحافظ عليه، وختمةٌ تسعى إليها.</Text>
+        <Text style={{ fontSize: 14, color: p.muted }}>وردٌ وختمة، ومواعيد تتجدد مع القرآن.</Text>
       </View>
       <PlanNotice message={error} retry={retry} /><PlanNotice message={reminderError} />
       {!ready ? !error && <PlanLoading /> : <>
@@ -94,23 +95,15 @@ function DailyOverview({ today, due, completed, hasGoals }: { today: string; due
 function GoalCard({ plan, today }: { plan: ReadingPlan; today: string }) {
   const { palette: p } = useReadingPreferences();
   const next = nextPortion(plan, today);
+  if (isRecurringPlan(plan)) return <RecurringGoalCard plan={plan} today={today} />;
   const completed = plan.cycle.sessions.filter(s => s.end <= plan.cycle.cursor).length;
   const progress = Math.max(0, Math.min(1, (plan.cycle.cursor - plan.cycle.start) / Math.max(1, plan.totalAyahs - plan.cycle.start)));
   const percent = progress === 1 ? 100 : Math.floor(progress * 100);
   const status = plan.status === 'paused' ? 'متوقف مؤقتًا' : plan.status === 'archived' ? 'مؤرشف' : plan.status === 'completed' ? plan.repeat ? 'الدورة التالية غدًا' : 'مكتمل' : next && !next.due ? `الورد القادم · ${shortDate(next.date)}` : next && next.date < today ? 'ورد سابق بانتظارك' : 'ورد اليوم';
   const description = plan.goal.type === 'khatma' ? `ختمة · ${arabicNumber(plan.goal.weeks)} أسابيع` : `ورد يومي · ${arabicNumber(plan.goal.amount)} ${unitLabels[plan.unit]}`;
-  return <Pressable accessibilityRole="button" accessibilityLabel={`فتح هدف ${plan.name}، ${status}، اكتمل ${percent} بالمئة`}
-    onPress={() => router.push({ pathname: '/plans/[id]', params: { id: plan.id } })}
-    style={({ pressed }) => [s.card, { backgroundColor: p.paper, borderColor: pressed ? p.accent : p.border, opacity: pressed ? 0.8 : 1 }]}>
-    <View style={s.cardContent}>
-      <View style={[s.row, { gap: 12 }]}>
-        <View style={[s.goalIcon, { backgroundColor: p.accentSoft }]}><ReaderIcon name={plan.goal.type === 'khatma' ? 'calendar' : 'book'} color={p.accent} size={24} /></View>
-        <View style={s.grow}>
-          <Text style={{ color: p.text, fontSize: 22, fontWeight: '600' }}>{plan.name}</Text>
-          <Text style={{ color: p.muted, fontSize: 12 }}>{description}</Text>
-        </View>
-        <View><Text style={{ color: p.accent, fontSize: 24, textAlign: 'center' }}>{arabicNumber(percent)}٪</Text></View>
-      </View>
+  return <GoalCardFrame id={plan.id} name={plan.name} status={status} due={!!next?.due} accessibilityDetail={`، اكتمل ${percent} بالمئة`}>
+    <GoalCardHeading name={plan.name} description={description} icon={plan.goal.type === 'khatma' ? 'calendar' : 'book'}
+      trailing={<Text style={{ color: p.accent, fontSize: 24, textAlign: 'center' }}>{arabicNumber(percent)}٪</Text>} />
       <View style={{ gap: 8 }}>
         <View style={[s.row, { justifyContent: 'space-between', flexWrap: 'wrap', rowGap: 0 }]}>
           <Text style={{ color: p.muted, fontSize: 12 }}>{arabicNumber(completed)} من {arabicNumber(plan.cycle.sessions.length)} وردًا</Text>
@@ -118,22 +111,14 @@ function GoalCard({ plan, today }: { plan: ReadingPlan; today: string }) {
         </View>
         <View style={[s.progress, { backgroundColor: p.border }]}><View style={{ height: '100%', width: `${progress * 100}%`, backgroundColor: p.accent }} /></View>
       </View>
-    </View>
-    <View style={[s.cardFooter, { backgroundColor: next?.due ? p.accentSoft : 'transparent', borderColor: p.border }]}>
-      <View style={[s.row, s.grow]}>
-        <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: next?.due ? p.accent : p.muted }} />
-        <Text style={{ color: next?.due ? p.accent : p.muted, fontSize: 12, flexShrink: 1 }}>{status}</Text>
-      </View>
-      <View style={s.row}><Text style={{ color: p.accent, fontSize: 13, fontWeight: '600' }}>{next?.due ? 'متابعة' : 'التفاصيل'}</Text><ReaderIcon name="chevron" color={p.accent} size={17} /></View>
-    </View>
-  </Pressable>;
+  </GoalCardFrame>;
 }
 
 function EmptyGoals({ view, hasGoals, completed, onCreate, onShowAll }: { view: GoalsView; hasGoals: boolean; completed: number; onCreate: () => void; onShowAll: () => void }) {
   const { palette: p } = useReadingPreferences();
   const waiting = view === 'today' && hasGoals;
   const title = view === 'archived' ? 'أرشيفك فارغ' : waiting ? completed ? 'أتممت وردك، تقبّل الله منك' : 'لا أوراد مطلوبة الآن' : 'لكل رحلة بداية';
-  const description = view === 'archived' ? 'تُحفظ الأهداف هنا لمدة أسبوعين بعد أرشفتها، ثم تُحذف نهائيًا.' : waiting ? 'تجد أهدافك القادمة والموقوفة في «أهدافي».' : 'ختمة في مدة تختارها، أو ورد يومي تواصل به القراءة من حيث توقفت.';
+  const description = view === 'archived' ? 'تُحفظ الأهداف هنا لمدة أسبوعين بعد أرشفتها، ثم تُحذف نهائيًا.' : waiting ? 'تجد أهدافك القادمة والموقوفة في «أهدافي».' : 'ختمة، أو ورد يومي، أو سور تختار لها مواعيد تتجدد.';
   return <View style={[s.empty, { borderColor: p.border }]}>
     <View style={[s.emptyIcon, { backgroundColor: p.accentSoft }]}><ReaderIcon name={view === 'archived' ? 'bookmark' : waiting && completed ? 'check' : 'book'} color={p.accent} size={28} /></View>
     <Text accessibilityRole="header" style={{ color: p.text, fontSize: 21, fontWeight: '600', textAlign: 'center' }}>{title}</Text>
@@ -156,11 +141,7 @@ const s = StyleSheet.create({
   stat: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   tabs: { flexDirection: 'row', borderBottomWidth: 1, gap: 8 },
   tab: { flex: 1, flexDirection: 'row', gap: 7, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, paddingVertical: 8, borderBottomWidth: 3, marginBottom: -1 },
-  card: { borderWidth: 1, borderRadius: readerShape.card, overflow: 'hidden' },
-  cardContent: { padding: 18, gap: 18 },
-  goalIcon: { width: 42, height: 48, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
   progress: { height: 5, borderRadius: 3, overflow: 'hidden' },
-  cardFooter: { paddingHorizontal: 18, paddingVertical: 10, minHeight: 48, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', gap: 14 },
   empty: { borderWidth: 1, borderStyle: 'dashed', borderRadius: readerShape.card, padding: 24, gap: 8, alignItems: 'center' },
   emptyIcon: { width: 56, height: 56, borderRadius: readerShape.card, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
 });

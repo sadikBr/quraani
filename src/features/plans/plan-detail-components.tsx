@@ -7,7 +7,7 @@ import { useReadingPreferences } from '../quran-reader/state/reading-preferences
 import { IconButton, ReaderIcon, type ReaderIconName } from '../quran-reader/components/ui/reader-chrome';
 import { readerLayout, readerShape } from '../quran-reader/design';
 import { RIWAYAT } from '../quran-reader/riwayat';
-import type { ReadingPlan } from './types';
+import type { ReadingPlan, SequentialPlan } from './types';
 import type { PlanIndex } from './engine';
 import { arabicNumber, shortDate } from './presentation';
 const statusLabels = { active: 'قيد القراءة', paused: 'متوقف مؤقتًا', completed: 'مكتمل', archived: 'مؤرشف' };
@@ -36,7 +36,7 @@ export function DetailScreen({ plan, onBack, onSettings, children }: PropsWithCh
   </SafeAreaView>;
 }
 
-export function ProgressHero({ plan }: { plan: ReadingPlan }) {
+export function ProgressHero({ plan }: { plan: SequentialPlan }) {
   const { palette: p } = useReadingPreferences();
   const finished = plan.cycle.sessions.filter(s => s.end <= plan.cycle.cursor).length;
   const total = plan.cycle.sessions.length;

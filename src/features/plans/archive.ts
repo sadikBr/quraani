@@ -1,5 +1,5 @@
 import { addDays, validDate } from './dates';
-import type { ReadingPlan } from './types';
+import { isRecurringPlan, type ReadingPlan } from './types';
 
 export const ARCHIVE_RETENTION_DAYS = 14;
 export function archiveDeletionDate(plan: ReadingPlan): string | undefined {
@@ -39,10 +39,10 @@ export function stampArchiveTransitions(previous: ReadingPlan[], next: ReadingPl
   return changed ? result : next;
 }
 
-export function restoreArchivedGoal(plan: ReadingPlan): ReadingPlan {
+export function restoreArchivedGoal<T extends ReadingPlan>(plan: T): T {
   if (plan.status !== 'archived') return plan;
   const { archivedOn: _archivedOn, pausedOn: _pausedOn, ...rest } = plan;
-  return { ...rest, status: plan.cycle.completedOn ? 'completed' : 'active' };
+  return { ...rest, status: !isRecurringPlan(plan) && plan.cycle.completedOn ? 'completed' : 'active' } as T;
 }
 
 /** Recheck inside the serialized write: a stale delete must not remove a goal

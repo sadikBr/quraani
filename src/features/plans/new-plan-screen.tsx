@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { ReaderIcon, Segments } from '../quran-reader/components/ui/reader-chrome';
@@ -16,7 +16,9 @@ import { arabicNumber, shortDate } from './presentation';
 import { remindersSupported, requestPlanReminders } from './notifications';
 import { usePlanIndex } from './use-plan-index';
 import { PlanDateField } from './plan-date-field';
-import type { PlanGoal, PlanStart, PlanUnit } from './types';
+import { isRecurringPlan, type SequentialGoal, type PlanStart, type PlanUnit } from './types';
+import { GoalChooser } from './goal-chooser';
+import { RecurringCreationScreen } from './recurring-creation-screen';
 import { saveWithReminder } from './save-with-reminder';
 import { currentGoal, DuplicateGoalError } from './goal-limit';
 import { AmountPicker, CreationSection, CreationSteps, ExistingGoalCard, GoalTypeChoices, c } from './goal-creation-components';
@@ -28,14 +30,17 @@ export function parsePlanNumber(value: string) {
 }
 export function NewPlanScreen() {
   const { ready, error, retry } = usePlans();
+  const { type, preset } = useLocalSearchParams<{ type?: string; preset?: string }>();
   if (!ready) return <PlanScreen title="هدف جديد" onBack={() => router.back()}><PlanNotice message={error} retry={retry} />{!error && <PlanLoading />}</PlanScreen>;
-  return <GoalCreationForm />;
+  if (type === 'recurring') return <RecurringCreationScreen preset={preset === 'kahf' || preset === 'mulk' ? preset : undefined} />;
+  if (type === 'khatma' || type === 'wird') return <GoalCreationForm key={type} initialKind={type} />;
+  return <GoalChooser />;
 }
-function GoalCreationForm() {
+function GoalCreationForm({ initialKind }: { initialKind: SequentialGoal['type'] }) {
   const { palette: p, preferences } = useReadingPreferences();
   const { commit, plans, today } = usePlans();
   const [id] = useState(() => `plan-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
-  const [kind, setKind] = useState<PlanGoal['type']>('khatma');
+  const [kind, setKind] = useState<SequentialGoal['type']>(initialKind);
   const [step, setStep] = useState<0 | 1>(0);
   const [name, setName] = useState('');
   const [riwayah, setRiwayah] = useState<Riwayah>(preferences.riwayah);
@@ -53,7 +58,7 @@ function GoalCreationForm() {
   const scroll = useRef<ScrollView>(null);
   const { index, error, retry } = usePlanIndex(riwayah);
   const blocked = currentGoal(plans);
-  const replacesRepeat = plans.some(goal => goal.status === 'completed' && goal.repeat);
+  const replacesRepeat = plans.some(goal => !isRecurringPlan(goal) && goal.status === 'completed' && goal.repeat);
   const preview = useMemo(() => {
     if (!index) return {};
     try {

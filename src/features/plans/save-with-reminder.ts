@@ -2,9 +2,9 @@ import type { ReadingPlan } from './types';
 import { ReminderSetupError, type ReminderIssue } from './reminder-errors';
 
 /** Reminder setup is optional; storage failures must still reject the save. */
-export async function saveWithReminder(
-  plan: ReadingPlan,
-  persist: (saved: ReadingPlan) => Promise<void>,
+export async function saveWithReminder<T extends ReadingPlan>(
+  plan: T,
+  persist: (saved: T) => Promise<void>,
   request?: () => Promise<void>,
 ): Promise<ReminderIssue | undefined> {
   let issue: ReminderIssue | undefined;

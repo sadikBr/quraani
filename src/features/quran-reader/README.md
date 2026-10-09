@@ -68,3 +68,18 @@ Screens should be thin wrappers around this feature. Planned route files:
 These route files are intentionally not scaffolded as empty files: Expo Router
 treats files under `src/app/` as routes. Add them when there are screens to render
 and integrate their layout with the existing tab navigation.
+
+## Index, search, and saved ayahs
+
+`components/ui/library-chrome.tsx` supplies shared headers, persistent search
+fields, tabs and empty states. The index filters surahs, juzs and hizbs by name
+or number (including Arabic digits), retaining each division's exact first ayah.
+Search and bookmarks share `AyahResultCard`, with the edition's Quran font,
+surah calligraphy, page references, and direct open/save controls.
+
+Bookmarks can be filtered by surah name, Quran text or a `surah:ayah` reference,
+and sorted in Quran order or by newest saved insertion. `utils/saved-ayahs.ts`
+keeps these operations separate from displayed text and preserves existing
+bookmark keys and storage. Removal offers an immediate undo; restoring re-adds
+the bookmark through the existing provider. Riwayah-specific saved lists remain
+separate. Quran search retains its debounce and paginated, virtualized results.

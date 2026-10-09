@@ -7,7 +7,7 @@ import { createPlansRepository } from './repository';
 import { buildPlanIndex, rollCompletedCycle } from './engine';
 import { localDate } from './dates';
 import { observePlanNotifications, syncPlanReminders } from './notifications';
-import type { ReadingPlan } from './types';
+import { isRecurringPlan, type ReadingPlan } from './types';
 import { reminderFailureMessage } from './reminder-errors';
 import { currentGoal } from './goal-limit';
 import { maintainArchives } from './archive';
@@ -66,10 +66,10 @@ export function PlansProvider({ children }: PropsWithChildren) {
   }, [plans, ready, clockRevision]);
   useEffect(() => {
     if (!ready) return;
-    for (const plan of plans) if (plan.status === 'completed' && plan.repeat && plan.cycle.completedOn && plan.cycle.completedOn < today) {
+    for (const plan of plans) if (!isRecurringPlan(plan) && plan.status === 'completed' && plan.repeat && plan.cycle.completedOn && plan.cycle.completedOn < today) {
       void loadReaderContent(undefined, plan.riwayah).then(content => {
         const index = buildPlanIndex(content.data);
-        return commit(items => items.map(p => p.id === plan.id && p.status === 'completed' && p.repeat
+        return commit(items => items.map(p => p.id === plan.id && !isRecurringPlan(p) && p.status === 'completed' && p.repeat
           ? currentGoal(items, p.id) ? { ...p, repeat: false } : rollCompletedCycle(p, index, today)
           : p));
       }).catch(() => { setError('تعذر بدء دورة جديدة. أعد فتح الهدف بعد تحميل مصحفه.'); });

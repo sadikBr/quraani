@@ -5,7 +5,7 @@ import { useReadingPreferences } from '../quran-reader/state/reading-preferences
 import { ReaderIcon, type ReaderIconName } from '../quran-reader/components/ui/reader-chrome';
 import { readerLayout, readerShape } from '../quran-reader/design';
 import { arabicNumber } from './presentation';
-import type { PlanGoal, ReadingPlan } from './types';
+import type { SequentialGoal, SequentialPlan } from './types';
 
 export function CreationSection({ title, icon, children, description }: PropsWithChildren<{ title: string; icon: ReaderIconName; description?: string }>) {
   const { palette: p } = useReadingPreferences();
@@ -16,7 +16,7 @@ export function CreationSection({ title, icon, children, description }: PropsWit
   </View>;
 }
 
-export function GoalTypeChoices({ kind, onChange, existing }: { kind: PlanGoal['type']; onChange: (kind: PlanGoal['type']) => void; existing?: ReadingPlan }) {
+export function GoalTypeChoices({ kind, onChange, existing }: { kind: SequentialGoal['type']; onChange: (kind: SequentialGoal['type']) => void; existing?: SequentialPlan }) {
   const { palette: p } = useReadingPreferences();
   return <View accessibilityRole="radiogroup" accessibilityLabel="نوع الهدف" style={{ flexDirection: 'row', gap: 12 }}>
     {([{ type: 'khatma', title: 'ختمة', detail: 'ورد محسوب حسب المدة', icon: 'calendar' }, { type: 'wird', title: 'ورد يومي', detail: 'مقدار تختاره، بلا مدة', icon: 'book' }] as const).map(option => {
@@ -83,7 +83,7 @@ function AmountButton({ label, plus = false, disabled, onPress }: { label: strin
   </Pressable>;
 }
 
-export function ExistingGoalCard({ goal, onOpen }: { goal: ReadingPlan; onOpen: () => void }) {
+export function ExistingGoalCard({ goal, onOpen }: { goal: SequentialPlan; onOpen: () => void }) {
   const { palette: p } = useReadingPreferences();
   return <View style={[c.panel, { backgroundColor: p.paper, borderColor: p.border, gap: 16 }]}>
     <View style={c.row}><View style={[c.existingIcon, { backgroundColor: p.accentSoft }]}><ReaderIcon name="check" color={p.accent} size={22} /></View>

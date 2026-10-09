@@ -7,6 +7,8 @@ export function normalizeArabicSearch(value: string): string {
         .replace(/\p{M}/gu, "")
         .replace(/[\u0640\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, "")
         .replace(/[أإآٱ]/g, "ا")
+        .replace(/[٠-٩]/g, digit => String(digit.charCodeAt(0) - 1632))
+        .replace(/[۰-۹]/g, digit => String(digit.charCodeAt(0) - 1776))
         .replace(/[ىےی]/g, "ي")
         .replace(/ک/g, "ك")
         .toLowerCase()

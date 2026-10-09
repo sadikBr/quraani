@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, TextInput, View, Text as QuranText } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { useReaderContent } from '../../hooks/use-reader-content';
@@ -8,79 +9,89 @@ import { useQuranFont } from '../../hooks/use-quran-font';
 import { useBookmarks } from '../../state/bookmarks-provider';
 import { useReadingPreferences } from '../../state/reading-preferences-provider';
 import { createQuranSearch, normalizeArabicSearch, type QuranSearchResult } from '../../utils/search';
+import { filterSavedAyahs, savedAyahs, type SavedAyahOrder } from '../../utils/saved-ayahs';
 import { ayahKey } from '../../utils/references';
-import { ReaderIcon, ScreenHeading } from '../ui/reader-chrome';
+import { RIWAYAT } from '../../riwayat';
+import { ReaderIcon } from '../ui/reader-chrome';
+import { LibraryEmpty, LibraryHeader, LibrarySearch, LibraryTabs, libraryStyles as l } from '../ui/library-chrome';
 import { ReaderButton } from '../reading/reader-button';
-import { readerLayout, readerShape } from '../../design';
+import { readerShape } from '../../design';
+import { AyahResultCard } from './ayah-result-card';
 
+const examples = ['الرحمن الرحيم', 'الحمد لله', 'السماوات', 'المؤمنين'];
+const orders = [{ value: 'quran', label: 'ترتيب المصحف' }, { value: 'recent', label: 'الأحدث حفظًا' }] as const;
 export function SearchScreen({ saved = false }: { saved?: boolean }) {
-  const { palette } = useReadingPreferences();
+  const { palette: p, dark, preferences } = useReadingPreferences();
   const { content, error, refresh } = useReaderContent();
-  const { bookmarks, ready, error: storageError } = useBookmarks();
+  const { bookmarks, toggle, ready, error: storageError } = useBookmarks();
   const font = useQuranFont();
-  const [query, setQuery] = useState('');
-  const [searchFocused, setSearchFocused] = useState(false);
-  const [debounced, setDebounced] = useState('');
+  const list = useRef<FlatList<QuranSearchResult>>(null);
+  const [query, setQuery] = useState(''), [debounced, setDebounced] = useState('');
+  const [order, setOrder] = useState<SavedAyahOrder>('quran');
+  const [removed, setRemoved] = useState<QuranSearchResult>();
   const [limit, setLimit] = useState(50);
   useEffect(() => { const timer = setTimeout(() => setDebounced(query), 180); return () => clearTimeout(timer); }, [query]);
-  const search = useMemo(() => content ? createQuranSearch(content.data.quran) : null, [content]);
+  const search = useMemo(() => content && !saved ? createQuranSearch(content.data.quran) : null, [content, saved]);
+  const savedItems = useMemo(() => content && saved ? savedAyahs(content.data.quran, bookmarks) : [], [content, saved, bookmarks]);
+  const bookmarkSet = useMemo(() => new Set(bookmarks), [bookmarks]);
   const matches = useMemo(() => {
-    if (!content || !search) return { items: [] as QuranSearchResult[], total: 0 };
-    if (saved) {
-      const items = content.data.quran.surahs.flatMap((surah) => surah.ayahs.filter((ayah) => bookmarks.includes(ayahKey(ayah))).map((ayah) => ({ reference: ayah, pageNumber: ayah.pageNumber, text: ayah.text, surahName: surah.name })));
-      return { items, total: items.length };
-    }
+    if (saved) { const items = filterSavedAyahs(savedItems, debounced, order); return { items, total: items.length }; }
+    if (!search) return { items: [] as QuranSearchResult[], total: 0 };
     const first = search(debounced, { limit: 50 });
     const items = [...first.items];
     for (let offset = 50; offset < Math.min(limit, first.total); offset += 100) items.push(...search(debounced, { offset, limit: Math.min(100, limit - offset) }).items);
     return { items, total: first.total };
-  }, [content, search, saved, bookmarks, debounced, limit]);
-  const hint = saved ? 'لم تحفظ علامات بعد. اختر آية في المصحف ثم احفظها.' : normalizeArabicSearch(debounced).length < 2 ? 'اكتب حرفين على الأقل للبحث في نص القرآن.' : 'لا توجد نتائج. جرّب كلمات أخرى أو احذف بعض الكلمات.';
+  }, [search, saved, savedItems, debounced, order, limit]);
   const hasSearch = normalizeArabicSearch(debounced).length >= 2;
-  return <SafeAreaView style={[styles.root, { backgroundColor: palette.background }]}>
-    <FlatList data={font.loaded ? matches.items : []} keyExtractor={(item) => ayahKey(item.reference)} initialNumToRender={10} maxToRenderPerBatch={10} windowSize={7}
-      keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}
-      ListHeaderComponent={<View style={styles.header}>
-        <ScreenHeading title={saved ? 'العلامات المحفوظة' : 'البحث في القرآن'} subtitle={saved ? 'عُد إلى الآيات التي اخترتها.' : 'ابحث في الرواية المختارة، مع التشكيل أو بدونه.'} palette={palette} onBack={() => router.canGoBack() ? router.back() : router.replace('/')} />
-        {!saved && <View style={[styles.search, { backgroundColor: palette.paper, borderColor: searchFocused ? palette.accent : palette.border }]}>
-          <ReaderIcon name="search" color={searchFocused ? palette.accent : palette.muted} size={20} />
-          <TextInput accessibilityLabel="البحث في نص القرآن" placeholder="ابحث عن كلمة أو عبارة" placeholderTextColor={palette.muted} value={query}
-            onFocus={() => setSearchFocused(true)} onBlur={() => setSearchFocused(false)}
-            onChangeText={(text) => { setQuery(text); setLimit(50); }} autoCorrect={false} returnKeyType="search" style={[styles.input, { color: palette.text }]} />
-          {!!query && <Pressable accessibilityRole="button" accessibilityLabel="مسح البحث" onPress={() => { setQuery(''); setLimit(50); }} style={styles.clear}>
-            <ReaderIcon name="close" color={palette.muted} size={18} />
-          </Pressable>}
+  const filtering = !!normalizeArabicSearch(debounced), searching = query !== debounced;
+  const available = !!content && font.loaded && (!saved || ready);
+  const back = () => router.canGoBack() ? router.back() : router.replace('/');
+  const changeQuery = (value: string) => { setQuery(value); setLimit(50); list.current?.scrollToOffset({ offset: 0, animated: false }); };
+  const open = (item: QuranSearchResult) => router.dismissTo({ pathname: '/', params: { surah: String(item.reference.surahNumber), ayah: String(item.reference.ayahNumber) } });
+  const save = (item: QuranSearchResult) => {
+    const key = ayahKey(item.reference);
+    setRemoved(saved && bookmarkSet.has(key) ? item : undefined); toggle(key);
+  };
+  const undo = () => { if (removed && !bookmarkSet.has(ayahKey(removed.reference))) toggle(ayahKey(removed.reference)); setRemoved(undefined); };
+  return <SafeAreaView style={[l.root, { backgroundColor: p.background }]}>
+    <StatusBar style={dark ? 'light' : 'dark'} />
+    <LibraryHeader title={saved ? 'العلامات المحفوظة' : 'البحث في القرآن'} subtitle={`رواية ${RIWAYAT[preferences.riwayah].label}`} icon={saved ? 'bookmark' : 'search'} palette={p} onBack={back} />
+    {(!saved || savedItems.length > 0 || !!query) && <View style={l.filters}>
+      <LibrarySearch value={query} onChange={changeQuery} label={saved ? 'البحث في العلامات المحفوظة' : 'البحث في نص القرآن'} placeholder={saved ? 'اسم السورة أو كلمات من الآية' : 'اكتب كلمة أو عبارة من الآية'} palette={p} />
+      {saved ? <LibraryTabs options={orders} value={order} onChange={value => { setOrder(value); list.current?.scrollToOffset({ offset: 0, animated: false }); }} label="ترتيب العلامات" palette={p} />
+        : <Text style={{ color: p.muted, fontSize: 11 }}>ابحث بالتشكيل أو بدونه، في روايتك المختارة.</Text>}
+    </View>}
+    {removed && <View style={l.filters}><View style={[s.undo, { backgroundColor: p.accentSoft }]}><Text accessibilityLiveRegion="polite" style={{ color: p.text, fontSize: 12, flex: 1 }}>أُزيلت العلامة من المحفوظات</Text><Pressable accessibilityRole="button" accessibilityLabel="التراجع عن إزالة العلامة" onPress={undo} style={s.undoAction}><Text style={{ color: p.accent, fontSize: 13, fontWeight: '600' }}>تراجع</Text><ReaderIcon name="restore" color={p.accent} size={18} /></Pressable></View></View>}
+    <FlatList ref={list} data={available ? matches.items : []} keyExtractor={item => ayahKey(item.reference)} style={l.list} contentContainerStyle={l.content}
+      initialNumToRender={8} maxToRenderPerBatch={8} windowSize={7} keyboardShouldPersistTaps="handled" keyboardDismissMode={Platform.OS === 'web' ? 'none' : 'on-drag'} showsVerticalScrollIndicator={false}
+      ListHeaderComponent={<View>
+        {storageError && <Text accessibilityRole="alert" style={{ color: p.warning, fontSize: 13, marginBottom: 12 }}>تعذر قراءة العلامات أو حفظها على الجهاز. تغييراتك متاحة في هذه الجلسة.</Text>}
+        {content?.stale && <Text style={{ color: p.muted, fontSize: 11, marginBottom: 10 }}>تستخدم نسخة المصحف المحفوظة على الجهاز.</Text>}
+        {available && saved && savedItems.length > 0 && !filtering && <View style={[s.summary, { backgroundColor: p.hero }]}>
+          <View style={{ flex: 1, minWidth: 0 }}><Text style={{ color: p.onHero, fontSize: 21, fontWeight: '600' }}>آيات ترجع إليها</Text><Text style={{ color: p.heroMuted, fontSize: 12 }}>العلامات: {savedItems.length} · السور: {new Set(savedItems.map(item => item.reference.surahNumber)).size}</Text></View><ReaderIcon name="bookmark" color={p.heroMuted} size={30} />
         </View>}
-        {(saved || hasSearch) && <View style={[styles.resultsHeading, { borderColor: palette.border }]}>
-          <Text style={{ color: palette.text, fontSize: 14, fontWeight: '600' }}>{saved ? 'آيات محفوظة' : 'نتائج البحث'}</Text>
-          <Text accessibilityLiveRegion="polite" style={{ color: palette.muted, fontSize: 12 }}>{matches.total} {saved ? 'علامة' : 'نتيجة'}</Text>
+        {available && (saved && savedItems.length > 0 || hasSearch) && <View style={l.results}>
+          <Text style={{ color: p.text, fontSize: 13, fontWeight: '600' }}>{saved ? filtering ? 'نتائج المحفوظات' : order === 'recent' ? 'آخر ما حفظته' : 'آياتك بترتيب المصحف' : 'نتائج البحث'}</Text>
+          {searching ? <ActivityIndicator accessibilityLabel="جارٍ البحث" size="small" color={p.accent} /> : <Text accessibilityLiveRegion="polite" style={{ color: p.muted, fontSize: 12 }}>{matches.total} {saved ? 'علامة' : 'نتيجة'}</Text>}
         </View>}
-        {storageError && saved && <Text accessibilityRole="alert" style={{ color: palette.warning }}>تعذر الوصول إلى العلامات المحفوظة على الجهاز.</Text>}
-        {content?.stale && <Text style={{ color: palette.muted, fontSize: 12 }}>تستخدم نسخة المصحف المحفوظة على الجهاز.</Text>}
       </View>}
-      ListEmptyComponent={error && !content || font.error ? <View style={styles.empty}><Text accessibilityRole="alert" style={{ color: palette.warning }}>تعذر تحميل المصحف أو الخط.</Text><ReaderButton palette={palette} onPress={refresh}>إعادة المحاولة</ReaderButton></View> : !content || !font.loaded || saved && !ready ? <ActivityIndicator accessibilityLabel="جارٍ تجهيز النتائج" color={palette.accent} /> : <View style={styles.empty}>
-        <View style={[styles.emptyIcon, { backgroundColor: palette.paper, borderColor: palette.border }]}><ReaderIcon name={saved ? 'bookmark' : 'search'} color={palette.ornament} size={26} /></View>
-        <Text accessibilityRole="header" style={{ color: palette.text, fontSize: 20, fontWeight: '600', textAlign: 'center' }}>{saved ? 'احتفظ بآياتك المفضّلة' : hasSearch ? 'لم نعثر على نتائج' : 'ابدأ بكلمة من الآية'}</Text>
-        <Text style={{ color: palette.muted, fontSize: 13, textAlign: 'center', maxWidth: 280 }}>{hint}</Text>
-        {saved && <ReaderButton palette={palette} onPress={() => router.canGoBack() ? router.back() : router.replace('/')}>العودة إلى المصحف</ReaderButton>}
-      </View>}
-      onEndReachedThreshold={0.5} onEndReached={() => { if (!saved && limit < matches.total) setLimit((v) => Math.min(v + 50, matches.total)); }}
-      renderItem={({ item }) => <Pressable accessibilityRole="button" accessibilityLabel={`${item.surahName}، الآية ${item.reference.ayahNumber}، صفحة ${item.pageNumber}. ${item.text}`} accessibilityHint="فتح الآية وتحديدها في المصحف" onPress={() => router.dismissTo({ pathname: '/', params: { surah: String(item.reference.surahNumber), ayah: String(item.reference.ayahNumber) } })}
-        style={({ pressed }) => [styles.result, { backgroundColor: pressed ? palette.accentSoft : palette.paper, borderColor: palette.border }]}>
-        <View style={styles.row}><Text style={{ color: palette.accent, fontSize: 14, fontWeight: '600', flex: 1 }}>{item.surahName} · الآية {item.reference.ayahNumber}</Text><Text style={{ color: palette.muted, fontSize: 11 }}>صفحة {item.pageNumber}</Text></View>
-        <QuranText numberOfLines={3} style={{ color: palette.text, fontFamily: font.fontFamily, fontSize: 24, lineHeight: 44, writingDirection: 'rtl', textAlign: Platform.OS === 'android' ? 'auto' : 'right' }}>{item.text}</QuranText>
-      </Pressable>} />
+      ListEmptyComponent={error && !content || font.error ? <LibraryEmpty title="تعذر تحميل المحتوى" description="تحقق من الاتصال، ثم أعد المحاولة." icon="book" palette={p}><ReaderButton palette={p} onPress={refresh}>إعادة المحاولة</ReaderButton></LibraryEmpty>
+        : !available ? <View style={l.status}><ActivityIndicator accessibilityLabel="جارٍ تجهيز النتائج" color={p.accent} /></View>
+        : <LibraryEmpty title={saved ? filtering ? 'لا توجد علامة مطابقة' : 'آيات تحب أن تبقى قريبة' : hasSearch ? 'لم نعثر على هذه الكلمات' : 'تذكّر كلمة، واعثر على الآية'}
+          description={saved ? filtering ? 'جرّب اسم السورة أو كلمات أخرى من الآية.' : 'احفظ أي آية من المصحف أو نتائج البحث، وستجدها هنا للعودة إليها بسهولة.' : hasSearch ? 'جرّب كلمات أقل، أو صياغة أخرى من الآية.' : 'اكتب حرفين على الأقل، أو ابدأ بأحد هذه الاقتراحات.'} icon={saved ? 'bookmark' : 'search'} palette={p}>
+          {saved ? <View style={{ alignSelf: 'stretch', marginTop: 12 }}><ReaderButton palette={p} selected={!filtering} onPress={filtering ? () => changeQuery('') : () => router.push('/search')}>{filtering ? 'عرض كل العلامات' : 'البحث عن آية'}</ReaderButton></View>
+            : hasSearch ? <ReaderButton palette={p} onPress={() => changeQuery('')}>مسح البحث</ReaderButton>
+            : <View style={s.suggestions}>{examples.map(example => <Pressable key={example} accessibilityRole="button" accessibilityLabel={`البحث عن ${example}`} onPress={() => changeQuery(example)} style={({ pressed }) => [s.suggestion, { backgroundColor: pressed ? p.accentSoft : p.paper, borderColor: p.border }]}><ReaderIcon name="search" color={p.accent} size={16} /><Text style={{ color: p.text, fontSize: 13 }}>{example}</Text></Pressable>)}</View>}
+        </LibraryEmpty>}
+      ListFooterComponent={available && !saved && matches.items.length > 0 && matches.items.length < matches.total ? <ReaderButton palette={p} onPress={() => setLimit(value => Math.min(value + 50, matches.total))}>عرض المزيد من النتائج</ReaderButton> : null}
+      onEndReachedThreshold={0.5} onEndReached={() => { if (!saved && !searching && limit < matches.total) setLimit(value => Math.min(value + 50, matches.total)); }}
+      renderItem={({ item }) => <AyahResultCard item={item} palette={p} fontFamily={font.fontFamily} bookmarked={bookmarkSet.has(ayahKey(item.reference))} saved={saved} canSave={ready} onOpen={() => open(item)} onSave={() => save(item)} />} />
   </SafeAreaView>;
 }
-const styles = StyleSheet.create({
-  root: { flex: 1 }, content: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: readerLayout.gutter, paddingTop: 12, paddingBottom: 32 },
-  header: { gap: 22, marginBottom: 16 },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, borderWidth: 1, borderRadius: readerShape.control },
-  input: { flex: 1, minWidth: 0, minHeight: 52, fontFamily: 'ReaderNaskh', fontSize: 16, writingDirection: 'rtl', textAlign: Platform.OS === 'android' ? 'left' : 'right', ...Platform.select({ native: { direction: 'rtl' as const }, web: { outlineWidth: 0 } }) },
-  clear: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  resultsHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, paddingBottom: 12, gap: 12 },
-  result: { minHeight: 80, padding: 16, marginBottom: 10, borderRadius: readerShape.card, borderWidth: 1, gap: 12 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  empty: { paddingHorizontal: 20, paddingVertical: 44, alignItems: 'center', gap: 12 },
-  emptyIcon: { width: 56, height: 56, borderWidth: 1, borderRadius: readerShape.card, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+const s = StyleSheet.create({
+  suggestions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginTop: 14 },
+  suggestion: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderRadius: readerShape.control },
+  summary: { padding: 18, flexDirection: 'row', alignItems: 'center', gap: 16, borderRadius: readerShape.card, marginBottom: 20 },
+  undo: { paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: readerShape.control },
+  undoAction: { flexDirection: 'row', gap: 6, minHeight: 44, alignItems: 'center', paddingHorizontal: 4 },
 });

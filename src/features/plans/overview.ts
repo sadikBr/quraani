@@ -1,5 +1,6 @@
 import { nextPortion } from './engine';
-import type { ReadingPlan } from './types';
+import { isRecurringPlan, type ReadingPlan } from './types';
+import { occurrenceProgress } from './recurring';
 
 export type GoalsView = 'today' | 'all' | 'archived';
 
@@ -9,7 +10,7 @@ export function goalsOverview(plans: ReadingPlan[], today: string) {
   const due = all.filter(p => nextPortion(p, today)?.due);
   // Count completed portions, including catch-up reading, without counting
   // partially read portions or goals that have been archived.
-  const completedToday = all.reduce((count, p) => count + p.cycle.sessions.filter(s =>
-    s.end <= p.cycle.cursor && p.cycle.progress.some(log => log.date === today && log.to === s.end)).length, 0);
+  const completedToday = all.reduce((count, p) => count + (isRecurringPlan(p) ? Number(occurrenceProgress(p, today).done) : p.cycle.sessions.filter(s =>
+    s.end <= p.cycle.cursor && p.cycle.progress.some(log => log.date === today && log.to === s.end)).length), 0);
   return { all, archived, due, completedToday };
 }

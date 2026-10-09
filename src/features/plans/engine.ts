@@ -3,7 +3,8 @@ import type { ReaderContent } from '../quran-reader/types/reader';
 import { RIWAYAT } from '../quran-reader/riwayat';
 import { pageFingerprint } from '../quran-reader/utils/page-fingerprint';
 import { addDays, daysBetween, validDate } from './dates';
-import type { PlanCycle, PlanDraft, PlanSession, PlanUnit, ReadingPlan } from './types';
+import { isRecurringPlan, type PlanCycle, type PlanDraft, type PlanSession, type PlanUnit, type ReadingPlan, type SequentialPlan, type RecurringPlan } from './types';
+import { nextRecurringPortion, recordRecurringProgress } from './recurring';
 import { resolvePlanStart } from './start-point';
 
 export interface PlanIndex {
@@ -43,6 +44,8 @@ export function assertPlanIndex(plan: ReadingPlan, index: PlanIndex) {
   if (index.mushafId !== RIWAYAT[plan.riwayah].mushafId || plan.corpus !== index.corpus || plan.totalAyahs !== index.ayahs.length) {
     throw new Error('لم يتطابق الهدف مع نسخة المصحف. لم يتغير تقدمك.');
   }
+  if (isRecurringPlan(plan) && plan.ranges.some(r => index.ayahs[r.start]?.surahNumber !== r.surah || index.ayahs[r.end - 1]?.surahNumber !== r.surah ||
+    index.ayahs[r.start - 1]?.surahNumber === r.surah || index.ayahs[r.end]?.surahNumber === r.surah)) throw new Error('حدود السور لا تتطابق مع المصحف. لم يتغير تقدمك.');
 }
 function daySequence(start: string, count: number): string[] {
   return Array.from({ length: count }, (_, i) => addDays(start, i));
@@ -79,7 +82,7 @@ function createCycle(draft: Pick<PlanDraft, 'goal' | 'unit' | 'startDate'>, inde
   const ends = draft.goal.type === 'khatma' ? khatmaEnds(index, draft.unit, start, draft.goal.weeks * 7) : quotaEnds(index, draft.unit, draft.goal.amount, start);
   return { number, start, cursor: start, sessions: sessionsFrom(ends, start, draft.startDate), availableDate: draft.startDate, progress: [] };
 }
-export function createPlan(draft: PlanDraft, index: PlanIndex, id: string): ReadingPlan {
+export function createPlan(draft: PlanDraft, index: PlanIndex, id: string): SequentialPlan {
   if (!draft.name.trim() || draft.name.trim().length > 80 || !validDate(draft.startDate) || !RIWAYAT[draft.riwayah] || index.mushafId !== RIWAYAT[draft.riwayah].mushafId) throw new Error('راجع اسم الهدف وتاريخه وروايته');
   if (draft.goal.type === 'khatma' && (!Number.isInteger(draft.goal.weeks) || draft.goal.weeks < 1 || draft.goal.weeks > 52)) throw new Error('اختر مدة بين أسبوع و٥٢ أسبوعًا');
   const start = resolvePlanStart(index, draft.start);
@@ -89,6 +92,7 @@ export function createPlan(draft: PlanDraft, index: PlanIndex, id: string): Read
     corpus: index.corpus, totalAyahs: index.ayahs.length, cycle: createCycle(draft, index, start), history: [] };
 }
 export function nextPortion(plan: ReadingPlan, today: string) {
+  if (isRecurringPlan(plan)) return nextRecurringPortion(plan, today);
   if (plan.status !== 'active') return null;
   const slot = plan.cycle.sessions.findIndex(s => s.end > plan.cycle.cursor);
   if (slot < 0) return null;
@@ -97,7 +101,11 @@ export function nextPortion(plan: ReadingPlan, today: string) {
   return { ...session, start: plan.cycle.cursor, slot, cycle: plan.cycle.number, date, due: date <= today };
 }
 /** A receipt binds a tap to one portion. Repeated taps cannot complete the next day's reading. */
+export function recordProgress(plan: SequentialPlan, receipt: { cycle: number; slot: number; to: number }, today: string): SequentialPlan;
+export function recordProgress(plan: RecurringPlan, receipt: { cycle: number; slot: number; to: number }, today: string): RecurringPlan;
+export function recordProgress(plan: ReadingPlan, receipt: { cycle: number; slot: number; to: number }, today: string): ReadingPlan;
 export function recordProgress(plan: ReadingPlan, receipt: { cycle: number; slot: number; to: number }, today: string): ReadingPlan {
+  if (isRecurringPlan(plan)) return recordRecurringProgress(plan, receipt, today);
   const next = nextPortion(plan, today);
   if (!next || !next.due || receipt.cycle !== next.cycle || receipt.slot !== next.slot || !Number.isInteger(receipt.to) || receipt.to <= next.start || receipt.to > next.end) return plan;
   const completed = receipt.to === plan.totalAyahs;
@@ -106,23 +114,24 @@ export function recordProgress(plan: ReadingPlan, receipt: { cycle: number; slot
     completedOn: completed ? today : undefined,
     progress: [...plan.cycle.progress, { date: today, from: next.start, to: receipt.to }] } };
 }
-export function undoProgress(plan: ReadingPlan): ReadingPlan {
+export function undoProgress(plan: SequentialPlan): SequentialPlan {
   if (plan.status === 'archived') return plan;
   const last = plan.cycle.progress.at(-1);
   if (!last) return plan;
   return { ...plan, status: plan.status === 'paused' ? 'paused' : 'active', cycle: { ...plan.cycle,
     cursor: last.from, completedOn: undefined, availableDate: last.date, progress: plan.cycle.progress.slice(0, -1) } };
 }
-export function rollCompletedCycle(plan: ReadingPlan, index: PlanIndex, today: string): ReadingPlan {
+export function rollCompletedCycle(plan: SequentialPlan, index: PlanIndex, today: string): SequentialPlan {
   assertPlanIndex(plan, index);
   if (plan.status !== 'completed' || !plan.repeat || !plan.cycle.completedOn || today <= plan.cycle.completedOn) return plan;
   const startDate = addDays(plan.cycle.completedOn, 1);
   return { ...plan, status: 'active', cycle: createCycle({ ...plan, startDate }, index, 0, plan.cycle.number + 1),
     history: [...plan.history, { number: plan.cycle.number, startedOn: plan.cycle.sessions[0].date, completedOn: plan.cycle.completedOn, ayahs: plan.totalAyahs - plan.cycle.start }] };
 }
-export function setPlanPaused(plan: ReadingPlan, paused: boolean, today: string): ReadingPlan {
+export function setPlanPaused<T extends ReadingPlan>(plan: T, paused: boolean, today: string): T {
   if (paused && plan.status === 'active') return { ...plan, status: 'paused', pausedOn: today };
   if (!paused && plan.status === 'paused') {
+    if (isRecurringPlan(plan)) return { ...plan, status: 'active', pausedOn: undefined };
     const shift = Math.max(0, daysBetween(plan.pausedOn ?? today, today));
     return { ...plan, status: 'active', pausedOn: undefined, cycle: { ...plan.cycle,
       availableDate: addDays(plan.cycle.availableDate, shift),
@@ -130,7 +139,7 @@ export function setPlanPaused(plan: ReadingPlan, paused: boolean, today: string)
   }
   return plan;
 }
-export function reschedulePlan(plan: ReadingPlan, index: PlanIndex, mode: 'extend' | 'redistribute', today: string): ReadingPlan {
+export function reschedulePlan(plan: SequentialPlan, index: PlanIndex, mode: 'extend' | 'redistribute', today: string): SequentialPlan {
   assertPlanIndex(plan, index);
   if (plan.status !== 'active' || plan.goal.type !== 'khatma') return plan;
   const pending = plan.cycle.sessions.filter(s => s.end > plan.cycle.cursor);
