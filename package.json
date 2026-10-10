@@ -3,6 +3,8 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "@expo-google-fonts/geist": "^0.4.2",
+    "@expo-google-fonts/ibm-plex-sans-arabic": "^0.4.2",
     "@expo/ui": "~57.0.22",
     "@react-native-community/slider": "5.2.0",
     "expo": "~57.0.27",
@@ -38,6 +40,7 @@
     "@types/react": "~19.2.2",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
+    "lucide-react-native": "^1.55.0",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -49,7 +52,8 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "bun test tests",
-    "verify:quranpedia": "bun scripts/verify-quranpedia.mjs"
+    "verify:quranpedia": "bun scripts/verify-quranpedia.mjs",
+    "icons": "node scripts/generate-icons.mjs"
   },
   "private": true
 }

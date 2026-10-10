@@ -85,7 +85,7 @@ export const QuranPage = memo(function QuranPage({
         fontFamily,
         fontSize,
         lineHeight: readerTextLineHeight(fontSize, spacious),
-        color: palette.text,
+        color: palette.foreground,
         fontWeight: "400",
         writingDirection: "rtl",
         textAlign: 'justify',
@@ -127,7 +127,7 @@ export const QuranPage = memo(function QuranPage({
                 } : undefined}
                 onLayout={Platform.OS === 'web' && layout === 'flowing' ? () => measureWebAyah(ayah) : undefined}
                 style={
-                    selected && !visibleWords ? { backgroundColor: palette.selected } : undefined
+                    selected && !visibleWords ? { backgroundColor: palette.highlight } : undefined
                 }
             >
                 <AyahTextAction onPress={() => onTap(ayah)} onLongPress={() => onSelect(ayah)}
@@ -137,7 +137,7 @@ export const QuranPage = memo(function QuranPage({
                         native nested text can inherit ink instead of honoring transparency. */}
                     {words ? words.map((word, index) => {
                         const hidden = index >= revealed!;
-                        return <Text key={index} style={{ color: hidden ? palette.paper : palette.text, opacity: hidden ? 0 : 1 }}
+                        return <Text key={index} style={{ color: hidden ? palette.card : palette.foreground, opacity: hidden ? 0 : 1 }}
                             accessibilityElementsHidden={hidden} importantForAccessibility={hidden ? 'no-hide-descendants' : 'auto'} aria-hidden={hidden}>
                             {word}
                         </Text>;
@@ -157,10 +157,10 @@ export const QuranPage = memo(function QuranPage({
             onLayout={Platform.OS === 'web' ? measureWebTarget : undefined}
             style={[
                 styles.page,
-                { backgroundColor: palette.paper },
+                { backgroundColor: palette.card },
             ]}
         >
-            {tajweed && coloring.error && <View style={{ gap: 8, padding: 12 }}><ArabicText style={{ color: palette.muted }}>تعذر تحميل ألوان التجويد. النص الكامل ظاهر دون ألوان.</ArabicText><ReaderButton palette={palette} onPress={coloring.retry}>إعادة المحاولة</ReaderButton></View>}
+            {tajweed && coloring.error && <View style={{ gap: 8, padding: 12 }}><ArabicText style={{ color: palette.mutedForeground }}>تعذر تحميل ألوان التجويد. النص الكامل ظاهر دون ألوان.</ArabicText><ReaderButton palette={palette} onPress={coloring.retry}>إعادة المحاولة</ReaderButton></View>}
             {sections.map((section) => (
                 <View key={section.surah.number} style={styles.section} onLayout={(event) => {
                     if (section.surah.number === selectedAyah?.surahNumber) { offsets.current.section = event.nativeEvent.layout.y; reportTarget(); }
@@ -217,7 +217,7 @@ export const QuranPage = memo(function QuranPage({
                                     <ArabicText
                                         style={[
                                             styles.reference,
-                                            { color: palette.accent, backgroundColor: palette.accentSoft },
+                                            { color: palette.secondaryForeground, backgroundColor: palette.secondary },
                                         ]}
                                     >
                                         {String(ayah.surahNumber)}:{String(ayah.ayahNumber)}
@@ -249,5 +249,5 @@ const styles = StyleSheet.create({
     paragraph: { paddingVertical: 8 },
     ayahs: { gap: 14 },
     ayahRow: { paddingBottom: 18, borderBottomWidth: StyleSheet.hairlineWidth },
-    reference: { fontSize: 11, textAlign: "center", alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 5, borderRadius: readerShape.detail, overflow: 'hidden' },
+    reference: { fontSize: 12, textAlign: "center", alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 3, borderRadius: readerShape.pill, overflow: 'hidden' },
 });

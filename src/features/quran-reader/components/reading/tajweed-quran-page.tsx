@@ -48,8 +48,8 @@ export const TajweedQuranPage = memo(function TajweedQuranPage({ page, quran, pa
   // Selection and measured opening heights are applied in place (see tajweed-bridge).
   const html = useMemo(() => data ? withTajweedPageBridge(tajweedDocument(data.blocks, data.font, palette, dark, null)) : '', [data, palette, dark]);
   const update = useMemo(() => JSON.stringify({ selected, openings: openingHeights } satisfies TajweedPageState), [selected, openingHeights]);
-  if (error) return <View style={{ padding: 30, gap: 16 }}><Text style={{ color: palette.muted }}>تعذر تحميل مصحف التجويد.</Text><ReaderButton palette={palette} onPress={() => { setError(false); setRetry((n) => n + 1); }}>إعادة المحاولة</ReaderButton></View>;
-  if (!data) return <ActivityIndicator color={palette.accent} accessibilityLabel="جارٍ تحميل مصحف التجويد" style={{ marginVertical: 60 }} />;
+  if (error) return <View style={{ padding: 30, gap: 16 }}><Text style={{ color: palette.mutedForeground }}>تعذر تحميل مصحف التجويد.</Text><ReaderButton palette={palette} onPress={() => { setError(false); setRetry((n) => n + 1); }}>إعادة المحاولة</ReaderButton></View>;
+  if (!data) return <ActivityIndicator color={palette.primary} accessibilityLabel="جارٍ تحميل مصحف التجويد" style={{ marginVertical: 60 }} />;
   return <View><TajweedSurface pageNumber={page.number} html={html} update={update} height={height} onError={() => setError(true)} onMessage={(raw) => {
     try {
       const message = JSON.parse(raw);

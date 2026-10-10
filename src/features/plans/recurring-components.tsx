@@ -1,7 +1,8 @@
 import { Pressable, View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
-import { readerShape, withAlpha } from '../quran-reader/design';
+import { readerShape } from '../quran-reader/design';
+import { Chip } from '@/components/ui';
 import { GoalCardFrame, GoalCardHeading, GoalProgress } from './goal-card';
 import { arabicNumber, shortDate } from './presentation';
 import { completedOccurrences, nextRecurringPortion, occurrenceProgress, WEEKDAYS, weekdaysLabel } from './recurring';
@@ -12,20 +13,17 @@ export function WeekdayPicker({ days, onChange, quickOptions = [{ label: 'كل �
   return <View style={{ gap: 12 }}>
     <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>{quickOptions.map(option => {
       const active = option.value.length === days.length && option.value.every(value => days.includes(value));
-      return <Pressable key={option.label} accessibilityRole="button" accessibilityState={{ selected: active }} aria-pressed={active} onPress={() => onChange(option.value)}
-        style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 14, justifyContent: 'center', borderRadius: readerShape.control, borderWidth: 1, borderColor: active ? p.accent : 'transparent', backgroundColor: active ? p.accentSoft : withAlpha(p.text, 0.05), opacity: pressed ? 0.6 : 1 })}>
-        <Text style={{ color: active ? p.accent : p.muted, fontSize: 13, fontWeight: active ? '600' : '400' }}>{option.label}</Text>
+      return <Pressable key={option.label} accessibilityRole="button" accessibilityState={{ selected: active }} aria-pressed={active} onPress={() => onChange(option.value)} hitSlop={4}
+        style={({ pressed }) => ({ minHeight: 32, paddingHorizontal: 12, justifyContent: 'center', borderRadius: readerShape.pill, borderWidth: 1, borderColor: active ? p.primary : p.border, backgroundColor: active ? p.secondary : pressed ? p.accent : 'transparent' })}>
+        <Text style={{ color: active ? p.foreground : p.mutedForeground, fontSize: 13, fontWeight: '500' }}>{option.label}</Text>
       </Pressable>;
     })}</View>
-    {[WEEKDAYS.slice(0, 4), WEEKDAYS.slice(4)].map((row, i) => <View key={i} style={{ flexDirection: 'row', gap: 6 }}>{row.map(day => {
+    {[WEEKDAYS.slice(0, 4), WEEKDAYS.slice(4)].map((row, i) => <View key={i} style={{ flexDirection: 'row', gap: 8 }}>{row.map(day => {
       const checked = days.includes(day.value);
-      return <Pressable key={day.value} accessibilityRole="checkbox" accessibilityLabel={day.label} accessibilityState={{ checked }} aria-checked={checked}
-        onPress={() => onChange(checked ? days.filter(d => d !== day.value) : [...days, day.value].sort((a, b) => a - b))}
-        style={({ pressed }) => ({ flex: 1, minHeight: 48, justifyContent: 'center', borderRadius: readerShape.control, borderWidth: 1, borderColor: checked ? p.accent : p.border, backgroundColor: checked ? p.accentSoft : p.paper, opacity: pressed ? 0.65 : 1 })}>
-        <Text style={{ color: checked ? p.accent : p.muted, fontSize: 13, fontWeight: checked ? '600' : '400', textAlign: 'center' }}>{day.label}</Text>
-      </Pressable>;
+      return <Chip key={day.value} flex soft accessibilityRole="checkbox" label={day.label} selected={checked}
+        onPress={() => onChange(checked ? days.filter(d => d !== day.value) : [...days, day.value].sort((a, b) => a - b))} />;
     })}</View>)}
-    <Text accessibilityLiveRegion="polite" style={{ color: days.length ? p.muted : p.warning, fontSize: 12 }}>{days.length ? weekdaysLabel(days) : 'اختر يومًا واحدًا على الأقل.'}</Text>
+    <Text accessibilityLiveRegion="polite" style={{ color: days.length ? p.mutedForeground : p.destructive, fontSize: 13 }}>{days.length ? weekdaysLabel(days) : 'اختر يومًا واحدًا على الأقل.'}</Text>
   </View>;
 }
 

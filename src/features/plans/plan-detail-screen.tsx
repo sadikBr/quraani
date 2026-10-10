@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { ReaderIcon } from '../quran-reader/components/ui/reader-chrome';
-import { readerShape } from '../quran-reader/design';
+import { IconTile } from '@/components/ui';
+
+
 import { router, useLocalSearchParams } from 'expo-router';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { ReaderButton } from '../quran-reader/components/reading/reader-button';
@@ -111,15 +112,15 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
     {!index && !error && <PlanLoading />}
     {index && !mismatch && next && <PlanCard prominent>
       <View style={d.row}>
-        <View style={{ width: 36, height: 36, borderRadius: readerShape.control, backgroundColor: palette.accentSoft, alignItems: 'center', justifyContent: 'center' }}><ReaderIcon name="book" color={palette.accent} size={20} /></View>
+        <IconTile name="book" size={36} />
         <View style={d.grow}>
-          <Text accessibilityRole="header" style={{ color: next.due ? palette.accent : palette.muted, fontSize: 15, fontWeight: '600' }}>{next.due ? next.date < today ? 'ورد بانتظارك' : 'ورد اليوم' : 'وردك القادم'}</Text>
+          <Text accessibilityRole="header" style={{ color: next.due ? palette.primary : palette.mutedForeground, fontSize: 15, fontWeight: '600' }}>{next.due ? next.date < today ? 'ورد بانتظارك' : 'ورد اليوم' : 'وردك القادم'}</Text>
         </View>
-        <Text style={{ color: palette.muted, fontSize: 13 }}>الورد {arabicNumber(next.slot + 1)}</Text>
+        <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>الورد {arabicNumber(next.slot + 1)}</Text>
       </View>
       <View style={{ gap: 4 }}>
-        <Text style={{ color: palette.text, fontSize: 30, fontWeight: '700', lineHeight: 44 }}>{rangeLabel(index, next.start, next.end)}</Text>
-        <Text style={{ color: palette.muted, fontSize: 13 }}>{shortDate(next.date)}{partial ? ' · نكمل من حيث توقفت' : ''}</Text>
+        <Text style={{ color: palette.foreground, fontSize: 24, fontWeight: '600', lineHeight: 36 }}>{rangeLabel(index, next.start, next.end)}</Text>
+        <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{shortDate(next.date)}{partial ? ' · نكمل من حيث توقفت' : ''}</Text>
       </View>
       <ReadingBounds index={index} start={next.start} end={next.end} />
       <View style={{ gap: 4 }}>
@@ -135,7 +136,7 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
       </View>}
     </PlanCard>}
     {plan.status !== 'active' && <PlanCard>
-      <View style={d.row}><ReaderIcon name={plan.status === 'completed' ? 'check' : 'bookmark'} color={palette.accent} size={24} />
+      <View style={d.row}><IconTile name={plan.status === 'completed' ? 'check' : 'bookmark'} />
         <View style={d.grow}><Copy title>{plan.status === 'completed' ? 'أتممت رحلتك، تقبّل الله منك' : plan.status === 'paused' ? 'خذ وقتك، تقدمك محفوظ' : 'هذا الهدف في الأرشيف'}</Copy></View></View>
       <Copy muted>{plan.status === 'completed' ? plan.repeat ? 'تبدأ دورة جديدة في اليوم التالي للإكمال.' : 'يمكنك مراجعة جميع أورادك في الجدول أدناه.' : plan.status === 'paused' ? 'عند الاستئناف نمدد الجدول بمدة التوقف.' : `تذكيراته متوقفة. ${deletionDate ? `سيُحذف نهائيًا في ${shortDate(deletionDate)}.` : 'سيُحذف نهائيًا بعد أسبوعين.'} استعده قبل ذلك للاحتفاظ به.`}</Copy>
       {plan.status === 'paused' && <DetailAction primary label="استئناف الهدف" icon="book" disabled={busy} onPress={() => void mutate(p => setPlanPaused(p, false, today))} />}
@@ -145,8 +146,8 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
     {plan.cycle.progress.length > 0 && plan.status !== 'archived' && <DetailAction label="التراجع عن آخر تسجيل قراءة" disabled={busy} onPress={() => { const count = plan.cycle.progress.length; void mutate(p => p.cycle.progress.length === count ? undoProgress(p) : p); }} />}
     {index && !mismatch && <PlanSchedule plan={plan} index={index} today={today} />}
     <View style={{ gap: 4, paddingHorizontal: 4 }}>
-      <Text style={{ color: palette.muted, fontSize: 13, lineHeight: 22 }}>{plan.goal.type === 'khatma' ? `التوزيع حسب ${unitLabels[plan.unit]}` : `المقدار اليومي: ${arabicNumber(plan.goal.amount)} ${unitLabels[plan.unit]}`} · {plan.repeat ? 'تتكرر بعد الإكمال' : 'دورة واحدة'}</Text>
-      <Text style={{ color: palette.muted, fontSize: 13, lineHeight: 22 }}>بداية الدورة: {dateLabel(plan.cycle.sessions[0].date)}{plan.reminder.enabled ? ` · التذكير ${String(plan.reminder.hour).padStart(2, '0')}:${String(plan.reminder.minute).padStart(2, '0')}` : ' · التذكير غير مفعّل'}</Text>
+      <Text style={{ color: palette.mutedForeground, fontSize: 13, lineHeight: 22 }}>{plan.goal.type === 'khatma' ? `التوزيع حسب ${unitLabels[plan.unit]}` : `المقدار اليومي: ${arabicNumber(plan.goal.amount)} ${unitLabels[plan.unit]}`} · {plan.repeat ? 'تتكرر بعد الإكمال' : 'دورة واحدة'}</Text>
+      <Text style={{ color: palette.mutedForeground, fontSize: 13, lineHeight: 22 }}>بداية الدورة: {dateLabel(plan.cycle.sessions[0].date)}{plan.reminder.enabled ? ` · التذكير ${String(plan.reminder.hour).padStart(2, '0')}:${String(plan.reminder.minute).padStart(2, '0')}` : ' · التذكير غير مفعّل'}</Text>
     </View>
     {!!plan.history.length && <PlanCard><Copy title>الدورات السابقة</Copy>
       <View>{plan.history.map((h, i) => <View key={h.number} style={{ paddingVertical: 10, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: palette.border }}><Copy>الدورة {arabicNumber(h.number)} · اكتملت {dateLabel(h.completedOn)}</Copy></View>)}</View>

@@ -10,8 +10,8 @@ export function tajweedDocument(blocks: TajweedBlock[], font: string, palette: R
   }).join('')}</div>`).join('')).join('');
   return `<!doctype html><html dir="rtl" lang="ar"><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'"><style>
 @font-face{font-family:tajweed;src:url('${font}') format('woff2');font-display:block}
-@font-palette-values --reader{font-family:tajweed;base-palette:${dark ? 1 : 0};override-colors:0 ${palette.text},13 ${palette.text}}
-*{box-sizing:border-box}html,body{padding:0;margin:0;background:${palette.paper};color:${palette.text};overflow:hidden;-webkit-user-select:none;user-select:none}main{padding:10px 2px 16px;opacity:0}.line{display:flex;direction:rtl;justify-content:space-between;align-items:baseline;font:32px/1.9 tajweed;font-palette:--reader}.centered{justify-content:center;gap:.22em}.word{flex-shrink:0;white-space:pre;cursor:pointer}.selected{background:${palette.selected}}.word:focus-visible{outline:1px solid ${palette.accent}}
+@font-palette-values --reader{font-family:tajweed;base-palette:${dark ? 1 : 0};override-colors:0 ${palette.foreground},13 ${palette.foreground}}
+*{box-sizing:border-box}html,body{padding:0;margin:0;background:${palette.card};color:${palette.foreground};overflow:hidden;-webkit-user-select:none;user-select:none}main{padding:10px 2px 16px;opacity:0}.line{display:flex;direction:rtl;justify-content:space-between;align-items:baseline;font:32px/1.9 tajweed;font-palette:--reader}.centered{justify-content:center;gap:.22em}.word{flex-shrink:0;white-space:pre;cursor:pointer}.selected{background:${palette.highlight}}.word:focus-visible{outline:1px solid ${palette.primary}}
 </style></head><body><main>${body}</main><script>
 const send=(type,extra={})=>{const data=JSON.stringify({source:'quranni-tajweed',type,...extra});if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage(data);else window.parent.postMessage(data,'*')};
 const main=document.querySelector('main');let ready=false;

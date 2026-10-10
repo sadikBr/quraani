@@ -38,11 +38,16 @@ function contrast(first, second) {
 test('all themes keep Quran text, labels, and selected controls legible', () => {
   for (const [id, palette] of Object.entries(readerThemes)) {
     for (const [foreground, background] of [
-      ['text', 'paper'], ['text', 'background'], ['muted', 'paper'], ['muted', 'background'],
-      ['accent', 'paper'], ['accent', 'accentSoft'], ['onHero', 'hero'], ['heroMuted', 'hero'],
+      ['foreground', 'card'], ['foreground', 'background'], ['mutedForeground', 'card'], ['mutedForeground', 'background'],
+      ['primaryForeground', 'primary'], ['accentForeground', 'accent'], ['secondaryForeground', 'secondary'], ['destructiveForeground', 'destructive'],
     ]) {
       expect(contrast(palette[foreground], palette[background]), `${id}: ${foreground} on ${background}`).toBeGreaterThanOrEqual(4.5);
     }
-    expect(contrast(palette.ornament, palette.paper), `${id}: ayah markers`).toBeGreaterThanOrEqual(3);
+    expect(contrast(palette.ornament, palette.card), `${id}: ayah markers`).toBeGreaterThanOrEqual(3);
+    expect(contrast(palette.primary, palette.card), `${id}: primary as text`).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(palette.mutedForeground, palette.muted), `${id}: inactive tab text`).toBeGreaterThanOrEqual(4);
+    for (const surface of ['background', 'card']) expect(contrast(palette.muted, palette[surface]), `${id}: muted fill on ${surface}`).toBeGreaterThanOrEqual(1.08);
+    expect(contrast(palette.destructive, palette.card), `${id}: destructive text`).toBeGreaterThanOrEqual(3);
+    for (const value of Object.values(palette)) expect(value, `${id}: solid or alpha hex`).toMatch(/^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$/);
   }
 });

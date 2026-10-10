@@ -42,8 +42,8 @@ export const TajweedTextSection = memo(function TajweedTextSection({ ayahs, page
   const html = useMemo(() => font ? withTajweedTextStyleBridge(tajweedTextDocument(ayahs, layout, font, DOCUMENT_FONT_SIZE, false, palette, preview)) : '', [ayahs, layout, font, palette, preview]);
   const ayahState = useMemo(() => tajweedTextState(ayahs, runs, dark, palette, selectedAyah, visibleWords), [ayahs, runs, dark, palette, selectedAyah, visibleWords]);
   const update = useMemo(() => tajweedTextUpdate(ayahState, { fontSize, lineHeight: readerTextLineHeight(fontSize, spacious) }), [ayahState, fontSize, spacious]);
-  if (error) return <View style={{ padding: 24, gap: 12 }}><ArabicText style={{ color: palette.muted }}>تعذر عرض النص القرآني.</ArabicText><ReaderButton palette={palette} onPress={() => { setError(false); setAttempt((n) => n + 1); }}>إعادة المحاولة</ReaderButton></View>;
-  if (!font) return <ActivityIndicator color={palette.accent} accessibilityLabel="جارٍ تحميل خط القرآن" style={{ marginVertical: 40 }} />;
+  if (error) return <View style={{ padding: 24, gap: 12 }}><ArabicText style={{ color: palette.mutedForeground }}>تعذر عرض النص القرآني.</ArabicText><ReaderButton palette={palette} onPress={() => { setError(false); setAttempt((n) => n + 1); }}>إعادة المحاولة</ReaderButton></View>;
+  if (!font) return <ActivityIndicator color={palette.primary} accessibilityLabel="جارٍ تحميل خط القرآن" style={{ marginVertical: 40 }} />;
   return <TajweedSurface key={`${mushafId}:${attempt}`} title={preview ? `معاينة نص ${edition.name} بألوان التجويد` : `نص ${edition.name} بألوان التجويد · صفحة ${pageNumber} · سورة ${ayahs[0].surahNumber}`} pageNumber={pageNumber} html={html} update={update} height={height} onError={() => setError(true)} onMessage={(raw) => {
     try {
       const message = JSON.parse(raw);

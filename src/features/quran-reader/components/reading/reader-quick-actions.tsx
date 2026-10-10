@@ -26,8 +26,8 @@ export function ReaderQuickActions({ page, surahName, palette, onMenu }: Props) 
   const iconLink = (href: '/search' | '/settings', icon: ReaderIconName, label: string) => (
     <Link href={href} asChild style={styles.iconLink}>
       <Pressable accessibilityRole="link" accessibilityLabel={label}>
-        {({ pressed }) => <View style={[styles.icon, { backgroundColor: pressed ? palette.accentSoft : 'transparent' }]}>
-          <ReaderIcon name={icon} color={palette.text} size={24} strokeWidth={1.9} />
+        {({ pressed }) => <View style={[styles.icon, { backgroundColor: pressed ? palette.accent : 'transparent' }]}>
+          <ReaderIcon name={icon} color={palette.foreground} size={20} />
         </View>}
       </Pressable>
     </Link>
@@ -38,22 +38,22 @@ export function ReaderQuickActions({ page, surahName, palette, onMenu }: Props) 
     <Link href="/quran-index" asChild style={styles.location}>
       <Pressable accessibilityRole="link" accessibilityLabel={`${surahName}، ${location}، فتح الفهرس`}>
         {({ pressed }) => <View style={[styles.locationContent, {
-          backgroundColor: pressed ? palette.selected : palette.accentSoft,
-          borderColor: pressed ? palette.accent : 'transparent',
+          backgroundColor: pressed ? palette.accent : palette.muted,
+          borderColor: pressed ? palette.ring : 'transparent',
         }]}>
           <View style={styles.locationText}>
             <Text accessibilityLabel={surahName} numberOfLines={1}
-              style={[styles.surah, calligraphy && styles.surahCalligraphy, { color: palette.text }]}>
+              style={[styles.surah, calligraphy && styles.surahCalligraphy, { color: palette.foreground }]}>
               {calligraphy ? surahNameGlyph(surahNumber!) : surahName}
             </Text>
-            <Text numberOfLines={1} style={[styles.divisions, { color: palette.muted }]}>{location}</Text>
+            <Text numberOfLines={1} style={[styles.divisions, { color: palette.mutedForeground }]}>{location}</Text>
           </View>
         </View>}
       </Pressable>
     </Link>
     <Pressable accessibilityRole="button" accessibilityLabel="فتح قائمة التطبيق" onPress={onMenu}
-      style={({ pressed }) => [styles.icon, { backgroundColor: pressed ? palette.accentSoft : 'transparent' }]}>
-      <ReaderIcon name="menu" color={palette.text} size={24} strokeWidth={1.9} />
+      style={({ pressed }) => [styles.icon, { backgroundColor: pressed ? palette.accent : 'transparent' }]}>
+      <ReaderIcon name="menu" color={palette.foreground} size={20} />
     </Pressable>
   </View>;
 }
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   icon: { width: 44, height: 44, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
   location: { flex: 1, minWidth: 0, minHeight: 44, justifyContent: 'center' },
   locationContent: { width: '100%', maxWidth: 260, minHeight: 44, alignSelf: 'center', flexDirection: 'row',
-    alignItems: 'center', paddingHorizontal: 16, paddingVertical: 2, borderWidth: 1, borderRadius: readerShape.control },
+    alignItems: 'center', paddingHorizontal: 16, paddingVertical: 2, borderWidth: 1, borderRadius: readerShape.lg },
   locationText: { flex: 1, minWidth: 0, alignItems: 'center' },
   surah: { fontSize: 13, lineHeight: 21, fontWeight: '600' },
   surahCalligraphy: { ...calligraphyStyle(28), lineHeight: 28 },

@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
+import { Card } from '@/components/ui';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
-import { readerElevation, withAlpha } from '../quran-reader/design';
+import { withAlpha } from '../quran-reader/design';
 import { GoalCardFrame, GoalCardHeading, GoalProgress } from './goal-card';
 import { arabicNumber, shortDate } from './presentation';
 import { mergeSpans, quarterLabel, spanCount } from './memorization';
@@ -31,22 +32,21 @@ export function RevisionHero({ plan, index, compact = false }: { plan: RevisionP
   const percent = Math.min(progress >= 1 ? 100 : 99, Math.floor(progress * 100));
   const circumference = 2 * Math.PI * 47;
   const empty = !plan.memorized.length;
-  return <View style={[d.hero, { backgroundColor: p.hero }, readerElevation(3, p)]}>
-    <View pointerEvents="none" aria-hidden style={d.heroPattern}><Svg width={230} height={250} viewBox="0 0 240 250" fill="none" stroke={p.onHero} opacity={0.07}><Path d="M20 250V112C20 55 90 55 120 8c30 47 100 47 100 104v138M40 250V120c0-47 56-49 80-88 24 39 80 41 80 88v130" /></Svg></View>
+  return <Card style={d.hero}>
     <View style={[d.row, { gap: 14 }]}>
       <View style={d.grow}>
-        <Text style={{ color: p.heroMuted, fontSize: 13 }}>{empty ? 'مراجعة المحفوظ' : `الدورة ${ordinalLabel(plan.pass)} على محفوظك`}</Text>
-        <Text style={{ color: p.onHero, fontSize: 22, fontWeight: '600', marginVertical: 4 }}>{empty ? 'حدد محفوظك لتبدأ' : progress === 0 ? 'دورة جديدة تبدأ' : 'تثبيتٌ يومًا بعد يوم'}</Text>
-        <Text style={{ color: p.heroMuted, fontSize: 13 }}>{empty ? 'المراجعة تدور على ما تحفظه' : `${arabicNumber(spanCount(plan.memorized))} آية · دورة كاملة في ${revisionDaysLabel(days)}`}</Text>
+        <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{empty ? 'مراجعة المحفوظ' : `الدورة ${ordinalLabel(plan.pass)} على محفوظك`}</Text>
+        <Text style={{ color: p.foreground, fontSize: 20, fontWeight: '600', marginVertical: 4 }}>{empty ? 'حدد محفوظك لتبدأ' : progress === 0 ? 'دورة جديدة تبدأ' : 'تثبيتٌ يومًا بعد يوم'}</Text>
+        <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{empty ? 'المراجعة تدور على ما تحفظه' : `${arabicNumber(spanCount(plan.memorized))} آية · دورة كاملة في ${revisionDaysLabel(days)}`}</Text>
       </View>
       <View accessibilityRole="progressbar" accessibilityLabel="ما روجع من الدورة الحالية" accessibilityValue={{ min: 0, max: 100, now: percent }} style={d.ring}>
-        <Svg width={108} height={108} viewBox="0 0 108 108" aria-hidden><Circle cx={54} cy={54} r={47} fill="none" stroke={p.onHero} strokeOpacity={0.14} strokeWidth={7} />
-          {progress > 0 && <Circle cx={54} cy={54} r={47} fill="none" stroke={p.ornament} strokeWidth={7} strokeLinecap="round" strokeDasharray={[circumference * progress, circumference]} transform="rotate(-90 54 54)" />}</Svg>
-        <View style={d.ringText}><Text style={{ color: p.onHero, fontSize: 28, textAlign: 'center' }}>{arabicNumber(percent)}٪</Text></View>
+        <Svg width={108} height={108} viewBox="0 0 108 108" aria-hidden><Circle cx={54} cy={54} r={47} fill="none" stroke={withAlpha(p.primary, 0.2)} strokeWidth={8} />
+          {progress > 0 && <Circle cx={54} cy={54} r={47} fill="none" stroke={p.primary} strokeWidth={8} strokeLinecap="round" strokeDasharray={[circumference * progress, circumference]} transform="rotate(-90 54 54)" />}</Svg>
+        <View style={d.ringText}><Text style={{ color: p.foreground, fontSize: 24, fontWeight: '600', textAlign: 'center' }}>{arabicNumber(percent)}٪</Text></View>
       </View>
     </View>
     {!compact && !empty && <PassBand plan={plan} index={index} />}
-  </View>;
+  </Card>;
 }
 
 function ordinalLabel(n: number) {
@@ -63,26 +63,26 @@ function PassBand({ plan, index }: { plan: RevisionPlan; index: PlanIndex }) {
   });
   const current = juzs.find(j => j.ahead > 0);
   const count = juzs.filter(j => j.revised + j.ahead > 0).length;
-  return <View style={{ gap: 10, borderTopWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(p.onHero, 0.2), paddingTop: 16 }}>
+  return <View style={{ gap: 10, borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border, paddingTop: 16 }}>
     <View style={[d.row, { justifyContent: 'space-between' }]}>
-      <Text style={{ color: p.onHero, fontSize: 15, fontWeight: '600' }}>{count === 1 ? 'محفوظك في جزء واحد' : count === 2 ? 'محفوظك في جزأين' : `محفوظك في ${arabicNumber(count)} ${count <= 10 ? 'أجزاء' : 'جزءًا'}`}</Text>
-      {current && <Text style={{ color: p.heroMuted, fontSize: 12 }}>تراجع الآن في الجزء {arabicNumber(current.number)}</Text>}
+      <Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{count === 1 ? 'محفوظك في جزء واحد' : count === 2 ? 'محفوظك في جزأين' : `محفوظك في ${arabicNumber(count)} ${count <= 10 ? 'أجزاء' : 'جزءًا'}`}</Text>
+      {current && <Text style={{ color: p.mutedForeground, fontSize: 13 }}>تراجع الآن في الجزء {arabicNumber(current.number)}</Text>}
     </View>
     <View accessible accessibilityLabel={`ما روجع وما ينتظر في ${arabicNumber(count)} أجزاء`} style={{ flexDirection: 'row', gap: 2, height: 14 }}>
-      {juzs.map(j => <View key={j.number} style={{ flex: 1, flexDirection: 'row', overflow: 'hidden', borderRadius: 2, backgroundColor: withAlpha(p.onHero, 0.1) }}>
-        <View style={{ width: `${j.revised * 100}%`, height: '100%', backgroundColor: p.ornament }} />
-        <View style={{ width: `${j.ahead * 100}%`, height: '100%', backgroundColor: withAlpha(p.onHero, 0.38) }} />
+      {juzs.map(j => <View key={j.number} style={{ flex: 1, flexDirection: 'row', overflow: 'hidden', borderRadius: 2, backgroundColor: withAlpha(p.primary, 0.12) }}>
+        <View style={{ width: `${j.revised * 100}%`, height: '100%', backgroundColor: p.primary }} />
+        <View style={{ width: `${j.ahead * 100}%`, height: '100%', backgroundColor: withAlpha(p.primary, 0.4) }} />
       </View>)}
     </View>
     <View style={[d.row, { gap: 16, flexWrap: 'wrap' }]}>
-      <Legend color={p.ornament} label="روجع في هذه الدورة" />
-      <Legend color={withAlpha(p.onHero, 0.38)} label="محفوظ ينتظر دوره" />
+      <Legend color={p.primary} label="روجع في هذه الدورة" />
+      <Legend color={withAlpha(p.primary, 0.4)} label="محفوظ ينتظر دوره" />
     </View>
   </View>;
 }
 function Legend({ color, label }: { color: string; label: string }) {
   const { palette: p } = useReadingPreferences();
-  return <View style={[d.row, { gap: 6 }]}><View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: color }} /><Text style={{ color: p.heroMuted, fontSize: 12 }}>{label}</Text></View>;
+  return <View style={[d.row, { gap: 6 }]}><View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: color }} /><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{label}</Text></View>;
 }
 
 export function RevisionGoalCard({ plan, today }: { plan: RevisionPlan; today: string }) {
@@ -94,7 +94,7 @@ export function RevisionGoalCard({ plan, today }: { plan: RevisionPlan; today: s
     : day?.due ? 'مراجعة اليوم بانتظارك' : doneToday ? 'أتممت مراجعة اليوم' : day ? `المراجعة القادمة · ${shortDate(day.date)}` : '';
   return <GoalCardFrame id={plan.id} name={plan.name} status={status} due={!!day?.due}>
     <GoalCardHeading name={plan.name} description={`مراجعة · ${quarterLabel(plan.goal.dailyQuarters)} في الجلسة`} icon="loop"
-      trailing={plan.memorized.length ? <Text style={{ color: p.text, fontSize: 22, fontWeight: '600', lineHeight: 28 }}>{arabicNumber(Math.floor(progress * 100))}٪</Text> : undefined} />
+      trailing={plan.memorized.length ? <Text style={{ color: p.foreground, fontSize: 20, fontWeight: '600' }}>{arabicNumber(Math.floor(progress * 100))}٪</Text> : undefined} />
     <GoalProgress value={progress} label={`الدورة ${arabicNumber(plan.pass)} · ${plan.log.length ? `${revisionDaysLabel(plan.log.length)} من المراجعة` : 'لم تبدأ بعد'}`} trailing={plan.memorized.length ? `${arabicNumber(spanCount(plan.memorized))} آية` : undefined} />
   </GoalCardFrame>;
 }

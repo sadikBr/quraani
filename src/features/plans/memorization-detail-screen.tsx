@@ -2,8 +2,9 @@ import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
+import { IconTile } from '@/components/ui';
 import { ReaderButton } from '../quran-reader/components/reading/reader-button';
-import { ReaderIcon } from '../quran-reader/components/ui/reader-chrome';
+
 import { readerShape } from '../quran-reader/design';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { normalizeArabicSearch } from '../quran-reader/utils/search';
@@ -105,31 +106,31 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
     {index && !mismatch && next && <PlanCard prominent>
       <View style={[d.row, { alignItems: 'flex-start', gap: 14 }]}>
         <View style={d.grow}>
-          <Text accessibilityRole="header" style={{ color: next.due ? p.accent : p.muted, fontSize: 14, fontWeight: '600' }}>{next.due ? 'نصيبك من الحفظ اليوم' : 'موعدك القادم للحفظ'}</Text>
+          <Text accessibilityRole="header" style={{ color: next.due ? p.primary : p.mutedForeground, fontSize: 14, fontWeight: '600' }}>{next.due ? 'نصيبك من الحفظ اليوم' : 'موعدك القادم للحفظ'}</Text>
           <SurahName number={index.ayahs[next.start].surahNumber} name={index.surahNames[index.ayahs[next.start].surahNumber]} size={56} color={p.ornament} />
-          <Text style={{ color: p.text, fontSize: 24, fontWeight: '700' }}>{next.end - next.start === 1 ? `الآية ${arabicNumber(index.ayahs[next.start].ayahNumber)}` : `الآيات ${arabicNumber(index.ayahs[next.start].ayahNumber)} – ${arabicNumber(index.ayahs[next.end - 1].ayahNumber)}`}</Text>
-          {index.ayahs[next.start].surahNumber !== index.ayahs[next.end - 1].surahNumber && <Text style={{ color: p.muted, fontSize: 13 }}>حتى {index.surahNames[index.ayahs[next.end - 1].surahNumber]}، الآية {arabicNumber(index.ayahs[next.end - 1].ayahNumber)}</Text>}
+          <Text style={{ color: p.foreground, fontSize: 22, fontWeight: '600' }}>{next.end - next.start === 1 ? `الآية ${arabicNumber(index.ayahs[next.start].ayahNumber)}` : `الآيات ${arabicNumber(index.ayahs[next.start].ayahNumber)} – ${arabicNumber(index.ayahs[next.end - 1].ayahNumber)}`}</Text>
+          {index.ayahs[next.start].surahNumber !== index.ayahs[next.end - 1].surahNumber && <Text style={{ color: p.mutedForeground, fontSize: 13 }}>حتى {index.surahNames[index.ayahs[next.end - 1].surahNumber]}، الآية {arabicNumber(index.ayahs[next.end - 1].ayahNumber)}</Text>}
         </View>
         {/* The date as a calendar leaf: weekday on top, day below. */}
-        <View accessible accessibilityLabel={next.due ? 'اليوم' : weekdayDateLabel(next.date)} style={{ minWidth: 74, paddingVertical: 10, paddingHorizontal: 12, alignItems: 'center', borderRadius: readerShape.control, backgroundColor: next.due ? p.accent : p.accentSoft }}>
-          <Text style={{ color: next.due ? p.paper : p.accent, fontSize: 12 }}>{next.due ? 'اليوم' : new Intl.DateTimeFormat('ar-MA', { weekday: 'long', timeZone: 'UTC' }).format(new Date(`${next.date}T12:00:00Z`))}</Text>
-          <Text style={{ color: next.due ? p.paper : p.text, fontSize: 26, fontWeight: '700', lineHeight: 36 }}>{arabicNumber(Number(next.date.slice(8)))}</Text>
-          <Text style={{ color: next.due ? p.paper : p.muted, fontSize: 12 }}>{new Intl.DateTimeFormat('ar-MA', { month: 'long', timeZone: 'UTC' }).format(new Date(`${next.date}T12:00:00Z`))}</Text>
+        <View accessible accessibilityLabel={next.due ? 'اليوم' : weekdayDateLabel(next.date)} style={{ minWidth: 74, paddingVertical: 10, paddingHorizontal: 12, alignItems: 'center', borderRadius: readerShape.lg, backgroundColor: next.due ? p.primary : p.muted }}>
+          <Text style={{ color: next.due ? p.primaryForeground : p.mutedForeground, fontSize: 12 }}>{next.due ? 'اليوم' : new Intl.DateTimeFormat('ar-MA', { weekday: 'long', timeZone: 'UTC' }).format(new Date(`${next.date}T12:00:00Z`))}</Text>
+          <Text style={{ color: next.due ? p.primaryForeground : p.foreground, fontSize: 28, fontWeight: '600', lineHeight: 36 }}>{arabicNumber(Number(next.date.slice(8)))}</Text>
+          <Text style={{ color: next.due ? p.primaryForeground : p.mutedForeground, fontSize: 12 }}>{new Intl.DateTimeFormat('ar-MA', { month: 'long', timeZone: 'UTC' }).format(new Date(`${next.date}T12:00:00Z`))}</Text>
         </View>
       </View>
       <View style={[d.row, { borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: p.border, paddingVertical: 10, gap: 0 }]}>
         {[{ label: 'الآيات', value: arabicNumber(next.end - next.start) }, { label: 'الكلمات', value: arabicNumber(index.ayahs.slice(next.start, next.end).reduce((n, a) => n + a.text.split(/\s+/).filter(Boolean).length, 0)) },
           { label: 'الصفحة', value: index.ayahs[next.start].pageNumber === index.ayahs[next.end - 1].pageNumber ? arabicNumber(index.ayahs[next.start].pageNumber) : `${arabicNumber(index.ayahs[next.start].pageNumber)}–${arabicNumber(index.ayahs[next.end - 1].pageNumber)}` }].map((stat, i) =>
           <View key={stat.label} style={[d.grow, { alignItems: 'center', borderStartWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: p.border }]}>
-            <Text style={{ color: p.muted, fontSize: 12 }}>{stat.label}</Text><Text style={{ color: p.text, fontSize: 15, fontWeight: '600' }}>{stat.value}</Text>
+            <Text style={{ color: p.mutedForeground, fontSize: 12 }}>{stat.label}</Text><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{stat.value}</Text>
           </View>)}
       </View>
-      {plan.sessions[0].ranges.length > 1 && <Text style={{ color: p.muted, fontSize: 13, lineHeight: 22 }}>جلسة اليوم تضم {arabicNumber(plan.sessions[0].ranges.length)} مقاطع؛ نفتح كل مقطع وحده.</Text>}
+      {plan.sessions[0].ranges.length > 1 && <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 22 }}>جلسة اليوم تضم {arabicNumber(plan.sessions[0].ranges.length)} مقاطع؛ نفتح كل مقطع وحده.</Text>}
       {next.due ? <View style={{ gap: 4 }}>
         <DetailAction primary icon="book" label="ابدأ الحفظ" disabled={busy} onPress={openReading} />
         <DetailAction icon="check" label="أتممت حفظ هذا المقطع" disabled={busy} onPress={() => void mutate(current => recordMemorizationProgress(current, { cycle: next.cycle, slot: next.slot, to: next.end }, localDate()))} />
-        <Text style={{ color: p.muted, fontSize: 12, textAlign: 'center' }}>لا يُضاف المقطع إلى محفوظك حتى تؤكد إتمام حفظه.</Text>
-      </View> : <Text style={{ color: p.muted, fontSize: 13 }}>يُفتح هذا المقطع يوم {weekdayDateLabel(next.date)}. حتى ذلك الحين راجع ما حفظته.</Text>}
+        <Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center' }}>لا يُضاف المقطع إلى محفوظك حتى تؤكد إتمام حفظه.</Text>
+      </View> : <Text style={{ color: p.mutedForeground, fontSize: 13 }}>يُفتح هذا المقطع يوم {weekdayDateLabel(next.date)}. حتى ذلك الحين راجع ما حفظته.</Text>}
     </PlanCard>}
     {plan.status !== 'active' && <PlanCard><Copy title>{plan.status === 'completed' ? 'أتممت حفظ القرآن، هنيئًا لك' : plan.status === 'paused' ? 'خذ وقتك، محفوظك باقٍ' : 'هذا الهدف في الأرشيف'}</Copy>
       <Copy muted>{plan.status === 'archived' ? `حذف الهدف لا يمس سجل محفوظك. ${deletionDate ? `يُحذف الهدف في ${shortDate(deletionDate)}.` : ''}` : plan.status === 'paused' ? 'عند العودة نتابع ما تبقّى في أيام الحفظ المختارة.' : 'سجلك محفوظ. ويمكنك تصحيح المقاطع المسجلة إذا احتجت.'}</Copy>
@@ -137,10 +138,10 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
       {plan.status === 'archived' && <><DetailAction primary label="استعادة الهدف" disabled={busy || !!other || !index || !!mismatch} onPress={() => void archive()} /><DetailAction destructive icon="trash" label="حذف الهدف" disabled={busy} onPress={() => setDeleting(true)} /></>}
     </PlanCard>}
     {index && !mismatch && <>
-      {plan.status !== 'archived' && !other && <PlanCard><View style={[d.row, { gap: 12, alignItems: 'flex-start' }]}><ReaderIcon name="check" color={p.accent} size={20} /><View style={d.grow}><Copy title>سجل محفوظك</Copy><Copy muted>أضف ما حفظته خارج الهدف أو صحح اختيارًا سابقًا.</Copy></View></View><DetailAction label="عرض المحفوظ وتعديله" disabled={busy} onPress={() => { setMessage(''); setChoosing(true); }} /></PlanCard>}
+      {plan.status !== 'archived' && !other && <PlanCard><View style={[d.row, { gap: 12, alignItems: 'flex-start' }]}><IconTile name="check" /><View style={d.grow}><Copy title>سجل محفوظك</Copy><Copy muted>أضف ما حفظته خارج الهدف أو صحح اختيارًا سابقًا.</Copy></View></View><DetailAction label="عرض المحفوظ وتعديله" disabled={busy} onPress={() => { setMessage(''); setChoosing(true); }} /></PlanCard>}
       {plan.undoable && plan.status !== 'archived' && !other && <DetailAction label="التراجع عن آخر تسجيل حفظ" disabled={busy} onPress={() => void mutate(current => undoMemorizationProgress(current, index, localDate()))} />}
       {!!schedule.length && plan.status !== 'archived' && <WeeklySchedule index={index} sessions={schedule} today={today} labels={MEMORIZATION_LABELS} summary={`${quarterLabel(plan.goal.weeklyQuarters)} أسبوعيًا · ${weekdaysLabel(plan.weekdays)}`} footer={`الموعد المتوقع لإتمام الحفظ: ${dateLabel(schedule.at(-1)!.date)} · يتحدّث مع تقدّمك.`} />}
-      {!!plan.progress.length && <PlanCard><Copy title>آخر ما أضفته إلى محفوظك</Copy><View>{plan.progress.slice(-5).reverse().map((log, i) => <View key={`${log.date}-${i}`} style={{ gap: 2, paddingVertical: 10, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: p.border }}><Text style={{ color: p.text, fontSize: 15 }}>{ayahRangeLabel(index, log.from, log.to)}</Text><Text style={{ color: p.muted, fontSize: 13 }}>{shortDate(log.date)}</Text></View>)}</View></PlanCard>}
+      {!!plan.progress.length && <PlanCard><Copy title>آخر ما أضفته إلى محفوظك</Copy><View>{plan.progress.slice(-5).reverse().map((log, i) => <View key={`${log.date}-${i}`} style={{ gap: 2, paddingVertical: 10, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: p.border }}><Text style={{ color: p.foreground, fontSize: 15 }}>{ayahRangeLabel(index, log.from, log.to)}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{shortDate(log.date)}</Text></View>)}</View></PlanCard>}
     </>}
     {editing && <PlanSettingsSheet onClose={() => { if (!busy) setEditing(false); }}><PlanNotice message={message} /><PlanField label="اسم الهدف" value={name} onChange={setName} />
       <AmountPicker label="المقدار الأسبوعي بأرباع الأحزاب" value={amount} onChange={setAmount} unit="ربع حزب أسبوعيًا" presets={['1', '2', '4', '8']} minimum={1} maximum={240} parse={value => Number(normalizeArabicSearch(value))} />

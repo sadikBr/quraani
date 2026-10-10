@@ -1,8 +1,9 @@
+import { IconTile, Progress } from '@/components/ui';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, type Href } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { readerElevation, readerLayout, readerShape, withAlpha } from '../../design';
+import { readerElevation, readerLayout, readerShape } from '../../design';
 import { useReaderContent } from '../../hooks/use-reader-content';
 import { useReadingPosition } from '../../hooks/use-reading-position';
 import { useReadingPreferences } from '../../state/reading-preferences-provider';
@@ -51,52 +52,52 @@ export function HomeScreen() {
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <View style={s.header}>
       <QuranniLogo color={p.ornament} size={30} />
-      <View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.text, fontSize: 22, fontWeight: '700' }}>قرآني</Text><Text style={{ color: p.muted, fontSize: 12 }}>{shortDate(today)} · رواية {RIWAYAT[riwayah].label}</Text></View>
+      <View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 20, fontWeight: '600' }}>قرآني</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{shortDate(today)} · رواية {RIWAYAT[riwayah].label}</Text></View>
       <IconButton name="close" label="العودة إلى القراءة" palette={p} onPress={() => router.dismissTo('/')} />
     </View>
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
       {/* Continue reading: the hero. */}
       <Pressable accessibilityRole="button" accessibilityLabel={surahName ? `متابعة القراءة في ${surahName}، صفحة ${page?.number ?? ''}` : 'فتح المصحف'} onPress={() => router.dismissTo('/')}
-        style={({ pressed }) => [s.hero, { backgroundColor: p.hero, opacity: pressed ? 0.9 : 1 }, readerElevation(3, p)]}>
-        <Text style={{ color: p.heroMuted, fontSize: 13 }}>{ready && page ? 'تابع من حيث توقفت' : 'افتح المصحف'}</Text>
+        style={({ pressed }) => [s.hero, { backgroundColor: pressed ? p.accent : p.card, borderColor: p.border }, readerElevation(2, p)]}>
+        <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{ready && page ? 'تابع من حيث توقفت' : 'افتح المصحف'}</Text>
         {surahNumber ? <SurahName number={surahNumber} name={surahName} size={56} color={p.ornament} /> : <View style={{ height: 76 }} />}
         <View style={s.heroRow}>
-          <Text style={{ color: p.onHero, fontSize: 15 }}>{page ? `صفحة ${arabicNumber(page.number)}` : ''}{divisions.juz.length ? ` · الجزء ${arabicNumber(divisions.juz[0])}` : ''}{hizb ? ` · الحزب ${arabicNumber(hizb)}` : ''}</Text>
-          <Text style={{ color: p.heroMuted, fontSize: 13 }}>{arabicNumber(Math.round(progress * 100))}٪ من المصحف</Text>
+          <Text style={{ color: p.foreground, fontSize: 15 }}>{page ? `صفحة ${arabicNumber(page.number)}` : ''}{divisions.juz.length ? ` · الجزء ${arabicNumber(divisions.juz[0])}` : ''}{hizb ? ` · الحزب ${arabicNumber(hizb)}` : ''}</Text>
+          <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{arabicNumber(Math.round(progress * 100))}٪ من المصحف</Text>
         </View>
-        <View style={[s.track, { backgroundColor: withAlpha(p.onHero, 0.18) }]}><View style={{ width: `${Math.max(1, progress * 100)}%`, height: '100%', backgroundColor: p.ornament }} /></View>
-        <View style={[s.heroButton, { backgroundColor: p.onHero }]}><ReaderIcon name="book" color={p.hero} size={20} /><Text style={{ color: p.hero, fontSize: 15, fontWeight: '600' }}>متابعة القراءة</Text></View>
+        <View style={{ marginTop: 6 }}><Progress value={Math.max(0.01, progress)} /></View>
+        <View style={[s.heroButton, { backgroundColor: p.primary }]}><ReaderIcon name="book" color={p.primaryForeground} size={16} /><Text style={{ color: p.primaryForeground, fontSize: 14, fontWeight: '500' }}>متابعة القراءة</Text></View>
       </Pressable>
 
       {/* Today. */}
       <View style={s.section}>
-        <View style={s.sectionHead}><Text accessibilityRole="header" style={{ color: p.text, fontSize: 19, fontWeight: '600', flex: 1 }}>وردك اليوم</Text>
+        <View style={s.sectionHead}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600', flex: 1 }}>وردك اليوم</Text>
           <Pressable accessibilityRole="link" accessibilityLabel="كل الأهداف" onPress={() => router.push('/plans')} style={({ pressed }) => [s.link, { opacity: pressed ? 0.6 : 1 }]}>
-            <Text style={{ color: p.accent, fontSize: 14, fontWeight: '600' }}>كل الأهداف</Text><ReaderIcon name="chevron" color={p.accent} size={16} /></Pressable></View>
+            <Text style={{ color: p.primary, fontSize: 14, fontWeight: '500' }}>كل الأهداف</Text><ReaderIcon name="chevron" color={p.primary} size={16} /></Pressable></View>
         {!plansReady ? null : !overview.all.length
           ? <Pressable accessibilityRole="button" accessibilityLabel="إنشاء هدف" onPress={() => router.push('/plans/new')} style={({ pressed }) => [s.empty, { borderColor: p.border, opacity: pressed ? 0.7 : 1 }]}>
-            <Text style={{ color: p.text, fontSize: 15 }}>لا أهداف بعد. ختمة، أو حفظ، أو سورة تعود إليها كل أسبوع.</Text>
-            <Text style={{ color: p.accent, fontSize: 14, fontWeight: '600' }}>أنشئ هدفك الأول</Text>
+            <Text style={{ color: p.foreground, fontSize: 15 }}>لا أهداف بعد. ختمة، أو حفظ، أو سورة تعود إليها كل أسبوع.</Text>
+            <Text style={{ color: p.primary, fontSize: 14, fontWeight: '500' }}>أنشئ هدفك الأول</Text>
           </Pressable>
           : overview.due.length
-            ? <View style={[s.list, { borderColor: p.border, backgroundColor: p.paper }]}>{overview.due.map((plan, i) => <DuePortion key={plan.id} plan={plan} today={today} first={!i} />)}</View>
+            ? <View style={[s.list, { borderColor: p.border, backgroundColor: p.card }, readerElevation(2, p)]}>{overview.due.map((plan, i) => <DuePortion key={plan.id} plan={plan} today={today} first={!i} />)}</View>
             : <View style={[s.empty, { borderColor: p.border }]}>
-              <Text style={{ color: p.text, fontSize: 15 }}>{overview.completedToday ? 'أتممت ورد اليوم، تقبّل الله منك.' : 'لا موعد اليوم.'}</Text>
-              {upcoming && <Text style={{ color: p.muted, fontSize: 13 }}>الموعد القادم: {upcoming.plan.name} · {shortDate(upcoming.next!.date)}</Text>}
+              <Text style={{ color: p.foreground, fontSize: 15 }}>{overview.completedToday ? 'أتممت ورد اليوم، تقبّل الله منك.' : 'لا موعد اليوم.'}</Text>
+              {upcoming && <Text style={{ color: p.mutedForeground, fontSize: 14 }}>الموعد القادم: {upcoming.plan.name} · {shortDate(upcoming.next!.date)}</Text>}
             </View>}
       </View>
 
       {/* Everything else. */}
       <View style={s.section}>
-        <Text accessibilityRole="header" style={{ color: p.text, fontSize: 19, fontWeight: '600' }}>استكشف</Text>
-        <View style={[s.list, { borderColor: p.border, backgroundColor: p.paper }]}>{areas.map((area, i) => <Pressable key={area.label} accessibilityRole="link" accessibilityLabel={area.label} onPress={() => router.push(area.href)}
-          style={({ pressed }) => [s.row, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }, { backgroundColor: pressed ? p.accentSoft : 'transparent' }]}>
-          <View style={[s.rowIcon, { backgroundColor: p.accentSoft }]}><ReaderIcon name={area.icon} color={p.accent} size={21} /></View>
+        <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>استكشف</Text>
+        <View style={[s.list, { borderColor: p.border, backgroundColor: p.card }, readerElevation(2, p)]}>{areas.map((area, i) => <Pressable key={area.label} accessibilityRole="link" accessibilityLabel={area.label} onPress={() => router.push(area.href)}
+          style={({ pressed }) => [s.row, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }, { backgroundColor: pressed ? p.accent : 'transparent' }]}>
+          <IconTile name={area.icon} palette={p} />
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ color: p.text, fontSize: 16, fontWeight: '600' }}>{area.label}</Text>
-            <Text style={{ color: p.muted, fontSize: 12 }}>{area.detail}</Text>
+            <Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{area.label}</Text>
+            <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{area.detail}</Text>
           </View>
-          <ReaderIcon name="chevron" color={p.muted} size={18} />
+          <ReaderIcon name="chevron" color={p.mutedForeground} size={16} />
         </Pressable>)}</View>
       </View>
     </ScrollView>
@@ -117,13 +118,13 @@ function DuePortion({ plan, today, first }: { plan: ReadingPlan; today: string; 
   };
   return <View style={[s.row, !first && { borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }]}>
     <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-      <Text style={{ color: p.muted, fontSize: 12 }}>{kind}{next.date < today ? ' · ورد سابق' : ''}</Text>
-      <Text numberOfLines={1} style={{ color: p.text, fontSize: 16, fontWeight: '600' }}>{plan.name}</Text>
-      <Text numberOfLines={1} style={{ color: p.muted, fontSize: 13 }}>{index ? describePortion(plan, index, next.start, next.end) : ''}</Text>
+      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{kind}{next.date < today ? ' · ورد سابق' : ''}</Text>
+      <Text numberOfLines={1} style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{plan.name}</Text>
+      <Text numberOfLines={1} style={{ color: p.mutedForeground, fontSize: 13 }}>{index ? describePortion(plan, index, next.start, next.end) : ''}</Text>
     </View>
-    <Pressable accessibilityRole="button" accessibilityLabel={`ابدأ ${plan.name}`} disabled={!index} onPress={start}
-      style={({ pressed }) => [s.start, { backgroundColor: p.accent, opacity: !index ? 0.4 : pressed ? 0.8 : 1 }]}>
-      <Text style={{ color: p.paper, fontSize: 14, fontWeight: '600' }}>ابدأ</Text>
+    <Pressable accessibilityRole="button" hitSlop={6} accessibilityLabel={`ابدأ ${plan.name}`} disabled={!index} onPress={start}
+      style={({ pressed }) => [s.start, { backgroundColor: p.primary, opacity: !index ? 0.4 : pressed ? 0.8 : 1 }]}>
+      <Text style={{ color: p.primaryForeground, fontSize: 14, fontWeight: '500' }}>ابدأ</Text>
     </Pressable>
   </View>;
 }
@@ -134,18 +135,18 @@ function describePortion(plan: ReadingPlan, index: PlanIndex, start: number, end
 }
 
 const s = StyleSheet.create({
-  header: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 6 },
-  content: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', padding: 20, paddingTop: 10, paddingBottom: 40, gap: 26 },
-  hero: { borderRadius: readerShape.hero, padding: 22, gap: 6 },
+  header: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 6 },
+  content: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', padding: 16, paddingTop: 10, paddingBottom: 40, gap: 24 },
+  hero: { borderRadius: readerShape.card, borderWidth: StyleSheet.hairlineWidth, padding: 20, gap: 6 },
   heroRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 },
   track: { height: 3, borderRadius: 2, overflow: 'hidden', marginTop: 4, flexDirection: 'row' },
-  heroButton: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 16, borderRadius: readerShape.control, marginTop: 12 },
+  heroButton: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44, paddingHorizontal: 16, borderRadius: readerShape.control, marginTop: 14 },
   section: { gap: 12 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   link: { flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 44 },
-  list: { borderWidth: StyleSheet.hairlineWidth * 2, borderRadius: readerShape.card, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, paddingHorizontal: 14 },
-  start: { minHeight: 42, paddingHorizontal: 18, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
-  empty: { padding: 16, gap: 6, borderWidth: 1, borderStyle: 'dashed', borderRadius: readerShape.card },
+  list: { borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card, overflow: 'hidden' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, minHeight: 64 },
+  start: { minHeight: 36, paddingHorizontal: 14, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
+  empty: { padding: 16, gap: 6, borderWidth: 1, borderStyle: 'dashed', borderRadius: readerShape.lg },
   rowIcon: { width: 40, height: 40, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
 });

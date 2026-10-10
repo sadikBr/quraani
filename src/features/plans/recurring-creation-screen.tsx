@@ -3,7 +3,7 @@ import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleS
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { readerElevation, readerShape, withAlpha } from '../quran-reader/design';
+import { Badge, Card, Separator } from '@/components/ui';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { ReaderIcon, Segments } from '../quran-reader/components/ui/reader-chrome';
 import { ReaderButton } from '../quran-reader/components/reading/reader-button';
@@ -65,45 +65,45 @@ export function RecurringCreationScreen({ preset }: { preset?: RecurringPreset }
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={c.navigation}><Pressable accessibilityRole="button" accessibilityLabel={step ? 'العودة إلى إعداد القراءة المتكررة' : 'العودة إلى أنواع الأهداف'} disabled={busy} onPress={() => step ? changeStep(0) : router.back()} style={({ pressed }) => [c.back, { opacity: pressed || busy ? 0.5 : 1 }]}>
-        <ReaderIcon name="back" color={p.text} size={20} /><Text style={{ color: p.text, fontSize: 15 }}>{step ? 'الإعداد' : 'هدف جديد'}</Text></Pressable><Text style={{ color: p.muted, fontSize: 13 }}>قراءة متكررة</Text></View>
+        <ReaderIcon name="back" color={p.foreground} size={20} /><Text style={{ color: p.foreground, fontSize: 15 }}>{step ? 'الإعداد' : 'هدف جديد'}</Text></Pressable><Text style={{ color: p.mutedForeground, fontSize: 13 }}>قراءة متكررة</Text></View>
       <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={c.content}>
-        <View style={{ gap: 2 }}><Text accessibilityRole="header" style={{ color: p.text, fontSize: 28, fontWeight: '700' }}>{step ? 'موعد خير يتجدد' : preset ? initial!.name : 'سور تحب العودة إليها'}</Text><Text style={{ color: p.muted, fontSize: 15 }}>{step ? 'هذه قراءتك ومواعيدها. كل موعد بداية جديدة.' : 'اختر السور، ثم امنحها موعدًا في أسبوعك.'}</Text></View>
+        <View style={{ gap: 2 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 24, fontWeight: '600' }}>{step ? 'موعد خير يتجدد' : preset ? initial!.name : 'سور تحب العودة إليها'}</Text><Text style={{ color: p.mutedForeground, fontSize: 15 }}>{step ? 'هذه قراءتك ومواعيدها. كل موعد بداية جديدة.' : 'اختر السور، ثم امنحها موعدًا في أسبوعك.'}</Text></View>
         <CreationSteps step={step} canReview={!!preview.plan && !busy} onChange={changeStep} />
         <View pointerEvents={busy ? 'none' : 'auto'} style={{ gap: 24 }}>
           {step === 0 ? <>
             <CreationSection title="ماذا تقرأ؟" icon="book">
               <Pressable accessibilityRole="button" accessibilityLabel="اختيار السور" disabled={!index} onPress={() => { Keyboard.dismiss(); setChoosing(true); }} style={({ pressed }) => ({ gap: 8, opacity: !index || pressed ? 0.6 : 1, minHeight: 72, justifyContent: 'center' })}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><Text style={{ color: p.text, fontSize: 20, fontWeight: '600', lineHeight: 30, flex: 1 }}>{surahs.length && index ? surahs.map(n => index.surahNames[n]).join('، ') : 'اختر سورة أو أكثر'}</Text><ReaderIcon name="chevron" color={p.accent} size={20} /></View>
-                <Text style={{ color: p.accent, fontSize: 13, fontWeight: '600' }}>{surahs.length ? 'تغيير السور المختارة' : 'تصفّح سور القرآن'}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><Text style={{ color: p.foreground, fontSize: 20, fontWeight: '600', lineHeight: 30, flex: 1 }}>{surahs.length && index ? surahs.map(n => index.surahNames[n]).join('، ') : 'اختر سورة أو أكثر'}</Text><ReaderIcon name="chevron" color={p.mutedForeground} size={16} /></View>
+                <Text style={{ color: p.primary, fontSize: 14, fontWeight: '500' }}>{surahs.length ? 'تغيير السور المختارة' : 'تصفّح سور القرآن'}</Text>
               </Pressable>
-              <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border, paddingTop: 16, gap: 8 }}><Text style={{ color: p.muted, fontSize: 13 }}>الرواية</Text><Segments palette={p} value={riwayah} onChange={setRiwayah} options={[{ value: 'warsh', label: 'ورش' }, { value: 'hafs', label: 'حفص' }]} /></View>
+              <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border, paddingTop: 16, gap: 8 }}><Text style={{ color: p.mutedForeground, fontSize: 13 }}>الرواية</Text><Segments palette={p} value={riwayah} onChange={setRiwayah} options={[{ value: 'warsh', label: 'ورش' }, { value: 'hafs', label: 'حفص' }]} /></View>
             </CreationSection>
             <CreationSection title="متى تعود إليها؟" icon="calendar" description="يتجدد الهدف في الأيام المختارة، دون تراكم قراءة الأيام الفائتة.">
               <WeekdayPicker days={days} onChange={setDays} /><PlanDateField label="ابتداءً من" mode="date" value={startDate} onChange={setStartDate} minimum={today} />
             </CreationSection>
           </> : <>
-            {preview.plan && index && <View style={[{ padding: 22, borderRadius: readerShape.hero, backgroundColor: p.hero, gap: 12 }, readerElevation(2, p)]}>
-              <View style={c.row}><ReaderIcon name="restore" color={p.heroMuted} size={20} /><Text style={{ color: p.heroMuted, fontSize: 13 }}>قراءة متكررة · رواية {RIWAYAT[riwayah].label}</Text></View>
-              <Text style={{ color: p.onHero, fontSize: 24, fontWeight: '600' }}>{surahs.map(n => index.surahNames[n]).join('، ')}</Text>
-              <Text style={{ color: p.heroMuted, fontSize: 15 }}>{weekdaysLabel(days)}</Text>
-              <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: withAlpha(p.onHero, 0.2) }} /><Text style={{ color: p.heroMuted, fontSize: 13, lineHeight: 22 }}>{surahs.length > 1 ? 'تقرأ السور بالترتيب، في جلسة مخصصة لكل سورة.' : 'جلسة قراءة مخصصة للسورة، مع حفظ تقدمك خلال اليوم.'}</Text>
-            </View>}
+            {preview.plan && index && <Card style={{ padding: 16, gap: 12 }}>
+              <View style={[c.row, { gap: 6 }]}><Badge variant="secondary" icon="restore">قراءة متكررة</Badge><Badge variant="outline">{`رواية ${RIWAYAT[riwayah].label}`}</Badge></View>
+              <Text style={{ color: p.foreground, fontSize: 22, fontWeight: '600' }}>{surahs.map(n => index.surahNames[n]).join('، ')}</Text>
+              <Text style={{ color: p.mutedForeground, fontSize: 15 }}>{weekdaysLabel(days)}</Text>
+              <Separator /><Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22 }}>{surahs.length > 1 ? 'تقرأ السور بالترتيب، في جلسة مخصصة لكل سورة.' : 'جلسة قراءة مخصصة للسورة، مع حفظ تقدمك خلال اليوم.'}</Text>
+            </Card>}
             <CreationSection title="مواعيدك الأولى" icon="calendar"><View>{upcoming.map((date, i) => <View key={date} style={[c.row, { gap: 12, paddingVertical: 10, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: p.border }]}>
-              <Text style={{ color: p.muted, fontSize: 13, minWidth: 20 }}>{arabicNumber(i + 1)}</Text><Text style={{ color: p.text, fontSize: 15, fontWeight: '600' }}>{dateLabel(date)}</Text>
+              <Text style={{ color: p.mutedForeground, fontSize: 13, minWidth: 20 }}>{arabicNumber(i + 1)}</Text><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{dateLabel(date)}</Text>
             </View>)}</View></CreationSection>
             <CreationSection title="اجعله موعدك" icon="settings">
               <PlanField label="اسم الهدف" value={name} onChange={setName} placeholder={fallbackName} />
               <PlanSwitch label="ذكّرني بالقراءة" checked={reminder} onChange={setReminder} disabled={!remindersSupported} detail={remindersSupported ? 'تذكير في الأيام المختارة فقط.' : 'فعّل التذكير من تطبيق الهاتف.'} />
               {reminder && <PlanDateField label="وقت التذكير" mode="time" value={time} onChange={setTime} />}
             </CreationSection>
-            <Text style={{ color: p.muted, fontSize: 13, lineHeight: 22, paddingHorizontal: 4 }}>يمكنك متابعة هذا الهدف بجانب ختمتك أو وردك اليومي، وإيقافه أو أرشفته متى شئت.</Text>
+            <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 22, paddingHorizontal: 4 }}>يمكنك متابعة هذا الهدف بجانب ختمتك أو وردك اليومي، وإيقافه أو أرشفته متى شئت.</Text>
           </>}
         </View>
         <PlanNotice message={error} retry={retry} />{!index && !error && <PlanLoading />}
       </ScrollView>
-      <View style={[c.footer, { backgroundColor: p.paper, borderColor: p.border }]}>
+      <View style={[c.footer, { backgroundColor: p.card, borderColor: p.border }]}>
         <PlanNotice message={message || (surahs.length && days.length ? preview.error : undefined)} />
-        {!surahs.length || !days.length ? <Text style={{ color: p.muted, fontSize: 13, textAlign: 'center' }}>اختر السور وأيام القراءة للمتابعة.</Text> : null}
+        {!surahs.length || !days.length ? <Text style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>اختر السور وأيام القراءة للمتابعة.</Text> : null}
         <ReaderButton palette={p} selected disabled={!preview.plan || busy} onPress={() => step ? void save() : changeStep(1)}>{busy ? 'جارٍ الحفظ…' : step ? 'إنشاء القراءة المتكررة' : 'مراجعة الموعد'}</ReaderButton>
       </View>
       {choosing && index && <SurahSelectionSheet index={index} selected={surahs} onClose={() => setChoosing(false)} onSave={value => { setSurahs(value); setChoosing(false); }} />}

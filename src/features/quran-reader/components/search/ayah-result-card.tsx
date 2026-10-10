@@ -11,24 +11,24 @@ export function AyahResultCard({ item, palette: p, fontFamily, bookmarked, saved
   item: QuranSearchResult; palette: ReaderPalette; fontFamily: string; bookmarked: boolean; saved: boolean; canSave: boolean; onOpen: () => void; onSave: () => void;
   index?: number; count?: number;
 }) {
-  return <View style={[listRowFrame(index, count), { backgroundColor: p.paper, borderColor: p.border }]}>
+  return <View style={[listRowFrame(index, count), { backgroundColor: p.card, borderColor: p.border }]}>
     <Pressable accessibilityRole="button" accessibilityLabel={`${item.surahName}، الآية ${item.reference.ayahNumber}، صفحة ${item.pageNumber}. ${item.text}`} accessibilityHint="فتح الآية وتحديدها في المصحف" onPress={onOpen}
-      style={({ pressed }) => [s.body, { backgroundColor: pressed ? p.accentSoft : 'transparent' }]}>
+      style={({ pressed }) => [s.body, { backgroundColor: pressed ? p.accent : 'transparent' }]}>
       <View style={s.heading}>
         <Text accessibilityLabel={item.surahName} style={[calligraphyStyle(32), { color: p.ornament, flex: 1 }]}>{surahNameGlyph(item.reference.surahNumber)}</Text>
-        <Text style={{ color: p.muted, fontSize: 13 }}>الآية {item.reference.ayahNumber} · صفحة {item.pageNumber}</Text>
+        <Text style={{ color: p.mutedForeground, fontSize: 13 }}>الآية {item.reference.ayahNumber} · صفحة {item.pageNumber}</Text>
       </View>
-      <QuranText numberOfLines={3} style={[s.ayah, { color: p.text, fontFamily }]}>{item.text}</QuranText>
+      <QuranText numberOfLines={3} style={[s.ayah, { color: p.foreground, fontFamily }]}>{item.text}</QuranText>
     </Pressable>
     <View style={[s.footer, { borderColor: p.border }]}>
       <Pressable accessibilityRole="button" accessibilityLabel={`${bookmarked ? 'إزالة حفظ' : 'حفظ'} ${item.surahName}، الآية ${item.reference.ayahNumber}`} accessibilityState={{ disabled: !canSave, selected: bookmarked }} aria-pressed={bookmarked} disabled={!canSave} onPress={onSave}
-        style={({ pressed }) => [s.action, { backgroundColor: pressed ? p.accentSoft : 'transparent', opacity: canSave ? 1 : 0.4 }]}>
-        <ReaderIcon name={bookmarked && !saved ? 'check' : 'bookmark'} color={bookmarked ? p.accent : p.muted} size={18} />
-        <Text style={{ color: bookmarked ? p.accent : p.muted, fontSize: 13 }}>{saved ? 'إزالة الحفظ' : bookmarked ? 'محفوظة' : 'حفظ الآية'}</Text>
+        style={({ pressed }) => [s.action, { backgroundColor: pressed ? p.accent : 'transparent', opacity: canSave ? 1 : 0.4 }]}>
+        <ReaderIcon name={bookmarked && !saved ? 'check' : 'bookmark'} color={bookmarked ? p.primary : p.mutedForeground} size={18} />
+        <Text style={{ color: bookmarked ? p.primary : p.mutedForeground, fontSize: 14, fontWeight: '500' }}>{saved ? 'إزالة الحفظ' : bookmarked ? 'محفوظة' : 'حفظ الآية'}</Text>
       </Pressable>
       <View style={{ width: StyleSheet.hairlineWidth, height: 20, backgroundColor: p.border }} />
-      <Pressable accessibilityRole="button" accessibilityLabel={`فتح ${item.surahName}، الآية ${item.reference.ayahNumber}`} onPress={onOpen} style={({ pressed }) => [s.action, { backgroundColor: pressed ? p.accentSoft : 'transparent' }]}>
-        <Text style={{ color: p.accent, fontSize: 13, fontWeight: '600' }}>فتح في المصحف</Text><ReaderIcon name="chevron" color={p.accent} size={16} />
+      <Pressable accessibilityRole="button" accessibilityLabel={`فتح ${item.surahName}، الآية ${item.reference.ayahNumber}`} onPress={onOpen} style={({ pressed }) => [s.action, { backgroundColor: pressed ? p.accent : 'transparent' }]}>
+        <Text style={{ color: p.primary, fontSize: 14, fontWeight: '500' }}>فتح في المصحف</Text><ReaderIcon name="chevron" color={p.primary} size={16} />
       </Pressable>
     </View>
   </View>;

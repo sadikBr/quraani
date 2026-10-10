@@ -1,16 +1,80 @@
-export const readerThemes = {
-  light: {
-    background: '#F6F4EE', paper: '#FFFEFA', text: '#1E3833', muted: '#5F716A',
-    accent: '#236B5B', accentSoft: '#E4F0EA', border: '#D4E0D8', ornament: '#9A7A3A',
-    selected: '#D7EADF', warning: '#984C2F',
-    hero: '#164238', onHero: '#FFF9E9', heroMuted: '#B9D1C6', goldSoft: '#EFE7D2',
-  },
-  dark: {
-    background: '#0F141B', paper: '#18212C', text: '#F1F5F4', muted: '#A4B2BE',
-    accent: '#9EC5D9', accentSoft: '#263746', border: '#344757', ornament: '#D8B875',
-    selected: '#3A5264', warning: '#EFB18A',
-    hero: '#223545', onHero: '#F7FBFA', heroMuted: '#BDD2DC', goldSoft: '#3A382E',
-  },
+import { isDarkColor, mixColor } from './colors';
+
+/**
+ * Colour roles follow the Universal UI (shadcn/ui) design system, so every
+ * component reads the same names in every theme. `ornament` (gold) and
+ * `highlight` (selected ayah) are the reader's own additions.
+ */
+export interface ReaderPalette {
+  background: string; foreground: string;
+  card: string; popover: string;
+  primary: string; primaryForeground: string;
+  secondary: string; secondaryForeground: string;
+  muted: string; mutedForeground: string;
+  accent: string; accentForeground: string;
+  destructive: string; destructiveForeground: string;
+  success: string; warning: string;
+  border: string; input: string; ring: string; overlay: string;
+  ornament: string; highlight: string;
+}
+
+/** The palette each colour theme was designed with; roles are derived from it. */
+interface ThemeSeed {
+  background: string; paper: string; text: string; muted: string;
+  accent: string; accentSoft: string; border: string; ornament: string;
+  selected: string; warning: string;
+  hero: string; onHero: string; heroMuted: string; goldSoft: string;
+}
+
+function contrast(a: string, b: string) {
+  const lum = (hex: string) => {
+    const c = hex.slice(1, 7).match(/../g)!.map(x => { const v = parseInt(x, 16) / 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  };
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+const onFill = (fill: string, candidates: string[]) => candidates.reduce((best, c) => contrast(fill, c) > contrast(fill, best) ? c : best);
+
+function fromSeed(seed: ThemeSeed): ReaderPalette {
+  const dark = isDarkColor(seed.background);
+  // Fills must read against both the page and cards: step away from the darker
+  // surface on light themes and from the lighter one on dark themes.
+  const fill = dark ? mixColor(seed.paper, seed.text, 0.09) : mixColor(seed.background, seed.text, 0.06);
+  return {
+    background: seed.background, foreground: seed.text,
+    card: seed.paper, popover: seed.paper,
+    primary: seed.accent, primaryForeground: onFill(seed.accent, [seed.background, seed.text]),
+    secondary: fill, secondaryForeground: seed.text,
+    muted: fill, mutedForeground: seed.muted,
+    accent: seed.accentSoft, accentForeground: seed.text,
+    destructive: seed.warning, destructiveForeground: onFill(seed.warning, [seed.background, '#FFFFFF']),
+    success: dark ? '#05DF72' : '#008236', warning: '#FFB900',
+    border: seed.border, input: dark ? mixColor(seed.border, seed.text, 0.12) : seed.border,
+    ring: mixColor(seed.text, seed.background, 0.5), overlay: '#00000080',
+    ornament: seed.ornament, highlight: seed.selected,
+  };
+}
+
+/** shadcn/ui neutral, exactly; alpha borders are flattened over the card. */
+const neutralLight: ReaderPalette = {
+  background: '#FFFFFF', foreground: '#0A0A0A', card: '#FFFFFF', popover: '#FFFFFF',
+  primary: '#171717', primaryForeground: '#FAFAFA', secondary: '#F5F5F5', secondaryForeground: '#171717',
+  muted: '#F5F5F5', mutedForeground: '#737373', accent: '#F5F5F5', accentForeground: '#171717',
+  destructive: '#E7000B', destructiveForeground: '#FFFFFF', success: '#008236', warning: '#FFB900',
+  border: '#E5E5E5', input: '#E5E5E5', ring: '#A1A1A1', overlay: '#00000080',
+  ornament: '#9A7A3A', highlight: '#EDEDED',
+};
+const neutralDark: ReaderPalette = {
+  background: '#0A0A0A', foreground: '#FAFAFA', card: '#171717', popover: '#171717',
+  primary: '#E5E5E5', primaryForeground: '#171717', secondary: '#262626', secondaryForeground: '#FAFAFA',
+  muted: '#262626', mutedForeground: '#A1A1A1', accent: '#262626', accentForeground: '#FAFAFA',
+  destructive: '#FF6467', destructiveForeground: '#0A0A0A', success: '#05DF72', warning: '#FFB900',
+  border: '#2E2E2E', input: '#383838', ring: '#737373', overlay: '#00000080',
+  ornament: '#D8B875', highlight: '#2A2A2A',
+};
+
+const themeSeeds = {
   emerald: {
     background: '#062E25', paper: '#0D4937', text: '#F4F0D6', muted: '#B4D1B9',
     accent: '#F0C85A', accentSoft: '#1B6046', border: '#2A7555', ornament: '#F0C85A',
@@ -143,9 +207,15 @@ export const readerThemes = {
     selected: '#70404B', warning: '#F2B185',
     hero: '#3A2345', onHero: '#FFF7E2', heroMuted: '#E5BDD0', goldSoft: '#4D412B',
   },
-} as const;
+} as const satisfies Record<string, ThemeSeed>;
 
-export type ReaderPalette = { [K in keyof typeof readerThemes.light]: string };
+export const readerThemes = {
+  light: neutralLight,
+  dark: neutralDark,
+  ...Object.fromEntries(Object.entries(themeSeeds).map(([id, seed]) => [id, fromSeed(seed)])) as Record<keyof typeof themeSeeds, ReaderPalette>,
+};
+
+
 export type ReaderThemeId = keyof typeof readerThemes;
 export type ReaderAppearance = 'system' | ReaderThemeId;
 

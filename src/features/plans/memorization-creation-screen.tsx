@@ -3,7 +3,7 @@ import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleS
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { readerShape, withAlpha } from '../quran-reader/design';
+import { readerShape } from '../quran-reader/design';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { ReaderIcon, Segments } from '../quran-reader/components/ui/reader-chrome';
 import { ReaderButton } from '../quran-reader/components/reading/reader-button';
@@ -72,23 +72,23 @@ export function MemorizationCreationScreen() {
   </PlanScreen>;
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={c.navigation}><Pressable accessibilityRole="button" accessibilityLabel={step ? 'العودة إلى إعداد الحفظ' : 'العودة إلى أنواع الأهداف'} disabled={busy} onPress={() => step ? changeStep(0) : router.back()} style={({ pressed }) => [c.back, { opacity: pressed || busy ? 0.5 : 1 }]}><ReaderIcon name="back" color={p.text} size={20} /><Text style={{ color: p.text, fontSize: 15 }}>{step ? 'الإعداد' : 'هدف جديد'}</Text></Pressable><Text style={{ color: p.muted, fontSize: 13 }}>حفظ القرآن</Text></View>
+      <View style={c.navigation}><Pressable accessibilityRole="button" accessibilityLabel={step ? 'العودة إلى إعداد الحفظ' : 'العودة إلى أنواع الأهداف'} disabled={busy} onPress={() => step ? changeStep(0) : router.back()} style={({ pressed }) => [c.back, { opacity: pressed || busy ? 0.5 : 1 }]}><ReaderIcon name="back" color={p.foreground} size={20} /><Text style={{ color: p.foreground, fontSize: 15 }}>{step ? 'الإعداد' : 'هدف جديد'}</Text></Pressable><Text style={{ color: p.mutedForeground, fontSize: 13 }}>حفظ القرآن</Text></View>
       <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={c.content}>
-        <View style={{ gap: 2 }}><Text accessibilityRole="header" style={{ color: p.text, fontSize: 28, fontWeight: '700' }}>{step ? 'خطوات واضحة للحفظ' : 'ليكن القرآن في صدرك'}</Text><Text style={{ color: p.muted, fontSize: 15 }}>{step ? 'راجع نصيبك ومواعيدك، وابدأ على مهل.' : 'أيام تختارها، ومقدار يناسبك، ورحلة تكبر آيةً آية.'}</Text></View>
+        <View style={{ gap: 2 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 24, fontWeight: '600' }}>{step ? 'خطوات واضحة للحفظ' : 'ليكن القرآن في صدرك'}</Text><Text style={{ color: p.mutedForeground, fontSize: 15 }}>{step ? 'راجع نصيبك ومواعيدك، وابدأ على مهل.' : 'أيام تختارها، ومقدار يناسبك، ورحلة تكبر آيةً آية.'}</Text></View>
         <CreationSteps step={step} canReview={!!preview.plan && !busy} onChange={changeStep} />
         <View pointerEvents={busy ? 'none' : 'auto'} style={{ gap: 24 }}>
           {step === 0 ? <>
             <CreationSection title="ما حفظته من قبل" icon="check" description="يُستبعد محفوظك من الجدول. كل مقطع تتم حفظه لاحقًا يُضاف إليه تلقائيًا.">
               <Segments palette={p} value={riwayah} onChange={setRiwayah} options={[{ value: 'warsh', label: 'ورش' }, { value: 'hafs', label: 'حفص' }]} />
-              <Pressable accessibilityRole="button" accessibilityLabel="تحديد ما أحفظه من القرآن" disabled={!index} onPress={() => { Keyboard.dismiss(); setChoosing(true); }} style={({ pressed }) => ({ padding: 16, gap: 8, minHeight: 52, borderWidth: 1, borderColor: pressed ? withAlpha(p.accent, 0.5) : p.border, borderRadius: readerShape.control, backgroundColor: pressed ? p.accentSoft : 'transparent', opacity: !index ? 0.6 : 1 })}>
-                <View style={c.row}><View style={c.grow}><Text style={{ color: p.text, fontSize: 18, fontWeight: '600' }}>{ranges.length ? `${arabicNumber(spanCount(ranges))} آية في محفوظك` : 'من أين تبدأ رحلتك؟'}</Text><Text style={{ color: p.muted, fontSize: 13 }}>سور، أجزاء، أحزاب، أرباع، أو آيات محددة</Text></View><ReaderIcon name="chevron" color={p.accent} size={20} /></View>
-                <Text style={{ color: p.accent, fontSize: 13, fontWeight: '600' }}>{ranges.length ? 'مراجعة المحفوظ وتعديله' : 'تحديد ما أحفظه'}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="تحديد ما أحفظه من القرآن" disabled={!index} onPress={() => { Keyboard.dismiss(); setChoosing(true); }} style={({ pressed }) => ({ padding: 16, gap: 6, minHeight: 52, borderWidth: 1, borderColor: p.input, borderRadius: readerShape.control, backgroundColor: pressed ? p.accent : p.background, opacity: !index ? 0.5 : 1 })}>
+                <View style={c.row}><View style={c.grow}><Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{ranges.length ? `${arabicNumber(spanCount(ranges))} آية في محفوظك` : 'من أين تبدأ رحلتك؟'}</Text><Text style={{ color: p.mutedForeground, fontSize: 14 }}>سور، أجزاء، أحزاب، أرباع، أو آيات محددة</Text></View><ReaderIcon name="chevron" color={p.mutedForeground} size={16} /></View>
+                <Text style={{ color: p.primary, fontSize: 14, fontWeight: '500' }}>{ranges.length ? 'مراجعة المحفوظ وتعديله' : 'تحديد ما أحفظه'}</Text>
               </Pressable>
-              <Text style={{ color: p.muted, fontSize: 13, lineHeight: 22 }}>يمكنك تركه فارغًا للبدء من الفاتحة. لكل رواية سجل مستقل.</Text>
+              <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 22 }}>يمكنك تركه فارغًا للبدء من الفاتحة. لكل رواية سجل مستقل.</Text>
             </CreationSection>
             <CreationSection title="نصيبك من الحفظ" icon="book" description="اختر مقدار الأسبوع بأرباع الأحزاب؛ أربعة أرباع تساوي حزبًا.">
               <AmountPicker label="المقدار الأسبوعي بأرباع الأحزاب" value={amount} onChange={setAmount} unit="ربع حزب في الأسبوع" presets={['1', '2', '4', '8']} minimum={1} maximum={240} parse={value => Number(normalizeArabicSearch(value))} />
-              {Number.isInteger(weeklyQuarters) && weeklyQuarters > 0 && <Text style={{ color: p.text, fontSize: 15, fontWeight: '600', textAlign: 'center' }}>{quarterLabel(weeklyQuarters)} كل أسبوع</Text>}
+              {Number.isInteger(weeklyQuarters) && weeklyQuarters > 0 && <Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600', textAlign: 'center' }}>{quarterLabel(weeklyQuarters)} كل أسبوع</Text>}
             </CreationSection>
             <CreationSection title="أيام تحفظ فيها" icon="calendar" description="نقسّم المقدار على هذه الأيام، وننهي كل جلسة عند آية كاملة.">
               <WeekdayPicker days={days} onChange={setDays} quickOptions={[{ label: 'الإثنين والأربعاء', value: [1, 3] }, { label: 'كل يوم', value: [0, 1, 2, 3, 4, 5, 6] }]} />
@@ -98,22 +98,22 @@ export function MemorizationCreationScreen() {
             <MemorizationHero index={index} ranges={preview.plan.memorized} compact />
             <CreationSection title="جدولك الأول" icon="calendar" description={`${quarterLabel(weeklyQuarters)} أسبوعيًا، موزّع على ${arabicNumber(days.length)} أيام. التوزيع تقريبي عند حدود الآيات.`}>
               {preview.plan.sessions.length ? <>{preview.plan.sessions.slice(0, Math.min(days.length, 7)).map((session, i) => <View key={session.date} style={{ paddingTop: i ? 12 : 0, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: p.border, gap: 4 }}>
-                <View style={[c.row, { justifyContent: 'space-between' }]}><Text style={{ color: p.text, fontSize: 15, fontWeight: '600' }}>{weekdayDateLabel(session.date)}</Text><Text style={{ color: p.muted, fontSize: 13 }}>{arabicNumber(spanCount(session.ranges))} آية</Text></View>
-                {session.ranges.slice(0, 3).map(r => <Text key={r.start} style={{ color: p.muted, fontSize: 13 }}>{ayahRangeLabel(index, r.start, r.end)}</Text>)}
-                {session.ranges.length > 3 && <Text style={{ color: p.muted, fontSize: 12 }}>و{arabicNumber(session.ranges.length - 3)} مقاطع إضافية</Text>}
-              </View>)}<View style={{ paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border, gap: 4 }}><Text style={{ color: p.text, fontSize: 15, fontWeight: '600' }}>{arabicNumber(preview.plan.sessions.length)} جلسة حتى الإتمام</Text><Text style={{ color: p.muted, fontSize: 13 }}>الإتمام المتوقع: {dateLabel(preview.plan.sessions.at(-1)!.date)}</Text></View></>
-              : <Text style={{ color: p.text, fontSize: 15, lineHeight: 25 }}>حددت القرآن كاملًا كمحفوظ. سنحفظ سجلك دون إنشاء جلسات جديدة.</Text>}
+                <View style={[c.row, { justifyContent: 'space-between' }]}><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{weekdayDateLabel(session.date)}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{arabicNumber(spanCount(session.ranges))} آية</Text></View>
+                {session.ranges.slice(0, 3).map(r => <Text key={r.start} style={{ color: p.mutedForeground, fontSize: 13 }}>{ayahRangeLabel(index, r.start, r.end)}</Text>)}
+                {session.ranges.length > 3 && <Text style={{ color: p.mutedForeground, fontSize: 12 }}>و{arabicNumber(session.ranges.length - 3)} مقاطع إضافية</Text>}
+              </View>)}<View style={{ paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border, gap: 4 }}><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{arabicNumber(preview.plan.sessions.length)} جلسة حتى الإتمام</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>الإتمام المتوقع: {dateLabel(preview.plan.sessions.at(-1)!.date)}</Text></View></>
+              : <Text style={{ color: p.foreground, fontSize: 15, lineHeight: 25 }}>حددت القرآن كاملًا كمحفوظ. سنحفظ سجلك دون إنشاء جلسات جديدة.</Text>}
             </CreationSection>
             <CreationSection title="اجعله موعدك" icon="settings"><PlanField label="اسم الهدف" value={name} onChange={setName} placeholder="رحلتي مع الحفظ" />
               <PlanSwitch label="ذكّرني بالحفظ" checked={reminder} onChange={setReminder} disabled={!remindersSupported || !preview.plan.sessions.length} detail={remindersSupported ? 'تذكير في أيام الحفظ فقط.' : 'فعّل التذكير من تطبيق الهاتف.'} />
               {reminder && <PlanDateField label="وقت التذكير" mode="time" value={time} onChange={setTime} />}
             </CreationSection>
-            <Text style={{ color: p.muted, fontSize: 13, lineHeight: 22, paddingHorizontal: 4 }}>نبدأ بأول آية غير محفوظة ونتابع بترتيب المصحف. إذا فاتك موعد، يبقى المقطع ليوم الحفظ التالي. يمكنك تعديل أيامك ومقدارك لاحقًا.</Text>
+            <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 22, paddingHorizontal: 4 }}>نبدأ بأول آية غير محفوظة ونتابع بترتيب المصحف. إذا فاتك موعد، يبقى المقطع ليوم الحفظ التالي. يمكنك تعديل أيامك ومقدارك لاحقًا.</Text>
           </> : null}
         </View>
         <PlanNotice message={error} retry={retry} />{!index && !error && <PlanLoading />}
       </ScrollView>
-      <View style={[c.footer, { backgroundColor: p.paper, borderColor: p.border }]}><PlanNotice message={message || preview.error} />
+      <View style={[c.footer, { backgroundColor: p.card, borderColor: p.border }]}><PlanNotice message={message || preview.error} />
         <ReaderButton palette={p} selected disabled={!preview.plan || busy} onPress={() => step ? void save() : changeStep(1)}>{busy ? 'جارٍ الحفظ…' : step ? preview.plan?.sessions.length ? 'ابدأ رحلة الحفظ' : 'حفظ سجل المحفوظ' : 'مراجعة جدول الحفظ'}</ReaderButton>
       </View>
       {choosing && index && <MemorizedSelectionSheet index={index} selected={ranges} onClose={() => setChoosing(false)} onSave={value => { setSelected(items => ({ ...items, [riwayah]: value })); setChoosing(false); }} />}

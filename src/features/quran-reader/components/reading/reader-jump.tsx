@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Keyboard, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
+import { Button, IconTile } from '@/components/ui';
 import type { AyahReference } from '@/lib/quranpedia/types';
-import { readerShape } from '../../design';
+import { readerElevation, readerShape, withAlpha } from '../../design';
 import type { ReaderContent } from '../../types/reader';
 import type { ReaderPalette } from '../../theme';
 import { ayahDestination, parseReaderNumber } from '../../utils/navigation';
@@ -51,9 +52,9 @@ export function ReaderJump({ content, currentPage, palette: p, onJump, limited =
         const selected = kind === option.value;
         return <Pressable key={option.value} accessibilityRole="tab" accessibilityLabel={option.label} accessibilityState={{ selected }} aria-selected={selected}
           onPress={() => { Keyboard.dismiss(); setKind(option.value); setError(''); }}
-          style={({ pressed }) => [s.tab, { borderColor: selected ? p.accent : 'transparent', opacity: pressed ? 0.65 : 1 }]}>
-          <ReaderIcon name={option.icon} size={19} color={selected ? p.accent : p.muted} />
-          <Text style={{ color: selected ? p.accent : p.muted, fontSize: 15, fontWeight: selected ? '600' : '400' }}>{option.label}</Text>
+          style={({ pressed }) => [s.tab, { borderColor: selected ? p.foreground : 'transparent', opacity: pressed ? 0.65 : 1 }]}>
+          <ReaderIcon name={option.icon} size={16} color={selected ? p.foreground : p.mutedForeground} />
+          <Text style={{ color: selected ? p.foreground : p.mutedForeground, fontSize: 14, fontWeight: '500' }}>{option.label}</Text>
         </Pressable>;
       })}
     </View>
@@ -65,20 +66,17 @@ export function ReaderJump({ content, currentPage, palette: p, onJump, limited =
       <NumberField label="رقم السورة" value={surah} onChange={change(setSurah)} hint={limited ? 'ضمن الورد' : 'من 1 إلى 114'} palette={p} onSubmit={submit} />
       <NumberField label="رقم الآية" value={ayah} onChange={change(setAyah)} hint={ayahHint} palette={p} onSubmit={submit} />
     </View>}
-    <View accessibilityLiveRegion="polite" style={[s.preview, { backgroundColor: p.accentSoft }]}>
-      <ReaderIcon name="book" color={p.accent} size={26} />
+    <View accessibilityLiveRegion="polite" style={[s.preview, { backgroundColor: p.card, borderColor: p.border }]}>
+      <IconTile name="book" palette={p} />
       <View style={s.grow}>
-        <Text style={{ color: p.muted, fontSize: 12 }}>وجهتك {limited ? 'داخل الورد' : 'في المصحف'}</Text>
-        <Text style={{ color: p.text, fontSize: 19, fontWeight: '600' }}>{destinationName || 'اختر موضعًا للانتقال'}</Text>
-        {!!previewDetail && <Text style={{ color: p.muted, fontSize: 13 }}>{previewDetail}</Text>}
+        <Text style={{ color: p.mutedForeground, fontSize: 12 }}>وجهتك {limited ? 'داخل الورد' : 'في المصحف'}</Text>
+        <Text style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{destinationName || 'اختر موضعًا للانتقال'}</Text>
+        {!!previewDetail && <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{previewDetail}</Text>}
       </View>
-      {destinationPage && <View style={[s.pageBadge, { borderColor: p.border }]}><Text style={{ color: p.muted, fontSize: 12, textAlign: 'center' }}>صفحة</Text><Text style={{ color: p.text, fontSize: 21, textAlign: 'center' }}>{destinationPage.number}</Text></View>}
+      {destinationPage && <View style={[s.pageBadge, { borderColor: p.border }]}><Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center' }}>صفحة</Text><Text style={{ color: p.foreground, fontSize: 21, textAlign: 'center' }}>{destinationPage.number}</Text></View>}
     </View>
-    {!!error && <Text accessibilityRole="alert" style={{ color: p.warning, fontSize: 13 }}>{error}</Text>}
-    <Pressable accessibilityRole="button" accessibilityLabel={actionLabel} onPress={submit}
-      style={({ pressed }) => [s.submit, { backgroundColor: p.accent, opacity: pressed ? 0.75 : 1 }]}>
-      <Text style={{ color: p.paper, fontSize: 15, fontWeight: '600', flex: 1, textAlign: 'center' }}>{actionLabel}</Text><ReaderIcon name="chevron" color={p.paper} size={21} />
-    </Pressable>
+    {!!error && <Text accessibilityRole="alert" style={{ color: p.destructive, fontSize: 13 }}>{error}</Text>}
+    <Button palette={p} size="lg" label={actionLabel} onPress={submit} iconEnd="chevron" block>{actionLabel}</Button>
   </View>;
 }
 
@@ -87,30 +85,26 @@ function NumberField({ label, value, onChange, hint, palette: p, onSubmit, large
 }) {
   const [focused, setFocused] = useState(false);
   return <View style={s.field}>
-    <Text style={{ color: p.muted, fontSize: 13, textAlign: 'center' }}>{label}</Text>
+    <Text style={{ color: p.foreground, fontSize: 14, fontWeight: '500', textAlign: 'center' }}>{label}</Text>
     <TextInput accessibilityLabel={label} value={value} onChangeText={onChange} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-      keyboardType="number-pad" inputMode="numeric" maxLength={3} selectTextOnFocus selectionColor={p.accent} onSubmitEditing={onSubmit} returnKeyType="go"
-      style={[s.input, large && s.largeInput, { color: p.text, borderColor: focused ? p.accent : p.border, backgroundColor: p.background }]} />
-    <Text style={{ color: p.muted, fontSize: 12, textAlign: 'center' }}>{hint}</Text>
+      keyboardType="number-pad" inputMode="numeric" maxLength={3} selectTextOnFocus selectionColor={p.primary} onSubmitEditing={onSubmit} returnKeyType="go"
+      style={[s.input, large && s.largeInput, { color: p.foreground, borderColor: focused ? p.ring : p.input, backgroundColor: p.background }, focused ? { boxShadow: `0 0 0 3px ${withAlpha(p.ring, 0.5)}` } as object : readerElevation(1, p)]} />
+    <Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center' }}>{hint}</Text>
   </View>;
 }
 function PageStep({ label, onPress, disabled, plus = false, palette: p }: { label: string; onPress: () => void; disabled: boolean; plus?: boolean; palette: ReaderPalette }) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }} disabled={disabled} onPress={onPress}
-    style={({ pressed }) => [s.step, { borderColor: p.border, backgroundColor: pressed ? p.accentSoft : p.paper, opacity: disabled ? 0.3 : 1 }]}>
-    <View style={{ width: 16, height: 2, backgroundColor: p.accent }} />
-    {plus && <View style={{ position: 'absolute', width: 2, height: 16, backgroundColor: p.accent }} />}
-  </Pressable>;
+  return <Button palette={p} variant="outline" size="lg" icon={plus ? 'plus' : 'minus'} label={label} disabled={disabled} onPress={onPress} />;
 }
 const s = StyleSheet.create({
   form: { gap: 20 }, grow: { flex: 1, minWidth: 0 },
   tabs: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, gap: 20 },
-  tab: { flex: 1, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', minHeight: 48, paddingBottom: 8, borderBottomWidth: 2, marginBottom: -1 },
+  tab: { flex: 1, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', minHeight: 44, paddingBottom: 6, borderBottomWidth: 2, marginBottom: -1 },
   pagePicker: { flexDirection: 'row', gap: 18, alignItems: 'center', paddingVertical: 2 },
   ayahFields: { flexDirection: 'row', gap: 16 }, field: { flex: 1, minWidth: 0, gap: 6 },
-  input: { minHeight: 64, borderWidth: 1, borderRadius: readerShape.control, paddingHorizontal: 8, paddingVertical: 4, fontFamily: 'ReaderNaskh', fontSize: 30, textAlign: 'center', writingDirection: 'ltr', includeFontPadding: false },
+  input: { minHeight: 64, borderWidth: 1, borderRadius: readerShape.control, paddingHorizontal: 8, paddingVertical: 4, fontFamily: 'UiNumericSemiBold', fontSize: 30, textAlign: 'center', writingDirection: 'ltr', includeFontPadding: false },
   largeInput: { minHeight: 80, fontSize: 42 },
   step: { width: 44, height: 44, borderWidth: StyleSheet.hairlineWidth * 2, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
-  preview: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: readerShape.card },
+  preview: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: readerShape.lg, borderWidth: StyleSheet.hairlineWidth },
   pageBadge: { minWidth: 46, borderStartWidth: StyleSheet.hairlineWidth, paddingStart: 12 },
   submit: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 16, borderRadius: readerShape.control },
 });

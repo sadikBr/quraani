@@ -1,3 +1,4 @@
+import { Badge, Button, IconTile } from '@/components/ui';
 import { SurahName } from '../quran-reader/components/ui/surah-name';
 import { useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -53,16 +54,12 @@ export function PlanReadingControls({ session, pageNumber, actions }: { session:
   return <View style={styles.toolbar}>
     <Pressable accessibilityRole="button" accessibilityLabel="العودة إلى الهدف" onPress={actions.back} disabled={actions.busy}
       style={({ pressed }) => [styles.back, { opacity: pressed ? 0.6 : 1 }]}>
-      <ReaderIcon name="chevron" size={18} color={palette.muted} />
-      <Text numberOfLines={1} style={{ color: palette.muted, fontSize: 12, flexShrink: 1 }}>{session.name}</Text>
+      <ReaderIcon name="chevron" size={18} color={palette.mutedForeground} />
+      <Text numberOfLines={1} style={{ color: palette.mutedForeground, fontSize: 12, flexShrink: 1 }}>{session.name}</Text>
     </Pressable>
-    <Pressable accessibilityRole="button" accessibilityLabel={last ? completion : copy.pageLabel} disabled={actions.busy}
-      onPress={() => void actions.save(sessionPageEnd(session, pageNumber))}
-      style={({ pressed }) => [styles.save, { backgroundColor: palette.accentSoft, opacity: actions.busy ? 0.5 : pressed ? 0.7 : 1 }]}>
-      <ReaderIcon name={last ? 'check' : 'bookmark'} color={palette.accent} size={18} />
-      <Text style={{ color: palette.accent, fontSize: 13, fontWeight: '600' }}>{actions.busy ? 'جارٍ الحفظ…' : last ? completion : copy.page}</Text>
-    </Pressable>
-    {!!actions.error && <Text accessibilityRole="alert" style={{ color: palette.warning, width: '100%' }}>{actions.error}</Text>}
+    <Button variant={last ? 'default' : 'secondary'} palette={palette} icon={last ? 'check' : 'bookmark'} label={last ? completion : copy.pageLabel} disabled={actions.busy}
+      onPress={() => void actions.save(sessionPageEnd(session, pageNumber))}>{actions.busy ? 'جارٍ الحفظ…' : last ? completion : copy.page}</Button>
+    {!!actions.error && <Text accessibilityRole="alert" style={{ color: palette.destructive, width: '100%' }}>{actions.error}</Text>}
   </View>;
 }
 
@@ -72,11 +69,10 @@ export function PlanReadingOpening({ session }: { session: PlanReadingSession })
   const first = session.index.ayahs[session.portion.start], copy = sessionCopy(session);
   return <View style={[styles.opening, { borderColor: palette.border }]}>
     <View style={styles.heading}>
-      <Text style={{ color: palette.accent, fontSize: 13, fontWeight: '600' }}>{copy.portion} · {rangeLabel(session.index, session.portion.start, session.portion.end)}</Text>
+      <Badge palette={palette} variant="secondary" icon="book">{`${copy.portion} · ${rangeLabel(session.index, session.portion.start, session.portion.end)}`}</Badge>
       <View style={{ flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: palette.border }} />
-      <ReaderIcon name="book" color={palette.accent} size={20} />
     </View>
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Text style={{ color: palette.muted, fontSize: 12 }}>البداية:</Text><SurahName number={first.surahNumber} name={session.index.surahNames[first.surahNumber]} size={24} color={palette.ornament} /><Text style={{ color: palette.muted, fontSize: 12 }}>الآية {arabicNumber(first.ayahNumber)}</Text></View>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><Text style={{ color: palette.mutedForeground, fontSize: 12 }}>البداية:</Text><SurahName number={first.surahNumber} name={session.index.surahNames[first.surahNumber]} size={24} color={palette.ornament} /><Text style={{ color: palette.mutedForeground, fontSize: 12 }}>الآية {arabicNumber(first.ayahNumber)}</Text></View>
   </View>;
 }
 
@@ -85,11 +81,11 @@ export function PlanReadingEnd({ session, actions }: { session: PlanReadingSessi
   const last = session.index.ayahs[session.portion.end - 1], copy = sessionCopy(session);
   return <View onTouchStart={event => event.stopPropagation()} {...(Platform.OS === 'web' ? { onClick: (event: { stopPropagation: () => void }) => event.stopPropagation() } : {})}
     style={[styles.end, { backgroundColor: palette.background, borderColor: palette.border }]}>
-    <View style={[styles.seal, { backgroundColor: palette.accentSoft }]}><ReaderIcon name="check" color={palette.accent} size={26} /></View>
-    <Text accessibilityRole="header" style={{ color: palette.text, fontSize: 19, fontWeight: '600', textAlign: 'center' }}>{copy.end}</Text>
-    <Text style={{ color: palette.muted, fontSize: 13, lineHeight: 22, textAlign: 'center' }}>حتى {session.index.surahNames[last.surahNumber]}، الآية {arabicNumber(last.ayahNumber)}{'\n'}{copy.note}</Text>
-    {session.remainingSurahs > 0 && <Text style={{ color: palette.accent, fontSize: 13, textAlign: 'center' }}>بعد الحفظ نعود إلى هدفك لمتابعة {copy.next}.</Text>}
-    {!!actions.error && <Text accessibilityRole="alert" style={{ color: palette.warning, textAlign: 'center' }}>{actions.error}</Text>}
+    <IconTile name="check" palette={palette} />
+    <Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 18, fontWeight: '600', textAlign: 'center' }}>{copy.end}</Text>
+    <Text style={{ color: palette.mutedForeground, fontSize: 14, lineHeight: 22, textAlign: 'center' }}>حتى {session.index.surahNames[last.surahNumber]}، الآية {arabicNumber(last.ayahNumber)}{'\n'}{copy.note}</Text>
+    {session.remainingSurahs > 0 && <Text style={{ color: palette.primary, fontSize: 13, textAlign: 'center' }}>بعد الحفظ نعود إلى هدفك لمتابعة {copy.next}.</Text>}
+    {!!actions.error && <Text accessibilityRole="alert" style={{ color: palette.destructive, textAlign: 'center' }}>{actions.error}</Text>}
     <View style={{ alignSelf: 'stretch' }}><ReaderButton palette={palette} selected disabled={actions.busy}
       onPress={() => void actions.save(session.portion.end)}>{actions.busy ? 'جارٍ حفظ التقدم…' : copy.complete}</ReaderButton></View>
   </View>;
@@ -101,6 +97,6 @@ const styles = StyleSheet.create({
   save: { minHeight: 44, paddingHorizontal: 12, borderRadius: readerShape.control, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   opening: { gap: 2, paddingVertical: 12, paddingHorizontal: 10, marginBottom: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   heading: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  end: { marginHorizontal: 10, marginTop: 26, marginBottom: 12, padding: 20, gap: 10, alignItems: 'center', borderRadius: readerShape.card, borderWidth: 1 },
+  end: { marginHorizontal: 10, marginTop: 26, marginBottom: 12, padding: 24, gap: 10, alignItems: 'center', borderRadius: readerShape.card, borderWidth: StyleSheet.hairlineWidth },
   seal: { width: 48, height: 48, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
 });

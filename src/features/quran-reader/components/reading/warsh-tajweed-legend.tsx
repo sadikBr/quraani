@@ -20,16 +20,16 @@ export function WarshTajweedLegend({ palette, dark }: { palette: ReaderPalette; 
   return <View>
     <Pressable accessibilityRole="button" accessibilityLabel="دليل ألوان ورش" accessibilityState={{ expanded }}
       onPress={() => setExpanded(!expanded)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}>
-      <ReaderIcon name="book" color={palette.accent} size={18} />
-      <Text style={{ color: palette.accent, fontSize: 13, flex: 1 }}>دليل ألوان ورش</Text>
-      <Text style={{ color: palette.muted, fontSize: 18 }}>{expanded ? '−' : '+'}</Text>
+      <ReaderIcon name="book" color={palette.primary} size={18} />
+      <Text style={{ color: palette.primary, fontSize: 13, flex: 1 }}>دليل ألوان ورش</Text>
+      <Text style={{ color: palette.mutedForeground, fontSize: 18 }}>{expanded ? '−' : '+'}</Text>
     </Pressable>
     {expanded && <View style={{ gap: 10, paddingVertical: 12 }}>
       {meanings.map(([rule, label]) => <View key={rule} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <View style={{ width: 14, height: 14, borderRadius: 2, backgroundColor: tajweedColor(rule, dark, palette.text) }} />
-        <Text style={{ color: palette.text, fontSize: 13, flex: 1 }}>{label}</Text>
+        <View style={{ width: 14, height: 14, borderRadius: 2, backgroundColor: tajweedColor(rule, dark, palette.foreground) }} />
+        <Text style={{ color: palette.foreground, fontSize: 13, flex: 1 }}>{label}</Text>
       </View>)}
-      <Text style={{ color: palette.muted, fontSize: 11, lineHeight: 20 }}>قد يجتمع أكثر من حكم في الحرف؛ يُعرض لون واحد للتوضيح. اللون لا يحدد عدد حركات المد.</Text>
+      <Text style={{ color: palette.mutedForeground, fontSize: 11, lineHeight: 20 }}>قد يجتمع أكثر من حكم في الحرف؛ يُعرض لون واحد للتوضيح. اللون لا يحدد عدد حركات المد.</Text>
     </View>}
   </View>;
 }

@@ -299,15 +299,15 @@ function RiwayahReaderScreen() {
     preloadPrintedPages(runway, async (artwork, target) => {
       await waitForPagePreparation();
       if (active && imageRunway.has(target.number)) {
-        await preloadPrintedImage(artwork, palette.text, palette.ornament);
+        await preloadPrintedImage(artwork, palette.foreground, palette.ornament);
       }
     });
     return () => { active = false; };
-  }, [ready, content, pageNumber, firstPage, lastPageNumber, mode, palette.text, palette.ornament, tajweed, riwayah]);
+  }, [ready, content, pageNumber, firstPage, lastPageNumber, mode, palette.foreground, palette.ornament, tajweed, riwayah]);
 
-  if (planId && (reading.error || plansError)) return <SafeAreaView style={[styles.root, { backgroundColor: palette.paper }]}>
+  if (planId && (reading.error || plansError)) return <SafeAreaView style={[styles.root, { backgroundColor: palette.card }]}>
     <View style={styles.status}>
-      <Text accessibilityRole="alert" style={[styles.statusTitle, { color: palette.text }]}>{reading.error || plansError}</Text>
+      <Text accessibilityRole="alert" style={[styles.statusTitle, { color: palette.foreground }]}>{reading.error || plansError}</Text>
       {!!plansError && <ReaderButton palette={palette} onPress={retryPlans}>إعادة المحاولة</ReaderButton>}
       <ReaderButton palette={palette} selected onPress={() => router.replace({ pathname: '/plans/[id]', params: { id: planId } })}>العودة إلى الهدف</ReaderButton>
       <ReaderButton palette={palette} onPress={() => router.replace('/')}>فتح المصحف</ReaderButton>
@@ -315,7 +315,7 @@ function RiwayahReaderScreen() {
   </SafeAreaView>;
 
   return (
-    <SafeAreaView edges={['left', 'right']} style={[styles.root, { backgroundColor: palette.paper }]}>
+    <SafeAreaView edges={['left', 'right']} style={[styles.root, { backgroundColor: palette.card }]}>
       {/* Let iOS manage transient home-indicator visibility without changing its
           policy (and safe-area layout) every time the reader tools are toggled. */}
       <Stack.Screen options={{ navigationBarHidden: immersive, autoHideHomeIndicator: true }} />
@@ -336,7 +336,7 @@ function RiwayahReaderScreen() {
         return <Animated.View key={displayPage?.number ?? 'loading'} pointerEvents={isCurrent ? 'auto' : 'none'}
           accessibilityElementsHidden={!isCurrent} importantForAccessibility={isCurrent ? 'auto' : 'no-hide-descendants'}
           {...(Platform.OS === 'web' && !isCurrent ? { 'aria-hidden': true, inert: true } : {})}
-          style={[StyleSheet.absoluteFill, { backgroundColor: palette.paper,
+          style={[StyleSheet.absoluteFill, { backgroundColor: palette.card,
             transform: [{ translateX: Animated.add(pageTranslation, -offset * pageWidth) }] }]}>
       {/* Revealing tools overlays the page without resizing the Quran. */}
       <View style={styles.readingSurface}
@@ -381,15 +381,15 @@ function RiwayahReaderScreen() {
           {ready && session && displayNumber === firstPage && <View onLayout={isCurrent ? event => { openingHeight.current = event.nativeEvent.layout.height; } : undefined}><PlanReadingOpening session={session} /></View>}
           {font.error || (error && !content) ? (
             <View accessibilityRole="alert" style={styles.status}>
-              <Text style={[styles.statusTitle, { color: palette.text }]}>{font.error ? 'تعذر تحميل خط المصحف' : 'تعذر تحميل القرآن'}</Text>
-              <Text style={[styles.statusText, { color: palette.muted }]}>{font.error ? 'أعد فتح التطبيق لتحميل خط المصحف.' : 'تحقق من الاتصال ثم أعد المحاولة.'}</Text>
+              <Text style={[styles.statusTitle, { color: palette.foreground }]}>{font.error ? 'تعذر تحميل خط المصحف' : 'تعذر تحميل القرآن'}</Text>
+              <Text style={[styles.statusText, { color: palette.mutedForeground }]}>{font.error ? 'أعد فتح التطبيق لتحميل خط المصحف.' : 'تحقق من الاتصال ثم أعد المحاولة.'}</Text>
               {!font.error && <ReaderButton palette={palette} onPress={refresh}>إعادة المحاولة</ReaderButton>}
             </View>
           ) : !font.loaded || !content || !ready ? (
             <View style={styles.status} accessibilityLiveRegion="polite">
-              <ActivityIndicator color={palette.accent} size="large" />
-              <Text style={[styles.statusTitle, { color: palette.text }]}>جارٍ تجهيز المصحف</Text>
-              <Text style={[styles.statusText, { color: palette.muted }]}>جارٍ تحميل الرواية المختارة وخطها.</Text>
+              <ActivityIndicator color={palette.primary} size="large" />
+              <Text style={[styles.statusTitle, { color: palette.foreground }]}>جارٍ تجهيز المصحف</Text>
+              <Text style={[styles.statusText, { color: palette.mutedForeground }]}>جارٍ تحميل الرواية المختارة وخطها.</Text>
             </View>
           ) : displayPage ? (
             mode === 'page' && !practicing && tajweed && riwayah === 'hafs' ? <TajweedQuranPage key={`${displayPage.number}:${jumpRevision}`} page={displayPage} quran={content.data.quran} palette={palette} dark={dark} selectedAyah={isCurrent ? position.ayah : null} onTap={toggleActions} onSelect={select} onNavigate={navigate} onTargetOffset={isCurrent ? targetOffset : undefined} /> :
@@ -399,7 +399,7 @@ function RiwayahReaderScreen() {
                 visibleWords={practicing ? visibleWords : undefined} fontSize={fontSize} spacious={spacious} palette={palette} selectedAyah={isCurrent ? position.ayah : null}
                 onTap={tapAyah} onSelect={select} onNavigate={navigate} onTargetOffset={isCurrent ? targetOffset : undefined}
                 onAyahOffset={isCurrent ? recordPracticeOffset : undefined} />
-          ) : <Text accessibilityRole="alert" style={{ color: palette.warning }}>هذه الصفحة غير متوفرة.</Text>}
+          ) : <Text accessibilityRole="alert" style={{ color: palette.destructive }}>هذه الصفحة غير متوفرة.</Text>}
           {ready && session && displayNumber === lastPageNumber && <PlanReadingEnd session={session} actions={planActions} />}
         </View>
       </ScrollView>

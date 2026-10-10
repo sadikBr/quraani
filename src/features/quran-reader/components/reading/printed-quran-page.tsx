@@ -26,7 +26,7 @@ interface Props {
 export const PrintedQuranPage = memo(function PrintedQuranPage({ page, palette, selectedAyah, onTap, onSelect, onTargetOffset }: Props) {
   const [rendered, setRendered] = useState<{ artwork: PrintedPage; image: PrintedImage } | undefined>(() => {
     const artwork = getCachedPrintedPage(page);
-    const image = artwork && getCachedPrintedImage(artwork, palette.text, palette.ornament);
+    const image = artwork && getCachedPrintedImage(artwork, palette.foreground, palette.ornament);
     return artwork && image ? { artwork, image } : undefined;
   });
   const [error, setError] = useState(false);
@@ -35,16 +35,16 @@ export const PrintedQuranPage = memo(function PrintedQuranPage({ page, palette, 
   const [renderWidth, setRenderWidth] = useState(0);
   useEffect(() => {
     let active = true;
-    loadPrintedPage(page).then(async (artwork) => ({ artwork, image: await loadPrintedImage(artwork, palette.text, palette.ornament) }))
+    loadPrintedPage(page).then(async (artwork) => ({ artwork, image: await loadPrintedImage(artwork, palette.foreground, palette.ornament) }))
       .then((value) => { if (active) setRendered(value); })
       .catch(() => { if (active) setError(true); });
     return () => { active = false; };
-  }, [page, retry, palette.text, palette.ornament]);
+  }, [page, retry, palette.foreground, palette.ornament]);
   if (error) return <View accessibilityRole="alert" style={styles.status}>
-    <Text style={{ color: palette.muted }}>تعذر تحميل هذه الصفحة من المصحف.</Text>
+    <Text style={{ color: palette.mutedForeground }}>تعذر تحميل هذه الصفحة من المصحف.</Text>
     <ReaderButton palette={palette} onPress={() => { setError(false); setRetry(retry + 1); }}>إعادة المحاولة</ReaderButton>
   </View>;
-  if (!rendered) return <View style={styles.status}><ActivityIndicator color={palette.muted} accessibilityLabel="جارٍ تحميل صفحة المصحف" /></View>;
+  if (!rendered) return <View style={styles.status}><ActivityIndicator color={palette.mutedForeground} accessibilityLabel="جارٍ تحميل صفحة المصحف" /></View>;
   const { artwork, image } = rendered;
   // Prioritize readable, full-width text. The surrounding scroll view handles
   // short screens without shrinking the page or changing its printed proportions.
@@ -69,7 +69,7 @@ export const PrintedQuranPage = memo(function PrintedQuranPage({ page, palette, 
       // Leave the original SVG heading visible until the overlay has a valid size.
       if (!Number.isFinite(height) || height <= 0) return null;
       return <View key={heading.surah} pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0,
-        top: `${heading.y / artwork.height * 100}%`, height, backgroundColor: palette.paper, justifyContent: 'center' }}>
+        top: `${heading.y / artwork.height * 100}%`, height, backgroundColor: palette.card, justifyContent: 'center' }}>
         <Text accessibilityRole="header" accessibilityLabel={`السورة ${heading.surah}`}
           style={{ ...calligraphyStyle(height * 1.05), lineHeight: height,
             textAlign: 'center', color: palette.ornament, includeFontPadding: false }}>
@@ -77,7 +77,7 @@ export const PrintedQuranPage = memo(function PrintedQuranPage({ page, palette, 
         </Text>
       </View>;
     })}
-    <AyahPageRegions artwork={artwork} page={page} selectedAyah={selectedAyah} selectionColor={palette.accent} onTap={onTap} onSelect={onSelect} />
+    <AyahPageRegions artwork={artwork} page={page} selectedAyah={selectedAyah} selectionColor={palette.primary} onTap={onTap} onSelect={onSelect} />
     </View>
   </View>;
 });

@@ -1,5 +1,6 @@
+import { IconTile } from '@/components/ui';
 import { editionForMushaf } from '../../riwayat';
-import { readerShape } from '../../design';
+import { readerElevation, readerShape } from '../../design';
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text as NativeText, View } from 'react-native';
 import { router } from 'expo-router';
@@ -40,22 +41,22 @@ export function AyahActionSheet({ ayah, quran, palette, onClose }: { ayah: Ayah;
       <View style={styles.body}>
       <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="إغلاق إجراءات الآية" onPress={onClose} />
       <SafeAreaView edges={['bottom']} accessibilityViewIsModal onAccessibilityEscape={onClose}
-        style={[styles.sheet, { backgroundColor: palette.paper, borderColor: palette.border }]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
+        style={[styles.sheet, { backgroundColor: palette.background, borderColor: palette.border }, readerElevation(4, palette)]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
         <View style={styles.heading}>
           <View style={styles.title}>
             <Text accessibilityRole="header" accessibilityLabel={`${surahName} · الآية ${ayah.ayahNumber}`}
               style={[styles.surah, { color: palette.ornament }]}>
               {surahNameGlyph(ayah.surahNumber)}
             </Text>
-            <Text style={[styles.reference, { color: palette.muted }]}>الآية {ayah.ayahNumber} · صفحة {ayah.pageNumber}</Text>
+            <Text style={[styles.reference, { color: palette.mutedForeground }]}>الآية {ayah.ayahNumber} · صفحة {ayah.pageNumber}</Text>
           </View>
           <Pressable ref={close} accessibilityRole="button" accessibilityLabel="إغلاق إجراءات الآية" onPress={onClose}
-            style={({ pressed }) => [styles.close, { backgroundColor: pressed ? palette.accentSoft : palette.background }]}>
-            <ReaderIcon name="close" color={palette.muted} size={20} />
+            hitSlop={4} style={({ pressed }) => [styles.close, { backgroundColor: pressed ? palette.accent : 'transparent' }]}>
+            <ReaderIcon name="close" color={palette.mutedForeground} size={18} />
           </Pressable>
         </View>
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
-          <View style={[styles.quickActions, { backgroundColor: palette.background }]}>
+          <View style={[styles.quickActions, { backgroundColor: palette.card, borderColor: palette.border }, readerElevation(2, palette)]}>
             <QuickAction palette={palette} icon={bookmarked ? 'check' : 'bookmark'} disabled={!ready} selected={bookmarked}
               label={bookmarked ? 'محفوظة' : 'حفظ علامة'} accessibilityLabel={bookmarked ? 'إزالة العلامة' : 'حفظ علامة'} onPress={() => toggle(ayahKey(ayah))} />
             <View style={[styles.separator, { backgroundColor: palette.border }]} />
@@ -63,8 +64,8 @@ export function AyahActionSheet({ ayah, quran, palette, onClose }: { ayah: Ayah;
             <View style={[styles.separator, { backgroundColor: palette.border }]} />
             <QuickAction palette={palette} icon="share" label="مشاركة" onPress={share} />
           </View>
-          {!!message && <Text accessibilityLiveRegion="polite" style={[styles.feedback, { color: palette.accent }]}>{message}</Text>}
-          {bookmarkError && <Text accessibilityRole="alert" style={[styles.feedback, { color: palette.warning }]}>تعذر حفظ العلامات على الجهاز. تبقى متاحة في هذه الجلسة.</Text>}
+          {!!message && <Text accessibilityLiveRegion="polite" style={[styles.feedback, { color: palette.primary }]}>{message}</Text>}
+          {bookmarkError && <Text accessibilityRole="alert" style={[styles.feedback, { color: palette.destructive }]}>تعذر حفظ العلامات على الجهاز. تبقى متاحة في هذه الجلسة.</Text>}
           <View style={styles.relatedActions}>
             <RelatedAction palette={palette} icon="book" label="التفسير" detail="شرح الآية ومعانيها" expanded={kind === 'tafsir'} onPress={() => setKind(kind === 'tafsir' ? null : 'tafsir')} />
             {kind === 'tafsir' && <View style={styles.relatedContent}><RelatedContent ayah={ayah} kind="tafsir" palette={palette} /></View>}
@@ -72,7 +73,7 @@ export function AyahActionSheet({ ayah, quran, palette, onClose }: { ayah: Ayah;
             <RelatedAction palette={palette} icon="translate" label="ترجمة المعاني" detail="بالفرنسية والإنجليزية" expanded={kind === 'translation'} onPress={() => setKind(kind === 'translation' ? null : 'translation')} />
             {kind === 'translation' && <View style={styles.relatedContent}><RelatedContent ayah={ayah} kind="translation" palette={palette} /></View>}
           </View>
-          <Text style={[styles.edition, { color: palette.muted }]}>رواية {editionForMushaf(quran.id).label}</Text>
+          <Text style={[styles.edition, { color: palette.mutedForeground }]}>رواية {editionForMushaf(quran.id).label}</Text>
         </ScrollView>
       </SafeAreaView>
       </View>
@@ -86,9 +87,9 @@ function QuickAction({ palette, icon, label, accessibilityLabel, onPress, select
 }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? label}
     accessibilityState={{ selected, disabled }} disabled={disabled} onPress={onPress}
-    style={({ pressed }) => [styles.quickAction, { backgroundColor: selected || pressed ? palette.accentSoft : 'transparent', opacity: disabled ? 0.4 : 1 }]}>
-    <ReaderIcon name={icon} color={palette.accent} size={23} />
-    <Text style={[styles.actionLabel, { color: selected ? palette.accent : palette.text }]}>{label}</Text>
+    style={({ pressed }) => [styles.quickAction, { backgroundColor: selected || pressed ? palette.accent : 'transparent', opacity: disabled ? 0.4 : 1 }]}>
+    <ReaderIcon name={icon} color={palette.foreground} size={20} />
+    <Text style={[styles.actionLabel, { color: palette.foreground }]}>{label}</Text>
   </Pressable>;
 }
 
@@ -96,13 +97,13 @@ function RelatedAction({ palette, icon, label, detail, expanded, onPress }: {
   palette: ReaderPalette; icon: ReaderIconName; label: string; detail: string; expanded: boolean; onPress: () => void;
 }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ expanded }} onPress={onPress}
-    style={({ pressed }) => [styles.relatedAction, { backgroundColor: pressed || expanded ? palette.accentSoft : 'transparent' }]}>
-    <View style={[styles.relatedIcon, { backgroundColor: palette.accentSoft }]}><ReaderIcon name={icon} color={palette.accent} size={22} /></View>
+    style={({ pressed }) => [styles.relatedAction, { backgroundColor: pressed || expanded ? palette.accent : 'transparent' }]}>
+    <IconTile name={icon} palette={palette} />
     <View style={styles.relatedCopy}>
-      <Text style={[styles.relatedLabel, { color: palette.text }]}>{label}</Text>
-      <Text style={[styles.relatedDetail, { color: palette.muted }]}>{detail}</Text>
+      <Text style={[styles.relatedLabel, { color: palette.foreground }]}>{label}</Text>
+      <Text style={[styles.relatedDetail, { color: palette.mutedForeground }]}>{detail}</Text>
     </View>
-    <View style={expanded ? { transform: [{ rotate: '-90deg' }] } : undefined}><ReaderIcon name="chevron" color={palette.muted} size={17} /></View>
+    <View style={expanded ? { transform: [{ rotate: '-90deg' }] } : undefined}><ReaderIcon name="chevron" color={palette.mutedForeground} size={16} /></View>
   </Pressable>;
 }
 function RelatedContent({ ayah, kind, palette }: { ayah: Ayah; kind: 'tafsir' | 'translation'; palette: ReaderPalette }) {
@@ -122,31 +123,31 @@ function RelatedContent({ ayah, kind, palette }: { ayah: Ayah; kind: 'tafsir' | 
   }, [ayah, kind, language, revision]);
   return <View style={{ gap: 12 }}>
     {kind === 'translation' && <Segments palette={palette} options={[{ value: 'fr', label: 'الفرنسية' }, { value: 'en', label: 'الإنجليزية' }]} value={language} onChange={(v) => { setResult({ items: [], error: false, loading: true }); setLanguage(v); }} />}
-    <Text style={{ color: palette.muted, fontSize: 12, lineHeight: 22 }}>المراجع الموازية حسب ترقيم حفص: {parallelAyahs(ayah).map((n) => `${ayah.surahNumber}:${n}`).join('، ')}. المصدر: الموسوعة القرآنية.</Text>
-    {result.loading ? <ActivityIndicator accessibilityLabel="جارٍ تحميل المحتوى" color={palette.accent} /> : result.error ? <View style={{ gap: 12 }}><Text accessibilityRole="alert" style={{ color: palette.warning }}>تعذر تحميل المحتوى. تحقق من الاتصال ثم أعد المحاولة.</Text><ReaderButton palette={palette} onPress={() => { setResult({ items: [], error: false, loading: true }); setRevision((v) => v + 1); }}>إعادة المحاولة</ReaderButton></View> : !result.items.length ? <Text style={{ color: palette.muted }}>لا يتوفر محتوى لهذا الموضع.</Text> : result.items.map((item, i) => <View key={`${item.number}:${item.content.book.id}:${i}`} style={[styles.range, { backgroundColor: palette.background }]}>
-      <Text accessibilityRole="header" style={{ color: palette.accent, fontWeight: '600' }}>{item.content.book.name}</Text>
-      {!!item.content.book.author && <Text style={{ color: palette.muted, fontSize: 12 }}>{item.content.book.author}</Text>}
-      <Text style={{ color: palette.muted, fontSize: 11 }}>المرجع الموازي {ayah.surahNumber}:{item.number}{item.stale ? ' · نسخة محفوظة دون تحديث' : ''}</Text>
-      {item.content.texts.filter(Boolean).map((text, index) => <NativeText key={index} selectable style={{ color: palette.text, fontSize: 17, lineHeight: 30, writingDirection: item.content.direction, textAlign: item.content.direction === 'ltr' ? 'left' : 'auto', fontFamily: item.content.direction === 'rtl' ? 'ReaderNaskh' : undefined }}>{relatedPlainText(text)}</NativeText>)}
+    <Text style={{ color: palette.mutedForeground, fontSize: 12, lineHeight: 22 }}>المراجع الموازية حسب ترقيم حفص: {parallelAyahs(ayah).map((n) => `${ayah.surahNumber}:${n}`).join('، ')}. المصدر: الموسوعة القرآنية.</Text>
+    {result.loading ? <ActivityIndicator accessibilityLabel="جارٍ تحميل المحتوى" color={palette.primary} /> : result.error ? <View style={{ gap: 12 }}><Text accessibilityRole="alert" style={{ color: palette.destructive }}>تعذر تحميل المحتوى. تحقق من الاتصال ثم أعد المحاولة.</Text><ReaderButton palette={palette} onPress={() => { setResult({ items: [], error: false, loading: true }); setRevision((v) => v + 1); }}>إعادة المحاولة</ReaderButton></View> : !result.items.length ? <Text style={{ color: palette.mutedForeground }}>لا يتوفر محتوى لهذا الموضع.</Text> : result.items.map((item, i) => <View key={`${item.number}:${item.content.book.id}:${i}`} style={[styles.range, { backgroundColor: palette.background }]}>
+      <Text accessibilityRole="header" style={{ color: palette.primary, fontWeight: '600' }}>{item.content.book.name}</Text>
+      {!!item.content.book.author && <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{item.content.book.author}</Text>}
+      <Text style={{ color: palette.mutedForeground, fontSize: 11 }}>المرجع الموازي {ayah.surahNumber}:{item.number}{item.stale ? ' · نسخة محفوظة دون تحديث' : ''}</Text>
+      {item.content.texts.filter(Boolean).map((text, index) => <NativeText key={index} selectable style={{ color: palette.foreground, fontSize: 17, lineHeight: 30, writingDirection: item.content.direction, textAlign: item.content.direction === 'ltr' ? 'left' : 'auto', fontFamily: item.content.direction === 'rtl' ? 'ReaderNaskh' : undefined }}>{relatedPlainText(text)}</NativeText>)}
       <ReaderButton palette={palette} onPress={() => void Linking.openURL(`https://quranpedia.net/surah/1/${ayah.surahNumber}`).catch(() => {})}>فتح المصدر</ReaderButton>
     </View>)}
   </View>;
 }
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'rgba(7,20,15,0.48)' },
+  root: { flex: 1, backgroundColor: '#00000080' },
   body: { flex: 1, justifyContent: 'flex-end' },
-  sheet: { width: '100%', maxWidth: 560, alignSelf: 'center', maxHeight: '85%', borderTopWidth: StyleSheet.hairlineWidth,
+  sheet: { width: '100%', maxWidth: 560, alignSelf: 'center', maxHeight: '85%', borderWidth: StyleSheet.hairlineWidth, borderBottomWidth: 0,
     borderTopLeftRadius: readerShape.sheet, borderTopRightRadius: readerShape.sheet,
     ...Platform.select({ native: { direction: 'rtl' as const } }) },
-  heading: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 20, paddingTop: 18, paddingBottom: 16 },
+  heading: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 },
   title: { flex: 1, minWidth: 0, gap: 2 },
   surah: calligraphyStyle(38),
-  reference: { fontSize: 12 },
-  close: { width: 44, height: 44, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
-  content: { paddingHorizontal: 20, paddingBottom: 18 },
-  quickActions: { flexDirection: 'row', alignItems: 'center', borderRadius: readerShape.card, overflow: 'hidden' },
+  reference: { fontSize: 13 },
+  close: { width: 40, height: 40, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
+  content: { paddingHorizontal: 16, paddingBottom: 16 },
+  quickActions: { flexDirection: 'row', alignItems: 'center', borderRadius: readerShape.card, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   quickAction: { flex: 1, minHeight: 82, paddingHorizontal: 4, paddingVertical: 12, gap: 7, alignItems: 'center', justifyContent: 'center' },
-  actionLabel: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
+  actionLabel: { fontSize: 13, fontWeight: '500', textAlign: 'center' },
   separator: { width: StyleSheet.hairlineWidth, height: 32 },
   feedback: { fontSize: 12, marginTop: 10, textAlign: 'center' },
   relatedActions: { marginTop: 16 },
@@ -154,8 +155,8 @@ const styles = StyleSheet.create({
   relatedIcon: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.control },
   relatedCopy: { flex: 1, minWidth: 0 },
   relatedLabel: { fontSize: 15, fontWeight: '600' },
-  relatedDetail: { fontSize: 11 },
+  relatedDetail: { fontSize: 13 },
   relatedContent: { paddingTop: 8, paddingBottom: 18 },
-  edition: { fontSize: 10, textAlign: 'center', marginTop: 12 },
+  edition: { fontSize: 12, textAlign: 'center', marginTop: 12 },
   range: { padding: 16, borderRadius: readerShape.card, gap: 12 },
 });

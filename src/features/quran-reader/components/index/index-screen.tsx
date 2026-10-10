@@ -34,18 +34,18 @@ export function IndexScreen() {
     </View>
     <FlatList ref={list} data={content ? items : []} keyExtractor={item => `${kind}:${item.number}`} style={l.list} contentContainerStyle={l.content}
       keyboardShouldPersistTaps="handled" keyboardDismissMode={Platform.OS === 'web' ? 'none' : 'on-drag'} showsVerticalScrollIndicator={false} initialNumToRender={12} windowSize={7}
-      ListHeaderComponent={content ? <View style={l.results}><Text style={{ color: p.text, fontSize: 13, fontWeight: '600' }}>{query.trim() ? 'نتائج البحث' : 'اختر موضعًا وابدأ القراءة'}</Text><Text accessibilityLiveRegion="polite" style={{ color: p.muted, fontSize: 13 }}>{items.length} {kind === 'surah' ? 'سورة' : kind === 'juz' ? 'جزءًا' : 'حزبًا'}</Text></View> : null}
-      ListEmptyComponent={!content ? loading ? <View style={l.status}><ActivityIndicator accessibilityLabel="جارٍ تحميل الفهرس" color={p.accent} /></View> : <LibraryEmpty title="تعذر فتح الفهرس" description={error ? 'تحقق من الاتصال، ثم أعد المحاولة.' : 'الفهرس غير متوفر الآن.'} icon="book" palette={p}><ReaderButton palette={p} onPress={refresh}>إعادة المحاولة</ReaderButton></LibraryEmpty>
+      ListHeaderComponent={content ? <View style={l.results}><Text style={{ color: p.foreground, fontSize: 13, fontWeight: '600' }}>{query.trim() ? 'نتائج البحث' : 'اختر موضعًا وابدأ القراءة'}</Text><Text accessibilityLiveRegion="polite" style={{ color: p.mutedForeground, fontSize: 13 }}>{items.length} {kind === 'surah' ? 'سورة' : kind === 'juz' ? 'جزءًا' : 'حزبًا'}</Text></View> : null}
+      ListEmptyComponent={!content ? loading ? <View style={l.status}><ActivityIndicator accessibilityLabel="جارٍ تحميل الفهرس" color={p.primary} /></View> : <LibraryEmpty title="تعذر فتح الفهرس" description={error ? 'تحقق من الاتصال، ثم أعد المحاولة.' : 'الفهرس غير متوفر الآن.'} icon="book" palette={p}><ReaderButton palette={p} onPress={refresh}>إعادة المحاولة</ReaderButton></LibraryEmpty>
         : <LibraryEmpty title="لا توجد نتائج" description="جرّب اسمًا أو رقمًا آخر، أو امسح البحث لعرض الفهرس كاملًا." icon="search" palette={p}><ReaderButton palette={p} onPress={() => changeQuery('')}>مسح البحث</ReaderButton></LibraryEmpty>}
       renderItem={({ item, index }) => <Pressable accessibilityRole="button" accessibilityLabel={`${item.title}، ${item.detail}، الصفحة ${item.pageNumber}`} accessibilityHint="افتح المصحف عند بداية الموضع" onPress={() => open(item)}
-        style={({ pressed }) => [s.item, listRowFrame(index, items.length), { borderColor: p.border, backgroundColor: pressed ? p.accentSoft : p.paper }]}>
-        <Text style={[s.number, { color: p.muted }]}>{item.number}</Text>
+        style={({ pressed }) => [s.item, listRowFrame(index, items.length), { borderColor: p.border, backgroundColor: pressed ? p.accent : p.card }]}>
+        <Text style={[s.number, { color: p.mutedForeground }]}>{item.number}</Text>
         <View style={s.name}>
-          <Text accessibilityLabel={item.title} style={{ color: kind === 'surah' ? p.ornament : p.text, fontSize: 19, fontWeight: kind === 'surah' ? '400' : '600', ...(kind === 'surah' && font.loaded ? calligraphyStyle(34) : {}) }}>{kind === 'surah' && font.loaded ? surahNameGlyph(item.number) : item.title}</Text>
-          <Text style={{ color: p.muted, fontSize: 13 }}>{item.detail}</Text>
+          <Text accessibilityLabel={item.title} style={{ color: kind === 'surah' ? p.ornament : p.foreground, fontSize: 19, fontWeight: kind === 'surah' ? '400' : '600', ...(kind === 'surah' && font.loaded ? calligraphyStyle(34) : {}) }}>{kind === 'surah' && font.loaded ? surahNameGlyph(item.number) : item.title}</Text>
+          <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{item.detail}</Text>
         </View>
-        <Text style={{ color: p.muted, fontSize: 13 }}>صفحة {item.pageNumber}</Text>
-        <ReaderIcon name="chevron" color={p.muted} size={16} />
+        <Text style={{ color: p.mutedForeground, fontSize: 13 }}>صفحة {item.pageNumber}</Text>
+        <ReaderIcon name="chevron" color={p.mutedForeground} size={16} />
       </Pressable>} />
   </SafeAreaView>;
 }

@@ -35,6 +35,15 @@ function RootNavigator() {
     ReaderNaskh: require('@/assets/fonts/NotoNaskhArabic-Regular.ttf'),
     ReaderNaskhSemibold: require('@/assets/fonts/NotoNaskhArabic-SemiBold.ttf'),
     ReaderNaskhBold: require('@/assets/fonts/NotoNaskhArabic-Bold.ttf'),
+    // Interface text: IBM Plex Sans Arabic; standalone numbers: Geist (Universal UI).
+    UiSans: require('@expo-google-fonts/ibm-plex-sans-arabic/400Regular/IBMPlexSansArabic_400Regular.ttf'),
+    UiSansMedium: require('@expo-google-fonts/ibm-plex-sans-arabic/500Medium/IBMPlexSansArabic_500Medium.ttf'),
+    UiSansSemiBold: require('@expo-google-fonts/ibm-plex-sans-arabic/600SemiBold/IBMPlexSansArabic_600SemiBold.ttf'),
+    UiSansBold: require('@expo-google-fonts/ibm-plex-sans-arabic/700Bold/IBMPlexSansArabic_700Bold.ttf'),
+    UiNumeric: require('@expo-google-fonts/geist/400Regular/Geist_400Regular.ttf'),
+    UiNumericMedium: require('@expo-google-fonts/geist/500Medium/Geist_500Medium.ttf'),
+    UiNumericSemiBold: require('@expo-google-fonts/geist/600SemiBold/Geist_600SemiBold.ttf'),
+    UiNumericBold: require('@expo-google-fonts/geist/700Bold/Geist_700Bold.ttf'),
   });
   useEffect(() => { if (fontsLoaded || fontError) void SplashScreen.hideAsync(); }, [fontsLoaded, fontError]);
   if (!fontsLoaded && !fontError) return null;
@@ -42,7 +51,7 @@ function RootNavigator() {
     <LocaleProvider direction="rtl">
       <View style={{ flex: 1, ...Platform.select({ native: { direction: 'rtl' as const } }) }} {...(Platform.OS === 'web' ? { dir: 'rtl', lang: 'ar' } : {})}>
         <StatusBar style={dark ? 'light' : 'dark'} hidden={false} />
-        <ThemeProvider value={{ ...baseTheme, colors: { ...baseTheme.colors, background: palette.background, card: palette.paper, text: palette.text, border: palette.border, primary: palette.accent } }}>
+        <ThemeProvider value={{ ...baseTheme, colors: { ...baseTheme.colors, background: palette.background, card: palette.card, text: palette.foreground, border: palette.border, primary: palette.primary } }}>
           <Stack screenOptions={{ headerShown: false }} />
           <PlanNotificationObserver />
         </ThemeProvider>
@@ -60,11 +69,11 @@ function RootNavigator() {
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   const c = readerThemes[useColorScheme() === 'dark' ? 'dark' : 'light'];
   return <ScrollView style={{ flex: 1, backgroundColor: c.background }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 28, gap: 14 }}>
-    <Text accessibilityRole="header" style={{ color: c.text, fontSize: 28, fontWeight: '700', textAlign: 'center', writingDirection: 'rtl' }}>حدث خطأ غير متوقع</Text>
-    <Text style={{ color: c.muted, fontSize: 15, lineHeight: 26, textAlign: 'center', writingDirection: 'rtl' }}>بياناتك وأهدافك محفوظة. أعد المحاولة، وإن تكرر الخطأ فأرسل النص أدناه لنا.</Text>
-    <Text selectable style={{ color: c.muted, fontSize: 12, lineHeight: 20, padding: 12, borderRadius: readerShape.control, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, backgroundColor: c.paper, textAlign: 'left', writingDirection: 'ltr', fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }) }}>{String(error?.message ?? error)}</Text>
-    <Pressable accessibilityRole="button" onPress={retry} style={({ pressed }) => ({ alignSelf: 'stretch', minHeight: 48, paddingHorizontal: 28, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center', backgroundColor: c.accent, opacity: pressed ? 0.8 : 1 })}>
-      <Text style={{ color: c.paper, fontSize: 15, fontWeight: '600' }}>إعادة المحاولة</Text>
+    <Text accessibilityRole="header" style={{ color: c.foreground, fontSize: 24, fontWeight: '600', textAlign: 'center', writingDirection: 'rtl' }}>حدث خطأ غير متوقع</Text>
+    <Text style={{ color: c.mutedForeground, fontSize: 15, lineHeight: 26, textAlign: 'center', writingDirection: 'rtl' }}>بياناتك وأهدافك محفوظة. أعد المحاولة، وإن تكرر الخطأ فأرسل النص أدناه لنا.</Text>
+    <Text selectable style={{ color: c.mutedForeground, fontSize: 12, lineHeight: 20, padding: 12, borderRadius: readerShape.control, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, backgroundColor: c.card, textAlign: 'left', writingDirection: 'ltr', fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }) }}>{String(error?.message ?? error)}</Text>
+    <Pressable accessibilityRole="button" onPress={retry} style={({ pressed }) => ({ alignSelf: 'stretch', minHeight: 48, paddingHorizontal: 28, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center', backgroundColor: c.primary, opacity: pressed ? 0.8 : 1 })}>
+      <Text style={{ color: c.primaryForeground, fontSize: 15, fontWeight: "600" }}>إعادة المحاولة</Text>
     </Pressable>
   </ScrollView>;
 }

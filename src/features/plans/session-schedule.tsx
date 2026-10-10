@@ -24,9 +24,9 @@ export function WeeklySchedule({ index, sessions, today, labels, summary, footer
   const currentWeek = weeks[Math.min(week, weeks.length - 1)] ?? [];
   return <PlanCard>
     <View style={[scheduleStyles.heading, { borderColor: p.border }]}>
-      <Pressable hitSlop={6} accessibilityRole="button" accessibilityLabel="الأسبوع السابق" accessibilityState={{ disabled: week === 0 }} disabled={week === 0} onPress={() => setWeek(value => Math.max(0, value - 1))} style={({ pressed }) => [scheduleStyles.navButton, scheduleStyles.previousNav, { backgroundColor: pressed ? p.accentSoft : 'transparent', opacity: week === 0 ? 0.28 : pressed ? 0.7 : 1 }]}><ReaderIcon name="back" color={week === 0 ? p.muted : p.accent} size={22} strokeWidth={2.05} /></Pressable>
-      <View style={scheduleStyles.headingCenter}><Text accessibilityRole="header" style={{ color: p.text, fontSize: 18, fontWeight: '600' }}>الأسبوع {arabicNumber(week + 1)} من {arabicNumber(weeks.length)}</Text><Text style={{ color: p.muted, fontSize: 13 }}>{summary}</Text></View>
-      <Pressable hitSlop={6} accessibilityRole="button" accessibilityLabel="الأسبوع التالي" accessibilityState={{ disabled: week >= weeks.length - 1 }} disabled={week >= weeks.length - 1} onPress={() => setWeek(value => Math.min(weeks.length - 1, value + 1))} style={({ pressed }) => [scheduleStyles.navButton, scheduleStyles.nextNav, { backgroundColor: pressed ? p.accentSoft : 'transparent', opacity: week >= weeks.length - 1 ? 0.28 : pressed ? 0.7 : 1 }]}><View style={{ transform: [{ rotate: '180deg' }] }}><ReaderIcon name="back" color={week >= weeks.length - 1 ? p.muted : p.accent} size={22} strokeWidth={2.05} /></View></Pressable>
+      <Pressable hitSlop={6} accessibilityRole="button" accessibilityLabel="الأسبوع السابق" accessibilityState={{ disabled: week === 0 }} disabled={week === 0} onPress={() => setWeek(value => Math.max(0, value - 1))} style={({ pressed }) => [scheduleStyles.navButton, scheduleStyles.previousNav, { backgroundColor: pressed ? p.accent : 'transparent', opacity: week === 0 ? 0.28 : pressed ? 0.7 : 1 }]}><ReaderIcon name="back" color={p.foreground} size={20} /></Pressable>
+      <View style={scheduleStyles.headingCenter}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>الأسبوع {arabicNumber(week + 1)} من {arabicNumber(weeks.length)}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{summary}</Text></View>
+      <Pressable hitSlop={6} accessibilityRole="button" accessibilityLabel="الأسبوع التالي" accessibilityState={{ disabled: week >= weeks.length - 1 }} disabled={week >= weeks.length - 1} onPress={() => setWeek(value => Math.min(weeks.length - 1, value + 1))} style={({ pressed }) => [scheduleStyles.navButton, scheduleStyles.nextNav, { backgroundColor: pressed ? p.accent : 'transparent', opacity: week >= weeks.length - 1 ? 0.28 : pressed ? 0.7 : 1 }]}><View style={{ transform: [{ rotate: '180deg' }] }}><ReaderIcon name="back" color={p.foreground} size={20} /></View></Pressable>
     </View>
     <View style={scheduleStyles.list}>
       {currentWeek.map((session, i) => {
@@ -34,22 +34,22 @@ export function WeeklySchedule({ index, sessions, today, labels, summary, footer
         const status = session.note ?? (current ? (session.date === today ? labels.today : labels.next) : week === 0 && i === 1 ? labels.following : labels.later);
         return <View key={session.date} style={scheduleStyles.timelineRow}>
         <View style={scheduleStyles.markerColumn}>
-          <View style={[scheduleStyles.marker, { backgroundColor: current ? p.accent : 'transparent', borderColor: current ? p.accent : p.border }]}><Text style={{ color: current ? p.paper : p.muted, fontSize: 12, fontWeight: '600' }}>{arabicNumber(i + 1)}</Text></View>
+          <View style={[scheduleStyles.marker, { backgroundColor: current ? p.primary : 'transparent', borderColor: current ? p.primary : p.border }]}><Text style={{ color: current ? p.primaryForeground : p.mutedForeground, fontSize: 12, fontWeight: '600' }}>{arabicNumber(i + 1)}</Text></View>
           {i < currentWeek.length - 1 && <View style={[scheduleStyles.connector, { backgroundColor: p.border }]} />}
         </View>
-        <View style={[scheduleStyles.sessionContent, { borderColor: p.border, backgroundColor: current ? p.accentSoft : 'transparent', borderRadius: current ? readerShape.control : 0, borderBottomWidth: current || i === currentWeek.length - 1 ? 0 : StyleSheet.hairlineWidth }]}>
+        <View style={[scheduleStyles.sessionContent, { borderColor: p.border, backgroundColor: current ? p.accent : 'transparent', borderRadius: current ? readerShape.control : 0, borderBottomWidth: current || i === currentWeek.length - 1 ? 0 : StyleSheet.hairlineWidth }]}>
           <View style={[d.row, { justifyContent: 'space-between', alignItems: 'flex-start' }]}>
-            <View style={{ gap: 2, flex: 1 }}><Text style={{ color: current ? p.accent : p.text, fontSize: 15, fontWeight: '600' }}>{weekdayDateLabel(session.date)}</Text><Text style={{ color: p.muted, fontSize: 12 }}>{status}</Text></View>
-            <Text style={{ color: current ? p.accent : p.muted, fontSize: 13, fontWeight: current ? '600' : '400' }}>{ayahCountLabel(spanCount(session.ranges))}</Text>
+            <View style={{ gap: 2, flex: 1 }}><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{weekdayDateLabel(session.date)}</Text><Text style={{ color: p.mutedForeground, fontSize: 12 }}>{status}</Text></View>
+            <Text style={{ color: current ? p.primary : p.mutedForeground, fontSize: 13, fontWeight: current ? '600' : '400' }}>{ayahCountLabel(spanCount(session.ranges))}</Text>
           </View>
           <View style={scheduleStyles.ranges}>
-            {session.ranges.map(range => <View key={range.start} style={scheduleStyles.range}><View style={[scheduleStyles.rangeDot, { backgroundColor: current ? p.accent : p.muted }]} /><Text style={{ color: p.muted, fontSize: 13, flex: 1 }}>{ayahRangeLabel(index, range.start, range.end)}</Text></View>)}
+            {session.ranges.map(range => <View key={range.start} style={scheduleStyles.range}><View style={[scheduleStyles.rangeDot, { backgroundColor: current ? p.primary : p.mutedForeground }]} /><Text style={{ color: p.mutedForeground, fontSize: 13, flex: 1 }}>{ayahRangeLabel(index, range.start, range.end)}</Text></View>)}
           </View>
         </View>
       </View>;
       })}
     </View>
-    <View style={[scheduleStyles.footer, { borderColor: p.border }]}><ReaderIcon name="calendar" color={p.muted} size={16} /><Text style={{ color: p.muted, fontSize: 13, flex: 1 }}>{footer}</Text></View>
+    <View style={[scheduleStyles.footer, { borderColor: p.border }]}><ReaderIcon name="calendar" color={p.mutedForeground} size={16} /><Text style={{ color: p.mutedForeground, fontSize: 13, flex: 1 }}>{footer}</Text></View>
   </PlanCard>;
 }
 

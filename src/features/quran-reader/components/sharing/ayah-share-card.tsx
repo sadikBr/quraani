@@ -47,7 +47,7 @@ export function AyahShareCard({ ayah, surahName, colors, format, translation, sh
           <View style={{ flex: 1, height: s, backgroundColor: colors.border }} />
         </View>
         <View style={{ paddingHorizontal: 12 * s, paddingVertical: 2 * s, borderWidth: s, borderColor: colors.accent, borderRadius: 4 * s, marginTop: 2 * s }}>
-          <Text allowFontScaling={false} style={[styles.label, { fontSize: 13 * s, lineHeight: 22 * s, color: colors.accent, fontFamily: 'ReaderNaskhSemibold' }]}>الآية {ayah.ayahNumber}</Text>
+          <Text allowFontScaling={false} style={[styles.label, { fontSize: 13 * s, lineHeight: 22 * s, color: colors.accent, fontFamily: 'UiSansSemiBold' }]}>الآية {ayah.ayahNumber}</Text>
         </View>
       </View>
       <View style={{ flexGrow: 1, justifyContent: 'center', paddingVertical: (square ? 12 : 24) * s, gap: (square ? 14 : 22) * s }}>
@@ -62,9 +62,9 @@ export function AyahShareCard({ ayah, surahName, colors, format, translation, sh
       </View>
       {showBrand && <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 * s, paddingTop: 8 * s }}>
         <QuranniLogo key={brandRevision} size={(square ? 22 : 26) * s} onDisplay={onBrandReady} onError={onBrandError} />
-        <Text allowFontScaling={false} style={[styles.label, { fontSize: 12 * s, lineHeight: 20 * s, color: colors.accent, fontFamily: 'ReaderNaskhSemibold' }]}>قرآني</Text>
+        <Text allowFontScaling={false} style={[styles.label, { fontSize: 12 * s, lineHeight: 20 * s, color: colors.accent, fontFamily: 'UiSansSemiBold' }]}>قرآني</Text>
       </View>}
     </View>
   </View>;
 }
-const styles = StyleSheet.create({ label: { fontFamily: 'ReaderNaskh', writingDirection: 'rtl', textAlign: 'center', includeFontPadding: false } });
+const styles = StyleSheet.create({ label: { fontFamily: 'UiSans', writingDirection: 'rtl', textAlign: 'center', includeFontPadding: false } });

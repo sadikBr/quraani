@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
+import { IconTile } from '@/components/ui';
 import { ReaderButton } from '../quran-reader/components/reading/reader-button';
 import { ReaderIcon } from '../quran-reader/components/ui/reader-chrome';
 import { SurahName } from '../quran-reader/components/ui/surah-name';
@@ -111,30 +112,30 @@ export function RevisionDetail({ plan, initialReminderIssue }: { plan: RevisionP
     {index && !mismatch && day && first && last && <PlanCard prominent>
       <View style={[d.row, { alignItems: 'flex-start', gap: 14 }]}>
         <View style={d.grow}>
-          <Text accessibilityRole="header" style={{ color: day.due ? p.accent : p.muted, fontSize: 14, fontWeight: '600' }}>{day.due ? 'مراجعة اليوم' : doneToday ? 'أتممت مراجعة اليوم · القادمة' : 'مراجعتك القادمة'}</Text>
+          <Text accessibilityRole="header" style={{ color: day.due ? p.primary : p.mutedForeground, fontSize: 14, fontWeight: '600' }}>{day.due ? 'مراجعة اليوم' : doneToday ? 'أتممت مراجعة اليوم · القادمة' : 'مراجعتك القادمة'}</Text>
           <SurahName number={first.surahNumber} name={index.surahNames[first.surahNumber]} size={56} color={p.ornament} />
-          <Text style={{ color: p.text, fontSize: 24, fontWeight: '700' }}>{first.surahNumber !== last.surahNumber ? `من الآية ${arabicNumber(first.ayahNumber)}` : ayahs.length === 1 ? `الآية ${arabicNumber(first.ayahNumber)}` : `الآيات ${arabicNumber(first.ayahNumber)} – ${arabicNumber(last.ayahNumber)}`}</Text>
-          {first.surahNumber !== last.surahNumber && <Text style={{ color: p.muted, fontSize: 13 }}>حتى {index.surahNames[last.surahNumber]}، الآية {arabicNumber(last.ayahNumber)}</Text>}
+          <Text style={{ color: p.foreground, fontSize: 22, fontWeight: '600' }}>{first.surahNumber !== last.surahNumber ? `من الآية ${arabicNumber(first.ayahNumber)}` : ayahs.length === 1 ? `الآية ${arabicNumber(first.ayahNumber)}` : `الآيات ${arabicNumber(first.ayahNumber)} – ${arabicNumber(last.ayahNumber)}`}</Text>
+          {first.surahNumber !== last.surahNumber && <Text style={{ color: p.mutedForeground, fontSize: 13 }}>حتى {index.surahNames[last.surahNumber]}، الآية {arabicNumber(last.ayahNumber)}</Text>}
         </View>
         {/* The date as a calendar leaf, as on the memorization goal. */}
-        <View accessible accessibilityLabel={day.due ? 'اليوم' : weekdayDateLabel(day.date)} style={{ minWidth: 74, paddingVertical: 10, paddingHorizontal: 12, alignItems: 'center', borderRadius: readerShape.control, backgroundColor: day.due ? p.accent : p.accentSoft }}>
-          <Text style={{ color: day.due ? p.paper : p.accent, fontSize: 12 }}>{day.due ? 'اليوم' : new Intl.DateTimeFormat('ar-MA', { weekday: 'long', timeZone: 'UTC' }).format(new Date(`${day.date}T12:00:00Z`))}</Text>
-          <Text style={{ color: day.due ? p.paper : p.text, fontSize: 26, fontWeight: '700', lineHeight: 36 }}>{arabicNumber(Number(day.date.slice(8)))}</Text>
-          <Text style={{ color: day.due ? p.paper : p.muted, fontSize: 12 }}>{new Intl.DateTimeFormat('ar-MA', { month: 'long', timeZone: 'UTC' }).format(new Date(`${day.date}T12:00:00Z`))}</Text>
+        <View accessible accessibilityLabel={day.due ? 'اليوم' : weekdayDateLabel(day.date)} style={{ minWidth: 74, paddingVertical: 10, paddingHorizontal: 12, alignItems: 'center', borderRadius: readerShape.lg, backgroundColor: day.due ? p.primary : p.muted }}>
+          <Text style={{ color: day.due ? p.primaryForeground : p.mutedForeground, fontSize: 12 }}>{day.due ? 'اليوم' : new Intl.DateTimeFormat('ar-MA', { weekday: 'long', timeZone: 'UTC' }).format(new Date(`${day.date}T12:00:00Z`))}</Text>
+          <Text style={{ color: day.due ? p.primaryForeground : p.foreground, fontSize: 28, fontWeight: '600', lineHeight: 36 }}>{arabicNumber(Number(day.date.slice(8)))}</Text>
+          <Text style={{ color: day.due ? p.primaryForeground : p.mutedForeground, fontSize: 12 }}>{new Intl.DateTimeFormat('ar-MA', { month: 'long', timeZone: 'UTC' }).format(new Date(`${day.date}T12:00:00Z`))}</Text>
         </View>
       </View>
       <View style={[d.row, { borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: p.border, paddingVertical: 10, gap: 0 }]}>
         {[{ label: 'الآيات', value: arabicNumber(ayahs.length) }, { label: 'الكلمات', value: arabicNumber(ayahs.reduce((n, a) => n + a.text.split(/\s+/).filter(Boolean).length, 0)) },
           { label: first.pageNumber === last.pageNumber ? 'الصفحة' : 'الصفحات', value: first.pageNumber === last.pageNumber ? arabicNumber(first.pageNumber) : `${arabicNumber(first.pageNumber)}–${arabicNumber(last.pageNumber)}` }].map((stat, i) =>
           <View key={stat.label} style={[d.grow, { alignItems: 'center', borderStartWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: p.border }]}>
-            <Text style={{ color: p.muted, fontSize: 12 }}>{stat.label}</Text><Text style={{ color: p.text, fontSize: 15, fontWeight: '600' }}>{stat.value}</Text>
+            <Text style={{ color: p.mutedForeground, fontSize: 12 }}>{stat.label}</Text><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{stat.value}</Text>
           </View>)}
       </View>
       {day.spans.length > 1 && <View style={{ gap: 6 }}>
-        <Text style={{ color: p.muted, fontSize: 13 }}>تضم مراجعتك {arabicNumber(day.spans.length)} مقاطع من محفوظك؛ نفتح كل مقطع وحده.</Text>
+        <Text style={{ color: p.mutedForeground, fontSize: 13 }}>تضم مراجعتك {arabicNumber(day.spans.length)} مقاطع من محفوظك؛ نفتح كل مقطع وحده.</Text>
         {day.spans.map(range => { const done = !day.remaining.some(r => r.end === range.end); return <View key={range.start} style={[d.row, { gap: 8 }]}>
-          <ReaderIcon name={done ? 'check' : 'bookmark'} color={done ? p.accent : p.muted} size={15} />
-          <Text style={{ color: done ? p.muted : p.text, fontSize: 13, flex: 1, textDecorationLine: done ? 'line-through' : 'none' }}>{ayahRangeLabel(index, range.start, range.end)}</Text>
+          <ReaderIcon name={done ? 'check' : 'bookmark'} color={done ? p.primary : p.mutedForeground} size={15} />
+          <Text style={{ color: done ? p.mutedForeground : p.foreground, fontSize: 13, flex: 1, textDecorationLine: done ? 'line-through' : 'none' }}>{ayahRangeLabel(index, range.start, range.end)}</Text>
         </View>; })}
       </View>}
       {day.due ? <View style={{ gap: 4 }}>
@@ -143,11 +144,11 @@ export function RevisionDetail({ plan, initialReminderIssue }: { plan: RevisionP
           if (current.revision !== plan.revision) throw new Error('تغيّرت مراجعتك. راجع المقطع المعروض ثم أعد المحاولة.');
           return finishRevisionDay(current, localDate());
         })} />
-        {resumed && <Text style={{ color: p.muted, fontSize: 12, textAlign: 'center' }}>نكمل من حيث توقفت.</Text>}
-      </View> : <Text style={{ color: p.muted, fontSize: 13, lineHeight: 22 }}>{doneToday ? 'تقبّل الله منك. ' : ''}تُفتح هذه المراجعة يوم {weekdayDateLabel(day.date)}.</Text>}
+        {resumed && <Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center' }}>نكمل من حيث توقفت.</Text>}
+      </View> : <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 22 }}>{doneToday ? 'تقبّل الله منك. ' : ''}تُفتح هذه المراجعة يوم {weekdayDateLabel(day.date)}.</Text>}
     </PlanCard>}
     {plan.status === 'active' && index && !mismatch && !plan.memorized.length && <PlanCard prominent>
-      <View style={[d.row, { gap: 12, alignItems: 'flex-start' }]}><ReaderIcon name="loop" color={p.accent} size={22} /><View style={d.grow}><Copy title>لا محفوظ لنراجعه بعد</Copy><Copy muted>{owner ? `ما تحفظه في «${owner.name}» ينضم إلى المراجعة تلقائيًا.` : 'حدد ما تحفظه من القرآن، ونبدأ دورتك من أوله.'}</Copy></View></View>
+      <View style={[d.row, { gap: 12, alignItems: 'flex-start' }]}><IconTile name="loop" /><View style={d.grow}><Copy title>لا محفوظ لنراجعه بعد</Copy><Copy muted>{owner ? `ما تحفظه في «${owner.name}» ينضم إلى المراجعة تلقائيًا.` : 'حدد ما تحفظه من القرآن، ونبدأ دورتك من أوله.'}</Copy></View></View>
       {owner ? <DetailAction label={`فتح ${owner.name}`} onPress={() => router.push({ pathname: '/plans/[id]', params: { id: owner.id } })} />
         : <DetailAction primary label="تحديد ما أحفظه" disabled={busy} onPress={() => { setMessage(''); setChoosing(true); }} />}
     </PlanCard>}
@@ -162,14 +163,14 @@ export function RevisionDetail({ plan, initialReminderIssue }: { plan: RevisionP
     {index && !mismatch && !!schedule.length && <WeeklySchedule index={index} sessions={schedule} today={today} labels={REVISION_LABELS}
       summary={`${quarterLabel(plan.goal.dailyQuarters)} في الجلسة · ${weekdaysLabel(plan.weekdays)}`} footer={`الموعد المتوقع لإتمام الدورة: ${dateLabel(schedule.at(-1)!.date)} · يتحدّث مع محفوظك.`} />}
     {index && !mismatch && plan.status !== 'archived' && !!plan.memorized.length && <PlanCard>
-      <View style={[d.row, { gap: 12, alignItems: 'flex-start' }]}><ReaderIcon name="check" color={p.accent} size={20} /><View style={d.grow}><Copy title>محفوظك</Copy>
+      <View style={[d.row, { gap: 12, alignItems: 'flex-start' }]}><IconTile name="check" /><View style={d.grow}><Copy title>محفوظك</Copy>
         <Copy muted>{owner ? `${arabicNumber(spanCount(plan.memorized))} آية. يتابعه هدف «${owner.name}»، وكل ما تحفظه فيه ينضم إلى المراجعة.` : `${arabicNumber(spanCount(plan.memorized))} آية. أضف ما حفظته أو صحح اختيارًا سابقًا؛ نحافظ على موضعك في الدورة.`}</Copy></View></View>
       {owner ? <DetailAction label={`فتح ${owner.name}`} onPress={() => router.push({ pathname: '/plans/[id]', params: { id: owner.id } })} />
         : <DetailAction label="عرض المحفوظ وتعديله" disabled={busy} onPress={() => { setMessage(''); setChoosing(true); }} />}
     </PlanCard>}
     {index && !mismatch && !!plan.log.length && <PlanCard><Copy title>آخر مراجعاتك</Copy><View>{plan.log.slice(-5).reverse().map((log, i) => <View key={`${log.date}-${i}`} style={{ gap: 2, paddingVertical: 10, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: p.border }}>
-      <Text style={{ color: p.text, fontSize: 15 }}>{ayahRangeLabel(index, log.from, log.to)}</Text>
-      <Text style={{ color: p.muted, fontSize: 13 }}>{shortDate(log.date)} · الدورة {arabicNumber(log.pass)} · {ayahCountLabel(spanCount(plan.memorized.flatMap(r => r.end <= log.from || r.start >= log.to ? [] : [{ start: Math.max(r.start, log.from), end: Math.min(r.end, log.to) }])))}</Text>
+      <Text style={{ color: p.foreground, fontSize: 15 }}>{ayahRangeLabel(index, log.from, log.to)}</Text>
+      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{shortDate(log.date)} · الدورة {arabicNumber(log.pass)} · {ayahCountLabel(spanCount(plan.memorized.flatMap(r => r.end <= log.from || r.start >= log.to ? [] : [{ start: Math.max(r.start, log.from), end: Math.min(r.end, log.to) }])))}</Text>
     </View>)}</View></PlanCard>}
     {editing && <PlanSettingsSheet onClose={() => { if (!busy) setEditing(false); }}><PlanNotice message={message} /><PlanField label="اسم الهدف" value={name} onChange={setName} />
       <AmountPicker label="مقدار المراجعة اليومي بأرباع الأحزاب" value={amount} onChange={setAmount} unit="ربع حزب في اليوم" presets={['1', '2', '4', '8']} minimum={1} maximum={REVISION_MAX_QUARTERS} parse={value => Number(normalizeArabicSearch(value))} />

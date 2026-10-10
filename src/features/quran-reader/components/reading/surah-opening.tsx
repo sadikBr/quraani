@@ -14,7 +14,7 @@ export function SurahOpening({ number, name, bismillah, fontSize, palette }: {
     <Text accessibilityRole="header" accessibilityLabel={name} style={[calligraphyStyle(scale.title), styles.calligraphy, { color: palette.ornament }]}>
       {surahNameGlyph(number)}
     </Text>
-    {bismillah && <Text accessibilityLabel={bismillah} style={[calligraphyStyle(scale.basmala), styles.calligraphy, { color: palette.text }]}>
+    {bismillah && <Text accessibilityLabel={bismillah} style={[calligraphyStyle(scale.basmala), styles.calligraphy, { color: palette.foreground }]}>
       {surahNameGlyph(115)}
     </Text>}
   </View>;

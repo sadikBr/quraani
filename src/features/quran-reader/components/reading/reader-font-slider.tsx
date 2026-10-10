@@ -19,7 +19,7 @@ export function ReaderFontSlider({ value, previewValue, onPreview, onCommit, pal
     accessibilityValue={{ min: 0, max: 6, now: previewValue, text: `${readerFontLabels[previewValue]}، ${previewValue + 1} من 7` }}
     minimumValue={0} maximumValue={6} step={1} value={value} tapToSeek
     inverted style={{ width: '100%', height: 48, direction: 'ltr' }}
-    minimumTrackTintColor={palette.accent} maximumTrackTintColor={palette.border} thumbTintColor={palette.accent}
+    minimumTrackTintColor={palette.primary} maximumTrackTintColor={palette.muted} thumbTintColor={palette.primary}
     onSlidingStart={() => { dragging.current = true; }}
     onValueChange={(step) => {
       onPreview(step);

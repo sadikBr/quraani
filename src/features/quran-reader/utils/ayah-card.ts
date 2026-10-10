@@ -8,8 +8,8 @@ export const ayahCardThemes = {
 export type AyahCardColors = { background: string; surface: string; text: string; muted: string; accent: string; border: string };
 /** 'app' follows whatever reader theme is in use, so the card matches the screen it came from. */
 export type AyahCardTheme = keyof typeof ayahCardThemes | 'app';
-export function appCardColors(palette: { background: string; paper: string; text: string; muted: string; ornament: string; border: string }): AyahCardColors {
-  return { background: palette.background, surface: palette.paper, text: palette.text, muted: palette.muted, accent: palette.ornament, border: palette.border };
+export function appCardColors(palette: { background: string; card: string; foreground: string; mutedForeground: string; ornament: string; border: string }): AyahCardColors {
+  return { background: palette.background, surface: palette.card, text: palette.foreground, muted: palette.mutedForeground, accent: palette.ornament, border: palette.border };
 }
 export function cardColors(theme: AyahCardTheme, palette: Parameters<typeof appCardColors>[0]): AyahCardColors {
   return theme === 'app' ? appCardColors(palette) : ayahCardThemes[theme];

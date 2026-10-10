@@ -46,28 +46,28 @@ export function ReaderControls({ page, totalPages, previous, next, surahName, pa
   const button = (icon: ReaderIconName, label: string, onPress: () => void, disabled = false, reversed = false) => (
     <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress}
       style={({ pressed }) => [styles.icon, { opacity: disabled ? 0.25 : pressed ? 0.5 : 1,
-        backgroundColor: pressed ? palette.accentSoft : 'transparent' }]}>
+        backgroundColor: pressed ? palette.accent : 'transparent' }]}>
       <View style={reversed ? { transform: [{ rotate: '180deg' }] } : undefined}>
-        <ReaderIcon name={icon} color={palette.text} size={20} />
+        <ReaderIcon name={icon} color={palette.foreground} size={20} />
       </View>
     </Pressable>
   );
   const practiceButton = (icon: ReaderIconName, text: string, label: string, onPress: () => void, disabled = false) => (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress}
+    <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress} hitSlop={4}
       style={({ pressed }) => [styles.practiceButton, { opacity: disabled ? 0.3 : pressed ? 0.55 : 1,
-        backgroundColor: icon === 'eye' || pressed ? palette.accentSoft : 'transparent' }]}>
-      <ReaderIcon name={icon} color={palette.accent} size={19} />
-      <Text style={{ fontSize: 13, color: palette.text }}>{text}</Text>
+        backgroundColor: pressed ? palette.accent : icon === 'eye' ? palette.secondary : 'transparent', borderColor: icon === 'eye' ? palette.secondary : palette.input }]}>
+      <ReaderIcon name={icon} color={palette.foreground} size={16} />
+      <Text style={{ fontSize: 14, fontWeight: '500', color: palette.foreground }}>{text}</Text>
     </Pressable>
   );
   return <>
     <View pointerEvents="box-none" style={[styles.edge, { top: 0 }]}>
       {/* Also fade the surface so a fractional-pixel border cannot remain at the clipped edge. */}
-      <Animated.View style={{ backgroundColor: palette.paper, opacity: progress, paddingTop: topInset,
+      <Animated.View style={{ backgroundColor: palette.card, opacity: progress, paddingTop: topInset,
         transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [-(topInset + toolbarHeight), 0] }) }] }}>
         <View {...hiddenProps} pointerEvents={visible ? 'auto' : 'none'}
           onLayout={(event) => onToolbarHeight(event.nativeEvent.layout.height)}
-          style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(palette.border, 0.6) }}>
+          style={{ borderBottomWidth: StyleSheet.hairlineWidth, borderColor: palette.border }}>
           <View style={styles.content}>
             <ReaderQuickActions page={page} surahName={surahName} palette={palette} onMenu={onMenu} />
           </View>
@@ -76,8 +76,8 @@ export function ReaderControls({ page, totalPages, previous, next, surahName, pa
     </View>
     <View {...hiddenProps} pointerEvents={visible ? 'box-none' : 'none'} style={[styles.edge, styles.bottom]}>
       <Animated.View accessibilityLabel="التنقل في المصحف" onLayout={(event) => setBottomHeight(event.nativeEvent.layout.height)}
-        style={{ backgroundColor: palette.paper, opacity: progress, paddingBottom: bottomInset, borderTopWidth: StyleSheet.hairlineWidth,
-          borderColor: withAlpha(palette.border, 0.6), transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [bottomHeight, 0] }) }] }}>
+        style={{ backgroundColor: palette.card, opacity: progress, paddingBottom: bottomInset, borderTopWidth: StyleSheet.hairlineWidth,
+          borderColor: palette.border, transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [bottomHeight, 0] }) }] }}>
         {planControls && <View style={styles.content}>{planControls}</View>}
         {practiceActive && <View style={[styles.content, styles.practice]} accessibilityLabel="أدوات مراجعة الصفحة">
           {practiceButton('eye', 'إظهار الكل', 'إظهار الصفحة كاملة وإنهاء المراجعة', onPractice)}
@@ -87,16 +87,16 @@ export function ReaderControls({ page, totalPages, previous, next, surahName, pa
         <View style={[styles.content, styles.navigation]} {...(Platform.OS === 'web' ? { dir: 'ltr' } : {})}>
           <Link href="/bookmarks" asChild style={styles.icon}>
             <Pressable accessibilityRole="link" accessibilityLabel="العلامات المحفوظة">
-              {({ pressed }) => <ReaderIcon name="bookmark" color={pressed ? palette.accent : palette.text} size={20} />}
+              {({ pressed }) => <ReaderIcon name="bookmark" color={pressed ? palette.primary : palette.foreground} size={20} />}
             </Pressable>
           </Link>
           {button('chevron', 'انتقل إلى الصفحة التالية', () => next && onNavigate(next.number), !next)}
           <Pressable accessibilityRole="button" accessibilityLabel={`${pageLabel ?? `الصفحة ${page.number} من ${totalPages}`}، الانتقال إلى صفحة أو آية`}
             onPress={onJump} style={({ pressed }) => [styles.page, { opacity: pressed ? 0.6 : 1 }]}>
-            <View style={[styles.pagePill, { backgroundColor: palette.accentSoft }]}>
-              <Text style={{ color: palette.text, fontSize: 13, lineHeight: 22, writingDirection: 'rtl', textAlign: 'center' }}>{pageLabel ?? `صفحة ${page.number}`}</Text>
-              {!pageLabel && <View style={[styles.pageTrack, { backgroundColor: withAlpha(palette.ornament, 0.22) }]}>
-                <View style={[styles.pageFill, { backgroundColor: palette.ornament, width: `${Math.max(2, Math.min(100, page.number / Math.max(1, totalPages) * 100))}%` }]} />
+            <View style={[styles.pagePill, { backgroundColor: palette.muted }]}>
+              <Text style={{ color: palette.foreground, fontSize: 13, fontWeight: '500', lineHeight: 22, writingDirection: 'rtl', textAlign: 'center' }}>{pageLabel ?? `صفحة ${page.number}`}</Text>
+              {!pageLabel && <View style={[styles.pageTrack, { backgroundColor: withAlpha(palette.primary, 0.2) }]}>
+                <View style={[styles.pageFill, { backgroundColor: palette.primary, width: `${Math.max(2, Math.min(100, page.number / Math.max(1, totalPages) * 100))}%` }]} />
               </View>}
             </View>
           </Pressable>
@@ -118,10 +118,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8, paddingVertical: 4, gap: 4 },
   icon: { width: 44, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.control },
   page: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
-  pagePill: { minWidth: 120, paddingHorizontal: 18, paddingTop: 3, paddingBottom: 7, borderRadius: readerShape.control, alignItems: 'center', gap: 3 },
+  pagePill: { minWidth: 120, paddingHorizontal: 18, paddingTop: 3, paddingBottom: 7, borderRadius: readerShape.lg, alignItems: 'center', gap: 3 },
   // The track fills from the reading start (right), like the mushaf.
-  pageTrack: { width: 72, height: 3, borderRadius: readerShape.detail, overflow: 'hidden', flexDirection: 'row-reverse' },
-  pageFill: { height: '100%', borderRadius: readerShape.detail },
+  pageTrack: { width: 72, height: 4, borderRadius: readerShape.pill, overflow: 'hidden', flexDirection: 'row-reverse' },
+  pageFill: { height: '100%', borderRadius: readerShape.pill },
   practice: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 6, paddingBottom: 4 },
-  practiceButton: { flex: 1, minHeight: 44, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.control },
+  practiceButton: { flex: 1, minHeight: 40, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.control, borderWidth: 1 },
 });

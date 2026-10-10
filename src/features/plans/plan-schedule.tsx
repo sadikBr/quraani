@@ -25,14 +25,14 @@ function WeeklySchedule({ plan, index, today, current }: { plan: SequentialPlan;
   const navigate = (offset: number) => { setWeek(w => w + offset); setExpanded(null); };
   return <View style={{ gap: 12 }}>
     <View style={[d.row, { justifyContent: 'space-between' }]}>
-      <Text accessibilityRole="header" style={{ color: p.text, fontSize: 19, fontWeight: '600' }}>{plan.goal.type === 'khatma' ? 'جدول الختمة' : 'مسار القراءة'}</Text>
-      <Text style={{ color: p.muted, fontSize: 13 }}>{arabicNumber(plan.cycle.sessions.length)} وردًا</Text>
+      <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{plan.goal.type === 'khatma' ? 'جدول الختمة' : 'مسار القراءة'}</Text>
+      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{arabicNumber(plan.cycle.sessions.length)} وردًا</Text>
     </View>
-    {plan.goal.type === 'wird' && <Text style={{ color: p.muted, fontSize: 13, lineHeight: 22 }}>المواعيد القادمة تقديرية، وتتبع آخر ورد أكملته.</Text>}
-    <View style={[styles.calendar, { backgroundColor: p.paper, borderColor: p.border }]}>
+    {plan.goal.type === 'wird' && <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 22 }}>المواعيد القادمة تقديرية، وتتبع آخر ورد أكملته.</Text>}
+    <View style={[styles.calendar, { backgroundColor: p.card, borderColor: p.border }]}>
       <View style={[styles.week, { borderColor: p.border }]}>
         <WeekButton previous disabled={week === 0} onPress={() => navigate(-1)} />
-        <Text accessibilityLiveRegion="polite" style={{ color: p.text, fontSize: 15, fontWeight: '600', flex: 1, textAlign: 'center' }}>الأسبوع {arabicNumber(week + 1)} <Text style={{ color: p.muted, fontSize: 13, fontWeight: '400' }}>من {arabicNumber(weeks)}</Text></Text>
+        <Text accessibilityLiveRegion="polite" style={{ color: p.foreground, fontSize: 15, fontWeight: '600', flex: 1, textAlign: 'center' }}>الأسبوع {arabicNumber(week + 1)} <Text style={{ color: p.mutedForeground, fontSize: 13, fontWeight: '400' }}>من {arabicNumber(weeks)}</Text></Text>
         <WeekButton disabled={week === weeks - 1} onPress={() => navigate(1)} />
       </View>
       <View style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
@@ -48,22 +48,22 @@ function WeeklySchedule({ plan, index, today, current }: { plan: SequentialPlan;
             <Pressable accessibilityRole="button" accessibilityState={{ expanded: isExpanded }}
               accessibilityLabel={`الورد ${slot + 1}، ${rangeLabel(index, session.start, session.end)}، ${dateLabel(date)}${status ? `، ${status}` : ''}`}
               onPress={() => setExpanded(isExpanded ? null : slot)}
-              style={({ pressed }) => [styles.session, { backgroundColor: active || pressed ? p.accentSoft : 'transparent' }]}>
+              style={({ pressed }) => [styles.session, { backgroundColor: active || pressed ? p.accent : 'transparent' }]}>
               <View style={{ alignSelf: 'stretch', alignItems: 'center', paddingTop: 9, width: 28 }}>
-                <View style={[styles.marker, { backgroundColor: done ? p.accent : active ? p.paper : 'transparent', borderColor: done || active ? p.accent : p.border }]}>
-                  {done ? <ReaderIcon name="check" color={p.paper} size={14} /> : <Text style={{ color: active ? p.accent : p.muted, fontSize: 11, textAlign: 'center' }}>{arabicNumber(slot + 1)}</Text>}
+                <View style={[styles.marker, { backgroundColor: done ? p.primary : active ? p.card : 'transparent', borderColor: done || active ? p.primary : p.border }]}>
+                  {done ? <ReaderIcon name="check" color={p.primaryForeground} size={14} /> : <Text style={{ color: active ? p.primary : p.mutedForeground, fontSize: 11, textAlign: 'center' }}>{arabicNumber(slot + 1)}</Text>}
                 </View>
                 {offset < visible.length - 1 && <View style={[styles.connector, { backgroundColor: p.border }]} />}
               </View>
               <View style={d.grow}>
                 <View style={[d.row, { justifyContent: 'space-between', flexWrap: 'wrap', columnGap: 10, rowGap: 0 }]}>
-                  <Text style={{ color: active ? p.accent : p.muted, fontSize: 12 }}>{date === today ? 'اليوم' : shortDate(date)}</Text>
-                  {!!status && <Text style={{ color: active ? p.accent : p.muted, fontSize: 12, fontWeight: active ? '600' : '400' }}>{status}</Text>}
+                  <Text style={{ color: active ? p.primary : p.mutedForeground, fontSize: 12 }}>{date === today ? 'اليوم' : shortDate(date)}</Text>
+                  {!!status && <Text style={{ color: active ? p.primary : p.mutedForeground, fontSize: 12, fontWeight: active ? '600' : '400' }}>{status}</Text>}
                 </View>
-                <Text style={{ color: p.text, fontSize: 15, fontWeight: active ? '600' : '400' }}>{rangeLabel(index, session.start, session.end)}</Text>
-                {isExpanded && <Text style={{ color: p.muted, fontSize: 13, marginTop: 4 }}>{ayahRangeLabel(index, session.start, session.end)}</Text>}
+                <Text style={{ color: p.foreground, fontSize: 15, fontWeight: active ? '600' : '400' }}>{rangeLabel(index, session.start, session.end)}</Text>
+                {isExpanded && <Text style={{ color: p.mutedForeground, fontSize: 13, marginTop: 4 }}>{ayahRangeLabel(index, session.start, session.end)}</Text>}
               </View>
-              <View style={{ transform: [{ rotate: isExpanded ? '-90deg' : '0deg' }], marginTop: 15 }}><ReaderIcon name="chevron" color={p.muted} size={15} /></View>
+              <View style={{ transform: [{ rotate: isExpanded ? '-90deg' : '0deg' }], marginTop: 15 }}><ReaderIcon name="chevron" color={p.mutedForeground} size={15} /></View>
             </Pressable>
           </View>;
         })}
@@ -74,8 +74,8 @@ function WeeklySchedule({ plan, index, today, current }: { plan: SequentialPlan;
 function WeekButton({ previous = false, disabled, onPress }: { previous?: boolean; disabled: boolean; onPress: () => void }) {
   const { palette } = useReadingPreferences();
   return <Pressable accessibilityRole="button" accessibilityLabel={previous ? 'الأسبوع السابق' : 'الأسبوع التالي'} accessibilityState={{ disabled }} disabled={disabled} onPress={onPress}
-    style={({ pressed }) => [styles.weekButton, { opacity: disabled ? 0.25 : pressed ? 0.6 : 1, backgroundColor: pressed ? palette.accentSoft : 'transparent' }]}>
-    <View style={{ transform: [{ rotate: previous ? '180deg' : '0deg' }] }}><ReaderIcon name="chevron" color={palette.text} size={20} /></View>
+    style={({ pressed }) => [styles.weekButton, { opacity: disabled ? 0.25 : pressed ? 0.6 : 1, backgroundColor: pressed ? palette.accent : 'transparent' }]}>
+    <View style={{ transform: [{ rotate: previous ? '180deg' : '0deg' }] }}><ReaderIcon name="chevron" color={palette.foreground} size={20} /></View>
   </Pressable>;
 }
 const styles = StyleSheet.create({

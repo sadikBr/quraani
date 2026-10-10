@@ -1,32 +1,36 @@
 import { Platform, type ViewStyle } from 'react-native';
+import { isDarkColor } from './colors';
 
-/** Shared geometry keeps controls, cards, and sheets consistent across themes.
- * `detail` is for small marks (checkboxes, badges), `control` for buttons and
- * fields, `card` for surfaces, `sheet` for modal sheets, `pill` for chips. */
-export const readerShape = { detail: 4, control: 8, card: 12, sheet: 18, hero: 14, pill: 999 } as const;
-export const readerLayout = { maxWidth: 740, gutter: 20, sectionGap: 28 } as const;
+/**
+ * Universal UI (shadcn/ui) tokens. Radii derive from `radius` 10: `detail` 4
+ * (checkbox), `sm` 6, `control` 8 (radius-md: buttons, inputs, menus), `lg` 10
+ * (alerts, dialogs, tab tracks), `card` 14 (radius-xl: cards, bottom sheets).
+ */
+export const readerShape = { detail: 4, sm: 6, control: 8, lg: 10, card: 14, sheet: 14, hero: 14, pill: 999 } as const;
+export const space = { 0.5: 2, 1: 4, 1.5: 6, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64 } as const;
+export const controlSize = { xs: 24, sm: 32, md: 36, lg: 40, touch: 48, icon: 16, iconSm: 12 } as const;
+/** Type scale (px / line height / weight). Arabic UI text needs the taller lines. */
+export const typeScale = {
+  h1: { fontSize: 32, lineHeight: 48, fontWeight: '700' }, h2: { fontSize: 28, lineHeight: 42, fontWeight: '600' },
+  h3: { fontSize: 24, lineHeight: 36, fontWeight: '600' }, h4: { fontSize: 20, lineHeight: 32, fontWeight: '600' },
+  large: { fontSize: 18, lineHeight: 28, fontWeight: '600' }, body: { fontSize: 16, lineHeight: 26, fontWeight: '400' },
+  bodySm: { fontSize: 14, lineHeight: 22, fontWeight: '400' }, small: { fontSize: 14, lineHeight: 20, fontWeight: '500' },
+  caption: { fontSize: 12, lineHeight: 18, fontWeight: '500' },
+} as const;
+export const readerLayout = { maxWidth: 740, gutter: 16, sectionGap: 24 } as const;
 
-/** Soft, theme-aware depth. Shadows are tinted with the theme's text colour so
- * they read as depth on light themes and stay invisible on dark ones. */
-export function readerElevation(level: 1 | 2 | 3, palette?: { background: string; text: string }): ViewStyle {
+/** Quiet depth from the design system: 1 = shadow-xs (controls), 2 = shadow-sm
+ * (cards), 3 = shadow-md (menus), 4 = shadow-lg (dialogs, sheets). Dark themes
+ * separate surfaces with the border alone. */
+export function readerElevation(level: 1 | 2 | 3 | 4, palette?: { background: string }): ViewStyle {
   if (palette && isDarkColor(palette.background)) return {};
-  const tint = palette?.text ?? '#0B2A23';
-  const radius = [0, 8, 14, 22][level], opacity = [0, 0.05, 0.08, 0.12][level], y = [0, 1, 4, 8][level];
+  const web = ['', '0 1px 2px 0 #0000000d', '0 1px 3px 0 #0000001a, 0 1px 2px -1px #0000001a', '0 4px 6px -1px #0000001a, 0 2px 4px -2px #0000001a', '0 10px 15px -3px #0000001a, 0 4px 6px -4px #0000001a'][level];
+  const radius = [0, 2, 3, 6, 15][level], opacity = [0, 0.05, 0.1, 0.1, 0.1][level], y = [0, 1, 1, 4, 10][level];
   return Platform.select<ViewStyle>({
-    ios: { shadowColor: tint, shadowOpacity: opacity, shadowRadius: radius, shadowOffset: { width: 0, height: y } },
-    android: { elevation: [0, 1, 3, 6][level], shadowColor: tint },
-    default: { boxShadow: `0 ${y}px ${radius}px ${tint}${Math.round(opacity * 255).toString(16).padStart(2, '0')}` } as ViewStyle,
+    ios: { shadowColor: '#000000', shadowOpacity: opacity, shadowRadius: radius / 2, shadowOffset: { width: 0, height: y } },
+    android: { elevation: [0, 1, 1, 3, 8][level], shadowColor: '#000000' },
+    default: { boxShadow: web } as ViewStyle,
   })!;
 }
 
-/** Colour with alpha, from a #RRGGBB palette value. */
-export function withAlpha(color: string, alpha: number) {
-  return /^#[0-9a-f]{6}$/i.test(color) ? `${color}${Math.round(Math.max(0, Math.min(1, alpha)) * 255).toString(16).padStart(2, '0')}` : color;
-}
-
-export function isDarkColor(color: string) {
-  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(color);
-  if (!m) return false;
-  const [r, g, b] = m.slice(1).map(x => parseInt(x, 16) / 255);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.45;
-}
+export { isDarkColor, mixColor, withAlpha } from './colors';

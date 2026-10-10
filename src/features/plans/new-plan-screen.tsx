@@ -8,7 +8,7 @@ import { ReaderIcon, Segments } from '../quran-reader/components/ui/reader-chrom
 import { ReaderButton } from '../quran-reader/components/reading/reader-button';
 import { RIWAYAT, readingPositionKey, type Riwayah } from '../quran-reader/riwayat';
 import { contentStorage } from '../quran-reader/storage/content-storage';
-import { readerElevation, readerShape, withAlpha } from '../quran-reader/design';
+import { Badge, Card } from '@/components/ui';
 import { usePlans } from './provider';
 import { createPlan, rangeLabel, unitLabels } from './engine';
 import { localDate } from './dates';
@@ -107,14 +107,14 @@ function GoalCreationForm({ initialKind }: { initialKind: SequentialGoal['type']
       <View style={c.navigation}>
         <Pressable accessibilityRole="button" accessibilityLabel={step ? 'العودة إلى إعداد الهدف' : 'العودة إلى الأهداف'} disabled={busy} onPress={() => step ? changeStep(0) : router.back()}
           style={({ pressed }) => [c.back, { opacity: pressed || busy ? 0.5 : 1 }]}>
-          <ReaderIcon name="back" color={p.text} size={20} /><Text style={{ color: p.text, fontSize: 15 }}>{step ? 'الإعداد' : 'الأهداف'}</Text>
+          <ReaderIcon name="back" color={p.foreground} size={20} /><Text style={{ color: p.foreground, fontSize: 15 }}>{step ? 'الإعداد' : 'الأهداف'}</Text>
         </Pressable>
-        <Text style={{ color: p.muted, fontSize: 13 }}>هدف جديد</Text>
+        <Text style={{ color: p.mutedForeground, fontSize: 13 }}>هدف جديد</Text>
       </View>
       <ScrollView ref={scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={c.content}>
         <View style={{ gap: 2 }}>
-          <Text accessibilityRole="header" accessibilityLiveRegion="polite" style={{ color: p.text, fontSize: 28, fontWeight: '700' }}>{blocked ? 'هدفك الحالي أولًا' : step ? 'جاهز للبداية؟' : 'على قدر استطاعتك'}</Text>
-          <Text style={{ color: p.muted, fontSize: 15 }}>{blocked ? 'رحلة واحدة مع القرآن، على مهلٍ وثبات.' : step ? 'راجع وردك، واجعل له وقتًا في يومك.' : 'اختر المدة أو المقدار، ونحن نرتّب وردك.'}</Text>
+          <Text accessibilityRole="header" accessibilityLiveRegion="polite" style={{ color: p.foreground, fontSize: 24, fontWeight: '600' }}>{blocked ? 'هدفك الحالي أولًا' : step ? 'جاهز للبداية؟' : 'على قدر استطاعتك'}</Text>
+          <Text style={{ color: p.mutedForeground, fontSize: 15 }}>{blocked ? 'رحلة واحدة مع القرآن، على مهلٍ وثبات.' : step ? 'راجع وردك، واجعل له وقتًا في يومك.' : 'اختر المدة أو المقدار، ونحن نرتّب وردك.'}</Text>
         </View>
         {!blocked && <CreationSteps step={step} canReview={!!preview.plan && !busy} onChange={changeStep} />}
         <View pointerEvents={busy ? 'none' : 'auto'} style={{ gap: 24 }}>
@@ -140,20 +140,20 @@ function GoalCreationForm({ initialKind }: { initialKind: SequentialGoal['type']
             </CreationSection>}
           </> : <>
             {preview.plan && index && <>
-              <View style={[{ backgroundColor: p.hero, padding: 22, borderRadius: readerShape.hero, gap: 14 }, readerElevation(2, p)]}>
-                <View style={c.row}><ReaderIcon name="book" color={p.heroMuted} size={20} /><Text style={{ color: p.heroMuted, fontSize: 13 }}>رواية {RIWAYAT[riwayah].label}</Text></View>
-                <Text style={{ color: p.onHero, fontSize: 24, fontWeight: '600' }}>{kind === 'khatma' ? `ختمة في ${arabicNumber(parsePlanNumber(weeks))} أسابيع` : `${arabicNumber(parsePlanNumber(amount))} ${unitLabels[unit]} كل يوم`}</Text>
-                <View style={[c.row, { borderTopWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(p.onHero, 0.2), paddingTop: 12, alignItems: 'flex-start' }]}>
-                  <View style={c.grow}><Text style={{ color: p.heroMuted, fontSize: 12 }}>البداية</Text><Text style={{ color: p.onHero, fontSize: 15, fontWeight: '600' }}>{shortDate(startDate)}</Text></View>
-                  <View style={c.grow}><Text style={{ color: p.heroMuted, fontSize: 12 }}>{kind === 'khatma' ? 'الإتمام' : 'الإيقاع'}</Text><Text style={{ color: p.onHero, fontSize: 15, fontWeight: '600' }}>{kind === 'khatma' ? shortDate(preview.plan.cycle.sessions.at(-1)!.date) : 'بلا موعد إتمام'}</Text></View>
-                  <View><Text style={{ color: p.heroMuted, fontSize: 12 }}>الأوراد</Text><Text style={{ color: p.onHero, fontSize: 15, fontWeight: '600' }}>{arabicNumber(preview.plan.cycle.sessions.length)}</Text></View>
+              <Card style={{ padding: 16, gap: 14 }}>
+                <Badge variant="outline">{`رواية ${RIWAYAT[riwayah].label}`}</Badge>
+                <Text style={{ color: p.foreground, fontSize: 22, fontWeight: '600' }}>{kind === 'khatma' ? `ختمة في ${arabicNumber(parsePlanNumber(weeks))} أسابيع` : `${arabicNumber(parsePlanNumber(amount))} ${unitLabels[unit]} كل يوم`}</Text>
+                <View style={[c.row, { borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border, paddingTop: 14, alignItems: 'flex-start' }]}>
+                  <View style={c.grow}><Text style={{ color: p.mutedForeground, fontSize: 13 }}>البداية</Text><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{shortDate(startDate)}</Text></View>
+                  <View style={c.grow}><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{kind === 'khatma' ? 'الإتمام' : 'الإيقاع'}</Text><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{kind === 'khatma' ? shortDate(preview.plan.cycle.sessions.at(-1)!.date) : 'بلا موعد إتمام'}</Text></View>
+                  <View><Text style={{ color: p.mutedForeground, fontSize: 13 }}>الأوراد</Text><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{arabicNumber(preview.plan.cycle.sessions.length)}</Text></View>
                 </View>
-                <Text style={{ color: p.heroMuted, fontSize: 13 }}>من {index.surahNames[index.ayahs[preview.plan.cycle.start].surahNumber]} · الآية {arabicNumber(index.ayahs[preview.plan.cycle.start].ayahNumber)} · صفحة {arabicNumber(index.ayahs[preview.plan.cycle.start].pageNumber)}</Text>
-              </View>
+                <Text style={{ color: p.mutedForeground, fontSize: 14 }}>من {index.surahNames[index.ayahs[preview.plan.cycle.start].surahNumber]} · الآية {arabicNumber(index.ayahs[preview.plan.cycle.start].ayahNumber)} · صفحة {arabicNumber(index.ayahs[preview.plan.cycle.start].pageNumber)}</Text>
+              </Card>
               <CreationSection title="أول خطواتك" icon="lines" description={kind === 'wird' ? 'المواعيد تقديرية؛ كل ورد جديد يتبع إتمام سابقه.' : undefined}>
                 <View>{preview.plan.cycle.sessions.slice(0, 3).map((session, i) => <View key={session.date} style={[c.row, { gap: 12, paddingVertical: 10, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: p.border }]}>
-                  <Text style={{ color: p.muted, fontSize: 13, minWidth: 20 }}>{arabicNumber(i + 1)}</Text>
-                  <View style={c.grow}><Text style={{ color: p.text, fontSize: 15, fontWeight: '600' }}>{rangeLabel(index, session.start, session.end)}</Text><Text style={{ color: p.muted, fontSize: 13 }}>{shortDate(session.date)}</Text></View>
+                  <Text style={{ color: p.mutedForeground, fontSize: 13, minWidth: 20 }}>{arabicNumber(i + 1)}</Text>
+                  <View style={c.grow}><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{rangeLabel(index, session.start, session.end)}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{shortDate(session.date)}</Text></View>
                 </View>)}</View>
               </CreationSection>
             </>}
@@ -169,11 +169,11 @@ function GoalCreationForm({ initialKind }: { initialKind: SequentialGoal['type']
         </View>
         {!blocked && <><PlanNotice message={error} retry={retry} />{!index && !error && <PlanLoading />}</>}
       </ScrollView>
-      {!blocked && <View style={[c.footer, { backgroundColor: p.paper, borderColor: p.border }]}>
+      {!blocked && <View style={[c.footer, { backgroundColor: p.card, borderColor: p.border }]}>
         <PlanNotice message={message || preview.error} />
         {conflictId ? <ReaderButton palette={p} onPress={() => openGoal(conflictId)}>عرض الهدف الحالي</ReaderButton>
           : <>
-            {step === 0 && preview.plan && <Text style={{ color: p.muted, fontSize: 13, textAlign: 'center' }}>{arabicNumber(preview.plan.cycle.sessions.length)} وردًا · نراجع التفاصيل في الخطوة التالية</Text>}
+            {step === 0 && preview.plan && <Text style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>{arabicNumber(preview.plan.cycle.sessions.length)} وردًا · نراجع التفاصيل في الخطوة التالية</Text>}
             <ReaderButton palette={p} selected disabled={!preview.plan || busy} onPress={() => step === 0 ? changeStep(1) : void save()}>{busy ? 'جارٍ الحفظ…' : step === 0 ? 'متابعة إلى المراجعة' : 'إنشاء الهدف'}</ReaderButton>
           </>}
       </View>}
