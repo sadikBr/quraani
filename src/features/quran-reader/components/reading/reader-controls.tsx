@@ -33,11 +33,16 @@ interface Props {
   onDismiss: () => void;
   planControls?: ReactNode;
   pageLabel?: string;
+  /** A recitation is under way: the listen button stops it. */
+  listening: boolean;
+  onListen: () => void;
+  /** The recitation controls, shown above the page navigation while listening. */
+  recitation?: ReactNode;
 }
 
 /** Both edges use the same animation, over a reading surface that never resizes. */
 export function ReaderControls({ page, totalPages, previous, next, surahName, palette, visible, progress,
-  topInset, toolbarHeight, onToolbarHeight, bottomInset, practiceActive, practiceComplete, onNavigate, onJump, onMenu, onPractice, onRevealWord, onRevealAyah, onDismiss, planControls, pageLabel }: Props) {
+  topInset, toolbarHeight, onToolbarHeight, bottomInset, practiceActive, practiceComplete, onNavigate, onJump, onMenu, onPractice, onRevealWord, onRevealAyah, onDismiss, planControls, pageLabel, listening, onListen, recitation }: Props) {
   const [bottomHeight, setBottomHeight] = useState(60 + bottomInset);
   const hiddenProps = {
     accessibilityElementsHidden: !visible,
@@ -85,6 +90,7 @@ export function ReaderControls({ page, totalPages, previous, next, surahName, pa
           {practiceButton('word', t('reader.controls.word'), t('reader.controls.wordLabel'), onRevealWord, practiceComplete)}
           {practiceButton('lines', t('reader.controls.ayah'), t('reader.controls.ayahLabel'), onRevealAyah, practiceComplete)}
         </View>}
+        {recitation && <View style={styles.content}>{recitation}</View>}
         <View style={[styles.content, styles.navigation]} {...(Platform.OS === 'web' ? { dir: 'ltr' } : {})}>
           <Link href="/bookmarks" asChild style={styles.icon}>
             <Pressable accessibilityRole="link" accessibilityLabel={t('reader.controls.bookmarks')}>
@@ -95,13 +101,17 @@ export function ReaderControls({ page, totalPages, previous, next, surahName, pa
           <Pressable accessibilityRole="button" accessibilityLabel={t('reader.controls.jump', { position: pageLabel ?? t('reader.controls.pageOf', { page: page.number, total: totalPages }) })}
             onPress={onJump} style={({ pressed }) => [styles.page, { opacity: pressed ? 0.6 : 1 }]}>
             <View style={[styles.pagePill, { backgroundColor: palette.muted }]}>
-              <Text style={{ color: palette.foreground, fontSize: 13, fontWeight: '500', lineHeight: 22, writingDirection: 'rtl', textAlign: 'center' }}>{pageLabel ?? t('reader.controls.page', { page: page.number })}</Text>
+              <Text numberOfLines={1} style={{ color: palette.foreground, fontSize: 13, fontWeight: '500', lineHeight: 22, writingDirection: 'rtl', textAlign: 'center' }}>{pageLabel ?? t('reader.controls.page', { page: page.number })}</Text>
               {!pageLabel && <View style={[styles.pageTrack, { backgroundColor: withAlpha(palette.primary, 0.2) }]}>
                 <View style={[styles.pageFill, { backgroundColor: palette.primary, width: `${Math.max(2, Math.min(100, page.number / Math.max(1, totalPages) * 100))}%` }]} />
               </View>}
             </View>
           </Pressable>
           {button('chevron', t('reader.controls.previousPage'), () => previous && onNavigate(previous.number), !previous, true)}
+          <Pressable accessibilityRole="button" accessibilityLabel={listening ? t('recitation.stop') : t('recitation.start')} accessibilityState={{ selected: listening }} onPress={onListen}
+            style={({ pressed }) => [styles.icon, { opacity: pressed ? 0.5 : 1, backgroundColor: pressed ? palette.accent : listening ? palette.secondary : 'transparent' }]}>
+            <ReaderIcon name="headphones" color={listening ? palette.primary : palette.foreground} size={20} />
+          </Pressable>
           {practiceActive
             ? button('close', t('reader.controls.hideTools'), onDismiss)
             : button('eye-off', t('reader.controls.practice'), onPractice)}
@@ -116,10 +126,10 @@ const styles = StyleSheet.create({
   bottom: { bottom: 0 },
   content: { width: '100%', maxWidth: 700, alignSelf: 'center' },
   navigation: { ...Platform.select({ native: { direction: 'ltr' as const } }), flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 8, paddingVertical: 4, gap: 4 },
+    paddingHorizontal: 8, paddingVertical: 4, gap: 2 },
   icon: { width: 44, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.control },
-  page: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
-  pagePill: { minWidth: 120, paddingHorizontal: 18, paddingTop: 3, paddingBottom: 7, borderRadius: readerShape.lg, alignItems: 'center', gap: 3 },
+  page: { flex: 1, minWidth: 0, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  pagePill: { minWidth: 104, maxWidth: '100%', paddingHorizontal: 14, paddingTop: 3, paddingBottom: 7, borderRadius: readerShape.lg, alignItems: 'center', gap: 3 },
   // The track fills from the reading start (right), like the mushaf.
   pageTrack: { width: 72, height: 4, borderRadius: readerShape.pill, overflow: 'hidden', flexDirection: 'row-reverse' },
   pageFill: { height: '100%', borderRadius: readerShape.pill },

@@ -27,6 +27,9 @@ import { reserveReadingInsets } from '../../utils/reading-insets';
 import { PlanReadingControls, PlanReadingEnd, PlanReadingOpening, usePlanReadingActions } from '@/features/plans/plan-reading-controls';
 import { usePlans } from '@/features/plans/provider';
 import { createReadingSession } from '@/features/plans/reading-session';
+import { RecitationBar } from '@/features/recitation/recitation-bar';
+import { stop as stopRecitation, useRecitation } from '@/features/recitation/player';
+import { useListen } from '@/features/recitation/use-listen';
 import { t } from '@/i18n';
 
 export function ReaderScreen() {
@@ -64,7 +67,7 @@ function RiwayahReaderScreen() {
   const firstPage = session?.firstPage ?? 1;
   const lastPageNumber = session?.lastPage ?? content?.data.pages.at(-1)?.number ?? 604;
   const font = useQuranFont();
-  const { preferences: { mode, textLayout, fontSize, spacious, tajweed, riwayah }, palette, dark } = useReadingPreferences();
+  const { preferences: { mode, textLayout, fontSize, spacious, tajweed, riwayah, repeat }, palette, dark } = useReadingPreferences();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [actionsVisible, setActionsVisible] = useState(false);
   const [controlsProgress] = useState(() => new Animated.Value(0));
@@ -146,6 +149,15 @@ function RiwayahReaderScreen() {
   const totalPages = content?.data.pages.length ?? 604;
   const overlayOpen = drawerOpen || !!actionAyah;
   const immersive = ready && !actionsVisible && !overlayOpen;
+  const recitation = useRecitation();
+  const listen = useListen(content?.data.quran);
+  const quranId = content?.data.quran.id;
+  const listening = recitation.status !== 'idle' && recitation.mushafId === quranId;
+  // A recitation of another riwayah (changed in settings while listening) no longer matches the page.
+  const otherRecitation = recitation.status !== 'idle' && quranId !== undefined && recitation.mushafId !== null && recitation.mushafId !== quranId;
+  useEffect(() => { if (otherRecitation) stopRecitation(); }, [otherRecitation]);
+  // A goal's reading stops at the end of its portion.
+  const sessionEnd = session ? session.index.ayahs[session.portion.end - 1] : null;
 
   const navigate = useCallback((number: number, ayah?: AyahReference) => {
     if (!ready || !readerPages?.some((value) => value.number === number) || (ayah && session && !session.contains(ayah))) return;
@@ -184,6 +196,33 @@ function RiwayahReaderScreen() {
     // Consume the jump so subsequent reloads restore the latest reading position.
     router.setParams({ surah: undefined, ayah: undefined });
   }, [ready, content, session, targetSurah, targetAyah, navigate]);
+  // The page follows the recitation: the ayah being recited is selected, on its own page.
+  // An open sheet or index is left alone; the page catches up once it closes.
+  const recitedSurah = listening ? recitation.current?.surahNumber : undefined;
+  const recitedAyah = listening ? recitation.current?.ayahNumber : undefined;
+  const recitedPage = listening ? recitation.current?.pageNumber : undefined;
+  useEffect(() => {
+    if (!ready || overlayOpen || quranId === undefined || recitedSurah === undefined || recitedAyah === undefined || recitedPage === undefined) return;
+    const ayah = { mushafId: quranId, surahNumber: recitedSurah, ayahNumber: recitedAyah };
+    if (session && !session.contains(ayah)) return;
+    const current = latestPosition.current;
+    if (recitedPage !== current.pageNumber) navigate(recitedPage, ayah);
+    else if (!current.ayah || ayahKey(current.ayah) !== ayahKey(ayah)) selectAyah(ayah);
+  }, [ready, overlayOpen, quranId, recitedSurah, recitedAyah, recitedPage, session, navigate, selectAyah]);
+  const toggleListening = () => {
+    if (listening) { stopRecitation(); return; }
+    if (!page?.ayahs.length) return;
+    // From the selected ayah when it is on this page, otherwise from the top of the page.
+    const selected = position.ayah;
+    const from = selected && page.ayahs.find((a) => a.surahNumber === selected.surahNumber && a.ayahNumber === selected.ayahNumber) || page.ayahs[0];
+    void listen(from, { to: sessionEnd });
+  };
+  const listenFrom = (ayah: Ayah, single: boolean) => {
+    setActionAyah(null);
+    setActionsVisible(true);
+    // Repeating one ayah uses the chosen count, or goes on until stopped when no repetition is set.
+    void listen(ayah, single ? { to: ayah, repeat: repeat > 1 ? repeat : 0 } : { to: sessionEnd });
+  };
   const toggleActions = useCallback(() => {
     if (Date.now() < suppressClick.current) return;
     // A native text press and its enclosing touch-end can describe the same tap.
@@ -415,11 +454,13 @@ function RiwayahReaderScreen() {
         practiceComplete={!!practicePlan && !!practice && practice.revealed >= practicePlan.totalWords}
         onNavigate={navigate} onJump={() => setDrawerOpen(true)} onMenu={() => router.push('/home')} onPractice={togglePractice}
         onRevealWord={() => reveal('word')} onRevealAyah={() => reveal('ayah')}
-        onDismiss={() => setActionsVisible(false)} />}
+        onDismiss={() => setActionsVisible(false)}
+        listening={listening} onListen={toggleListening}
+        recitation={listening || recitation.error ? <RecitationBar palette={palette} quran={content.data.quran} /> : undefined} />}
       </Animated.View>;
       })}
       </View>
-      {actionAyah && content && <AyahActionSheet key={ayahKey(actionAyah)} ayah={actionAyah} quran={content.data.quran} palette={palette} onClose={() => setActionAyah(null)} />}
+      {actionAyah && content && <AyahActionSheet key={ayahKey(actionAyah)} ayah={actionAyah} quran={content.data.quran} palette={palette} onClose={() => setActionAyah(null)} onListen={listenFrom} />}
       {drawerOpen && <ReaderDrawer content={session?.content ?? content?.data} limited={!!session} currentPage={pageNumber} onJump={navigate} onClose={() => setDrawerOpen(false)} palette={palette} />}
     </SafeAreaView>
   );

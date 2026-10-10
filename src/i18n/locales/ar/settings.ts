@@ -1,9 +1,10 @@
 /** The settings screen: riwayah, reading mode, tajweed, text comfort and appearance. */
 export default {
-  tabs: { label: 'أقسام الإعدادات', reading: 'القراءة', appearance: 'المظهر' },
+  tabs: { label: 'أقسام الإعدادات', reading: 'القراءة', recitation: 'التلاوة', appearance: 'المظهر' },
   /** Headline and sentence at the top of each settings tab. */
   intro: {
     reading: { title: 'قراءة تناسبك', detail: 'اختر روايتك وطريقة العرض التي تريحك.' },
+    recitation: { title: 'تلاوة تعينك على الحفظ', detail: 'اختر قارئك وعدد مرات التكرار، ونزّل التلاوة لتستمع إليها دون اتصال.' },
     appearance: { title: 'ألوان تريح عينك', detail: 'اختر مظهرًا يرافقك في كل صفحة.' },
   },
   riwayah: {

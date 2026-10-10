@@ -7,6 +7,7 @@ import {
     MemoryCacheStorage,
 } from "./cache";
 import { QuranpediaError, refreshBackoffMs } from "./errors";
+import { decodeReciters } from "./reciters";
 import {
     decodeBookContent,
     decodeBooks,
@@ -100,6 +101,11 @@ export class QuranpediaClient {
 
     getMushafs(options?: RequestOptions) {
         return this.get("/mushafs", decodeMushafs, options, this.corpusTtlMs);
+    }
+
+    /** Every recitation edition with its audio server and, for surah files, ayah timings. */
+    getReciters(options?: RequestOptions) {
+        return this.get("/reciters", decodeReciters, options, this.corpusTtlMs);
     }
 
     getTafsirBooks(surah: number, ayah: number) {

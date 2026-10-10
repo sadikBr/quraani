@@ -12,6 +12,7 @@ import type { Ayah, Quran } from '@/lib/quranpedia/types';
 import { relatedPlainText, type RelatedText } from '@/lib/quranpedia/related-content';
 import { quranpedia } from '../../services/reader-service';
 import { useBookmarks } from '../../state/bookmarks-provider';
+import { useReadingPreferences } from '../../state/reading-preferences-provider';
 import { ayahKey } from '../../utils/references';
 import { ayahShareText, parallelAyahs } from '../../utils/ayah-actions';
 import type { ReaderPalette } from '../../theme';
@@ -20,8 +21,13 @@ import { ReaderIcon, type ReaderIconName, Segments } from '../ui/reader-chrome';
 import { calligraphyStyle, surahNameGlyph } from '../../utils/reader-typography';
 import { formatList, t } from '@/i18n';
 
-export function AyahActionSheet({ ayah, quran, palette, onClose }: { ayah: Ayah; quran: Quran; palette: ReaderPalette; onClose: () => void }) {
+export function AyahActionSheet({ ayah, quran, palette, onClose, onListen }: {
+  ayah: Ayah; quran: Quran; palette: ReaderPalette; onClose: () => void;
+  /** Listen from this ayah onward, or repeat this ayah alone (`single`). */
+  onListen?: (ayah: Ayah, single: boolean) => void;
+}) {
   const close = useRef<View>(null);
+  const { preferences: { repeat } } = useReadingPreferences();
   const { bookmarks, toggle, ready, error: bookmarkError } = useBookmarks();
   const [message, setMessage] = useState('');
   const [kind, setKind] = useState<'tafsir' | 'translation' | null>(null);
@@ -72,6 +78,13 @@ export function AyahActionSheet({ ayah, quran, palette, onClose }: { ayah: Ayah;
           {!!message && <Text accessibilityLiveRegion="polite" style={[styles.feedback, { color: palette.primary }]}>{message}</Text>}
           {bookmarkError && <Text accessibilityRole="alert" style={[styles.feedback, { color: palette.destructive }]}>{t('reader.actions.bookmarkStorageError')}</Text>}
           <View style={styles.relatedActions}>
+            {onListen && <>
+              <ListenAction palette={palette} icon="headphones" label={t('recitation.ayahSheet.fromHere')} detail={t('recitation.ayahSheet.fromHereDetail')} onPress={() => onListen(ayah, false)} />
+              <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: palette.border }} />
+              <ListenAction palette={palette} icon="loop" label={t('recitation.ayahSheet.repeatAyah')}
+                detail={repeat > 1 ? t('recitation.ayahSheet.repeatAyahDetail', { count: repeat }) : t('recitation.ayahSheet.repeatAyahEndless')} onPress={() => onListen(ayah, true)} />
+              <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: palette.border }} />
+            </>}
             <RelatedAction palette={palette} icon="book" label={t('reader.actions.tafsir')} detail={t('reader.actions.tafsirDetail')} expanded={kind === 'tafsir'} onPress={() => setKind(kind === 'tafsir' ? null : 'tafsir')} />
             {kind === 'tafsir' && <View style={styles.relatedContent}><RelatedContent ayah={ayah} kind="tafsir" palette={palette} /></View>}
             <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: palette.border }} />
@@ -96,6 +109,17 @@ function QuickAction({ palette, icon, label, accessibilityLabel, onPress, select
     style={({ pressed }) => [styles.quickAction, { backgroundColor: selected || pressed ? palette.accent : 'transparent', opacity: disabled ? 0.4 : 1 }]}>
     <ReaderIcon name={icon} color={palette.foreground} size={20} />
     <Text style={[styles.actionLabel, { color: palette.foreground }]}>{label}</Text>
+  </Pressable>;
+}
+
+function ListenAction({ palette, icon, label, detail, onPress }: { palette: ReaderPalette; icon: ReaderIconName; label: string; detail: string; onPress: () => void }) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityHint={detail} onPress={onPress}
+    style={({ pressed }) => [styles.relatedAction, { backgroundColor: pressed ? palette.accent : 'transparent' }]}>
+    <IconTile name={icon} palette={palette} />
+    <View style={styles.relatedCopy}>
+      <Text style={[styles.relatedLabel, { color: palette.foreground }]}>{label}</Text>
+      <Text style={[styles.relatedDetail, { color: palette.mutedForeground }]}>{detail}</Text>
+    </View>
   </Pressable>;
 }
 

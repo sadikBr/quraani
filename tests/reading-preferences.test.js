@@ -3,14 +3,14 @@ import { decodeReadingPreferences, defaultReadingPreferences } from '../src/feat
 
 test('restores saved settings and preserves Warsh page mode as the default', () => {
   const preferences = { appearance: 'dark', mode: 'text', textLayout: 'ayah', fontSize: 40, spacious: true };
-  expect(decodeReadingPreferences(JSON.stringify(preferences))).toEqual({ riwayah: 'warsh', tajweed: false, ...preferences });
+  expect(decodeReadingPreferences(JSON.stringify(preferences))).toEqual({ riwayah: 'warsh', tajweed: false, reciters: {}, repeat: 1, ...preferences });
   expect(decodeReadingPreferences(null)).toEqual(defaultReadingPreferences);
 });
 
 test('recovers corrupt preferences and clamps stored text sizes', () => {
   expect(decodeReadingPreferences('{broken')).toEqual(defaultReadingPreferences);
   expect(decodeReadingPreferences(JSON.stringify({ appearance: 'unknown', mode: 'unknown', fontSize: 200, spacious: 'yes' })))
-    .toEqual({ riwayah: 'warsh', tajweed: false, appearance: 'system', mode: 'page', textLayout: 'ayah', fontSize: 48, spacious: false });
+    .toEqual({ riwayah: 'warsh', tajweed: false, appearance: 'system', mode: 'page', textLayout: 'ayah', fontSize: 48, spacious: false, reciters: {}, repeat: 1 });
   expect(decodeReadingPreferences(JSON.stringify({ fontSize: 1 })).fontSize).toBe(24);
   expect(decodeReadingPreferences(JSON.stringify({ fontSize: '40' })).fontSize).toBe(32);
 });
@@ -18,7 +18,7 @@ test('recovers corrupt preferences and clamps stored text sizes', () => {
 test('migrates the former ayah reader without changing its layout or other settings', () => {
   const old = { appearance: 'emerald', mode: 'ayah', fontSize: 40, spacious: true };
   expect(decodeReadingPreferences(JSON.stringify(old)))
-    .toEqual({ riwayah: 'warsh', tajweed: false, ...old, mode: 'text', textLayout: 'ayah' });
+    .toEqual({ riwayah: 'warsh', tajweed: false, reciters: {}, repeat: 1, ...old, mode: 'text', textLayout: 'ayah' });
 });
 
 test('remembers both text layouts even while printed pages are selected', () => {
@@ -35,4 +35,12 @@ test('the seven-size slider restores every stop and snaps older in-between sizes
   }
   expect(decodeReadingPreferences(JSON.stringify({ fontSize: 35 })).fontSize).toBe(36);
   expect(decodeReadingPreferences(JSON.stringify({ fontSize: 25.5 })).fontSize).toBe(24);
+});
+
+test('keeps a valid reciter per riwayah and a known repeat count', () => {
+  const decoded = decodeReadingPreferences(JSON.stringify({ reciters: { warsh: 265, hafs: 'x', qalun: 3 }, repeat: 5 }));
+  expect(decoded.reciters).toEqual({ warsh: 265 });
+  expect(decoded.repeat).toBe(5);
+  expect(decodeReadingPreferences(JSON.stringify({ repeat: 4 })).repeat).toBe(1);
+  expect(decodeReadingPreferences(JSON.stringify({ repeat: 0 })).repeat).toBe(0);
 });

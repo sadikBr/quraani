@@ -13,11 +13,21 @@ export interface ReadingPreferences {
   textLayout: ReaderTextLayout;
   fontSize: number;
   spacious: boolean;
+  /** Quranpedia reciter id chosen for each riwayah; unset uses the default reciter. */
+  reciters: Partial<Record<Riwayah, number>>;
+  /** Times each ayah is recited before moving on; 0 repeats until stopped. */
+  repeat: number;
 }
+
+/** Choices offered for repeating each ayah. */
+export const REPEAT_CHOICES = [1, 2, 3, 5, 7, 10, 0] as const;
 
 export const defaultReadingPreferences: ReadingPreferences = {
   riwayah: 'warsh', tajweed: false, appearance: 'system', mode: 'page', textLayout: 'ayah', fontSize: READER_FONT_DEFAULT, spacious: false,
+  reciters: {}, repeat: 1,
 };
+
+const reciterId = (value: unknown) => typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : undefined;
 
 export function decodeReadingPreferences(raw: string | null): ReadingPreferences {
   try {
@@ -33,6 +43,9 @@ export function decodeReadingPreferences(raw: string | null): ReadingPreferences
       fontSize: typeof value.fontSize === 'number' && Number.isFinite(value.fontSize)
         ? snapReaderFontSize(value.fontSize) : READER_FONT_DEFAULT,
       spacious: value.spacious === true,
+      reciters: Object.fromEntries((['warsh', 'hafs'] as const)
+        .map((key) => [key, reciterId(value.reciters?.[key])] as const).filter(([, id]) => id !== undefined)),
+      repeat: (REPEAT_CHOICES as readonly number[]).includes(value.repeat) ? value.repeat : 1,
     };
   } catch {
     return defaultReadingPreferences;

@@ -13,11 +13,13 @@ import { QuranniLogo } from '../ui/quranni-logo';
 import { WarshTajweedLegend } from './warsh-tajweed-legend';
 import { ReadingLayoutPreview, SettingsCard, SettingsCardHeading, SettingsSelection, SettingsToggle } from './settings-ui';
 import { readerLayout, readerShape } from '../../design';
+import { RecitationSettings } from '@/features/recitation/recitation-settings';
 import { t } from '@/i18n';
 
-type SettingsTab = 'reading' | 'appearance';
+type SettingsTab = 'reading' | 'recitation' | 'appearance';
 const tabs: { value: SettingsTab; label: string; icon: ReaderIconName }[] = [
   { value: 'reading', get label() { return t('settings.tabs.reading'); }, icon: 'book' },
+  { value: 'recitation', get label() { return t('settings.tabs.recitation'); }, icon: 'headphones' },
   { value: 'appearance', get label() { return t('settings.tabs.appearance'); }, icon: 'sun' },
 ];
 
@@ -92,8 +94,9 @@ export function SettingsScreen() {
           </View>}
         </SettingsCard>
       </>}
-      <ReaderSettings section={tab} palette={palette} fixedPage={mode === 'page'} textLayout={textLayout} appearance={appearance} setAppearance={value => update({ appearance: value })}
-        fontSize={fontSize} setFontSize={value => update({ fontSize: value })} spacious={spacious} setSpacious={value => update({ spacious: value })} />
+      {tab === 'recitation' && <RecitationSettings palette={palette} />}
+      {tab !== 'recitation' && <ReaderSettings section={tab} palette={palette} fixedPage={mode === 'page'} textLayout={textLayout} appearance={appearance} setAppearance={value => update({ appearance: value })}
+        fontSize={fontSize} setFontSize={value => update({ fontSize: value })} spacious={spacious} setSpacious={value => update({ spacious: value })} />}
       <View style={styles.footer}>
         <View style={styles.saved}><ReaderIcon name="done" color={palette.mutedForeground} size={14} /><Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('settings.footer.autoSaved')}</Text></View>
         <View style={[styles.footerRule, { backgroundColor: palette.border }]} />

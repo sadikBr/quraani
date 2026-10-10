@@ -7,6 +7,7 @@ const icons = {
   menu: 'menu', calendar: 'calendar-check', index: 'list', jump: 'locate-fixed', sun: 'sun', moon: 'moon',
   system: 'monitor-smartphone', clock: 'clock', plus: 'plus', minus: 'minus', sparkle: 'sparkles', flame: 'flame', loop: 'repeat',
   alert: 'circle-alert', info: 'info', 'chevron-down': 'chevron-down', done: 'circle-check', home: 'house', bell: 'bell', pencil: 'pencil',
+  play: 'play', pause: 'pause', 'skip-back': 'skip-back', 'skip-forward': 'skip-forward', headphones: 'headphones', download: 'download',
 };
 const out = {};
 for (const [name, lucide] of Object.entries(icons)) {
