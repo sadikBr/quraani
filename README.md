@@ -1,56 +1,60 @@
-# Welcome to your Expo app 👋
+# قرآني · Quraani
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An Arabic Quran reader built with Expo SDK 57 and Expo Router, with Warsh and Hafs editions, reading goals, and recurring readings.
 
-## Get started
+## Development
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Use Bun to install dependencies and start the app:
 
 ```bash
-npm run reset-project
+bun install --frozen-lockfile
+bun start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Screens live in `src/app/`; reader and goal features live in `src/features/`.
 
-### Other setup steps
+Before creating a test release:
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```bash
+bun run lint
+bun run typecheck
+bun test tests
+```
 
-## Learn more
+## Build a shareable Android APK
 
-To learn more about developing your project with Expo, look at the following resources:
+The `preview` profile in `eas.json` creates a signed, standalone release APK through [EAS Build](https://docs.expo.dev/build-reference/apk/). Testers do not need Expo Go, a running development server, or a Google Play account.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### First build
 
-## Join the community
+1. Sign in to the Expo account that will own the app:
 
-Join our community of developers creating universal apps.
+   ```bash
+   bunx eas-cli login
+   ```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+2. Start the Android build:
+
+   ```bash
+   bun run build:apk
+   ```
+
+3. If prompted, create/link the `quran-mobile` EAS project under your account and let EAS generate the Android signing keystore. EAS writes the project ID to `app.json`; keep that configuration for subsequent builds. No credentials need to be committed.
+
+4. When the build finishes, open its EAS link and download the `.apk`, or share the installation link directly with testers. They open it on Android, download the APK, and allow installation from their browser or file manager when Android asks.
+
+The app uses the existing قرآني name, icon, and splash screen. It needs internet access to download Quranpedia content that has not already been cached. Each installation keeps its own goals, bookmarks, and preferences; Expo Go data is separate from the installed app.
+
+### Subsequent test releases
+
+Run `bun run build:apk` again after your changes and checks. EAS automatically increases Android's build number. Keep the same EAS project, Android package (`com.bsadik.quraani`), and signing keystore so testers can install each new APK as an update without uninstalling and losing their local data.
+
+These are manual APK updates; over-the-air updates and Play Store submission are not configured. The user-visible version is `expo.version` in `app.json`.
+
+You can find previous builds with:
+
+```bash
+bunx eas-cli build:list --platform android
+```
+
+[Expo's internal distribution guide](https://docs.expo.dev/build/internal-distribution/) explains sharing links and their access settings. Android APKs cannot be installed on iPhones.

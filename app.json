@@ -10,10 +10,16 @@
     "ios": {
       "icon": "./assets/brand/icon.png",
       "infoPlist": {
-        "CFBundleDevelopmentRegion": "ar"
+        "CFBundleDevelopmentRegion": "ar",
+        "ExpoLocalization_supportsRTL": true,
+        "ExpoLocalization_forcesRTL": true,
+        "CFBundleLocalizations": [
+          "ar"
+        ]
       }
     },
     "android": {
+      "package": "com.bsadik.quraani",
       "adaptiveIcon": {
         "backgroundColor": "#103E35",
         "foregroundImage": "./assets/brand/adaptive-foreground.png",
@@ -58,6 +64,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ca679f02-80ef-4c88-bc2c-ebba4070e520"
+      }
     }
   }
 }
