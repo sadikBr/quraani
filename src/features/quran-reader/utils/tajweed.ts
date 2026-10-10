@@ -95,11 +95,13 @@ export function tajweedAyahKey(ayah: Pick<Ayah, 'surahNumber' | 'ayahNumber'>) {
  * difference; reject any change to letters, diacritics, whitespace or order. */
 export function alignTajweed(runs: TajweedRun[], original: string): TajweedRun[] {
   const source = runs.flatMap((r) => [...r.text].map((char) => ({ char, rule: r.rule })));
+  // eslint-disable-next-line no-restricted-syntax -- tatweel, for aligning Quran text
   const significant = source.filter((c) => c.char !== 'ـ');
   if (significant.map((c) => c.char).join('') !== original.replace(/ـ/g, '')) throw new Error('Tajweed text mismatch');
   let i = 0;
   const aligned: TajweedRun[] = [];
   for (const char of original) {
+    // eslint-disable-next-line no-restricted-syntax -- tatweel, for aligning Quran text
     const rule = char === 'ـ' ? significant[Math.max(0, i - 1)]?.rule : significant[i++].rule;
     const last = aligned.at(-1);
     if (last && last.rule === rule) last.text += char;

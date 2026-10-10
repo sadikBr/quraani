@@ -8,13 +8,20 @@ import { PlanCard } from './components';
 import { ayahRangeLabel, type PlanIndex } from './engine';
 import { spanCount } from './memorization';
 import { d } from './plan-detail-components';
-import { arabicNumber, weekdayDateLabel } from './presentation';
+import { weekdayDateLabel } from './presentation';
+import { formatNumber, t } from '@/i18n';
 import type { AyahSpan } from './types';
 
 export interface ScheduleSession { date: string; ranges: AyahSpan[]; note?: string }
 export interface ScheduleLabels { today: string; next: string; following: string; later: string }
-export const MEMORIZATION_LABELS: ScheduleLabels = { today: 'ورد اليوم', next: 'الورد القادم', following: 'الورد التالي', later: 'ورد لاحق' };
-export const REVISION_LABELS: ScheduleLabels = { today: 'مراجعة اليوم', next: 'المراجعة القادمة', following: 'المراجعة التالية', later: 'مراجعة لاحقة' };
+export const MEMORIZATION_LABELS: ScheduleLabels = {
+  get today() { return t('session.weekly.memorization.today'); }, get next() { return t('session.weekly.memorization.next'); },
+  get following() { return t('session.weekly.memorization.following'); }, get later() { return t('session.weekly.memorization.later'); },
+};
+export const REVISION_LABELS: ScheduleLabels = {
+  get today() { return t('session.weekly.revision.today'); }, get next() { return t('session.weekly.revision.next'); },
+  get following() { return t('session.weekly.revision.following'); }, get later() { return t('session.weekly.revision.later'); },
+};
 
 /** Sessions grouped by calendar week (Monday first) with a week pager; the first session is the current one. */
 export function WeeklySchedule({ index, sessions, today, labels, summary, footer }: { index: PlanIndex; sessions: ScheduleSession[]; today: string; labels: ScheduleLabels; summary: string; footer: string }) {
@@ -24,9 +31,9 @@ export function WeeklySchedule({ index, sessions, today, labels, summary, footer
   const currentWeek = weeks[Math.min(week, weeks.length - 1)] ?? [];
   return <PlanCard>
     <View style={[scheduleStyles.heading, { borderColor: p.border }]}>
-      <Pressable hitSlop={6} accessibilityRole="button" accessibilityLabel="الأسبوع السابق" accessibilityState={{ disabled: week === 0 }} disabled={week === 0} onPress={() => setWeek(value => Math.max(0, value - 1))} style={({ pressed }) => [scheduleStyles.navButton, scheduleStyles.previousNav, { backgroundColor: pressed ? p.accent : 'transparent', opacity: week === 0 ? 0.28 : pressed ? 0.7 : 1 }]}><ReaderIcon name="back" color={p.foreground} size={20} /></Pressable>
-      <View style={scheduleStyles.headingCenter}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>الأسبوع {arabicNumber(week + 1)} من {arabicNumber(weeks.length)}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{summary}</Text></View>
-      <Pressable hitSlop={6} accessibilityRole="button" accessibilityLabel="الأسبوع التالي" accessibilityState={{ disabled: week >= weeks.length - 1 }} disabled={week >= weeks.length - 1} onPress={() => setWeek(value => Math.min(weeks.length - 1, value + 1))} style={({ pressed }) => [scheduleStyles.navButton, scheduleStyles.nextNav, { backgroundColor: pressed ? p.accent : 'transparent', opacity: week >= weeks.length - 1 ? 0.28 : pressed ? 0.7 : 1 }]}><View style={{ transform: [{ rotate: '180deg' }] }}><ReaderIcon name="back" color={p.foreground} size={20} /></View></Pressable>
+      <Pressable hitSlop={6} accessibilityRole="button" accessibilityLabel={t('goals.previousWeek')} accessibilityState={{ disabled: week === 0 }} disabled={week === 0} onPress={() => setWeek(value => Math.max(0, value - 1))} style={({ pressed }) => [scheduleStyles.navButton, scheduleStyles.previousNav, { backgroundColor: pressed ? p.accent : 'transparent', opacity: week === 0 ? 0.28 : pressed ? 0.7 : 1 }]}><ReaderIcon name="back" color={p.foreground} size={20} /></Pressable>
+      <View style={scheduleStyles.headingCenter}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('session.weekly.week', { week: week + 1, total: weeks.length })}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{summary}</Text></View>
+      <Pressable hitSlop={6} accessibilityRole="button" accessibilityLabel={t('goals.nextWeek')} accessibilityState={{ disabled: week >= weeks.length - 1 }} disabled={week >= weeks.length - 1} onPress={() => setWeek(value => Math.min(weeks.length - 1, value + 1))} style={({ pressed }) => [scheduleStyles.navButton, scheduleStyles.nextNav, { backgroundColor: pressed ? p.accent : 'transparent', opacity: week >= weeks.length - 1 ? 0.28 : pressed ? 0.7 : 1 }]}><View style={{ transform: [{ rotate: '180deg' }] }}><ReaderIcon name="back" color={p.foreground} size={20} /></View></Pressable>
     </View>
     <View style={scheduleStyles.list}>
       {currentWeek.map((session, i) => {
@@ -34,7 +41,7 @@ export function WeeklySchedule({ index, sessions, today, labels, summary, footer
         const status = session.note ?? (current ? (session.date === today ? labels.today : labels.next) : week === 0 && i === 1 ? labels.following : labels.later);
         return <View key={session.date} style={scheduleStyles.timelineRow}>
         <View style={scheduleStyles.markerColumn}>
-          <View style={[scheduleStyles.marker, { backgroundColor: current ? p.primary : 'transparent', borderColor: current ? p.primary : p.border }]}><Text style={{ color: current ? p.primaryForeground : p.mutedForeground, fontSize: 12, fontWeight: '600' }}>{arabicNumber(i + 1)}</Text></View>
+          <View style={[scheduleStyles.marker, { backgroundColor: current ? p.primary : 'transparent', borderColor: current ? p.primary : p.border }]}><Text style={{ color: current ? p.primaryForeground : p.mutedForeground, fontSize: 12, fontWeight: '600' }}>{formatNumber(i + 1)}</Text></View>
           {i < currentWeek.length - 1 && <View style={[scheduleStyles.connector, { backgroundColor: p.border }]} />}
         </View>
         <View style={[scheduleStyles.sessionContent, { borderColor: p.border, backgroundColor: current ? p.accent : 'transparent', borderRadius: current ? readerShape.control : 0, borderBottomWidth: current || i === currentWeek.length - 1 ? 0 : StyleSheet.hairlineWidth }]}>
@@ -54,10 +61,7 @@ export function WeeklySchedule({ index, sessions, today, labels, summary, footer
 }
 
 export function ayahCountLabel(count: number) {
-  if (count === 1) return 'آية واحدة';
-  if (count === 2) return 'آيتان';
-  if (count >= 3 && count <= 10) return `${arabicNumber(count)} آيات`;
-  return `${arabicNumber(count)} آية`;
+  return t('session.weekly.ayahCount', { count });
 }
 
 function groupSessionsByWeek(sessions: ScheduleSession[]) {

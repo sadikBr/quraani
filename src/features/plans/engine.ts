@@ -8,6 +8,7 @@ import { isMemorizationPlan, isRecurringPlan, isRevisionPlan, isSequentialPlan, 
 import { nextRecurringPortion, recordRecurringProgress } from './recurring';
 import { nextRevisionPortion, recordRevisionProgress } from './revision';
 import { resolvePlanStart } from './start-point';
+import { t } from '@/i18n';
 
 export interface PlanIndex {
   mushafId: number;
@@ -19,7 +20,7 @@ export interface PlanIndex {
   quarters: number[];
   surahNames: Record<number, string>;
 }
-export const unitLabels: Record<PlanUnit, string> = { pages: 'صفحات', hizbs: 'أحزاب', juzs: 'أجزاء' };
+export const unitLabels: Record<PlanUnit, string> = { get pages() { return t('plans.units.pages'); }, get hizbs() { return t('plans.units.hizbs'); }, get juzs() { return t('plans.units.juzs'); } };
 const indices = new WeakMap<ReaderContent, PlanIndex>();
 export function buildPlanIndex(content: ReaderContent): PlanIndex {
   const cached = indices.get(content);
@@ -28,7 +29,7 @@ export function buildPlanIndex(content: ReaderContent): PlanIndex {
   const positions = new Map(ayahs.map((a, i) => [`${a.surahNumber}:${a.ayahNumber}`, i]));
   const boundaries = (refs: { surahNumber: number; ayahNumber: number }[]) => [...new Set([0, ...refs.map(a => {
     const i = positions.get(`${a.surahNumber}:${a.ayahNumber}`);
-    if (i === undefined) throw new Error('حدود المصحف غير مكتملة');
+    if (i === undefined) throw new Error(t('plans.engine.incompleteBoundaries'));
     return i;
   }), ayahs.length])].sort((a, b) => a - b);
   const result: PlanIndex = {
@@ -44,10 +45,10 @@ export function buildPlanIndex(content: ReaderContent): PlanIndex {
 }
 export function assertPlanIndex(plan: ReadingPlan, index: PlanIndex) {
   if (index.mushafId !== RIWAYAT[plan.riwayah].mushafId || plan.corpus !== index.corpus || plan.totalAyahs !== index.ayahs.length) {
-    throw new Error('لم يتطابق الهدف مع نسخة المصحف. لم يتغير تقدمك.');
+    throw new Error(t('plans.engine.editionMismatch'));
   }
   if (isRecurringPlan(plan) && plan.ranges.some(r => index.ayahs[r.start]?.surahNumber !== r.surah || index.ayahs[r.end - 1]?.surahNumber !== r.surah ||
-    index.ayahs[r.start - 1]?.surahNumber === r.surah || index.ayahs[r.end]?.surahNumber === r.surah)) throw new Error('حدود السور لا تتطابق مع المصحف. لم يتغير تقدمك.');
+    index.ayahs[r.start - 1]?.surahNumber === r.surah || index.ayahs[r.end]?.surahNumber === r.surah)) throw new Error(t('plans.engine.surahBoundsMismatch'));
 }
 function daySequence(start: string, count: number): string[] {
   return Array.from({ length: count }, (_, i) => addDays(start, i));
@@ -63,7 +64,7 @@ function khatmaEnds(index: PlanIndex, unit: PlanUnit, start: number, count: numb
 function quotaEnds(index: PlanIndex, unit: PlanUnit, amount: number, start: number): number[] {
   const boundaries = unit === 'pages' ? index.pages : index.quarters;
   const stride = amount * (unit === 'hizbs' ? 4 : unit === 'juzs' ? 8 : 1);
-  if (!Number.isInteger(stride) || stride < 1 || stride > boundaries.length - 1) throw new Error('اختر مقدارًا صالحًا للورد');
+  if (!Number.isInteger(stride) || stride < 1 || stride > boundaries.length - 1) throw new Error(t('plans.engine.invalidWirdAmount'));
   const ends: number[] = [];
   let cursor = start;
   let quantum = stride, remainder = unit === 'hizbs' ? 4 : 8;
@@ -85,10 +86,10 @@ function createCycle(draft: Pick<PlanDraft, 'goal' | 'unit' | 'startDate'>, inde
   return { number, start, cursor: start, sessions: sessionsFrom(ends, start, draft.startDate), availableDate: draft.startDate, progress: [] };
 }
 export function createPlan(draft: PlanDraft, index: PlanIndex, id: string): SequentialPlan {
-  if (!draft.name.trim() || draft.name.trim().length > 80 || !validDate(draft.startDate) || !RIWAYAT[draft.riwayah] || index.mushafId !== RIWAYAT[draft.riwayah].mushafId) throw new Error('راجع اسم الهدف وتاريخه وروايته');
-  if (draft.goal.type === 'khatma' && (!Number.isInteger(draft.goal.weeks) || draft.goal.weeks < 1 || draft.goal.weeks > 52)) throw new Error('اختر مدة بين أسبوع و٥٢ أسبوعًا');
+  if (!draft.name.trim() || draft.name.trim().length > 80 || !validDate(draft.startDate) || !RIWAYAT[draft.riwayah] || index.mushafId !== RIWAYAT[draft.riwayah].mushafId) throw new Error(t('plans.engine.checkDraft'));
+  if (draft.goal.type === 'khatma' && (!Number.isInteger(draft.goal.weeks) || draft.goal.weeks < 1 || draft.goal.weeks > 52)) throw new Error(t('plans.engine.khatmaWeeks'));
   const start = resolvePlanStart(index, draft.start);
-  if (!Number.isInteger(draft.reminder.hour) || draft.reminder.hour < 0 || draft.reminder.hour > 23 || !Number.isInteger(draft.reminder.minute) || draft.reminder.minute < 0 || draft.reminder.minute > 59) throw new Error('وقت التذكير غير صالح');
+  if (!Number.isInteger(draft.reminder.hour) || draft.reminder.hour < 0 || draft.reminder.hour > 23 || !Number.isInteger(draft.reminder.minute) || draft.reminder.minute < 0 || draft.reminder.minute > 59) throw new Error(t('plans.engine.invalidReminderTime'));
   return { id, name: draft.name.trim(), riwayah: draft.riwayah, goal: draft.goal, unit: draft.unit, startDate: draft.startDate,
     repeat: draft.repeat, reminder: draft.reminder, status: 'active', weekdays: [0, 1, 2, 3, 4, 5, 6],
     corpus: index.corpus, totalAyahs: index.ayahs.length, cycle: createCycle(draft, index, start), history: [] };
@@ -152,7 +153,7 @@ export function reschedulePlan(plan: SequentialPlan, index: PlanIndex, mode: 'ex
   const pending = plan.cycle.sessions.filter(s => s.end > plan.cycle.cursor);
   const done = plan.cycle.sessions.filter(s => s.end <= plan.cycle.cursor);
   const days = mode === 'extend' ? pending.length : daysBetween(today, pending.at(-1)!.date) + 1;
-  if (days < 1) throw new Error('انتهت المدة المحددة. اختر تمديد الهدف.');
+  if (days < 1) throw new Error(t('plans.engine.periodEnded'));
   const ends = mode === 'extend' ? pending.map(s => s.end) : khatmaEnds(index, plan.unit, plan.cycle.cursor, days);
   const remaining = sessionsFrom(ends, plan.cycle.cursor, today);
   // Retain the already-read beginning of a partially completed portion, including undo.
@@ -162,9 +163,9 @@ export function reschedulePlan(plan: SequentialPlan, index: PlanIndex, mode: 'ex
 export function rangeLabel(index: PlanIndex, start: number, end: number): string {
   const first = index.ayahs[start], last = index.ayahs[end - 1];
   if (!first || !last) return '';
-  return first.pageNumber === last.pageNumber ? `صفحة ${first.pageNumber}` : `الصفحات \u2066${first.pageNumber}–${last.pageNumber}\u2069`;
+  return first.pageNumber === last.pageNumber ? t('plans.range.page', { page: first.pageNumber }) : t('plans.range.pages', { first: first.pageNumber, last: last.pageNumber });
 }
 export function ayahRangeLabel(index: PlanIndex, start: number, end: number): string {
   const a = index.ayahs[start], b = index.ayahs[end - 1];
-  return a && b ? `${index.surahNames[a.surahNumber]} ${a.ayahNumber} ← ${index.surahNames[b.surahNumber]} ${b.ayahNumber}` : '';
+  return a && b ? t('plans.range.ayahs', { fromSurah: index.surahNames[a.surahNumber], fromAyah: a.ayahNumber, toSurah: index.surahNames[b.surahNumber], toAyah: b.ayahNumber }) : '';
 }

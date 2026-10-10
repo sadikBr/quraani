@@ -13,6 +13,7 @@ import { ReaderButton } from './reader-button';
 import { AyahPageRegions } from './ayah-page-regions';
 import { SurahOpening } from './surah-opening';
 import { calligraphyStyle, surahNameGlyph } from '../../utils/reader-typography';
+import { t } from '@/i18n';
 
 interface Props {
   page: QuranPage;
@@ -41,15 +42,16 @@ export const PrintedQuranPage = memo(function PrintedQuranPage({ page, palette, 
     return () => { active = false; };
   }, [page, retry, palette.foreground, palette.ornament]);
   if (error) return <View accessibilityRole="alert" style={styles.status}>
-    <Text style={{ color: palette.mutedForeground }}>تعذر تحميل هذه الصفحة من المصحف.</Text>
-    <ReaderButton palette={palette} onPress={() => { setError(false); setRetry(retry + 1); }}>إعادة المحاولة</ReaderButton>
+    <Text style={{ color: palette.mutedForeground }}>{t('reader.printed.loadError')}</Text>
+    <ReaderButton palette={palette} onPress={() => { setError(false); setRetry(retry + 1); }}>{t('common.retry')}</ReaderButton>
   </View>;
-  if (!rendered) return <View style={styles.status}><ActivityIndicator color={palette.mutedForeground} accessibilityLabel="جارٍ تحميل صفحة المصحف" /></View>;
+  if (!rendered) return <View style={styles.status}><ActivityIndicator color={palette.mutedForeground} accessibilityLabel={t('reader.printed.loading')} /></View>;
   const { artwork, image } = rendered;
   // Prioritize readable, full-width text. The surrounding scroll view handles
   // short screens without shrinking the page or changing its printed proportions.
   return <View style={{ width: '100%' }} onLayout={(event) => setRenderWidth(event.nativeEvent.layout.width)}>
-    {page.number <= 2 && <SurahOpening number={page.number} name={page.number === 1 ? 'سورة الفاتحة' : 'سورة البقرة'}
+    {/* eslint-disable-next-line no-restricted-syntax -- surah names (Quran data) */}
+    {page.number <= 2 && <SurahOpening number={page.number} name={t('reader.printed.surahTitle', { name: page.number === 1 ? 'الفاتحة' : 'البقرة' })}
       fontSize={renderWidth ? renderWidth / artwork.width * (36.5 / 1.9) : 32} palette={palette} />}
     <View style={{ width: '100%', aspectRatio: artwork.width / artwork.height }} onLayout={(event) => {
       setRenderHeight(event.nativeEvent.layout.height);
@@ -70,7 +72,7 @@ export const PrintedQuranPage = memo(function PrintedQuranPage({ page, palette, 
       if (!Number.isFinite(height) || height <= 0) return null;
       return <View key={heading.surah} pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0,
         top: `${heading.y / artwork.height * 100}%`, height, backgroundColor: palette.card, justifyContent: 'center' }}>
-        <Text accessibilityRole="header" accessibilityLabel={`السورة ${heading.surah}`}
+        <Text accessibilityRole="header" accessibilityLabel={t('reader.surahNumber', { surah: heading.surah })}
           style={{ ...calligraphyStyle(height * 1.05), lineHeight: height,
             textAlign: 'center', color: palette.ornament, includeFontPadding: false }}>
           {surahNameGlyph(heading.surah)}

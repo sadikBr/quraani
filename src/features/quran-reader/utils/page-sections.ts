@@ -18,6 +18,7 @@ export function pageSections(page: QuranPage, quran: Quran): PageSection[] {
       const surah = quran.surahs.find((s) => s.number === ayah.surahNumber);
       if (!surah) throw new Error('Page references an unknown surah');
       const opensSurah = ayah.ayahNumber === 1;
+      // eslint-disable-next-line no-restricted-syntax -- riwayah name from the Quran data
       sections.push({ surah, ayahs: [ayah], opensSurah, showBismillah: opensSurah && surah.number !== 9 && !(quran.riwayah.name === 'حفص' && surah.number === 1) });
     }
   }

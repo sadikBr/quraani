@@ -1,5 +1,6 @@
 import type { View } from 'react-native';
 import type { PreparedAyahCard } from './ayah-card-export';
+import { t } from '@/i18n';
 
 export async function prepareAyahCard(view: View, width: number, height: number, name: string): Promise<PreparedAyahCard> {
   await document.fonts.ready;
@@ -22,7 +23,7 @@ export async function prepareAyahCard(view: View, width: number, height: number,
     // The image is prepared before the tap so Web Share retains user activation.
     share: async () => {
       if (canShare) {
-        try { await navigator.share({ files: [file], title: 'بطاقة آية · قرآني' }); return 'shared'; }
+        try { await navigator.share({ files: [file], title: t('reader.ayahCard.shareTitle', { app: t('common.appName') }) }); return 'shared'; }
         catch (error) { if (error instanceof Error && error.name === 'AbortError') return 'cancelled'; }
       }
       download(); return 'downloaded';

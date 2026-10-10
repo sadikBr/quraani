@@ -6,6 +6,7 @@ import { calligraphyStyle, openingTypography, surahNameGlyph } from '../../utils
 import { cardMinimumHeight, cardQuranFontSize, type AyahCardColors, type AyahCardFormat, type CardTranslation } from '../../utils/ayah-card';
 import { parallelAyahs } from '../../utils/ayah-actions';
 import { QuranniLogo } from '../ui/quranni-logo';
+import { formatList, t } from '@/i18n';
 
 /**
  * A printed-mushaf feel: a double rule with accented corners frames the
@@ -47,7 +48,7 @@ export function AyahShareCard({ ayah, surahName, colors, format, translation, sh
           <View style={{ flex: 1, height: s, backgroundColor: colors.border }} />
         </View>
         <View style={{ paddingHorizontal: 12 * s, paddingVertical: 2 * s, borderWidth: s, borderColor: colors.accent, borderRadius: 4 * s, marginTop: 2 * s }}>
-          <Text allowFontScaling={false} style={[styles.label, { fontSize: 13 * s, lineHeight: 22 * s, color: colors.accent, fontFamily: 'UiSansSemiBold' }]}>الآية {ayah.ayahNumber}</Text>
+          <Text allowFontScaling={false} style={[styles.label, { fontSize: 13 * s, lineHeight: 22 * s, color: colors.accent, fontFamily: 'UiSansSemiBold' }]}>{t('share.card.ayah', { ayah: ayah.ayahNumber })}</Text>
         </View>
       </View>
       <View style={{ flexGrow: 1, justifyContent: 'center', paddingVertical: (square ? 12 : 24) * s, gap: (square ? 14 : 22) * s }}>
@@ -57,12 +58,12 @@ export function AyahShareCard({ ayah, surahName, colors, format, translation, sh
         {translation && <View style={{ gap: 12 * s, alignItems: 'center' }}>
           <View style={{ width: 28 * s, height: s, backgroundColor: colors.accent }} />
           <Text allowFontScaling={false} style={{ fontSize: 13 * s, lineHeight: 21 * s, color: colors.text, textAlign: 'center', writingDirection: 'ltr' }}>{translation.text}</Text>
-          <Text allowFontScaling={false} style={[styles.label, { fontSize: 10 * s, lineHeight: 17 * s, color: colors.muted }]}>{`ترجمة المعاني · ${translation.source}\nترقيم حفص: ${parallelAyahs(ayah).map((n) => `${ayah.surahNumber}:${n}`).join('، ')}`}</Text>
+          <Text allowFontScaling={false} style={[styles.label, { fontSize: 10 * s, lineHeight: 17 * s, color: colors.muted }]}>{`${t('share.card.translation', { source: translation.source })}\n${t('share.card.numbering', { refs: formatList(parallelAyahs(ayah).map((n) => `${ayah.surahNumber}:${n}`)) })}`}</Text>
         </View>}
       </View>
       {showBrand && <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 * s, paddingTop: 8 * s }}>
         <QuranniLogo key={brandRevision} size={(square ? 22 : 26) * s} onDisplay={onBrandReady} onError={onBrandError} />
-        <Text allowFontScaling={false} style={[styles.label, { fontSize: 12 * s, lineHeight: 20 * s, color: colors.accent, fontFamily: 'UiSansSemiBold' }]}>قرآني</Text>
+        <Text allowFontScaling={false} style={[styles.label, { fontSize: 12 * s, lineHeight: 20 * s, color: colors.accent, fontFamily: 'UiSansSemiBold' }]}>{t('common.appName')}</Text>
       </View>}
     </View>
   </View>;

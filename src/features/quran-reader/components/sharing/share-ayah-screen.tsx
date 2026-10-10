@@ -19,6 +19,7 @@ import { ReaderButton } from '../reading/reader-button';
 import { AyahShareCard } from './ayah-share-card';
 import { readerElevation, readerLayout, readerShape } from '../../design';
 import type { ReaderPalette } from '../../theme';
+import { formatList, t } from '@/i18n';
 
 export function ShareAyahScreen() {
   const { surah, ayah: number } = useLocalSearchParams<{ surah?: string; ayah?: string }>();
@@ -30,14 +31,14 @@ export function ShareAyahScreen() {
   return <SafeAreaView style={[styles.root, { backgroundColor: palette.background }]}>
     <StatusBar style={dark ? 'light' : 'dark'} hidden={false} />
     <View style={[styles.header, { borderColor: palette.border }]}>
-      <View style={{ flex: 1, minWidth: 0 }}><Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 24, fontWeight: '600' }}>بطاقة آية</Text>
-        <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>آية تتأملها، وأثر تشاركه</Text></View>
-      <IconButton name="close" label="العودة إلى القراءة" onPress={() => router.canGoBack() ? router.back() : router.replace('/')} palette={palette} />
+      <View style={{ flex: 1, minWidth: 0 }}><Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 24, fontWeight: '600' }}>{t('share.title')}</Text>
+        <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('share.subtitle')}</Text></View>
+      <IconButton name="close" label={t('common.backToReading')} onPress={() => router.canGoBack() ? router.back() : router.replace('/')} palette={palette} />
     </View>
-    {loading || (!fontsLoaded && !fontError) ? <View style={styles.center}><ActivityIndicator color={palette.primary} accessibilityLabel="جارٍ تجهيز البطاقة" /></View>
+    {loading || (!fontsLoaded && !fontError) ? <View style={styles.center}><ActivityIndicator color={palette.primary} accessibilityLabel={t('share.preparing')} /></View>
       : error || fontError || !ayah || !chapter ? <View style={[styles.center, { gap: 16, padding: 24 }]}>
-        <Text accessibilityRole="alert" style={{ color: palette.destructive }}>{!error && !fontError ? 'لم نعثر على هذه الآية.' : 'تعذر تجهيز البطاقة. أعد المحاولة.'}</Text>
-        {error && <ReaderButton palette={palette} onPress={refresh}>إعادة المحاولة</ReaderButton>}
+        <Text accessibilityRole="alert" style={{ color: palette.destructive }}>{!error && !fontError ? t('share.notFound') : t('share.loadError')}</Text>
+        {error && <ReaderButton palette={palette} onPress={refresh}>{t('common.retry')}</ReaderButton>}
       </View>
       : <CardDesigner key={`${ayah.surahNumber}:${ayah.ayahNumber}`} ayah={ayah} surahName={chapter.name} palette={palette} />}
   </SafeAreaView>;
@@ -97,8 +98,8 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
             // Retrying cannot change that, so say so instead of offering a retry.
             const unavailable = Platform.OS !== 'web' && !(await Sharing.isAvailableAsync().catch(() => true));
             if (!active) return;
-            setExportError(unavailable ? { message: 'المشاركة غير متاحة على هذا الجهاز، لذا لا يمكن إنشاء صورة البطاقة.', retry: false }
-              : { message: 'تعذر إنشاء الصورة. أعد المحاولة.', retry: true });
+            setExportError(unavailable ? { message: t('share.errors.unavailable'), retry: false }
+              : { message: t('share.errors.image'), retry: true });
           });
       });
     }, 200);
@@ -110,31 +111,31 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
     busy.current = true; setSharing(true); setMessage('');
     try {
       const result = await prepared.image.share();
-      if (result === 'downloaded') setMessage('تم تنزيل البطاقة. يمكنك مشاركتها من الصور أو الملفات.');
+      if (result === 'downloaded') setMessage(t('share.downloaded'));
     } catch (error) {
-      if (!(error instanceof Error && error.name === 'AbortError')) setMessage('تعذرت المشاركة. حاول مرة أخرى.');
+      if (!(error instanceof Error && error.name === 'AbortError')) setMessage(t('share.errors.share'));
     } finally { busy.current = false; setSharing(false); }
   };
 
   return <>
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
       <View pointerEvents={sharing ? 'none' : 'auto'} style={{ gap: 18 }}>
-        <Segments palette={palette} value={format} onChange={setFormat} options={[{ value: 'status', label: 'حالة واتساب · 9:16' }, { value: 'square', label: 'منشور مربع · 1:1' }]} />
+        <Segments palette={palette} value={format} onChange={setFormat} options={[{ value: 'status', label: t('share.format.status') }, { value: 'square', label: t('share.format.square') }]} />
         <View style={[styles.preview, { backgroundColor: palette.muted, borderColor: palette.border }]}>
-          <View style={styles.previewLabel}><Text style={{ color: palette.mutedForeground, fontSize: 13 }}>معاينة البطاقة</Text>
+          <View style={styles.previewLabel}><Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('share.preview.title')}</Text>
             <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{height ? `1080 × ${Math.round(1080 * height / width)}` : ''}</Text></View>
           <View style={readerElevation(2, palette)}>
             <AyahShareCard cardRef={card} ayah={ayah} surahName={surahName} colors={cardColors(theme, palette)} format={format}
-              brandRevision={exportRevision} onBrandReady={() => setBrandReady(true)} onBrandError={() => { setBrandReady(false); setExportError({ message: 'تعذر تحميل شعار التطبيق. أعد المحاولة.', retry: true }); }}
+              brandRevision={exportRevision} onBrandReady={() => setBrandReady(true)} onBrandError={() => { setBrandReady(false); setExportError({ message: t('share.errors.brand'), retry: true }); }}
               showBrand={showBrand} translation={displayedTranslation} width={width} onLayout={(event) => setHeight(event.nativeEvent.layout.height)} />
             {ready && <View pointerEvents="none" style={StyleSheet.absoluteFill}><Image testID="exported-ayah-card" source={{ uri: prepared.image.uri }} resizeMode="contain" accessible={false} style={StyleSheet.absoluteFill} /></View>}
           </View>
-          {height > cardMinimumHeight(width, format) + 2 && <Text style={{ color: palette.mutedForeground, fontSize: 12, textAlign: 'center' }}>امتدت البطاقة لإظهار النص كاملًا.</Text>}
+          {height > cardMinimumHeight(width, format) + 2 && <Text style={{ color: palette.mutedForeground, fontSize: 12, textAlign: 'center' }}>{t('share.preview.extended')}</Text>}
         </View>
         <View style={{ gap: 10 }}>
-          <Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600' }}>لون البطاقة</Text>
+          <Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600' }}>{t('share.color.title')}</Text>
           <View style={styles.themes}>
-            {([['app', { label: 'مثل التطبيق', ...cardColors('app', palette) }], ...Object.entries(ayahCardThemes)] as [AyahCardTheme, { label: string; background: string; border: string; accent: string }][]).map(([id, colors]) => <Pressable key={id} accessibilityRole="button" accessibilityLabel={colors.label} accessibilityState={{ selected: theme === id }} aria-pressed={theme === id} onPress={() => setTheme(id)}
+            {([['app', { label: t('share.color.app'), ...cardColors('app', palette) }], ...Object.entries(ayahCardThemes)] as [AyahCardTheme, { label: string; background: string; border: string; accent: string }][]).map(([id, colors]) => <Pressable key={id} accessibilityRole="button" accessibilityLabel={colors.label} accessibilityState={{ selected: theme === id }} aria-pressed={theme === id} onPress={() => setTheme(id)}
               style={({ pressed }) => [styles.theme, { borderColor: theme === id ? palette.primary : palette.input, backgroundColor: pressed ? palette.accent : palette.background }]}>
               <View style={[styles.swatch, { backgroundColor: colors.background, borderColor: colors.border }]}>{theme === id && <ReaderIcon name="check" color={colors.accent} size={16} />}</View>
               <Text style={{ color: palette.foreground, fontSize: 14, fontWeight: '500' }}>{colors.label}</Text>
@@ -142,25 +143,25 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
           </View>
         </View>
         <View style={[styles.options, { borderColor: palette.border }]}>
-          <Toggle label="إظهار شعار قرآني" value={showBrand} onChange={() => { setBrandReady(false); setShowBrand(!showBrand); }} palette={palette} />
+          <Toggle label={t('share.showBrand')} value={showBrand} onChange={() => { setBrandReady(false); setShowBrand(!showBrand); }} palette={palette} />
           <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: palette.border }} />
-          <Toggle label="إضافة ترجمة المعاني" value={language !== 'none'} onChange={() => setLanguage(language === 'none' ? 'fr' : 'none')} palette={palette} />
+          <Toggle label={t('share.translation.add')} value={language !== 'none'} onChange={() => setLanguage(language === 'none' ? 'fr' : 'none')} palette={palette} />
           {language !== 'none' && <View style={{ gap: 10, paddingTop: 6 }}>
-            <Segments palette={palette} value={language} onChange={setLanguage} options={[{ value: 'fr', label: 'الفرنسية' }, { value: 'en', label: 'الإنجليزية' }]} />
-            {translating ? <ActivityIndicator color={palette.primary} accessibilityLabel="جارٍ تحميل الترجمة" />
-              : translationError ? <><Text accessibilityRole="alert" style={{ color: palette.destructive, fontSize: 12 }}>تعذر تحميل ترجمة كاملة لهذه الآية. أعد المحاولة أو أوقف الترجمة.</Text><ReaderButton palette={palette} onPress={() => setRevision((value) => value + 1)}>إعادة تحميل الترجمة</ReaderButton></>
-              : <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>المصدر: {displayedTranslation?.source} · المراجع الموازية حسب ترقيم حفص: {parallelAyahs(ayah).map((n) => `${ayah.surahNumber}:${n}`).join('، ')}</Text>}
+            <Segments palette={palette} value={language} onChange={setLanguage} options={[{ value: 'fr', label: t('common.languages.french') }, { value: 'en', label: t('common.languages.english') }]} />
+            {translating ? <ActivityIndicator color={palette.primary} accessibilityLabel={t('share.translation.loading')} />
+              : translationError ? <><Text accessibilityRole="alert" style={{ color: palette.destructive, fontSize: 12 }}>{t('share.translation.error')}</Text><ReaderButton palette={palette} onPress={() => setRevision((value) => value + 1)}>{t('share.translation.reload')}</ReaderButton></>
+              : <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('share.translation.source', { source: displayedTranslation?.source ?? '' })} · {t('share.translation.parallel', { refs: formatList(parallelAyahs(ayah).map((n) => `${ayah.surahNumber}:${n}`)) })}</Text>}
           </View>}
         </View>
       </View>
     </ScrollView>
     <View style={[styles.footer, { backgroundColor: palette.card, borderColor: palette.border }]}>
       {!!message && <Text accessibilityLiveRegion="polite" style={{ color: palette.foreground, fontSize: 13, textAlign: 'center' }}>{message}</Text>}
-      {exportError ? <><Text accessibilityRole="alert" style={{ color: palette.destructive, fontSize: 13 }}>{exportError.message}</Text>{exportError.retry && <ReaderButton palette={palette} onPress={() => setExportRevision((value) => value + 1)}>إعادة تجهيز الصورة</ReaderButton>}</>
-        : <Pressable accessibilityRole="button" accessibilityLabel={prepared?.image.action === 'download' ? 'تنزيل الصورة' : 'مشاركة الصورة'} accessibilityState={{ disabled: !ready || sharing }} disabled={!ready || sharing} onPress={() => void share()}
+      {exportError ? <><Text accessibilityRole="alert" style={{ color: palette.destructive, fontSize: 13 }}>{exportError.message}</Text>{exportError.retry && <ReaderButton palette={palette} onPress={() => setExportRevision((value) => value + 1)}>{t('share.retryImage')}</ReaderButton>}</>
+        : <Pressable accessibilityRole="button" accessibilityLabel={prepared?.image.action === 'download' ? t('share.downloadImage') : t('share.shareImage')} accessibilityState={{ disabled: !ready || sharing }} disabled={!ready || sharing} onPress={() => void share()}
           style={({ pressed }) => [styles.share, { backgroundColor: palette.primary, opacity: !ready || sharing ? 0.5 : pressed ? 0.9 : 1 }]}>
           {(!ready && !translationError) || sharing ? <ActivityIndicator color={palette.primaryForeground} /> : <ReaderIcon name="share" color={palette.primaryForeground} size={18} />}
-          <Text style={{ color: palette.primaryForeground, fontSize: 14, fontWeight: '500' }}>{sharing ? 'جارٍ المشاركة…' : !ready && !translationError ? 'جارٍ تجهيز الصورة…' : prepared?.image.action === 'download' ? 'تنزيل الصورة' : 'مشاركة الصورة'}</Text>
+          <Text style={{ color: palette.primaryForeground, fontSize: 14, fontWeight: '500' }}>{sharing ? t('share.sharing') : !ready && !translationError ? t('share.preparingImage') : prepared?.image.action === 'download' ? t('share.downloadImage') : t('share.shareImage')}</Text>
         </Pressable>}
     </View>
   </>;

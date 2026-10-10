@@ -9,6 +9,7 @@ import type { ReaderContent } from '../../types/reader';
 import type { AyahReference } from '@/lib/quranpedia/types';
 import { ReaderJump } from './reader-jump';
 import { ReaderIcon } from '../ui/reader-chrome';
+import { t } from '@/i18n';
 
 interface Props {
   onClose: () => void;
@@ -33,17 +34,17 @@ export function ReaderDrawer({ onClose, palette, content, currentPage, onJump, l
   return <Modal visible transparent statusBarTranslucent navigationBarTranslucent animationType="none" onShow={show} onRequestClose={onClose}>
     <SafeAreaView edges={['top', 'left', 'right']} style={[styles.root, { backgroundColor: palette.overlay }]}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.body} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
-        <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="إغلاق الانتقال السريع" onPress={onClose} />
+        <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel={t('reader.drawer.close')} onPress={onClose} />
         <Animated.View accessibilityViewIsModal onAccessibilityEscape={onClose} style={[styles.drawer, readerElevation(4, palette), { backgroundColor: palette.background, borderColor: palette.border, transform: [{ translateY: translation }] }]}>
           <SafeAreaView edges={['bottom']} style={styles.sheetContent}>
             <View style={[styles.handle, { backgroundColor: palette.border }]} />
             <View style={styles.heading}>
               <IconTile name="jump" palette={palette} />
               <View style={styles.title}>
-                <Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 18, fontWeight: '600' }}>{limited ? 'انتقال داخل الورد' : 'انتقال سريع'}</Text>
-                <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{content?.quran.riwayah.name} · موضعك الحالي: صفحة {currentPage}</Text>
+                <Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 18, fontWeight: '600' }}>{limited ? t('reader.drawer.titleSession') : t('reader.drawer.title')}</Text>
+                <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('reader.drawer.currentPosition', { riwayah: content?.quran.riwayah.name ?? '', page: currentPage })}</Text>
               </View>
-              <Pressable ref={close} accessibilityRole="button" accessibilityLabel="إغلاق الانتقال السريع" onPress={onClose}
+              <Pressable ref={close} accessibilityRole="button" accessibilityLabel={t('reader.drawer.close')} onPress={onClose}
                 hitSlop={4} style={({ pressed }) => [styles.close, { backgroundColor: pressed ? palette.accent : 'transparent' }]}><ReaderIcon name="close" color={palette.mutedForeground} size={18} /></Pressable>
             </View>
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.formContent}>

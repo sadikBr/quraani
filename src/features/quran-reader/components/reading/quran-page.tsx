@@ -16,6 +16,7 @@ import { AyahTextAction } from './ayah-text-action';
 import { readerTextLineHeight } from '../../utils/reader-typography';
 import { TajweedTextSection } from './tajweed-text-section';
 import { SurahOpening } from './surah-opening';
+import { t } from '@/i18n';
 
 interface Props {
     page: Page;
@@ -94,7 +95,7 @@ export const QuranPage = memo(function QuranPage({
     const spokenLabel = (ayah: Ayah) => {
         const revealed = visibleWords?.get(ayahKey(ayah));
         const spokenText = revealed === undefined ? ayah.text : ayahWords(ayah.text).slice(0, revealed).join('');
-        return `السورة ${ayah.surahNumber}، الآية ${ayah.ayahNumber}. ${spokenText || 'آية مخفية'}`;
+        return t('reader.ayah.spokenLabel', { surah: ayah.surahNumber, ayah: ayah.ayahNumber, text: spokenText || t('reader.ayah.hidden') });
     };
     // iOS exposes nested <Text> buttons only as raw text fragments: their labels,
     // hints and long-press actions are lost, and a paragraph's own custom actions
@@ -103,9 +104,9 @@ export const QuranPage = memo(function QuranPage({
     const ayahGroupAccessibility = (ayahs: readonly Ayah[]): ViewProps | undefined => Platform.OS !== 'ios' ? undefined : {
         accessible: true,
         accessibilityLabel: ayahs.map(spokenLabel).join(' '),
-        accessibilityHint: ayahs.length > 1 ? 'اضغط مرتين لإظهار أدوات القراءة، واستخدم الإجراءات لفتح إجراءات آية' : 'اضغط مرتين لإظهار أدوات القراءة، واستخدم الإجراءات لفتح إجراءات الآية',
-        accessibilityActions: [{ name: 'activate', label: 'إظهار أدوات القراءة' },
-            ...ayahs.map((ayah) => ({ name: `ayah:${ayahKey(ayah)}`, label: `إجراءات الآية ${ayah.ayahNumber}، السورة ${ayah.surahNumber}` }))],
+        accessibilityHint: t('reader.ayah.groupHint', { count: ayahs.length }),
+        accessibilityActions: [{ name: 'activate', label: t('reader.ayah.showTools') },
+            ...ayahs.map((ayah) => ({ name: `ayah:${ayahKey(ayah)}`, label: t('reader.ayah.actions', { ayah: ayah.ayahNumber, surah: ayah.surahNumber }) }))],
         onAccessibilityAction: (event: AccessibilityActionEvent) => {
             const name = event.nativeEvent.actionName;
             if (name === 'activate') { if (ayahs[0]) onTap(ayahs[0]); return; }
@@ -132,7 +133,7 @@ export const QuranPage = memo(function QuranPage({
             >
                 <AyahTextAction onPress={() => onTap(ayah)} onLongPress={() => onSelect(ayah)}
                     label={spokenLabel(ayah)}
-                    hint="اضغط لإظهار أدوات القراءة، واضغط مطولاً لفتح إجراءات الآية">
+                    hint={t('reader.ayah.hint')}>
                     {/* Keep hidden runs the same color as the page as well as transparent:
                         native nested text can inherit ink instead of honoring transparency. */}
                     {words ? words.map((word, index) => {
@@ -145,7 +146,7 @@ export const QuranPage = memo(function QuranPage({
                 </AyahTextAction>
                 {"\u00A0"}
                 <AyahTextAction color={palette.ornament} onPress={() => onSelect(ayah)}
-                    label={`إجراءات الآية ${ayah.ayahNumber}، السورة ${ayah.surahNumber}`}>
+                    label={t('reader.ayah.actions', { ayah: ayah.ayahNumber, surah: ayah.surahNumber })}>
                     {ayah.marker}
                 </AyahTextAction>{" "}
             </Text>
@@ -160,7 +161,7 @@ export const QuranPage = memo(function QuranPage({
                 { backgroundColor: palette.card },
             ]}
         >
-            {tajweed && coloring.error && <View style={{ gap: 8, padding: 12 }}><ArabicText style={{ color: palette.mutedForeground }}>تعذر تحميل ألوان التجويد. النص الكامل ظاهر دون ألوان.</ArabicText><ReaderButton palette={palette} onPress={coloring.retry}>إعادة المحاولة</ReaderButton></View>}
+            {tajweed && coloring.error && <View style={{ gap: 8, padding: 12 }}><ArabicText style={{ color: palette.mutedForeground }}>{t('reader.page.tajweedError')}</ArabicText><ReaderButton palette={palette} onPress={coloring.retry}>{t('common.retry')}</ReaderButton></View>}
             {sections.map((section) => (
                 <View key={section.surah.number} style={styles.section} onLayout={(event) => {
                     if (section.surah.number === selectedAyah?.surahNumber) { offsets.current.section = event.nativeEvent.layout.y; reportTarget(); }

@@ -10,6 +10,7 @@ export interface ReadingPosition {
 }
 
 export function parseReaderNumber(value: string): number {
+  // eslint-disable-next-line no-restricted-syntax -- Arabic-Indic digits for parsing typed numbers
   const digits = value.trim().replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
   return /^\d+$/.test(digits) ? Number(digits) : NaN;
 }

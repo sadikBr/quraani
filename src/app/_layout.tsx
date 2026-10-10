@@ -11,6 +11,7 @@ import type { ErrorBoundaryProps } from 'expo-router';
 import { PlansProvider, PlanNotificationObserver } from '@/features/plans/provider';
 import { readerThemes } from '@/features/quran-reader/theme';
 import { readerShape } from '@/features/quran-reader/design';
+import { localeInfo, t } from '@/i18n';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -23,7 +24,7 @@ if (Platform.OS !== 'web') {
 
 export default function RootLayout() {
   return <>
-    {Platform.OS === 'web' && <Head><title>قرآني</title></Head>}
+    {Platform.OS === 'web' && <Head><title>{t('common.appName')}</title></Head>}
     <ReadingPreferencesProvider><BookmarksProvider><PlansProvider><RootNavigator /></PlansProvider></BookmarksProvider></ReadingPreferencesProvider>
   </>;
 }
@@ -49,7 +50,7 @@ function RootNavigator() {
   if (!fontsLoaded && !fontError) return null;
   return (
     <LocaleProvider direction="rtl">
-      <View style={{ flex: 1, ...Platform.select({ native: { direction: 'rtl' as const } }) }} {...(Platform.OS === 'web' ? { dir: 'rtl', lang: 'ar' } : {})}>
+      <View style={{ flex: 1, ...Platform.select({ native: { direction: 'rtl' as const } }) }} {...(Platform.OS === 'web' ? { dir: 'rtl', lang: localeInfo().tag } : {})}>
         <StatusBar style={dark ? 'light' : 'dark'} hidden={false} />
         <ThemeProvider value={{ ...baseTheme, colors: { ...baseTheme.colors, background: palette.background, card: palette.card, text: palette.foreground, border: palette.border, primary: palette.primary } }}>
           <Stack screenOptions={{ headerShown: false }} />
@@ -69,11 +70,11 @@ function RootNavigator() {
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   const c = readerThemes[useColorScheme() === 'dark' ? 'dark' : 'light'];
   return <ScrollView style={{ flex: 1, backgroundColor: c.background }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 28, gap: 14 }}>
-    <Text accessibilityRole="header" style={{ color: c.foreground, fontSize: 24, fontWeight: '600', textAlign: 'center', writingDirection: 'rtl' }}>حدث خطأ غير متوقع</Text>
-    <Text style={{ color: c.mutedForeground, fontSize: 15, lineHeight: 26, textAlign: 'center', writingDirection: 'rtl' }}>بياناتك وأهدافك محفوظة. أعد المحاولة، وإن تكرر الخطأ فأرسل النص أدناه لنا.</Text>
+    <Text accessibilityRole="header" style={{ color: c.foreground, fontSize: 24, fontWeight: '600', textAlign: 'center', writingDirection: 'rtl' }}>{t('app.error.title')}</Text>
+    <Text style={{ color: c.mutedForeground, fontSize: 15, lineHeight: 26, textAlign: 'center', writingDirection: 'rtl' }}>{t('app.error.message')}</Text>
     <Text selectable style={{ color: c.mutedForeground, fontSize: 12, lineHeight: 20, padding: 12, borderRadius: readerShape.control, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, backgroundColor: c.card, textAlign: 'left', writingDirection: 'ltr', fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }) }}>{String(error?.message ?? error)}</Text>
     <Pressable accessibilityRole="button" onPress={retry} style={({ pressed }) => ({ alignSelf: 'stretch', minHeight: 48, paddingHorizontal: 28, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center', backgroundColor: c.primary, opacity: pressed ? 0.8 : 1 })}>
-      <Text style={{ color: c.primaryForeground, fontSize: 15, fontWeight: "600" }}>إعادة المحاولة</Text>
+      <Text style={{ color: c.primaryForeground, fontSize: 15, fontWeight: "600" }}>{t('common.retry')}</Text>
     </Pressable>
   </ScrollView>;
 }

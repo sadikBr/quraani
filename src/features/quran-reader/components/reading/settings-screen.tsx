@@ -13,11 +13,12 @@ import { QuranniLogo } from '../ui/quranni-logo';
 import { WarshTajweedLegend } from './warsh-tajweed-legend';
 import { ReadingLayoutPreview, SettingsCard, SettingsCardHeading, SettingsSelection, SettingsToggle } from './settings-ui';
 import { readerLayout, readerShape } from '../../design';
+import { t } from '@/i18n';
 
 type SettingsTab = 'reading' | 'appearance';
 const tabs: { value: SettingsTab; label: string; icon: ReaderIconName }[] = [
-  { value: 'reading', label: 'القراءة', icon: 'book' },
-  { value: 'appearance', label: 'المظهر', icon: 'sun' },
+  { value: 'reading', get label() { return t('settings.tabs.reading'); }, icon: 'book' },
+  { value: 'appearance', get label() { return t('settings.tabs.appearance'); }, icon: 'sun' },
 ];
 
 export function SettingsScreen() {
@@ -29,25 +30,25 @@ export function SettingsScreen() {
     <StatusBar style={dark ? 'light' : 'dark'} />
     <View style={[styles.header, { borderColor: palette.border }]}>
       <View style={styles.navigation}>
-        <IconButton name="back" label="العودة إلى القراءة" palette={palette} onPress={() => router.canGoBack() ? router.back() : router.replace('/')} />
-        <Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 20, fontWeight: '600', flex: 1 }}>الإعدادات</Text>
+        <IconButton name="back" label={t('common.backToReading')} palette={palette} onPress={() => router.canGoBack() ? router.back() : router.replace('/')} />
+        <Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 20, fontWeight: '600', flex: 1 }}>{t('common.settings')}</Text>
         <QuranniLogo size={30} color={palette.ornament} />
       </View>
-      <Tabs palette={palette} label="أقسام الإعدادات" value={tab} options={tabs}
+      <Tabs palette={palette} label={t('settings.tabs.label')} value={tab} options={tabs}
         onChange={value => { if (tab !== value) { setTab(value); scroll.current?.scrollTo({ y: 0, animated: false }); } }} />
     </View>
     <ScrollView ref={scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
       <View style={styles.intro}>
-        <Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 24, fontWeight: '600' }}>{tab === 'reading' ? 'قراءتك، كما تحب' : 'ألوان تريح عينك'}</Text>
-        <Text style={{ color: palette.mutedForeground, fontSize: 15 }}>{tab === 'reading' ? 'روايتك المفضّلة، والطريقة الأقرب إليك.' : 'اختر طابعًا يرافقك في كل صفحة.'}</Text>
+        <Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 24, fontWeight: '600' }}>{t(`settings.intro.${tab}.title`)}</Text>
+        <Text style={{ color: palette.mutedForeground, fontSize: 15 }}>{t(`settings.intro.${tab}.detail`)}</Text>
       </View>
       {tab === 'reading' && <>
         <SettingsCard palette={palette}>
-          <SettingsCardHeading title="رواية القرآن" icon="book" palette={palette} />
-          <View accessibilityRole="radiogroup" accessibilityLabel="رواية القرآن" style={styles.row}>
-            {([{ value: 'warsh', name: 'ورش', from: 'عن نافع' }, { value: 'hafs', name: 'حفص', from: 'عن عاصم' }] as const).map(item => {
+          <SettingsCardHeading title={t('settings.riwayah.title')} icon="book" palette={palette} />
+          <View accessibilityRole="radiogroup" accessibilityLabel={t('settings.riwayah.title')} style={styles.row}>
+            {([{ value: 'warsh', name: t('common.riwayah.warsh.name'), from: t('settings.riwayah.from.warsh') }, { value: 'hafs', name: t('common.riwayah.hafs.name'), from: t('settings.riwayah.from.hafs') }] as const).map(item => {
               const selected = riwayah === item.value;
-              return <Pressable key={item.value} accessibilityRole="radio" accessibilityLabel={`${item.name} ${item.from}`} accessibilityState={{ checked: selected }} aria-checked={selected}
+              return <Pressable key={item.value} accessibilityRole="radio" accessibilityLabel={t(`common.riwayah.${item.value}.label`)} accessibilityState={{ checked: selected }} aria-checked={selected}
                 onPress={() => update({ riwayah: item.value })} style={({ pressed }) => [styles.riwayah, { backgroundColor: pressed ? palette.accent : palette.background, borderColor: selected ? palette.primary : palette.input }]}>
                 <View style={styles.riwayahTop}><SettingsSelection palette={palette} selected={selected} /></View>
                 <Text style={{ color: palette.foreground, fontSize: 22, lineHeight: 36, fontWeight: '600' }}>{item.name}</Text>
@@ -55,12 +56,12 @@ export function SettingsScreen() {
               </Pressable>;
             })}
           </View>
-          <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>موضع القراءة والعلامات محفوظة لكل رواية.</Text>
+          <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('settings.riwayah.savedSeparately')}</Text>
         </SettingsCard>
         <SettingsCard palette={palette}>
-          <SettingsCardHeading title="طريقة القراءة" detail="اختر كيف تظهر لك صفحات القرآن." icon="lines" palette={palette} />
-          <View accessibilityRole="radiogroup" accessibilityLabel="طريقة القراءة" style={styles.row}>
-            {([{ value: 'page', label: 'صفحات المصحف', detail: 'التنسيق الأصلي' }, { value: 'text', label: 'النص القرآني', detail: 'مرن وقابل للتكبير' }] as const).map(item => {
+          <SettingsCardHeading title={t('settings.mode.title')} detail={t('settings.mode.detail')} icon="lines" palette={palette} />
+          <View accessibilityRole="radiogroup" accessibilityLabel={t('settings.mode.title')} style={styles.row}>
+            {([{ value: 'page', label: t('settings.mode.page.label'), detail: t('settings.mode.page.detail') }, { value: 'text', label: t('settings.mode.text.label'), detail: t('settings.mode.text.detail') }] as const).map(item => {
               const selected = mode === item.value;
               return <Pressable key={item.value} accessibilityRole="radio" accessibilityLabel={item.label} accessibilityState={{ checked: selected }} aria-checked={selected}
                 onPress={() => update({ mode: item.value })} style={({ pressed }) => [styles.layoutChoice, { backgroundColor: pressed ? palette.accent : palette.background, borderColor: selected ? palette.primary : palette.input }]}>
@@ -71,34 +72,34 @@ export function SettingsScreen() {
             })}
           </View>
           {mode === 'text' ? <View style={[styles.textLayout, { borderColor: palette.border }]}>
-            <Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600' }}>تنسيق الآيات</Text>
-            <Tabs palette={palette} role="radio" label="تنسيق النص القرآني" value={textLayout} onChange={value => update({ textLayout: value })} options={[{ value: 'ayah', label: 'آيات منفصلة' }, { value: 'flowing', label: 'نص متصل' }] as const} />
-            <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{textLayout === 'ayah' ? 'كل آية في سطر مستقل.' : 'آيات متتابعة، بسطور تتكيّف مع شاشتك.'}</Text>
-          </View> : <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>يحافظ على حجم الخط وتباعد المصحف المطبوع.</Text>}
+            <Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600' }}>{t('settings.textLayout.title')}</Text>
+            <Tabs palette={palette} role="radio" label={t('settings.textLayout.label')} value={textLayout} onChange={value => update({ textLayout: value })} options={[{ value: 'ayah', label: t('settings.textLayout.ayah') }, { value: 'flowing', label: t('settings.textLayout.flowing') }] as const} />
+            <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{textLayout === 'ayah' ? t('settings.textLayout.ayahDetail') : t('settings.textLayout.flowingDetail')}</Text>
+          </View> : <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('settings.mode.pageNote')}</Text>}
         </SettingsCard>
         <SettingsCard palette={palette}>
-          <Pressable accessibilityRole="switch" accessibilityState={{ checked: tajweed }} aria-checked={tajweed} accessibilityLabel="ألوان التجويد"
+          <Pressable accessibilityRole="switch" accessibilityState={{ checked: tajweed }} aria-checked={tajweed} accessibilityLabel={t('settings.tajweed.title')}
             onPress={() => update({ tajweed: !tajweed })} style={({ pressed }) => [styles.tajweed, { opacity: pressed ? 0.65 : 1 }]}>
             <View style={[styles.colors, { backgroundColor: palette.muted }]}>{['#537fff', '#dd5359', '#50a86b'].map((color, i) => <View key={color} style={{ width: 4, height: 12 + i * 4, backgroundColor: color, borderRadius: 2 }} />)}</View>
-            <View style={{ flex: 1, minWidth: 0 }}><Text style={{ color: palette.foreground, fontSize: 16, fontWeight: '600' }}>ألوان التجويد</Text><Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{tajweed ? 'مفعّلة' : 'غير مفعّلة'} · تمييز أحكام التلاوة</Text></View>
+            <View style={{ flex: 1, minWidth: 0 }}><Text style={{ color: palette.foreground, fontSize: 16, fontWeight: '600' }}>{t('settings.tajweed.title')}</Text><Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{tajweed ? t('settings.tajweed.on') : t('settings.tajweed.off')} · {t('settings.tajweed.detail')}</Text></View>
             <SettingsToggle checked={tajweed} palette={palette} />
           </Pressable>
-          {riwayah === 'warsh' ? <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>ورش من طريق الأزرق. تظهر الألوان في النص القرآني، وتبقى صفحات المصحف المطبوع كما هي.</Text>
-            : <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>ألوان مصحف التجويد في الموسوعة القرآنية، في الصفحات والنص.</Text>}
+          {riwayah === 'warsh' ? <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('settings.tajweed.warshNote')}</Text>
+            : <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('settings.tajweed.hafsNote')}</Text>}
           {riwayah === 'warsh' && tajweed && <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderColor: palette.border, paddingTop: 6 }}>
             <WarshTajweedLegend palette={palette} dark={dark} />
-            <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>تُعرض الأحكام على أساس الوقف عند نهاية كل آية.</Text>
+            <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('settings.tajweed.stopNote')}</Text>
           </View>}
         </SettingsCard>
       </>}
       <ReaderSettings section={tab} palette={palette} fixedPage={mode === 'page'} textLayout={textLayout} appearance={appearance} setAppearance={value => update({ appearance: value })}
         fontSize={fontSize} setFontSize={value => update({ fontSize: value })} spacious={spacious} setSpacious={value => update({ spacious: value })} />
       <View style={styles.footer}>
-        <View style={styles.saved}><ReaderIcon name="done" color={palette.mutedForeground} size={14} /><Text style={{ color: palette.mutedForeground, fontSize: 12 }}>تُحفظ اختياراتك تلقائيًا</Text></View>
+        <View style={styles.saved}><ReaderIcon name="done" color={palette.mutedForeground} size={14} /><Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('settings.footer.autoSaved')}</Text></View>
         <View style={[styles.footerRule, { backgroundColor: palette.border }]} />
-        <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>قرآني · رواية {RIWAYAT[riwayah].label}</Text>
-        <Pressable accessibilityRole="link" accessibilityLabel="المحتوى القرآني من الموسوعة القرآنية" onPress={() => void Linking.openURL('https://quranpedia.net')} style={styles.source}>
-          <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>المحتوى من الموسوعة القرآنية ↗</Text>
+        <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('common.appName')} · {t('common.riwayahOf', { riwayah: RIWAYAT[riwayah].label })}</Text>
+        <Pressable accessibilityRole="link" accessibilityLabel={t('settings.footer.sourceLabel')} onPress={() => void Linking.openURL('https://quranpedia.net')} style={styles.source}>
+          <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('settings.footer.source')}</Text>
         </Pressable>
       </View>
     </ScrollView>

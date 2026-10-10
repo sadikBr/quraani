@@ -27,7 +27,7 @@ import { reserveReadingInsets } from '../../utils/reading-insets';
 import { PlanReadingControls, PlanReadingEnd, PlanReadingOpening, usePlanReadingActions } from '@/features/plans/plan-reading-controls';
 import { usePlans } from '@/features/plans/provider';
 import { createReadingSession } from '@/features/plans/reading-session';
-import { arabicNumber } from '@/features/plans/presentation';
+import { t } from '@/i18n';
 
 export function ReaderScreen() {
   const { preferences: { riwayah } } = useReadingPreferences();
@@ -54,9 +54,9 @@ function RiwayahReaderScreen() {
   const plan = plans.find(p => p.id === planId);
   const reading = useMemo(() => {
     if (!planId || !plansReady || !content) return {};
-    if (!plan) return { error: 'هذا الهدف لم يعد متاحًا.' };
+    if (!plan) return { error: t('goals.unavailable') };
     try { return { session: createReadingSession(plan, content.data, planCycle, planSlot, today) }; }
-    catch (e) { return { error: e instanceof Error ? e.message : 'تعذر فتح الورد.' }; }
+    catch (e) { return { error: e instanceof Error ? e.message : t('reader.screen.sessionError') }; }
   }, [planId, plansReady, content, plan, planCycle, planSlot, today]);
   const session = reading.session;
   const planActions = usePlanReadingActions(session);
@@ -308,9 +308,9 @@ function RiwayahReaderScreen() {
   if (planId && (reading.error || plansError)) return <SafeAreaView style={[styles.root, { backgroundColor: palette.card }]}>
     <View style={styles.status}>
       <Text accessibilityRole="alert" style={[styles.statusTitle, { color: palette.foreground }]}>{reading.error || plansError}</Text>
-      {!!plansError && <ReaderButton palette={palette} onPress={retryPlans}>إعادة المحاولة</ReaderButton>}
-      <ReaderButton palette={palette} selected onPress={() => router.replace({ pathname: '/plans/[id]', params: { id: planId } })}>العودة إلى الهدف</ReaderButton>
-      <ReaderButton palette={palette} onPress={() => router.replace('/')}>فتح المصحف</ReaderButton>
+      {!!plansError && <ReaderButton palette={palette} onPress={retryPlans}>{t('common.retry')}</ReaderButton>}
+      <ReaderButton palette={palette} selected onPress={() => router.replace({ pathname: '/plans/[id]', params: { id: planId } })}>{t('goals.backToGoal')}</ReaderButton>
+      <ReaderButton palette={palette} onPress={() => router.replace('/')}>{t('reader.screen.openMushaf')}</ReaderButton>
     </View>
   </SafeAreaView>;
 
@@ -381,15 +381,15 @@ function RiwayahReaderScreen() {
           {ready && session && displayNumber === firstPage && <View onLayout={isCurrent ? event => { openingHeight.current = event.nativeEvent.layout.height; } : undefined}><PlanReadingOpening session={session} /></View>}
           {font.error || (error && !content) ? (
             <View accessibilityRole="alert" style={styles.status}>
-              <Text style={[styles.statusTitle, { color: palette.foreground }]}>{font.error ? 'تعذر تحميل خط المصحف' : 'تعذر تحميل القرآن'}</Text>
-              <Text style={[styles.statusText, { color: palette.mutedForeground }]}>{font.error ? 'أعد فتح التطبيق لتحميل خط المصحف.' : 'تحقق من الاتصال ثم أعد المحاولة.'}</Text>
-              {!font.error && <ReaderButton palette={palette} onPress={refresh}>إعادة المحاولة</ReaderButton>}
+              <Text style={[styles.statusTitle, { color: palette.foreground }]}>{font.error ? t('reader.screen.fontError') : t('reader.screen.quranError')}</Text>
+              <Text style={[styles.statusText, { color: palette.mutedForeground }]}>{font.error ? t('reader.screen.fontErrorDetail') : t('reader.screen.quranErrorDetail')}</Text>
+              {!font.error && <ReaderButton palette={palette} onPress={refresh}>{t('common.retry')}</ReaderButton>}
             </View>
           ) : !font.loaded || !content || !ready ? (
             <View style={styles.status} accessibilityLiveRegion="polite">
               <ActivityIndicator color={palette.primary} size="large" />
-              <Text style={[styles.statusTitle, { color: palette.foreground }]}>جارٍ تجهيز المصحف</Text>
-              <Text style={[styles.statusText, { color: palette.mutedForeground }]}>جارٍ تحميل الرواية المختارة وخطها.</Text>
+              <Text style={[styles.statusTitle, { color: palette.foreground }]}>{t('reader.screen.preparing')}</Text>
+              <Text style={[styles.statusText, { color: palette.mutedForeground }]}>{t('reader.screen.preparingDetail')}</Text>
             </View>
           ) : displayPage ? (
             mode === 'page' && !practicing && tajweed && riwayah === 'hafs' ? <TajweedQuranPage key={`${displayPage.number}:${jumpRevision}`} page={displayPage} quran={content.data.quran} palette={palette} dark={dark} selectedAyah={isCurrent ? position.ayah : null} onTap={toggleActions} onSelect={select} onNavigate={navigate} onTargetOffset={isCurrent ? targetOffset : undefined} /> :
@@ -399,16 +399,16 @@ function RiwayahReaderScreen() {
                 visibleWords={practicing ? visibleWords : undefined} fontSize={fontSize} spacious={spacious} palette={palette} selectedAyah={isCurrent ? position.ayah : null}
                 onTap={tapAyah} onSelect={select} onNavigate={navigate} onTargetOffset={isCurrent ? targetOffset : undefined}
                 onAyahOffset={isCurrent ? recordPracticeOffset : undefined} />
-          ) : <Text accessibilityRole="alert" style={{ color: palette.destructive }}>هذه الصفحة غير متوفرة.</Text>}
+          ) : <Text accessibilityRole="alert" style={{ color: palette.destructive }}>{t('reader.screen.pageUnavailable')}</Text>}
           {ready && session && displayNumber === lastPageNumber && <PlanReadingEnd session={session} actions={planActions} />}
         </View>
       </ScrollView>
       </View>
       {ready && displayPage && content && <ReaderControls visible={actionsVisible} progress={controlsProgress}
-        page={displayPage} totalPages={totalPages} surahName={surahName ?? 'قرآني'} palette={palette}
+        page={displayPage} totalPages={totalPages} surahName={surahName ?? t('common.appName')} palette={palette}
         previous={readerPages?.find((value) => value.number === displayNumber - 1)}
         next={readerPages?.find((value) => value.number === displayNumber + 1)}
-        pageLabel={session ? `${arabicNumber(displayNumber - firstPage + 1)} من ${arabicNumber(session.pages.length)} · ص ${arabicNumber(displayNumber)}` : undefined}
+        pageLabel={session ? t('reader.screen.sessionPage', { index: displayNumber - firstPage + 1, total: session.pages.length, page: displayNumber }) : undefined}
         topInset={topInset} toolbarHeight={toolbarHeight} onToolbarHeight={setToolbarHeight}
         bottomInset={bottomInset} practiceActive={practicing}
         planControls={session ? <PlanReadingControls session={session} pageNumber={displayNumber} actions={planActions} /> : undefined}

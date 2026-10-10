@@ -1,4 +1,5 @@
 import type { QuranPage } from '../types/reader';
+import { formatList, t } from '@/i18n';
 
 /** A page can cross a juz or quarter boundary; retain every known division. */
 export function pageDivisions(page: QuranPage) {
@@ -9,7 +10,7 @@ export function pageDivisions(page: QuranPage) {
 }
 
 export function quarterLabel(quarter: { hizb: number; rub: number }): string {
-  return `الحزب ${String(quarter.hizb)} · الربع ${String(quarter.rub)}/4`;
+  return t('reader.divisions.quarter', { hizb: String(quarter.hizb), rub: String(quarter.rub) });
 }
 
 /** Combine quarters in the same hizb without hiding a boundary crossing. */
@@ -25,14 +26,14 @@ export function quarterRangeLabels(quarters: { hizb: number; rub: number }[], co
     const consecutive = rubs.every((rub, index) => index === 0 || rub === rubs[index - 1] + 1);
     const range = rubs.length > 1 && consecutive
       ? `${String(rubs[0])}–${String(rubs[rubs.length - 1])}`
-      : rubs.map(String).join('، ');
+      : formatList(rubs.map(String));
     // Isolate numeric ranges so RTL does not reverse their endpoints or slash.
-    return compact ? `\u2066${String(hizb)} (${range}/4)\u2069` : `الحزب ${String(hizb)} · الربع \u2066${range}/4\u2069`;
+    return compact ? `\u2066${String(hizb)} (${range}/4)\u2069` : t('reader.divisions.quarterRange', { hizb: String(hizb), range });
   });
 }
 
 /** Keep boundary summaries on one line while retaining each hizb/quarter pair. */
 export function quarterSummary(quarters: { hizb: number; rub: number }[]): string {
   const labels = quarterRangeLabels(quarters);
-  return labels.length > 1 ? `الحزب ${quarterRangeLabels(quarters, true).join('، ')}` : labels.join('');
+  return labels.length > 1 ? t('reader.divisions.hizb', { hizb: formatList(quarterRangeLabels(quarters, true)) }) : labels.join('');
 }

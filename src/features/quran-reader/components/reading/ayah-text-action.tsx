@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Text } from 'react-native';
+import { t } from '@/i18n';
 
 export interface AyahTextActionProps {
   children: ReactNode;
@@ -15,7 +16,7 @@ export function AyahTextAction({ children, color, label, hint, onPress, onLongPr
     accessibilityLabel={label} accessibilityHint={hint}
     onPress={(event) => { event.stopPropagation(); onPress(); }}
     onLongPress={onLongPress ? (event) => { event.stopPropagation(); onLongPress(); } : undefined}
-    accessibilityActions={onLongPress ? [{ name: 'longpress', label: 'فتح إجراءات الآية' }] : undefined}
+    accessibilityActions={onLongPress ? [{ name: 'longpress', label: t('reader.ayah.openActions') }] : undefined}
     onAccessibilityAction={onLongPress ? (event) => { if (event.nativeEvent.actionName === 'longpress') onLongPress(); } : undefined}>
     {children}
   </Text>;

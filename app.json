@@ -65,7 +65,8 @@
         }
       ],
       "expo-sharing",
-      "expo-asset"
+      "expo-asset",
+      "./plugins/with-android-text-bounds"
     ],
     "experiments": {
       "typedRoutes": true,

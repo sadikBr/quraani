@@ -1,4 +1,5 @@
 import { isDarkColor, mixColor } from './colors';
+import { t } from '@/i18n';
 
 /**
  * Colour roles follow the Universal UI (shadcn/ui) design system, so every
@@ -220,31 +221,31 @@ export type ReaderThemeId = keyof typeof readerThemes;
 export type ReaderAppearance = 'system' | ReaderThemeId;
 
 export const readerThemeOptions = [
-  { id: 'system', label: 'حسب الجهاز', dark: false },
-  { id: 'light', label: 'فاتح', dark: false },
-  { id: 'dark', label: 'داكن', dark: true },
-  { id: 'emerald', label: 'زمرد وذهب', dark: true },
-  { id: 'sand', label: 'لؤلؤة الصحراء', dark: false },
-  { id: 'rose', label: 'كوارتز وردي', dark: false },
-  { id: 'midnight', label: 'ياقوت ليلي', dark: true },
-  { id: 'olive', label: 'حرير الزيتون', dark: false },
-  { id: 'aurora', label: 'الشفق القطبي', dark: true },
-  { id: 'sea', label: 'زجاج البحر', dark: false },
-  { id: 'lavender', label: 'فجر الوستيريا', dark: false },
-  { id: 'copper', label: 'ليل النحاس', dark: true },
-  { id: 'porcelain', label: 'خزف سماوي', dark: false },
-  { id: 'apricot', label: 'مشمش وعاج', dark: false },
-  { id: 'silver', label: 'حبر وفضة', dark: true },
-  { id: 'garnet', label: 'مخمل الرمان', dark: true },
-  { id: 'pearl', label: 'لؤلؤ الأعماق', dark: true },
-  { id: 'manuscript', label: 'رقّ ونيلي', dark: false },
-  { id: 'marble', label: 'رخام ومرجان', dark: false },
-  { id: 'amber', label: 'زيتون وعنبر', dark: true },
-  { id: 'andalus', label: 'زليج أندلسي', dark: true },
-  { id: 'glacier', label: 'الجليد الأزرق', dark: false },
-  { id: 'glacierNight', label: 'ليل الجليد الأزرق', dark: true },
-  { id: 'coralMint', label: 'ليمون وتوت', dark: false },
-  { id: 'coralMintNight', label: 'ليل الليمون والتوت', dark: true },
+  { id: 'system', get label() { return t('themes.system'); }, dark: false },
+  { id: 'light', get label() { return t('themes.light'); }, dark: false },
+  { id: 'dark', get label() { return t('themes.dark'); }, dark: true },
+  { id: 'emerald', get label() { return t('themes.emerald'); }, dark: true },
+  { id: 'sand', get label() { return t('themes.sand'); }, dark: false },
+  { id: 'rose', get label() { return t('themes.rose'); }, dark: false },
+  { id: 'midnight', get label() { return t('themes.midnight'); }, dark: true },
+  { id: 'olive', get label() { return t('themes.olive'); }, dark: false },
+  { id: 'aurora', get label() { return t('themes.aurora'); }, dark: true },
+  { id: 'sea', get label() { return t('themes.sea'); }, dark: false },
+  { id: 'lavender', get label() { return t('themes.lavender'); }, dark: false },
+  { id: 'copper', get label() { return t('themes.copper'); }, dark: true },
+  { id: 'porcelain', get label() { return t('themes.porcelain'); }, dark: false },
+  { id: 'apricot', get label() { return t('themes.apricot'); }, dark: false },
+  { id: 'silver', get label() { return t('themes.silver'); }, dark: true },
+  { id: 'garnet', get label() { return t('themes.garnet'); }, dark: true },
+  { id: 'pearl', get label() { return t('themes.pearl'); }, dark: true },
+  { id: 'manuscript', get label() { return t('themes.manuscript'); }, dark: false },
+  { id: 'marble', get label() { return t('themes.marble'); }, dark: false },
+  { id: 'amber', get label() { return t('themes.amber'); }, dark: true },
+  { id: 'andalus', get label() { return t('themes.andalus'); }, dark: true },
+  { id: 'glacier', get label() { return t('themes.glacier'); }, dark: false },
+  { id: 'glacierNight', get label() { return t('themes.glacierNight'); }, dark: true },
+  { id: 'coralMint', get label() { return t('themes.coralMint'); }, dark: false },
+  { id: 'coralMintNight', get label() { return t('themes.coralMintNight'); }, dark: true },
 ] as const satisfies readonly { id: ReaderAppearance; label: string; dark: boolean }[];
 
 export function isReaderAppearance(value: unknown): value is ReaderAppearance {

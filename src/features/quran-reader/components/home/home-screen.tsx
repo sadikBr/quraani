@@ -17,16 +17,17 @@ import { usePlanIndex } from '@/features/plans/use-plan-index';
 import { ayahRangeLabel, nextPortion, rangeLabel, type PlanIndex } from '@/features/plans/engine';
 import { goalsOverview } from '@/features/plans/overview';
 import { isMemorizationPlan, isRecurringPlan, isRevisionPlan, isSequentialPlan, type ReadingPlan } from '@/features/plans/types';
-import { arabicNumber, shortDate } from '@/features/plans/presentation';
+import { shortDate } from '@/features/plans/presentation';
+import { t } from '@/i18n';
 
-interface Area { href: Href; icon: ReaderIconName; label: string; detail: string }
+interface Area { href: Href; icon: ReaderIconName; text: 'plans' | 'index' | 'bookmarks' | 'search' | 'settings' }
 /** Everything beyond the reader. A new area (dashboard, halaqat, groups…) is one more entry. */
 const areas: Area[] = [
-  { href: '/plans', icon: 'calendar', label: 'الأهداف', detail: 'ختمة، ورد، حفظ، وقراءات متكررة' },
-  { href: '/quran-index', icon: 'index', label: 'الفهرس', detail: 'السور والأجزاء والأحزاب' },
-  { href: '/bookmarks', icon: 'bookmark', label: 'العلامات', detail: 'آيات حفظتها للرجوع إليها' },
-  { href: '/search', icon: 'search', label: 'البحث', detail: 'بكلمة أو بموضع آية' },
-  { href: '/settings', icon: 'settings', label: 'الإعدادات', detail: 'الرواية والمظهر والخط' },
+  { href: '/plans', icon: 'calendar', text: 'plans' },
+  { href: '/quran-index', icon: 'index', text: 'index' },
+  { href: '/bookmarks', icon: 'bookmark', text: 'bookmarks' },
+  { href: '/search', icon: 'search', text: 'search' },
+  { href: '/settings', icon: 'settings', text: 'settings' },
 ];
 
 /**
@@ -52,50 +53,50 @@ export function HomeScreen() {
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <View style={s.header}>
       <QuranniLogo color={p.ornament} size={30} />
-      <View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 20, fontWeight: '600' }}>قرآني</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{shortDate(today)} · رواية {RIWAYAT[riwayah].label}</Text></View>
-      <IconButton name="close" label="العودة إلى القراءة" palette={p} onPress={() => router.dismissTo('/')} />
+      <View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 20, fontWeight: '600' }}>{t('common.appName')}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{shortDate(today)} · {t('common.riwayahOf', { riwayah: RIWAYAT[riwayah].label })}</Text></View>
+      <IconButton name="close" label={t('common.backToReading')} palette={p} onPress={() => router.dismissTo('/')} />
     </View>
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
       {/* Continue reading: the hero. */}
-      <Pressable accessibilityRole="button" accessibilityLabel={surahName ? `متابعة القراءة في ${surahName}، صفحة ${page?.number ?? ''}` : 'فتح المصحف'} onPress={() => router.dismissTo('/')}
+      <Pressable accessibilityRole="button" accessibilityLabel={surahName ? t('home.hero.continueIn', { surah: surahName, page: page?.number ?? '' }) : t('home.hero.openMushaf')} onPress={() => router.dismissTo('/')}
         style={({ pressed }) => [s.hero, { backgroundColor: pressed ? p.accent : p.card, borderColor: p.border }, readerElevation(2, p)]}>
-        <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{ready && page ? 'تابع من حيث توقفت' : 'افتح المصحف'}</Text>
+        <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{ready && page ? t('home.hero.resume') : t('home.hero.open')}</Text>
         {surahNumber ? <SurahName number={surahNumber} name={surahName} size={56} color={p.ornament} /> : <View style={{ height: 76 }} />}
         <View style={s.heroRow}>
-          <Text style={{ color: p.foreground, fontSize: 15 }}>{page ? `صفحة ${arabicNumber(page.number)}` : ''}{divisions.juz.length ? ` · الجزء ${arabicNumber(divisions.juz[0])}` : ''}{hizb ? ` · الحزب ${arabicNumber(hizb)}` : ''}</Text>
-          <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{arabicNumber(Math.round(progress * 100))}٪ من المصحف</Text>
+          <Text style={{ color: p.foreground, fontSize: 15 }}>{page ? t('home.hero.page', { page: page.number }) : ''}{divisions.juz.length ? ` · ${t('home.hero.juz', { juz: divisions.juz[0] })}` : ''}{hizb ? ` · ${t('home.hero.hizb', { hizb })}` : ''}</Text>
+          <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('home.hero.progress', { percent: Math.round(progress * 100) })}</Text>
         </View>
         <View style={{ marginTop: 6 }}><Progress value={Math.max(0.01, progress)} /></View>
-        <View style={[s.heroButton, { backgroundColor: p.primary }]}><ReaderIcon name="book" color={p.primaryForeground} size={16} /><Text style={{ color: p.primaryForeground, fontSize: 14, fontWeight: '500' }}>متابعة القراءة</Text></View>
+        <View style={[s.heroButton, { backgroundColor: p.primary }]}><ReaderIcon name="book" color={p.primaryForeground} size={16} /><Text style={{ color: p.primaryForeground, fontSize: 14, fontWeight: '500' }}>{t('home.hero.continue')}</Text></View>
       </Pressable>
 
       {/* Today. */}
       <View style={s.section}>
-        <View style={s.sectionHead}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600', flex: 1 }}>وردك اليوم</Text>
-          <Pressable accessibilityRole="link" accessibilityLabel="كل الأهداف" onPress={() => router.push('/plans')} style={({ pressed }) => [s.link, { opacity: pressed ? 0.6 : 1 }]}>
-            <Text style={{ color: p.primary, fontSize: 14, fontWeight: '500' }}>كل الأهداف</Text><ReaderIcon name="chevron" color={p.primary} size={16} /></Pressable></View>
+        <View style={s.sectionHead}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600', flex: 1 }}>{t('home.today.title')}</Text>
+          <Pressable accessibilityRole="link" accessibilityLabel={t('home.today.allGoals')} onPress={() => router.push('/plans')} style={({ pressed }) => [s.link, { opacity: pressed ? 0.6 : 1 }]}>
+            <Text style={{ color: p.primary, fontSize: 14, fontWeight: '500' }}>{t('home.today.allGoals')}</Text><ReaderIcon name="chevron" color={p.primary} size={16} /></Pressable></View>
         {!plansReady ? null : !overview.all.length
-          ? <Pressable accessibilityRole="button" accessibilityLabel="إنشاء هدف" onPress={() => router.push('/plans/new')} style={({ pressed }) => [s.empty, { borderColor: p.border, opacity: pressed ? 0.7 : 1 }]}>
-            <Text style={{ color: p.foreground, fontSize: 15 }}>لا أهداف بعد. ختمة، أو حفظ، أو سورة تعود إليها كل أسبوع.</Text>
-            <Text style={{ color: p.primary, fontSize: 14, fontWeight: '500' }}>أنشئ هدفك الأول</Text>
+          ? <Pressable accessibilityRole="button" accessibilityLabel={t('home.today.createGoal')} onPress={() => router.push('/plans/new')} style={({ pressed }) => [s.empty, { borderColor: p.border, opacity: pressed ? 0.7 : 1 }]}>
+            <Text style={{ color: p.foreground, fontSize: 15 }}>{t('home.today.emptyTitle')}</Text>
+            <Text style={{ color: p.primary, fontSize: 14, fontWeight: '500' }}>{t('home.today.emptyAction')}</Text>
           </Pressable>
           : overview.due.length
             ? <View style={[s.list, { borderColor: p.border, backgroundColor: p.card }, readerElevation(2, p)]}>{overview.due.map((plan, i) => <DuePortion key={plan.id} plan={plan} today={today} first={!i} />)}</View>
             : <View style={[s.empty, { borderColor: p.border }]}>
-              <Text style={{ color: p.foreground, fontSize: 15 }}>{overview.completedToday ? 'أتممت ورد اليوم، تقبّل الله منك.' : 'لا موعد اليوم.'}</Text>
-              {upcoming && <Text style={{ color: p.mutedForeground, fontSize: 14 }}>الموعد القادم: {upcoming.plan.name} · {shortDate(upcoming.next!.date)}</Text>}
+              <Text style={{ color: p.foreground, fontSize: 15 }}>{overview.completedToday ? t('home.today.completed') : t('home.today.nothingDue')}</Text>
+              {upcoming && <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('home.today.upcoming', { name: upcoming.plan.name, date: shortDate(upcoming.next!.date) })}</Text>}
             </View>}
       </View>
 
       {/* Everything else. */}
       <View style={s.section}>
-        <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>استكشف</Text>
-        <View style={[s.list, { borderColor: p.border, backgroundColor: p.card }, readerElevation(2, p)]}>{areas.map((area, i) => <Pressable key={area.label} accessibilityRole="link" accessibilityLabel={area.label} onPress={() => router.push(area.href)}
+        <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('home.explore')}</Text>
+        <View style={[s.list, { borderColor: p.border, backgroundColor: p.card }, readerElevation(2, p)]}>{areas.map((area, i) => <Pressable key={area.text} accessibilityRole="link" accessibilityLabel={t(`home.areas.${area.text}.label`)} onPress={() => router.push(area.href)}
           style={({ pressed }) => [s.row, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }, { backgroundColor: pressed ? p.accent : 'transparent' }]}>
           <IconTile name={area.icon} palette={p} />
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{area.label}</Text>
-            <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{area.detail}</Text>
+            <Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{t(`home.areas.${area.text}.label`)}</Text>
+            <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t(`home.areas.${area.text}.detail`)}</Text>
           </View>
           <ReaderIcon name="chevron" color={p.mutedForeground} size={16} />
         </Pressable>)}</View>
@@ -109,7 +110,7 @@ function DuePortion({ plan, today, first }: { plan: ReadingPlan; today: string; 
   const { index } = usePlanIndex(plan.riwayah);
   const next = nextPortion(plan, today);
   if (!next) return null;
-  const kind = isMemorizationPlan(plan) ? 'حفظ' : isRevisionPlan(plan) ? 'مراجعة' : isRecurringPlan(plan) ? 'قراءة متكررة' : plan.goal.type === 'khatma' ? 'ختمة' : 'ورد يومي';
+  const kind = t(`goals.types.${isMemorizationPlan(plan) ? 'memorization' : isRevisionPlan(plan) ? 'revision' : isRecurringPlan(plan) ? 'recurring' : plan.goal.type === 'khatma' ? 'khatma' : 'wird'}`);
   const start = () => {
     if (!index) return;
     const ayah = index.ayahs[next.start];
@@ -118,13 +119,13 @@ function DuePortion({ plan, today, first }: { plan: ReadingPlan; today: string; 
   };
   return <View style={[s.row, !first && { borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }]}>
     <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{kind}{next.date < today ? ' · ورد سابق' : ''}</Text>
+      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{kind}{next.date < today ? ` · ${t('home.today.overdue')}` : ''}</Text>
       <Text numberOfLines={1} style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{plan.name}</Text>
       <Text numberOfLines={1} style={{ color: p.mutedForeground, fontSize: 13 }}>{index ? describePortion(plan, index, next.start, next.end) : ''}</Text>
     </View>
-    <Pressable accessibilityRole="button" hitSlop={6} accessibilityLabel={`ابدأ ${plan.name}`} disabled={!index} onPress={start}
+    <Pressable accessibilityRole="button" hitSlop={6} accessibilityLabel={t('home.today.startGoal', { name: plan.name })} disabled={!index} onPress={start}
       style={({ pressed }) => [s.start, { backgroundColor: p.primary, opacity: !index ? 0.4 : pressed ? 0.8 : 1 }]}>
-      <Text style={{ color: p.primaryForeground, fontSize: 14, fontWeight: '500' }}>ابدأ</Text>
+      <Text style={{ color: p.primaryForeground, fontSize: 14, fontWeight: '500' }}>{t('home.today.start')}</Text>
     </Pressable>
   </View>;
 }

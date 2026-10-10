@@ -3,6 +3,7 @@ import type { ReaderContent, QuranPage } from '../quran-reader/types/reader';
 import { assertPlanIndex, buildPlanIndex, nextPortion, recordProgress, type PlanIndex } from './engine';
 import { isMemorizationPlan, isRecurringPlan, isRevisionPlan, type ReadingPlan } from './types';
 import { revisionDay } from './revision';
+import { t } from '@/i18n';
 
 export interface PlanReadingSession {
   id: string;
@@ -29,7 +30,7 @@ export function createReadingSession(plan: ReadingPlan, content: ReaderContent, 
   assertPlanIndex(plan, index);
   const portion = nextPortion(plan, today);
   if (!portion?.due || String(portion.cycle) !== cycle || String(portion.slot) !== slot) {
-    throw new Error('هذا الورد لم يعد متاحًا. افتح الهدف لاختيار وردك الحالي.');
+    throw new Error(t('plans.session.unavailable'));
   }
   const firstPage = index.ayahs[portion.start].pageNumber;
   const lastPage = index.ayahs[portion.end - 1].pageNumber;
@@ -58,7 +59,7 @@ export function saveReadingSession(plan: ReadingPlan, session: PlanReadingSessio
   const next = nextPortion(plan, today);
   if (plan.id !== session.id || !next?.due || next.cycle !== session.portion.cycle || next.slot !== session.portion.slot ||
     next.start !== session.portion.start || next.end !== session.portion.end || !Number.isInteger(to) || to <= next.start || to > next.end) {
-    throw new Error('تغيّر هذا الورد. عد إلى الهدف لعرض تقدمك الحالي.');
+    throw new Error(t('plans.session.changed'));
   }
   return recordProgress(plan, { cycle: next.cycle, slot: next.slot, to }, today);
 }

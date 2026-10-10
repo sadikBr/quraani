@@ -15,7 +15,8 @@ import { memoryFor, quarterLabel, spanCount } from './memorization';
 import { createRevisionPlan, remainingPassDays, REVISION_MAX_QUARTERS, revisionPassLength } from './revision';
 import { ayahRangeLabel } from './engine';
 import { dateLabel, localDate } from './dates';
-import { arabicNumber, weekdayDateLabel } from './presentation';
+import { weekdayDateLabel } from './presentation';
+import { t } from '@/i18n';
 import { PlanField, PlanLoading, PlanNotice, PlanSwitch } from './components';
 import { AmountPicker, CreationSection, CreationSteps, c } from './goal-creation-components';
 import { PlanDateField } from './plan-date-field';
@@ -51,11 +52,11 @@ export function RevisionCreationScreen() {
   const preview = useMemo(() => {
     if (!index) return {};
     try {
-      if (startDate < today) throw new Error('اختر اليوم أو تاريخًا قادمًا للبداية.');
-      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new Error('اختر وقتًا صالحًا للتذكير.');
+      if (startDate < today) throw new Error(t('goals.errors.startDate'));
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new Error(t('goals.errors.reminderTime'));
       const [hour, minute] = time.split(':').map(Number);
-      return { plan: createRevisionPlan({ name: name.trim() || 'مراجعة المحفوظ', riwayah, dailyQuarters, weekdays: days, startDate, memorized: ranges, reminder: { enabled: reminder, hour, minute } }, index, id, { allowEmpty: !!owner }) };
-    } catch (e) { return { error: e instanceof Error ? e.message : 'راجع اختياراتك.' }; }
+      return { plan: createRevisionPlan({ name: name.trim() || t('revision.defaultName'), riwayah, dailyQuarters, weekdays: days, startDate, memorized: ranges, reminder: { enabled: reminder, hour, minute } }, index, id, { allowEmpty: !!owner }) };
+    } catch (e) { return { error: e instanceof Error ? e.message : t('goals.errors.checkChoices') }; }
   }, [index, startDate, today, time, name, riwayah, dailyQuarters, days, ranges, reminder, id, owner]);
   const passDays = useMemo(() => preview.plan ? revisionPassLength(preview.plan) : 0, [preview.plan]);
   const firstPass = useMemo(() => preview.plan && index ? remainingPassDays(preview.plan, today) : [], [preview.plan, index, today]);
@@ -69,66 +70,66 @@ export function RevisionCreationScreen() {
     try {
       const reminderIssue = await saveWithReminder(preview.plan, plan => commit(items => items.some(item => item.id === id) ? items : [...items, plan]), remindersSupported ? requestPlanReminders : undefined);
       router.replace({ pathname: '/plans/[id]', params: { id, ...(reminderIssue ? { reminderIssue } : {}) } });
-    } catch (e) { setMessage(e instanceof Error ? e.message : 'تعذر حفظ الهدف. حاول مرة أخرى.'); }
+    } catch (e) { setMessage(e instanceof Error ? e.message : t('goals.errors.saveGoal')); }
     finally { saving.current = false; setBusy(false); }
   };
   const memoryCard = <View style={{ padding: 16, gap: 6, minHeight: 52, borderWidth: 1, borderColor: p.input, borderRadius: readerShape.control }}>
     <View style={c.row}>
       <View style={c.grow}>
-        <Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{ranges.length ? `${arabicNumber(spanCount(ranges))} آية في محفوظك` : 'لم تحدد محفوظك بعد'}</Text>
-        <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{owner ? `يتابعه هدف «${owner.name}»، وما تحفظه فيه ينضم إلى المراجعة.` : 'سور، أجزاء، أحزاب، أرباع، أو آيات محددة'}</Text>
+        <Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{ranges.length ? t('revision.creation.memory.count', { count: spanCount(ranges) }) : t('revision.creation.memory.none')}</Text>
+        <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{owner ? t('revision.creation.memory.followedBy', { name: owner.name }) : t('revision.creation.memory.kinds')}</Text>
       </View>
       {!owner && <ReaderIcon name="chevron" color={p.mutedForeground} size={16} />}
     </View>
-    {!owner && <Text style={{ color: p.primary, fontSize: 14, fontWeight: '500' }}>{ranges.length ? 'مراجعة المحفوظ وتعديله' : 'تحديد ما أحفظه'}</Text>}
+    {!owner && <Text style={{ color: p.primary, fontSize: 14, fontWeight: '500' }}>{ranges.length ? t('revision.creation.memory.edit') : t('revision.chooseMemorized')}</Text>}
   </View>;
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={c.navigation}><Pressable accessibilityRole="button" accessibilityLabel={step ? 'العودة إلى إعداد المراجعة' : 'العودة إلى أنواع الأهداف'} disabled={busy} onPress={() => step ? changeStep(0) : router.back()} style={({ pressed }) => [c.back, { opacity: pressed || busy ? 0.5 : 1 }]}><ReaderIcon name="back" color={p.foreground} size={20} /><Text style={{ color: p.foreground, fontSize: 15 }}>{step ? 'الإعداد' : 'هدف جديد'}</Text></Pressable><Text style={{ color: p.mutedForeground, fontSize: 13 }}>مراجعة المحفوظ</Text></View>
+      <View style={c.navigation}><Pressable accessibilityRole="button" accessibilityLabel={step ? t('revision.creation.backToSetup') : t('goals.backToGoalTypes')} disabled={busy} onPress={() => step ? changeStep(0) : router.back()} style={({ pressed }) => [c.back, { opacity: pressed || busy ? 0.5 : 1 }]}><ReaderIcon name="back" color={p.foreground} size={20} /><Text style={{ color: p.foreground, fontSize: 15 }}>{step ? t('goals.setup') : t('goals.newGoal')}</Text></Pressable><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('revision.title')}</Text></View>
       <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={c.content}>
-        <View style={{ gap: 2 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 24, fontWeight: '600' }}>{step ? 'دورتك على محفوظك' : 'ثبّت ما حفظت'}</Text><Text style={{ color: p.mutedForeground, fontSize: 15 }}>{step ? 'راجع أيامك الأولى، واجعل لها وقتًا.' : 'مقدار تختاره، في أيام تختارها، يمر على محفوظك كله ثم يبدأ من جديد.'}</Text></View>
+        <View style={{ gap: 2 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 24, fontWeight: '600' }}>{step ? t('revision.creation.heading.review') : t('revision.creation.heading.setup')}</Text><Text style={{ color: p.mutedForeground, fontSize: 15 }}>{step ? t('revision.creation.intro.review') : t('revision.creation.intro.setup')}</Text></View>
         <CreationSteps step={step} canReview={!!preview.plan && !busy && !existing} onChange={changeStep} />
         <View pointerEvents={busy ? 'none' : 'auto'} style={{ gap: 24 }}>
           {step === 0 ? <>
-            <CreationSection title="ما تراجعه" icon="check" description="المراجعة تمر على محفوظك بترتيب المصحف. كل ما تحفظه لاحقًا ينضم إليها تلقائيًا.">
-              <Segments palette={p} value={riwayah} onChange={setRiwayah} options={[{ value: 'warsh', label: 'ورش' }, { value: 'hafs', label: 'حفص' }]} />
+            <CreationSection title={t('revision.creation.memory.title')} icon="check" description={t('revision.creation.memory.description')}>
+              <Segments palette={p} value={riwayah} onChange={setRiwayah} options={[{ value: 'warsh', label: t('common.riwayah.warsh.name') }, { value: 'hafs', label: t('common.riwayah.hafs.name') }]} />
               {existing ? <View style={{ gap: 10 }}>
-                <PlanNotice message={`لديك هدف مراجعة جارٍ لرواية ${riwayah === 'warsh' ? 'ورش' : 'حفص'}. يمكنك تعديل مقداره وأيامه من إعداداته.`} />
-                <ReaderButton palette={p} onPress={() => router.replace({ pathname: '/plans/[id]', params: { id: existing.id } })}>{`متابعة ${existing.name}`}</ReaderButton>
+                <PlanNotice message={t('revision.creation.memory.existing', { riwayah: riwayah === 'warsh' ? t('common.riwayah.warsh.name') : t('common.riwayah.hafs.name') })} />
+                <ReaderButton palette={p} onPress={() => router.replace({ pathname: '/plans/[id]', params: { id: existing.id } })}>{t('revision.creation.memory.continueExisting', { name: existing.name })}</ReaderButton>
               </View> : owner ? memoryCard
-                : <Pressable accessibilityRole="button" accessibilityLabel="تحديد ما أحفظه من القرآن" disabled={!index} onPress={() => { Keyboard.dismiss(); setChoosing(true); }} style={({ pressed }) => ({ borderRadius: readerShape.control, backgroundColor: pressed ? p.accent : 'transparent', opacity: !index ? 0.6 : pressed ? 0.85 : 1 })}>{memoryCard}</Pressable>}
+                : <Pressable accessibilityRole="button" accessibilityLabel={t('revision.creation.memory.chooseLabel')} disabled={!index} onPress={() => { Keyboard.dismiss(); setChoosing(true); }} style={({ pressed }) => ({ borderRadius: readerShape.control, backgroundColor: pressed ? p.accent : 'transparent', opacity: !index ? 0.6 : pressed ? 0.85 : 1 })}>{memoryCard}</Pressable>}
             </CreationSection>
             {!existing && <>
-              <CreationSection title="كم تراجع في اليوم؟" icon="loop" description="بأرباع الأحزاب؛ ينتهي كل يوم عند أقرب آية كاملة. إذا كان محفوظك أقل من المقدار، تراجعه كله.">
-                <AmountPicker label="مقدار المراجعة اليومي بأرباع الأحزاب" value={amount} onChange={setAmount} unit="ربع حزب في اليوم" presets={['1', '2', '4', '8']} minimum={1} maximum={REVISION_MAX_QUARTERS} parse={value => Number(normalizeArabicSearch(value))} />
-                {Number.isInteger(dailyQuarters) && dailyQuarters > 0 && <Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600', textAlign: 'center' }}>{quarterLabel(dailyQuarters)} في كل يوم مراجعة</Text>}
+              <CreationSection title={t('revision.creation.amount.title')} icon="loop" description={t('revision.creation.amount.description')}>
+                <AmountPicker label={t('revision.amount.label')} value={amount} onChange={setAmount} unit={t('revision.amount.unit')} presets={['1', '2', '4', '8']} minimum={1} maximum={REVISION_MAX_QUARTERS} parse={value => Number(normalizeArabicSearch(value))} />
+                {Number.isInteger(dailyQuarters) && dailyQuarters > 0 && <Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600', textAlign: 'center' }}>{t('revision.dailyAmount', { amount: quarterLabel(dailyQuarters) })}</Text>}
               </CreationSection>
-              <CreationSection title="أيام المراجعة" icon="calendar" description="إذا فاتك يوم، تنتظرك المراجعة نفسها في اليوم التالي من أيامك، دون تراكم.">
-                <WeekdayPicker days={days} onChange={setDays} quickOptions={[{ label: 'كل يوم', value: EVERY_DAY }, { label: 'عدا الجمعة', value: [0, 1, 2, 3, 4, 6] }, { label: 'الإثنين والخميس', value: [1, 4] }]} />
-                <PlanDateField label="ابتداءً من" mode="date" value={startDate} onChange={setStartDate} minimum={today} />
+              <CreationSection title={t('revision.creation.days.title')} icon="calendar" description={t('revision.creation.days.description')}>
+                <WeekdayPicker days={days} onChange={setDays} quickOptions={[{ label: t('common.weekdays.everyDay'), value: EVERY_DAY }, { label: t('revision.weekdays.exceptFriday'), value: [0, 1, 2, 3, 4, 6] }, { label: t('revision.weekdays.mondayThursday'), value: [1, 4] }]} />
+                <PlanDateField label={t('goals.startingFrom')} mode="date" value={startDate} onChange={setStartDate} minimum={today} />
               </CreationSection>
             </>}
           </> : preview.plan && index ? <>
             <RevisionHero plan={preview.plan} index={index} />
-            <CreationSection title="جدولك الأول" icon="calendar" description={`${quarterLabel(dailyQuarters)} في الجلسة، في ${arabicNumber(days.length)} أيام من الأسبوع. ينتهي كل يوم عند آية كاملة، ثم تبدأ الدورة من أول محفوظك.`}>
+            <CreationSection title={t('goals.firstSchedule')} icon="calendar" description={t('revision.creation.schedule.description', { amount: quarterLabel(dailyQuarters), count: days.length })}>
               {firstPass.length ? <>{firstPass.slice(0, Math.min(days.length, 7)).map((session, i) => <View key={session.date} style={{ paddingTop: i ? 12 : 0, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: p.border, gap: 4 }}>
-                <View style={[c.row, { justifyContent: 'space-between' }]}><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{weekdayDateLabel(session.date)}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{arabicNumber(spanCount(session.spans))} آية</Text></View>
+                <View style={[c.row, { justifyContent: 'space-between' }]}><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{weekdayDateLabel(session.date)}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('revision.ayahCount', { count: spanCount(session.spans) })}</Text></View>
                 {session.spans.slice(0, 3).map(r => <Text key={r.start} style={{ color: p.mutedForeground, fontSize: 13 }}>{ayahRangeLabel(index, r.start, r.end)}</Text>)}
-                {session.spans.length > 3 && <Text style={{ color: p.mutedForeground, fontSize: 12 }}>و{arabicNumber(session.spans.length - 3)} مقاطع إضافية</Text>}
-              </View>)}<View style={{ paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border, gap: 4 }}><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{arabicNumber(firstPass.length)} جلسة لإتمام الدورة</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>الإتمام المتوقع: {dateLabel(firstPass.at(-1)!.date)}</Text></View></>
-                : <Text style={{ color: p.foreground, fontSize: 15, lineHeight: 25 }}>{owner ? `لا محفوظ بعد. ما تحفظه في «${owner.name}» ينضم إلى المراجعة تلقائيًا، وتبدأ أيامك معه.` : 'حدد ما تحفظه لتبدأ المراجعة.'}</Text>}
+                {session.spans.length > 3 && <Text style={{ color: p.mutedForeground, fontSize: 12 }}>{t('revision.creation.schedule.moreSpans', { count: session.spans.length - 3 })}</Text>}
+              </View>)}<View style={{ paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border, gap: 4 }}><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{t('revision.creation.schedule.sessions', { count: firstPass.length })}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('revision.creation.schedule.expectedEnd', { date: dateLabel(firstPass.at(-1)!.date) })}</Text></View></>
+                : <Text style={{ color: p.foreground, fontSize: 15, lineHeight: 25 }}>{owner ? t('revision.creation.schedule.ownerEmpty', { name: owner.name }) : t('revision.creation.schedule.chooseFirst')}</Text>}
             </CreationSection>
-            <CreationSection title="اجعله موعدك" icon="settings"><PlanField label="اسم الهدف" value={name} onChange={setName} placeholder="مراجعة المحفوظ" />
-              <PlanSwitch label="ذكّرني بالمراجعة" checked={reminder} onChange={setReminder} disabled={!remindersSupported} detail={remindersSupported ? 'تذكير في أيام المراجعة فقط.' : 'فعّل التذكير من تطبيق الهاتف.'} />
-              {reminder && <PlanDateField label="وقت التذكير" mode="time" value={time} onChange={setTime} />}
+            <CreationSection title={t('goals.makeItYours')} icon="settings"><PlanField label={t('goals.name')} value={name} onChange={setName} placeholder={t('revision.defaultName')} />
+              <PlanSwitch label={t('revision.remindMe')} checked={reminder} onChange={setReminder} disabled={!remindersSupported} detail={remindersSupported ? t('revision.creation.reminderDetail') : t('goals.reminder.enableOnPhone')} />
+              {reminder && <PlanDateField label={t('goals.reminder.time')} mode="time" value={time} onChange={setTime} />}
             </CreationSection>
           </> : null}
         </View>
         <PlanNotice message={error} retry={retry} />{!index && !error && <PlanLoading />}
       </ScrollView>
       {!existing && <View style={[c.footer, { backgroundColor: p.card, borderColor: p.border }]}><PlanNotice message={message || preview.error} />
-        {step === 0 && preview.plan && passDays > 0 && <Text style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>دورة كاملة كل {revisionDaysLabel(passDays)} مراجعة</Text>}
-        <ReaderButton palette={p} selected disabled={!preview.plan || busy} onPress={() => step ? void save() : changeStep(1)}>{busy ? 'جارٍ الحفظ…' : step ? 'ابدأ المراجعة' : 'عرض أيام المراجعة'}</ReaderButton>
+        {step === 0 && preview.plan && passDays > 0 && <Text style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>{t('revision.creation.passEvery', { days: revisionDaysLabel(passDays) })}</Text>}
+        <ReaderButton palette={p} selected disabled={!preview.plan || busy} onPress={() => step ? void save() : changeStep(1)}>{busy ? t('goals.saving') : step ? t('revision.creation.submit') : t('revision.creation.showDays')}</ReaderButton>
       </View>}
       {choosing && index && !owner && <MemorizedSelectionSheet index={index} selected={ranges} onClose={() => setChoosing(false)} onSave={value => { setSelected(items => ({ ...items, [riwayah]: value })); setChoosing(false); }} />}
     </KeyboardAvoidingView>

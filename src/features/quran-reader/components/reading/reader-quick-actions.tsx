@@ -8,6 +8,7 @@ import type { ReaderPalette } from '../../theme';
 import type { QuranPage } from '../../types/reader';
 import { pageDivisions } from '../../utils/page-divisions';
 import { ReaderIcon, type ReaderIconName } from '../ui/reader-chrome';
+import { t } from '@/i18n';
 
 interface Props {
   page: QuranPage;
@@ -22,7 +23,7 @@ export function ReaderQuickActions({ page, surahName, palette, onMenu }: Props) 
   const calligraphy = font.loaded && !!surahNumber;
   const divisions = pageDivisions(page);
   const hizbs = [...new Set(divisions.quarters.map((quarter) => quarter.hizb))];
-  const location = [divisions.juz.length ? `الجزء ${divisions.juz.join('–')}` : '', hizbs.length ? `الحزب ${hizbs.join('–')}` : ''].filter(Boolean).join(' · ');
+  const location = [divisions.juz.length ? t('reader.divisions.juz', { juz: divisions.juz.join('–') }) : '', hizbs.length ? t('reader.divisions.hizb', { hizb: hizbs.join('–') }) : ''].filter(Boolean).join(' · ');
   const iconLink = (href: '/search' | '/settings', icon: ReaderIconName, label: string) => (
     <Link href={href} asChild style={styles.iconLink}>
       <Pressable accessibilityRole="link" accessibilityLabel={label}>
@@ -32,11 +33,11 @@ export function ReaderQuickActions({ page, surahName, palette, onMenu }: Props) 
       </Pressable>
     </Link>
   );
-  return <View accessibilityLabel="أدوات القراءة" style={styles.toolbar} {...(Platform.OS === 'web' ? { dir: 'ltr' } : {})}>
-    {iconLink('/settings', 'settings', 'إعدادات القراءة')}
-    {iconLink('/search', 'search', 'البحث في القرآن')}
+  return <View accessibilityLabel={t('reader.toolbar.label')} style={styles.toolbar} {...(Platform.OS === 'web' ? { dir: 'ltr' } : {})}>
+    {iconLink('/settings', 'settings', t('reader.toolbar.settings'))}
+    {iconLink('/search', 'search', t('reader.toolbar.search'))}
     <Link href="/quran-index" asChild style={styles.location}>
-      <Pressable accessibilityRole="link" accessibilityLabel={`${surahName}، ${location}، فتح الفهرس`}>
+      <Pressable accessibilityRole="link" accessibilityLabel={t('reader.toolbar.location', { surah: surahName, location })}>
         {({ pressed }) => <View style={[styles.locationContent, {
           backgroundColor: pressed ? palette.accent : palette.muted,
           borderColor: pressed ? palette.ring : 'transparent',
@@ -51,7 +52,7 @@ export function ReaderQuickActions({ page, surahName, palette, onMenu }: Props) 
         </View>}
       </Pressable>
     </Link>
-    <Pressable accessibilityRole="button" accessibilityLabel="فتح قائمة التطبيق" onPress={onMenu}
+    <Pressable accessibilityRole="button" accessibilityLabel={t('reader.toolbar.menu')} onPress={onMenu}
       style={({ pressed }) => [styles.icon, { backgroundColor: pressed ? palette.accent : 'transparent' }]}>
       <ReaderIcon name="menu" color={palette.foreground} size={20} />
     </Pressable>

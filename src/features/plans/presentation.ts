@@ -1,4 +1,4 @@
-export const arabicNumber = (n: number) => n.toLocaleString('ar');
-export const shortDate = (date: string) => new Intl.DateTimeFormat('ar-MA', { day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
+import { formatDate } from '@/i18n';
 
-export const weekdayDateLabel = (date: string) => new Intl.DateTimeFormat('ar-MA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
+export const shortDate = (date: string) => formatDate(date, { day: 'numeric', month: 'long' });
+export const weekdayDateLabel = (date: string) => formatDate(date, { weekday: 'long', day: 'numeric', month: 'long' });

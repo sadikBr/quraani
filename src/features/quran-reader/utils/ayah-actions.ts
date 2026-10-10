@@ -1,6 +1,7 @@
 import { editionForMushaf } from '../riwayat';
 import type { Ayah, AyahReference, Quran } from '@/lib/quranpedia/types';
 import { ayahKey } from './references';
+import { t } from '@/i18n';
 export function passageAyahs(quran: Quran, start: AyahReference, endSurah: number, endAyah: number): Ayah[] {
   if (start.mushafId !== quran.id || !Number.isSafeInteger(endSurah) || !Number.isSafeInteger(endAyah)) return [];
   const ayahs = quran.surahs.flatMap((s) => s.ayahs);
@@ -15,5 +16,5 @@ export function parallelAyahs(ayah: Ayah): number[] {
   return [...new Set(ayah.hafsAyahNumbers)].filter((n) => Number.isSafeInteger(n) && n > 0);
 }
 export function ayahShareText(ayah: Ayah, surahName: string) {
-  return `${ayah.text} ${ayah.marker}\n${surahName} · الآية ${ayah.ayahNumber} · رواية ${editionForMushaf(ayah.mushafId).label}`;
+  return `${ayah.text} ${ayah.marker}\n${t('reader.ayah.reference', { surah: surahName, ayah: ayah.ayahNumber })} · ${t('common.riwayahOf', { riwayah: editionForMushaf(ayah.mushafId).label })}`;
 }

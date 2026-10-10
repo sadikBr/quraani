@@ -1,14 +1,15 @@
 import type { PlanIndex } from './engine';
 import type { PlanStart } from './types';
 import { normalizeArabicSearch } from '../quran-reader/utils/search';
+import { t } from '@/i18n';
 
 /** Resolve in the selected edition. Surah/hizb starts must never round to a page. */
 export function resolvePlanStart(index: PlanIndex, start: PlanStart): number {
-  if (!start || !Number.isInteger(start.number) || start.number < 1) throw new Error('اختر موضع بداية صالحًا.');
+  if (!start || !Number.isInteger(start.number) || start.number < 1) throw new Error(t('plans.start.invalid'));
   const position = start.kind === 'page' ? index.ayahs.findIndex(a => a.pageNumber === start.number)
     : start.kind === 'surah' ? index.ayahs.findIndex(a => a.surahNumber === start.number)
       : start.kind === 'hizb' && start.number < index.hizbs.length ? index.hizbs[start.number - 1] : -1;
-  if (position === undefined || position < 0 || position >= index.ayahs.length) throw new Error('موضع البداية غير موجود في هذه الرواية.');
+  if (position === undefined || position < 0 || position >= index.ayahs.length) throw new Error(t('plans.start.notFound'));
   return position;
 }
 

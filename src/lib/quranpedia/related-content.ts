@@ -1,4 +1,5 @@
 import { QuranpediaError } from './errors';
+import { formatList } from '@/i18n';
 export interface ContentBook { id: number; name: string; author: string }
 export interface RelatedText { book: ContentBook; texts: string[]; direction: 'rtl' | 'ltr' }
 function record(value: unknown): Record<string, unknown> {
@@ -8,7 +9,7 @@ function record(value: unknown): Record<string, unknown> {
 function book(value: unknown): ContentBook {
   const v = record(value);
   if (!Number.isSafeInteger(v.id) || Number(v.id) <= 0 || typeof v.name !== 'string' || !v.name) throw new QuranpediaError('invalid-response', 'Invalid content source');
-  const author = typeof v.author === 'string' ? v.author : v.author ? record(v.author).ar_name : Array.isArray(v.authors) ? v.authors.map((a) => record(a).ar_name).filter((a) => typeof a === 'string').join('، ') : '';
+  const author = typeof v.author === 'string' ? v.author : v.author ? record(v.author).ar_name : Array.isArray(v.authors) ? formatList(v.authors.map((a) => record(a).ar_name).filter((a): a is string => typeof a === 'string')) : '';
   return { id: Number(v.id), name: v.name, author: typeof author === 'string' ? author : '' };
 }
 export function decodeBooks(value: unknown): ContentBook[] {

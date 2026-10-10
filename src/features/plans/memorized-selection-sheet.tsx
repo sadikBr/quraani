@@ -12,7 +12,7 @@ import { ayahRangeLabel, type PlanIndex } from './engine';
 import { coversSpan, mergeSpans, spanCount, subtractSpans } from './memorization';
 import type { AyahSpan } from './types';
 import { PlanField, PlanNotice, sheet } from './components';
-import { arabicNumber } from './presentation';
+import { t } from '@/i18n';
 
 type SelectionTab = 'surahs' | 'juzs' | 'hizbs' | 'quarters' | 'ayahs';
 export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy = false, error }: {
@@ -29,7 +29,7 @@ export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy
       start: index.ayahs.findIndex(a => a.surahNumber === Number(number)), end: index.ayahs.findLastIndex(a => a.surahNumber === Number(number)) + 1 }));
     const bounds = tab === 'juzs' ? index.juzs : tab === 'hizbs' ? index.hizbs : index.quarters;
     return bounds.slice(0, -1).map((start, i) => ({ number: i + 1, start, end: bounds[i + 1],
-      label: tab === 'juzs' ? `الجزء ${arabicNumber(i + 1)}` : tab === 'hizbs' ? `الحزب ${arabicNumber(i + 1)}` : `الحزب ${arabicNumber(Math.floor(i / 4) + 1)} · الربع ${arabicNumber(i % 4 + 1)}` }));
+      label: tab === 'juzs' ? t('memorization.selection.juz', { juz: i + 1 }) : tab === 'hizbs' ? t('memorization.selection.hizb', { hizb: i + 1 }) : t('memorization.selection.quarter', { hizb: Math.floor(i / 4) + 1, quarter: i % 4 + 1 }) }));
   }, [index, tab]);
   const filtered = useMemo(() => {
     const needle = normalizeArabicSearch(query);
@@ -48,33 +48,33 @@ export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy
         <SafeAreaView edges={['bottom']} accessibilityViewIsModal onAccessibilityEscape={() => { if (!busy) onClose(); }} style={{ height: '94%', width: '100%', maxWidth: readerLayout.maxWidth, backgroundColor: p.background, borderTopLeftRadius: readerShape.sheet, borderTopRightRadius: readerShape.sheet, borderWidth: StyleSheet.hairlineWidth, borderBottomWidth: 0, borderColor: p.border }} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
           <View style={[sheet.grabber, { backgroundColor: p.border }]} />
           <View style={{ padding: 16, paddingTop: 8, paddingBottom: 10, gap: 12 }}>
-            <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}><View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>ما استقرّ في صدرك</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>حدّد ما تحفظه، لنبني رحلتك مما تبقّى.</Text></View><Pressable ref={close} accessibilityRole="button" accessibilityLabel="إغلاق اختيار المحفوظ" disabled={busy} onPress={onClose} hitSlop={4} style={({ pressed }) => [sheet.close, { backgroundColor: pressed ? p.accent : 'transparent' }]}><ReaderIcon name="close" color={p.mutedForeground} size={18} /></Pressable></View>
-            <LibraryTabs palette={p} label="اختيار المحفوظ حسب" value={tab} onChange={value => { setTab(value as SelectionTab); setQuery(''); list.current?.scrollToOffset({ offset: 0, animated: false }); }} options={[{ value: 'surahs', label: 'سور' }, { value: 'juzs', label: 'أجزاء' }, { value: 'hizbs', label: 'أحزاب' }, { value: 'quarters', label: 'أرباع' }, { value: 'ayahs', label: 'آيات' }]} />
-            {tab !== 'ayahs' && <LibrarySearch palette={p} value={query} onChange={setQuery} placeholder="ابحث بالاسم أو الرقم" label="البحث في مقاطع الحفظ" />}
+            <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}><View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('memorization.selection.title')}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('memorization.selection.subtitle')}</Text></View><Pressable ref={close} accessibilityRole="button" accessibilityLabel={t('memorization.selection.close')} disabled={busy} onPress={onClose} hitSlop={4} style={({ pressed }) => [sheet.close, { backgroundColor: pressed ? p.accent : 'transparent' }]}><ReaderIcon name="close" color={p.mutedForeground} size={18} /></Pressable></View>
+            <LibraryTabs palette={p} label={t('memorization.selection.tabsLabel')} value={tab} onChange={value => { setTab(value as SelectionTab); setQuery(''); list.current?.scrollToOffset({ offset: 0, animated: false }); }} options={[{ value: 'surahs', label: t('memorization.selection.tabs.surahs') }, { value: 'juzs', label: t('memorization.selection.tabs.juzs') }, { value: 'hizbs', label: t('memorization.selection.tabs.hizbs') }, { value: 'quarters', label: t('memorization.selection.tabs.quarters') }, { value: 'ayahs', label: t('memorization.selection.tabs.ayahs') }]} />
+            {tab !== 'ayahs' && <LibrarySearch palette={p} value={query} onChange={setQuery} placeholder={t('memorization.selection.searchPlaceholder')} label={t('memorization.selection.searchLabel')} />}
           </View>
           <FlatList ref={list} data={filtered} keyExtractor={item => String(item.number)} extraData={draft} keyboardShouldPersistTaps="handled" initialNumToRender={10} windowSize={5} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
             ListHeaderComponent={tab === 'ayahs' ? <View style={{ gap: 14, paddingTop: 12, paddingBottom: 8 }}>
-              <Text style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>مقطع محدد بالآيات</Text>
-              <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 22 }}>أدخل رقم السورة والآية عند بداية المقطع ونهايته.</Text>
-              <View style={{ flexDirection: 'row', gap: 12 }}><View style={{ flex: 1 }}><PlanField label="من السورة" value={fromSurah} onChange={setFromSurah} numeric /></View><View style={{ flex: 1 }}><PlanField label="من الآية" value={fromAyah} onChange={setFromAyah} numeric /></View></View>
-              <View style={{ flexDirection: 'row', gap: 12 }}><View style={{ flex: 1 }}><PlanField label="إلى السورة" value={toSurah} onChange={setToSurah} numeric /></View><View style={{ flex: 1 }}><PlanField label="إلى الآية" value={toAyah} onChange={setToAyah} numeric /></View></View>
-              <View style={{ paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: p.border }}><Text style={{ color: validRange ? p.foreground : p.destructive, fontSize: 15, fontWeight: validRange ? '600' : '400' }}>{validRange ? ayahRangeLabel(index, customStart, customEnd) : 'تحقق من أرقام السور والآيات وترتيب المقطع.'}</Text></View>
-              <ReaderButton palette={p} disabled={!validRange || busy} onPress={() => toggle(customRange)}>{validRange && coversSpan(draft, customRange) ? 'إزالة المقطع من المحفوظ' : 'إضافة المقطع إلى المحفوظ'}</ReaderButton>
-              <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 22 }}>يمكن إضافة عدة مقاطع. الاختيارات المتداخلة تُحتسب مرة واحدة.</Text>
+              <Text style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('memorization.selection.custom.title')}</Text>
+              <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 22 }}>{t('memorization.selection.custom.hint')}</Text>
+              <View style={{ flexDirection: 'row', gap: 12 }}><View style={{ flex: 1 }}><PlanField label={t('memorization.selection.custom.fromSurah')} value={fromSurah} onChange={setFromSurah} numeric /></View><View style={{ flex: 1 }}><PlanField label={t('memorization.selection.custom.fromAyah')} value={fromAyah} onChange={setFromAyah} numeric /></View></View>
+              <View style={{ flexDirection: 'row', gap: 12 }}><View style={{ flex: 1 }}><PlanField label={t('memorization.selection.custom.toSurah')} value={toSurah} onChange={setToSurah} numeric /></View><View style={{ flex: 1 }}><PlanField label={t('memorization.selection.custom.toAyah')} value={toAyah} onChange={setToAyah} numeric /></View></View>
+              <View style={{ paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: p.border }}><Text style={{ color: validRange ? p.foreground : p.destructive, fontSize: 15, fontWeight: validRange ? '600' : '400' }}>{validRange ? ayahRangeLabel(index, customStart, customEnd) : t('memorization.selection.custom.invalid')}</Text></View>
+              <ReaderButton palette={p} disabled={!validRange || busy} onPress={() => toggle(customRange)}>{validRange && coversSpan(draft, customRange) ? t('memorization.selection.custom.remove') : t('memorization.selection.custom.add')}</ReaderButton>
+              <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 22 }}>{t('memorization.selection.custom.note')}</Text>
             </View> : null}
-            ListEmptyComponent={tab !== 'ayahs' ? <Text style={{ color: p.mutedForeground, padding: 16, textAlign: 'center' }}>لا توجد نتائج.</Text> : null}
+            ListEmptyComponent={tab !== 'ayahs' ? <Text style={{ color: p.mutedForeground, padding: 16, textAlign: 'center' }}>{t('memorization.selection.noResults')}</Text> : null}
             renderItem={({ item, index: position }) => {
               const checked = coversSpan(draft, item), partial = !checked && draft.some(r => r.start < item.end && r.end > item.start);
               const first = position === 0, last = position === filtered.length - 1;
               return <Pressable accessibilityRole="checkbox" accessibilityLabel={item.label} accessibilityState={{ checked: partial ? 'mixed' : checked }} aria-checked={partial ? 'mixed' : checked} disabled={busy} onPress={() => toggle(item)}
                 style={({ pressed }) => [sheet.row, { borderColor: p.border, backgroundColor: checked || pressed ? p.accent : p.card, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: last ? StyleSheet.hairlineWidth : 0 }, first && sheet.rowFirst, last && sheet.rowLast]}>
-                <View style={{ flex: 1 }}><Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{item.label}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{tab === 'surahs' ? `${arabicNumber(item.end - item.start)} آية${partial ? ' · محفوظة جزئيًا' : ''}` : ayahRangeLabel(index, item.start, item.end)}</Text></View>
+                <View style={{ flex: 1 }}><Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{item.label}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{tab === 'surahs' ? partial ? t('memorization.selection.partial', { ayahs: item.end - item.start }) : t('memorization.ayahCount', { ayahs: item.end - item.start }) : ayahRangeLabel(index, item.start, item.end)}</Text></View>
                 <View style={[sheet.check, { borderColor: checked || partial ? p.primary : p.input, backgroundColor: checked ? p.primary : p.background }]}>{checked ? <ReaderIcon name="check" color={p.primaryForeground} size={14} /> : partial ? <View style={{ width: 10, height: 2, backgroundColor: p.primary }} /> : null}</View>
               </Pressable>;
             }} />
           <View style={{ padding: 16, gap: 8, borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }}>
-            <PlanNotice message={error} /><Text accessibilityLiveRegion="polite" style={{ color: p.mutedForeground, fontSize: 13 }}>{arabicNumber(spanCount(draft))} آية محفوظة · تُستبعد من جدول الحفظ</Text>
-            <ReaderButton palette={p} selected disabled={busy} onPress={() => onSave(draft)}>{busy ? 'جارٍ حفظ التغييرات…' : 'اعتماد المحفوظ'}</ReaderButton>
+            <PlanNotice message={error} /><Text accessibilityLiveRegion="polite" style={{ color: p.mutedForeground, fontSize: 13 }}>{t('memorization.selection.total', { ayahs: spanCount(draft) })}</Text>
+            <ReaderButton palette={p} selected disabled={busy} onPress={() => onSave(draft)}>{busy ? t('memorization.selection.saving') : t('memorization.selection.confirm')}</ReaderButton>
           </View>
         </SafeAreaView>
       </KeyboardAvoidingView>

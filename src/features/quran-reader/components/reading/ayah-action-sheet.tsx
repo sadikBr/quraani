@@ -17,6 +17,7 @@ import type { ReaderPalette } from '../../theme';
 import { ReaderButton } from './reader-button';
 import { ReaderIcon, type ReaderIconName, Segments } from '../ui/reader-chrome';
 import { calligraphyStyle, surahNameGlyph } from '../../utils/reader-typography';
+import { formatList, t } from '@/i18n';
 
 export function AyahActionSheet({ ayah, quran, palette, onClose }: { ayah: Ayah; quran: Quran; palette: ReaderPalette; onClose: () => void }) {
   const close = useRef<View>(null);
@@ -28,8 +29,8 @@ export function AyahActionSheet({ ayah, quran, palette, onClose }: { ayah: Ayah;
   const copy = async () => {
     try {
       const text = ayahShareText(ayah, surahName);
-      const ok = await Clipboard.setStringAsync(text); setMessage(ok ? 'تم نسخ الآية' : 'تعذر النسخ، حاول مرة أخرى');
-    } catch { setMessage('تعذر النسخ، حاول مرة أخرى'); }
+      const ok = await Clipboard.setStringAsync(text); setMessage(ok ? t('reader.actions.copied') : t('reader.actions.copyFailed'));
+    } catch { setMessage(t('reader.actions.copyFailed')); }
   };
   const share = () => {
     onClose();
@@ -39,18 +40,18 @@ export function AyahActionSheet({ ayah, quran, palette, onClose }: { ayah: Ayah;
   return <Modal visible transparent statusBarTranslucent navigationBarTranslucent animationType="slide" onRequestClose={onClose} onShow={() => { if (Platform.OS === 'web') close.current?.focus(); else if (close.current) AccessibilityInfo.sendAccessibilityEvent(close.current, 'focus'); }}>
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.root}>
       <View style={styles.body}>
-      <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="إغلاق إجراءات الآية" onPress={onClose} />
+      <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel={t('reader.actions.close')} onPress={onClose} />
       <SafeAreaView edges={['bottom']} accessibilityViewIsModal onAccessibilityEscape={onClose}
         style={[styles.sheet, { backgroundColor: palette.background, borderColor: palette.border }, readerElevation(4, palette)]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
         <View style={styles.heading}>
           <View style={styles.title}>
-            <Text accessibilityRole="header" accessibilityLabel={`${surahName} · الآية ${ayah.ayahNumber}`}
+            <Text accessibilityRole="header" accessibilityLabel={t('reader.ayah.reference', { surah: surahName, ayah: ayah.ayahNumber })}
               style={[styles.surah, { color: palette.ornament }]}>
               {surahNameGlyph(ayah.surahNumber)}
             </Text>
-            <Text style={[styles.reference, { color: palette.mutedForeground }]}>الآية {ayah.ayahNumber} · صفحة {ayah.pageNumber}</Text>
+            <Text style={[styles.reference, { color: palette.mutedForeground }]}>{t('reader.ayah.location', { ayah: ayah.ayahNumber, page: ayah.pageNumber })}</Text>
           </View>
-          <Pressable ref={close} accessibilityRole="button" accessibilityLabel="إغلاق إجراءات الآية" onPress={onClose}
+          <Pressable ref={close} accessibilityRole="button" accessibilityLabel={t('reader.actions.close')} onPress={onClose}
             hitSlop={4} style={({ pressed }) => [styles.close, { backgroundColor: pressed ? palette.accent : 'transparent' }]}>
             <ReaderIcon name="close" color={palette.mutedForeground} size={18} />
           </Pressable>
@@ -58,22 +59,22 @@ export function AyahActionSheet({ ayah, quran, palette, onClose }: { ayah: Ayah;
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
           <View style={[styles.quickActions, { backgroundColor: palette.card, borderColor: palette.border }, readerElevation(2, palette)]}>
             <QuickAction palette={palette} icon={bookmarked ? 'check' : 'bookmark'} disabled={!ready} selected={bookmarked}
-              label={bookmarked ? 'محفوظة' : 'حفظ علامة'} accessibilityLabel={bookmarked ? 'إزالة العلامة' : 'حفظ علامة'} onPress={() => toggle(ayahKey(ayah))} />
+              label={bookmarked ? t('reader.actions.bookmarked') : t('reader.actions.bookmark')} accessibilityLabel={bookmarked ? t('reader.actions.removeBookmark') : t('reader.actions.bookmark')} onPress={() => toggle(ayahKey(ayah))} />
             <View style={[styles.separator, { backgroundColor: palette.border }]} />
-            <QuickAction palette={palette} icon="copy" label="نسخ الآية" onPress={() => void copy()} />
+            <QuickAction palette={palette} icon="copy" label={t('reader.actions.copy')} onPress={() => void copy()} />
             <View style={[styles.separator, { backgroundColor: palette.border }]} />
-            <QuickAction palette={palette} icon="share" label="مشاركة" onPress={share} />
+            <QuickAction palette={palette} icon="share" label={t('reader.actions.share')} onPress={share} />
           </View>
           {!!message && <Text accessibilityLiveRegion="polite" style={[styles.feedback, { color: palette.primary }]}>{message}</Text>}
-          {bookmarkError && <Text accessibilityRole="alert" style={[styles.feedback, { color: palette.destructive }]}>تعذر حفظ العلامات على الجهاز. تبقى متاحة في هذه الجلسة.</Text>}
+          {bookmarkError && <Text accessibilityRole="alert" style={[styles.feedback, { color: palette.destructive }]}>{t('reader.actions.bookmarkStorageError')}</Text>}
           <View style={styles.relatedActions}>
-            <RelatedAction palette={palette} icon="book" label="التفسير" detail="شرح الآية ومعانيها" expanded={kind === 'tafsir'} onPress={() => setKind(kind === 'tafsir' ? null : 'tafsir')} />
+            <RelatedAction palette={palette} icon="book" label={t('reader.actions.tafsir')} detail={t('reader.actions.tafsirDetail')} expanded={kind === 'tafsir'} onPress={() => setKind(kind === 'tafsir' ? null : 'tafsir')} />
             {kind === 'tafsir' && <View style={styles.relatedContent}><RelatedContent ayah={ayah} kind="tafsir" palette={palette} /></View>}
             <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: palette.border }} />
-            <RelatedAction palette={palette} icon="translate" label="ترجمة المعاني" detail="بالفرنسية والإنجليزية" expanded={kind === 'translation'} onPress={() => setKind(kind === 'translation' ? null : 'translation')} />
+            <RelatedAction palette={palette} icon="translate" label={t('reader.actions.translation')} detail={t('reader.actions.translationDetail')} expanded={kind === 'translation'} onPress={() => setKind(kind === 'translation' ? null : 'translation')} />
             {kind === 'translation' && <View style={styles.relatedContent}><RelatedContent ayah={ayah} kind="translation" palette={palette} /></View>}
           </View>
-          <Text style={[styles.edition, { color: palette.mutedForeground }]}>رواية {editionForMushaf(quran.id).label}</Text>
+          <Text style={[styles.edition, { color: palette.mutedForeground }]}>{t('common.riwayahOf', { riwayah: editionForMushaf(quran.id).label })}</Text>
         </ScrollView>
       </SafeAreaView>
       </View>
@@ -122,14 +123,14 @@ function RelatedContent({ ayah, kind, palette }: { ayah: Ayah; kind: 'tafsir' | 
     return () => { active = false; };
   }, [ayah, kind, language, revision]);
   return <View style={{ gap: 12 }}>
-    {kind === 'translation' && <Segments palette={palette} options={[{ value: 'fr', label: 'الفرنسية' }, { value: 'en', label: 'الإنجليزية' }]} value={language} onChange={(v) => { setResult({ items: [], error: false, loading: true }); setLanguage(v); }} />}
-    <Text style={{ color: palette.mutedForeground, fontSize: 12, lineHeight: 22 }}>المراجع الموازية حسب ترقيم حفص: {parallelAyahs(ayah).map((n) => `${ayah.surahNumber}:${n}`).join('، ')}. المصدر: الموسوعة القرآنية.</Text>
-    {result.loading ? <ActivityIndicator accessibilityLabel="جارٍ تحميل المحتوى" color={palette.primary} /> : result.error ? <View style={{ gap: 12 }}><Text accessibilityRole="alert" style={{ color: palette.destructive }}>تعذر تحميل المحتوى. تحقق من الاتصال ثم أعد المحاولة.</Text><ReaderButton palette={palette} onPress={() => { setResult({ items: [], error: false, loading: true }); setRevision((v) => v + 1); }}>إعادة المحاولة</ReaderButton></View> : !result.items.length ? <Text style={{ color: palette.mutedForeground }}>لا يتوفر محتوى لهذا الموضع.</Text> : result.items.map((item, i) => <View key={`${item.number}:${item.content.book.id}:${i}`} style={[styles.range, { backgroundColor: palette.background }]}>
+    {kind === 'translation' && <Segments palette={palette} options={[{ value: 'fr', label: t('common.languages.french') }, { value: 'en', label: t('common.languages.english') }]} value={language} onChange={(v) => { setResult({ items: [], error: false, loading: true }); setLanguage(v); }} />}
+    <Text style={{ color: palette.mutedForeground, fontSize: 12, lineHeight: 22 }}>{t('reader.related.sources', { references: formatList(parallelAyahs(ayah).map((n) => `${ayah.surahNumber}:${n}`)) })}</Text>
+    {result.loading ? <ActivityIndicator accessibilityLabel={t('reader.related.loading')} color={palette.primary} /> : result.error ? <View style={{ gap: 12 }}><Text accessibilityRole="alert" style={{ color: palette.destructive }}>{t('reader.related.loadError')}</Text><ReaderButton palette={palette} onPress={() => { setResult({ items: [], error: false, loading: true }); setRevision((v) => v + 1); }}>{t('common.retry')}</ReaderButton></View> : !result.items.length ? <Text style={{ color: palette.mutedForeground }}>{t('reader.related.empty')}</Text> : result.items.map((item, i) => <View key={`${item.number}:${item.content.book.id}:${i}`} style={[styles.range, { backgroundColor: palette.background }]}>
       <Text accessibilityRole="header" style={{ color: palette.primary, fontWeight: '600' }}>{item.content.book.name}</Text>
       {!!item.content.book.author && <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{item.content.book.author}</Text>}
-      <Text style={{ color: palette.mutedForeground, fontSize: 11 }}>المرجع الموازي {ayah.surahNumber}:{item.number}{item.stale ? ' · نسخة محفوظة دون تحديث' : ''}</Text>
+      <Text style={{ color: palette.mutedForeground, fontSize: 11 }}>{t('reader.related.parallelReference', { surah: ayah.surahNumber, ayah: item.number })}{item.stale ? ` · ${t('reader.related.stale')}` : ''}</Text>
       {item.content.texts.filter(Boolean).map((text, index) => <NativeText key={index} selectable style={{ color: palette.foreground, fontSize: 17, lineHeight: 30, writingDirection: item.content.direction, textAlign: item.content.direction === 'ltr' ? 'left' : 'auto', fontFamily: item.content.direction === 'rtl' ? 'ReaderNaskh' : undefined }}>{relatedPlainText(text)}</NativeText>)}
-      <ReaderButton palette={palette} onPress={() => void Linking.openURL(`https://quranpedia.net/surah/1/${ayah.surahNumber}`).catch(() => {})}>فتح المصدر</ReaderButton>
+      <ReaderButton palette={palette} onPress={() => void Linking.openURL(`https://quranpedia.net/surah/1/${ayah.surahNumber}`).catch(() => {})}>{t('reader.related.openSource')}</ReaderButton>
     </View>)}
   </View>;
 }

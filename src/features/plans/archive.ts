@@ -1,5 +1,6 @@
 import { addDays, validDate } from './dates';
 import { isMemorizationPlan, isSequentialPlan, type ReadingPlan } from './types';
+import { t } from '@/i18n';
 
 export const ARCHIVE_RETENTION_DAYS = 14;
 export function archiveDeletionDate(plan: ReadingPlan): string | undefined {
@@ -9,7 +10,7 @@ export function archiveDeletionDate(plan: ReadingPlan): string | undefined {
 /** Old archives get a full grace period on first load. Never infer their age
  * from their start/completion dates, which describe reading, not archiving. */
 export function maintainArchives(plans: ReadingPlan[], today: string): ReadingPlan[] {
-  if (!validDate(today)) throw new Error('تاريخ غير صالح');
+  if (!validDate(today)) throw new Error(t('plans.engine.invalidDate'));
   let changed = false;
   const next = plans.flatMap(plan => {
     if (plan.status !== 'archived') {
@@ -53,6 +54,6 @@ export function restoreArchivedGoal<T extends ReadingPlan>(plan: T): T {
 export function deleteArchivedGoal(plans: ReadingPlan[], id: string): ReadingPlan[] {
   const plan = plans.find(p => p.id === id);
   if (!plan) return plans;
-  if (plan.status !== 'archived') throw new Error('تمت استعادة هذا الهدف. لا يمكن حذفه إلا من الأرشيف.');
+  if (plan.status !== 'archived') throw new Error(t('plans.archive.errors.restoredCannotDelete'));
   return plans.filter(p => p.id !== id);
 }

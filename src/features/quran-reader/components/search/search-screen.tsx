@@ -17,9 +17,11 @@ import { LibraryEmpty, LibraryHeader, LibrarySearch, LibraryTabs, libraryStyles 
 import { ReaderButton } from '../reading/reader-button';
 import { readerElevation, readerShape } from '../../design';
 import { AyahResultCard } from './ayah-result-card';
+import { t } from '@/i18n';
 
+// eslint-disable-next-line no-restricted-syntax -- Quran words used as search queries
 const examples = ['الرحمن الرحيم', 'الحمد لله', 'السماوات', 'المؤمنين'];
-const orders = [{ value: 'quran', label: 'ترتيب المصحف' }, { value: 'recent', label: 'الأحدث حفظًا' }] as const;
+const orders = [{ value: 'quran', get label() { return t('library.bookmarks.order.quran'); } }, { value: 'recent', get label() { return t('library.bookmarks.order.recent'); } }] as const;
 export function SearchScreen({ saved = false }: { saved?: boolean }) {
   const { palette: p, dark, preferences } = useReadingPreferences();
   const { content, error, refresh } = useReaderContent();
@@ -55,35 +57,35 @@ export function SearchScreen({ saved = false }: { saved?: boolean }) {
   const undo = () => { if (removed && !bookmarkSet.has(ayahKey(removed.reference))) toggle(ayahKey(removed.reference)); setRemoved(undefined); };
   return <SafeAreaView style={[l.root, { backgroundColor: p.background }]}>
     <StatusBar style={dark ? 'light' : 'dark'} />
-    <LibraryHeader title={saved ? 'العلامات المحفوظة' : 'البحث في القرآن'} subtitle={`رواية ${RIWAYAT[preferences.riwayah].label}`} icon={saved ? 'bookmark' : 'search'} palette={p} onBack={back} />
+    <LibraryHeader title={saved ? t('library.bookmarks.title') : t('library.search.title')} subtitle={t('common.riwayahOf', { riwayah: RIWAYAT[preferences.riwayah].label })} icon={saved ? 'bookmark' : 'search'} palette={p} onBack={back} />
     {(!saved || savedItems.length > 0 || !!query) && <View style={l.filters}>
-      <LibrarySearch value={query} onChange={changeQuery} label={saved ? 'البحث في العلامات المحفوظة' : 'البحث في نص القرآن'} placeholder={saved ? 'اسم السورة أو كلمات من الآية' : 'اكتب كلمة أو عبارة من الآية'} palette={p} />
-      {saved ? <LibraryTabs options={orders} value={order} onChange={value => { setOrder(value); list.current?.scrollToOffset({ offset: 0, animated: false }); }} label="ترتيب العلامات" palette={p} />
-        : <Text style={{ color: p.mutedForeground, fontSize: 13 }}>ابحث بالتشكيل أو بدونه، في روايتك المختارة.</Text>}
+      <LibrarySearch value={query} onChange={changeQuery} label={saved ? t('library.bookmarks.search.label') : t('library.search.label')} placeholder={saved ? t('library.bookmarks.search.placeholder') : t('library.search.placeholder')} palette={p} />
+      {saved ? <LibraryTabs options={orders} value={order} onChange={value => { setOrder(value); list.current?.scrollToOffset({ offset: 0, animated: false }); }} label={t('library.bookmarks.order.label')} palette={p} />
+        : <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('library.search.tip')}</Text>}
     </View>}
-    {removed && <View style={l.filters}><View style={[s.undo, { backgroundColor: p.card, borderColor: p.border }, readerElevation(3, p)]}><Text accessibilityLiveRegion="polite" style={{ color: p.foreground, fontSize: 13, flex: 1 }}>أُزيلت العلامة من المحفوظات</Text><Pressable accessibilityRole="button" accessibilityLabel="التراجع عن إزالة العلامة" onPress={undo} style={s.undoAction}><Text style={{ color: p.primary, fontSize: 13, fontWeight: '600' }}>تراجع</Text><ReaderIcon name="restore" color={p.primary} size={18} /></Pressable></View></View>}
+    {removed && <View style={l.filters}><View style={[s.undo, { backgroundColor: p.card, borderColor: p.border }, readerElevation(3, p)]}><Text accessibilityLiveRegion="polite" style={{ color: p.foreground, fontSize: 13, flex: 1 }}>{t('library.bookmarks.removed')}</Text><Pressable accessibilityRole="button" accessibilityLabel={t('library.bookmarks.undoLabel')} onPress={undo} style={s.undoAction}><Text style={{ color: p.primary, fontSize: 13, fontWeight: '600' }}>{t('library.bookmarks.undo')}</Text><ReaderIcon name="restore" color={p.primary} size={18} /></Pressable></View></View>}
     <FlatList ref={list} data={available ? matches.items : []} keyExtractor={item => ayahKey(item.reference)} style={l.list} contentContainerStyle={l.content}
       initialNumToRender={8} maxToRenderPerBatch={8} windowSize={7} keyboardShouldPersistTaps="handled" keyboardDismissMode={Platform.OS === 'web' ? 'none' : 'on-drag'} showsVerticalScrollIndicator={false}
       ListHeaderComponent={<View>
-        {storageError && <Text accessibilityRole="alert" style={{ color: p.destructive, fontSize: 13, marginBottom: 12 }}>تعذر قراءة العلامات أو حفظها على الجهاز. تغييراتك متاحة في هذه الجلسة.</Text>}
-        {content?.stale && <Text style={{ color: p.mutedForeground, fontSize: 12, marginBottom: 10 }}>تستخدم نسخة المصحف المحفوظة على الجهاز.</Text>}
+        {storageError && <Text accessibilityRole="alert" style={{ color: p.destructive, fontSize: 13, marginBottom: 12 }}>{t('library.bookmarks.storageError')}</Text>}
+        {content?.stale && <Text style={{ color: p.mutedForeground, fontSize: 12, marginBottom: 10 }}>{t('library.stale')}</Text>}
         {available && saved && savedItems.length > 0 && !filtering && <View style={[s.summary, { backgroundColor: p.card, borderColor: p.border }, readerElevation(2, p)]}>
-          <View style={{ flex: 1, minWidth: 0 }}><Text style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>آيات ترجع إليها</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>العلامات: {savedItems.length} · السور: {new Set(savedItems.map(item => item.reference.surahNumber)).size}</Text></View><ReaderIcon name="bookmark" color={p.primary} size={26} />
+          <View style={{ flex: 1, minWidth: 0 }}><Text style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('library.bookmarks.summary.title')}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('library.bookmarks.summary.counts', { bookmarks: savedItems.length, surahs: new Set(savedItems.map(item => item.reference.surahNumber)).size })}</Text></View><ReaderIcon name="bookmark" color={p.primary} size={26} />
         </View>}
         {available && (saved && savedItems.length > 0 || hasSearch) && <View style={l.results}>
-          <Text style={{ color: p.foreground, fontSize: 13, fontWeight: '600' }}>{saved ? filtering ? 'نتائج المحفوظات' : order === 'recent' ? 'آخر ما حفظته' : 'آياتك بترتيب المصحف' : 'نتائج البحث'}</Text>
-          {searching ? <ActivityIndicator accessibilityLabel="جارٍ البحث" size="small" color={p.primary} /> : <Text accessibilityLiveRegion="polite" style={{ color: p.mutedForeground, fontSize: 13 }}>{matches.total} {saved ? 'علامة' : 'نتيجة'}</Text>}
+          <Text style={{ color: p.foreground, fontSize: 13, fontWeight: '600' }}>{saved ? filtering ? t('library.bookmarks.results.filtered') : order === 'recent' ? t('library.bookmarks.results.recent') : t('library.bookmarks.results.quran') : t('library.searchResults')}</Text>
+          {searching ? <ActivityIndicator accessibilityLabel={t('library.search.searching')} size="small" color={p.primary} /> : <Text accessibilityLiveRegion="polite" style={{ color: p.mutedForeground, fontSize: 13 }}>{saved ? t('library.bookmarks.count', { n: matches.total }) : t('library.search.count', { n: matches.total })}</Text>}
         </View>}
       </View>}
-      ListEmptyComponent={error && !content || font.error ? <LibraryEmpty title="تعذر تحميل المحتوى" description="تحقق من الاتصال، ثم أعد المحاولة." icon="book" palette={p}><ReaderButton palette={p} onPress={refresh}>إعادة المحاولة</ReaderButton></LibraryEmpty>
-        : !available ? <View style={l.status}><ActivityIndicator accessibilityLabel="جارٍ تجهيز النتائج" color={p.primary} /></View>
-        : <LibraryEmpty title={saved ? filtering ? 'لا توجد علامة مطابقة' : 'آيات تحب أن تبقى قريبة' : hasSearch ? 'لم نعثر على هذه الكلمات' : 'تذكّر كلمة، واعثر على الآية'}
-          description={saved ? filtering ? 'جرّب اسم السورة أو كلمات أخرى من الآية.' : 'احفظ أي آية من المصحف أو نتائج البحث، وستجدها هنا للعودة إليها بسهولة.' : hasSearch ? 'جرّب كلمات أقل، أو صياغة أخرى من الآية.' : 'اكتب حرفين على الأقل، أو ابدأ بأحد هذه الاقتراحات.'} icon={saved ? 'bookmark' : 'search'} palette={p}>
-          {saved ? <View style={{ alignSelf: 'stretch', marginTop: 12 }}><ReaderButton palette={p} selected={!filtering} onPress={filtering ? () => changeQuery('') : () => router.push('/search')}>{filtering ? 'عرض كل العلامات' : 'البحث عن آية'}</ReaderButton></View>
-            : hasSearch ? <ReaderButton palette={p} onPress={() => changeQuery('')}>مسح البحث</ReaderButton>
-            : <View style={s.suggestions}>{examples.map(example => <Pressable key={example} accessibilityRole="button" accessibilityLabel={`البحث عن ${example}`} onPress={() => changeQuery(example)} hitSlop={4} style={({ pressed }) => [s.suggestion, { backgroundColor: pressed ? p.accent : p.background, borderColor: p.input }, readerElevation(1, p)]}><ReaderIcon name="search" color={p.mutedForeground} size={16} /><Text style={{ color: p.foreground, fontSize: 14 }}>{example}</Text></Pressable>)}</View>}
+      ListEmptyComponent={error && !content || font.error ? <LibraryEmpty title={t('library.loadError')} description={t('common.checkConnection')} icon="book" palette={p}><ReaderButton palette={p} onPress={refresh}>{t('common.retry')}</ReaderButton></LibraryEmpty>
+        : !available ? <View style={l.status}><ActivityIndicator accessibilityLabel={t('library.preparing')} color={p.primary} /></View>
+        : <LibraryEmpty title={saved ? filtering ? t('library.bookmarks.empty.noMatchTitle') : t('library.bookmarks.empty.title') : hasSearch ? t('library.search.empty.noMatchTitle') : t('library.search.empty.title')}
+          description={saved ? filtering ? t('library.bookmarks.empty.noMatchDescription') : t('library.bookmarks.empty.description') : hasSearch ? t('library.search.empty.noMatchDescription') : t('library.search.empty.description')} icon={saved ? 'bookmark' : 'search'} palette={p}>
+          {saved ? <View style={{ alignSelf: 'stretch', marginTop: 12 }}><ReaderButton palette={p} selected={!filtering} onPress={filtering ? () => changeQuery('') : () => router.push('/search')}>{filtering ? t('library.bookmarks.empty.showAll') : t('library.bookmarks.empty.findAyah')}</ReaderButton></View>
+            : hasSearch ? <ReaderButton palette={p} onPress={() => changeQuery('')}>{t('common.clearSearch')}</ReaderButton>
+            : <View style={s.suggestions}>{examples.map(example => <Pressable key={example} accessibilityRole="button" accessibilityLabel={t('library.search.suggestion', { query: example })} onPress={() => changeQuery(example)} hitSlop={4} style={({ pressed }) => [s.suggestion, { backgroundColor: pressed ? p.accent : p.background, borderColor: p.input }, readerElevation(1, p)]}><ReaderIcon name="search" color={p.mutedForeground} size={16} /><Text style={{ color: p.foreground, fontSize: 14 }}>{example}</Text></Pressable>)}</View>}
         </LibraryEmpty>}
-      ListFooterComponent={available && !saved && matches.items.length > 0 && matches.items.length < matches.total ? <View style={s.more}><ReaderButton palette={p} onPress={() => setLimit(value => Math.min(value + 50, matches.total))}>عرض المزيد من النتائج</ReaderButton></View> : null}
+      ListFooterComponent={available && !saved && matches.items.length > 0 && matches.items.length < matches.total ? <View style={s.more}><ReaderButton palette={p} onPress={() => setLimit(value => Math.min(value + 50, matches.total))}>{t('library.search.showMore')}</ReaderButton></View> : null}
       onEndReachedThreshold={0.5} onEndReached={() => { if (!saved && !searching && limit < matches.total) setLimit(value => Math.min(value + 50, matches.total)); }}
       renderItem={({ item, index }) => <AyahResultCard item={item} index={index} count={matches.items.length} palette={p} fontFamily={font.fontFamily} bookmarked={bookmarkSet.has(ayahKey(item.reference))} saved={saved} canSave={ready} onOpen={() => open(item)} onSave={() => save(item)} />} />
   </SafeAreaView>;

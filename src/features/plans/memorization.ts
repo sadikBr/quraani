@@ -3,6 +3,7 @@ import { addDays, validDate } from './dates';
 import type { PlanIndex } from './engine';
 import { calendarWeekday, nextScheduledDate } from './recurring';
 import type { AyahSpan, MemorizationDraft, MemorizationPlan, MemorizationRecord, MemorizationSession } from './types';
+import { formatNumber, t } from '@/i18n';
 
 export function mergeSpans(ranges: AyahSpan[]): AyahSpan[] {
   const result: AyahSpan[] = [];
@@ -39,16 +40,16 @@ export const sameSpans = (a: AyahSpan[], b: AyahSpan[]) => {
 export const spanCount = (ranges: AyahSpan[]) => ranges.reduce((n, r) => n + r.end - r.start, 0);
 export const coversSpan = (ranges: AyahSpan[], range: AyahSpan) => subtractSpans([range], ranges).length === 0;
 export function validateSpans(ranges: AyahSpan[], total: number) {
-  if (!Array.isArray(ranges) || ranges.length > total) throw new Error('المقاطع المحفوظة غير صالحة.');
+  if (!Array.isArray(ranges) || ranges.length > total) throw new Error(t('memorization.errors.invalidSegments'));
   let end = -1;
   for (const r of ranges) {
-    if (!r || !Number.isInteger(r.start) || !Number.isInteger(r.end) || r.start < 0 || r.start < end || r.end <= r.start || r.end > total) throw new Error('حدود الحفظ غير صالحة.');
+    if (!r || !Number.isInteger(r.start) || !Number.isInteger(r.end) || r.start < 0 || r.start < end || r.end <= r.start || r.end > total) throw new Error(t('memorization.errors.invalidBounds'));
     end = r.end;
   }
 }
 export function memoryFor(records: MemorizationRecord[], riwayah: MemorizationRecord['riwayah'], index: PlanIndex) {
   const record = records.find(r => r.riwayah === riwayah);
-  if (record && (record.corpus !== index.corpus || record.totalAyahs !== index.ayahs.length)) throw new Error('نسخة سجل الحفظ لا تطابق المصحف. لم يتغير محفوظك.');
+  if (record && (record.corpus !== index.corpus || record.totalAyahs !== index.ayahs.length)) throw new Error(t('memorization.errors.recordMismatch'));
   return record?.ranges ?? [];
 }
 /** Measure each ayah as its share of its real quarter; no fixed pages-per-hizb assumption. */
@@ -59,25 +60,25 @@ export function quarterAmount(index: PlanIndex, ranges: AyahSpan[]) {
   }, 0), 0);
 }
 export function quarterLabel(amount: number) {
-  if (amount === 1) return 'ربع حزب';
-  if (amount === 2) return 'نصف حزب';
-  if (amount === 3) return 'ثلاثة أرباع حزب';
-  if (amount === 4) return 'حزب واحد';
-  if (amount === 8) return 'جزء واحد';
-  return `${new Intl.NumberFormat('ar', { maximumFractionDigits: 2 }).format(amount / 4)} حزب`;
+  if (amount === 1) return t('memorization.quarterAmount.quarter');
+  if (amount === 2) return t('memorization.quarterAmount.half');
+  if (amount === 3) return t('memorization.quarterAmount.threeQuarters');
+  if (amount === 4) return t('memorization.quarterAmount.oneHizb');
+  if (amount === 8) return t('memorization.quarterAmount.oneJuz');
+  return t('memorization.quarterAmount.hizbs', { amount: formatNumber(amount / 4, { maximumFractionDigits: 2 }) });
 }
 function validateSettings(weeklyQuarters: number, weekdays: number[]) {
-  if (!Number.isInteger(weeklyQuarters) || weeklyQuarters < 1 || weeklyQuarters > 240) throw new Error('اختر مقدارًا من ربع حزب إلى القرآن كاملًا في الأسبوع.');
-  if (!Array.isArray(weekdays) || !weekdays.length || new Set(weekdays).size !== weekdays.length || weekdays.some(d => !Number.isInteger(d) || d < 0 || d > 6)) throw new Error('اختر يومًا واحدًا على الأقل للحفظ.');
+  if (!Number.isInteger(weeklyQuarters) || weeklyQuarters < 1 || weeklyQuarters > 240) throw new Error(t('memorization.errors.weeklyAmount'));
+  if (!Array.isArray(weekdays) || !weekdays.length || new Set(weekdays).size !== weekdays.length || weekdays.some(d => !Number.isInteger(d) || d < 0 || d > 6)) throw new Error(t('memorization.errors.weekdays'));
 }
 function validateClock(reminder: MemorizationDraft['reminder']) {
-  if (typeof reminder.enabled !== 'boolean' || !Number.isInteger(reminder.hour) || reminder.hour < 0 || reminder.hour > 23 || !Number.isInteger(reminder.minute) || reminder.minute < 0 || reminder.minute > 59) throw new Error('وقت التذكير غير صالح.');
+  if (typeof reminder.enabled !== 'boolean' || !Number.isInteger(reminder.hour) || reminder.hour < 0 || reminder.hour > 23 || !Number.isInteger(reminder.minute) || reminder.minute < 0 || reminder.minute > 59) throw new Error(t('memorization.errors.reminderTime'));
 }
 /** Round cumulative targets, not each day independently, so rounding never compounds. */
 export function buildMemorizationSchedule(index: PlanIndex, memorized: AyahSpan[], weeklyQuarters: number, weekdays: number[], startDate: string): MemorizationSession[] {
   validateSettings(weeklyQuarters, weekdays);
   validateSpans(memorized, index.ayahs.length);
-  if (!validDate(startDate)) throw new Error('تاريخ البداية غير صالح.');
+  if (!validDate(startDate)) throw new Error(t('memorization.errors.startDate'));
   const remaining = subtractSpans([{ start: 0, end: index.ayahs.length }], memorized);
   const ordinals = remaining.flatMap(r => Array.from({ length: r.end - r.start }, (_, i) => r.start + i));
   const cumulative = [0];
@@ -99,7 +100,7 @@ export function buildMemorizationSchedule(index: PlanIndex, memorized: AyahSpan[
   return sessions;
 }
 export function createMemorizationPlan(draft: MemorizationDraft, index: PlanIndex, id: string): MemorizationPlan {
-  if (!draft.name.trim() || draft.name.trim().length > 80 || !RIWAYAT[draft.riwayah] || index.mushafId !== RIWAYAT[draft.riwayah].mushafId) throw new Error('راجع اسم الهدف وروايته.');
+  if (!draft.name.trim() || draft.name.trim().length > 80 || !RIWAYAT[draft.riwayah] || index.mushafId !== RIWAYAT[draft.riwayah].mushafId) throw new Error(t('memorization.errors.nameAndRiwayah'));
   validateClock(draft.reminder);
   const memorized = mergeSpans(draft.memorized);
   const sessions = buildMemorizationSchedule(index, memorized, draft.weeklyQuarters, draft.weekdays, draft.startDate);
@@ -144,7 +145,7 @@ export function recordMemorizationProgress(plan: MemorizationPlan, receipt: { cy
     progress: [...plan.progress, { date: today, from: next.start, to: receipt.to, finished }] };
 }
 export function reviseMemorization(plan: MemorizationPlan, index: PlanIndex, memorized: AyahSpan[], today: string, settings = { weeklyQuarters: plan.goal.weeklyQuarters, weekdays: plan.weekdays }): MemorizationPlan {
-  if (plan.corpus !== index.corpus || index.mushafId !== RIWAYAT[plan.riwayah].mushafId || plan.totalAyahs !== index.ayahs.length) throw new Error('المصحف لا يطابق سجل الحفظ.');
+  if (plan.corpus !== index.corpus || index.mushafId !== RIWAYAT[plan.riwayah].mushafId || plan.totalAyahs !== index.ayahs.length) throw new Error(t('memorization.errors.mushafMismatch'));
   const ranges = mergeSpans(memorized);
   const sessions = buildMemorizationSchedule(index, ranges, settings.weeklyQuarters, settings.weekdays, today < plan.startDate ? plan.startDate : today);
   return { ...plan, goal: { type: 'memorization', weeklyQuarters: settings.weeklyQuarters }, weekdays: [...settings.weekdays].sort((a, b) => a - b),
@@ -154,7 +155,7 @@ export function reviseMemorization(plan: MemorizationPlan, index: PlanIndex, mem
 export function undoMemorizationProgress(plan: MemorizationPlan, index: PlanIndex, today: string): MemorizationPlan {
   const last = plan.progress.at(-1);
   if (plan.status === 'archived' || !plan.undoable || !last || !plan.undoSession) return plan;
-  if (plan.corpus !== index.corpus || plan.totalAyahs !== index.ayahs.length || index.mushafId !== RIWAYAT[plan.riwayah].mushafId || !validDate(today)) throw new Error('المصحف أو التاريخ لا يطابق سجل الحفظ.');
+  if (plan.corpus !== index.corpus || plan.totalAyahs !== index.ayahs.length || index.mushafId !== RIWAYAT[plan.riwayah].mushafId || !validDate(today)) throw new Error(t('memorization.errors.undoMismatch'));
   return { ...plan, status: plan.status === 'paused' ? 'paused' : 'active', revision: plan.revision + 1,
     memorized: subtractSpans(plan.memorized, [{ start: last.from, end: last.to }]),
     sessions: [plan.undoSession, ...plan.sessions.slice(last.finished ? 0 : 1)],
@@ -164,24 +165,24 @@ export function validateMemorizationPlan(plan: MemorizationPlan) {
   validateSettings(plan.goal.weeklyQuarters, plan.weekdays);
   validateSpans(plan.memorized, plan.totalAyahs);
   validateSpans(plan.initialRecord, plan.totalAyahs);
-  if (!Number.isInteger(plan.revision) || plan.revision < 1 || typeof plan.undoable !== 'boolean' || !Array.isArray(plan.sessions) || plan.sessions.length > plan.totalAyahs || !Array.isArray(plan.progress)) throw new Error('جدول الحفظ غير صالح.');
+  if (!Number.isInteger(plan.revision) || plan.revision < 1 || typeof plan.undoable !== 'boolean' || !Array.isArray(plan.sessions) || plan.sessions.length > plan.totalAyahs || !Array.isArray(plan.progress)) throw new Error(t('memorization.errors.invalidSchedule'));
   let date = '', end = -1;
   const pending: AyahSpan[] = [];
   for (const session of plan.sessions) {
-    if (!session || !validDate(session.date) || session.date < plan.startDate || session.date <= date || !plan.weekdays.includes(calendarWeekday(session.date)) || !session.ranges?.length) throw new Error('مواعيد الحفظ غير صالحة.');
+    if (!session || !validDate(session.date) || session.date < plan.startDate || session.date <= date || !plan.weekdays.includes(calendarWeekday(session.date)) || !session.ranges?.length) throw new Error(t('memorization.errors.invalidDates'));
     validateSpans(session.ranges, plan.totalAyahs);
     for (const range of session.ranges) {
-      if (range.start < end) throw new Error('مقاطع الحفظ متداخلة.');
+      if (range.start < end) throw new Error(t('memorization.errors.overlapping'));
       end = range.end; pending.push(range);
     }
     date = session.date;
   }
   const complement = subtractSpans([{ start: 0, end: plan.totalAyahs }], plan.memorized);
-  if (JSON.stringify(mergeSpans(pending)) !== JSON.stringify(complement) || (plan.status === 'completed' && pending.length) || (plan.status === 'active' && !pending.length)) throw new Error('جدول الحفظ لا يطابق محفوظك.');
-  for (const log of plan.progress) if (!log || !validDate(log.date) || log.date < plan.startDate || !Number.isInteger(log.from) || !Number.isInteger(log.to) || log.from < 0 || log.to <= log.from || log.to > plan.totalAyahs || typeof log.finished !== 'boolean') throw new Error('سجل الحفظ غير صالح.');
+  if (JSON.stringify(mergeSpans(pending)) !== JSON.stringify(complement) || (plan.status === 'completed' && pending.length) || (plan.status === 'active' && !pending.length)) throw new Error(t('memorization.errors.scheduleMismatch'));
+  for (const log of plan.progress) if (!log || !validDate(log.date) || log.date < plan.startDate || !Number.isInteger(log.from) || !Number.isInteger(log.to) || log.from < 0 || log.to <= log.from || log.to > plan.totalAyahs || typeof log.finished !== 'boolean') throw new Error(t('memorization.errors.invalidLog'));
   if (plan.undoSession) {
-    if (!validDate(plan.undoSession.date)) throw new Error('تاريخ التراجع عن الحفظ غير صالح.');
+    if (!validDate(plan.undoSession.date)) throw new Error(t('memorization.errors.invalidUndoDate'));
     validateSpans(plan.undoSession.ranges, plan.totalAyahs);
   }
-  if (plan.undoable && (!plan.undoSession || !validDate(plan.undoSession.date) || !plan.undoSession.ranges?.length || !plan.progress.length || !coversSpan(plan.memorized, { start: plan.progress.at(-1)!.from, end: plan.progress.at(-1)!.to }))) throw new Error('آخر تسجيل للحفظ غير صالح.');
+  if (plan.undoable && (!plan.undoSession || !validDate(plan.undoSession.date) || !plan.undoSession.ranges?.length || !plan.progress.length || !coversSpan(plan.memorized, { start: plan.progress.at(-1)!.from, end: plan.progress.at(-1)!.to }))) throw new Error(t('memorization.errors.invalidLastEntry'));
 }

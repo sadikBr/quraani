@@ -7,7 +7,9 @@ import { useReadingPreferences } from '../quran-reader/state/reading-preferences
 import { addDays, dateLabel } from './dates';
 import { ayahRangeLabel, nextPortion, rangeLabel, type PlanIndex } from './engine';
 import { d } from './plan-detail-components';
-import { arabicNumber, shortDate } from './presentation';
+import { shortDate } from './presentation';
+import { formatList, formatNumber, t } from '@/i18n';
+import { tRich } from '@/i18n/rich';
 import type { SequentialPlan } from './types';
 
 export function PlanSchedule({ plan, index, today }: { plan: SequentialPlan; index: PlanIndex; today: string }) {
@@ -25,14 +27,14 @@ function WeeklySchedule({ plan, index, today, current }: { plan: SequentialPlan;
   const navigate = (offset: number) => { setWeek(w => w + offset); setExpanded(null); };
   return <View style={{ gap: 12 }}>
     <View style={[d.row, { justifyContent: 'space-between' }]}>
-      <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{plan.goal.type === 'khatma' ? 'جدول الختمة' : 'مسار القراءة'}</Text>
-      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{arabicNumber(plan.cycle.sessions.length)} وردًا</Text>
+      <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{plan.goal.type === 'khatma' ? t('session.plan.khatmaTitle') : t('session.plan.wirdTitle')}</Text>
+      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('session.plan.total', { total: plan.cycle.sessions.length })}</Text>
     </View>
-    {plan.goal.type === 'wird' && <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 22 }}>المواعيد القادمة تقديرية، وتتبع آخر ورد أكملته.</Text>}
+    {plan.goal.type === 'wird' && <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 22 }}>{t('session.plan.wirdNote')}</Text>}
     <View style={[styles.calendar, { backgroundColor: p.card, borderColor: p.border }]}>
       <View style={[styles.week, { borderColor: p.border }]}>
         <WeekButton previous disabled={week === 0} onPress={() => navigate(-1)} />
-        <Text accessibilityLiveRegion="polite" style={{ color: p.foreground, fontSize: 15, fontWeight: '600', flex: 1, textAlign: 'center' }}>الأسبوع {arabicNumber(week + 1)} <Text style={{ color: p.mutedForeground, fontSize: 13, fontWeight: '400' }}>من {arabicNumber(weeks)}</Text></Text>
+        <Text accessibilityLiveRegion="polite" style={{ color: p.foreground, fontSize: 15, fontWeight: '600', flex: 1, textAlign: 'center' }}>{tRich('session.plan.week', { week: week + 1, of: <Text style={{ color: p.mutedForeground, fontSize: 13, fontWeight: '400' }}>{t('session.plan.weekOf', { total: weeks })}</Text> })}</Text>
         <WeekButton disabled={week === weeks - 1} onPress={() => navigate(1)} />
       </View>
       <View style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
@@ -43,21 +45,21 @@ function WeeklySchedule({ plan, index, today, current }: { plan: SequentialPlan;
           const actual = plan.cycle.progress.find(log => log.to === session.end)?.date;
           const date = actual ?? (plan.goal.type === 'wird' && next && slot >= next.slot ? addDays(next.date, slot - next.slot) : session.date);
           const isExpanded = expanded === slot;
-          const status = done ? 'مكتمل' : active ? date <= today ? 'وردك الحالي' : 'القادم' : '';
+          const status = done ? t('session.plan.status.done') : active ? date <= today ? t('session.plan.status.current') : t('session.plan.status.upcoming') : '';
           return <View key={`${slot}:${session.end}`}>
             <Pressable accessibilityRole="button" accessibilityState={{ expanded: isExpanded }}
-              accessibilityLabel={`الورد ${slot + 1}، ${rangeLabel(index, session.start, session.end)}، ${dateLabel(date)}${status ? `، ${status}` : ''}`}
+              accessibilityLabel={formatList([t('session.plan.sessionNumber', { number: slot + 1 }), rangeLabel(index, session.start, session.end), dateLabel(date), ...(status ? [status] : [])])}
               onPress={() => setExpanded(isExpanded ? null : slot)}
               style={({ pressed }) => [styles.session, { backgroundColor: active || pressed ? p.accent : 'transparent' }]}>
               <View style={{ alignSelf: 'stretch', alignItems: 'center', paddingTop: 9, width: 28 }}>
                 <View style={[styles.marker, { backgroundColor: done ? p.primary : active ? p.card : 'transparent', borderColor: done || active ? p.primary : p.border }]}>
-                  {done ? <ReaderIcon name="check" color={p.primaryForeground} size={14} /> : <Text style={{ color: active ? p.primary : p.mutedForeground, fontSize: 11, textAlign: 'center' }}>{arabicNumber(slot + 1)}</Text>}
+                  {done ? <ReaderIcon name="check" color={p.primaryForeground} size={14} /> : <Text style={{ color: active ? p.primary : p.mutedForeground, fontSize: 11, textAlign: 'center' }}>{formatNumber(slot + 1)}</Text>}
                 </View>
                 {offset < visible.length - 1 && <View style={[styles.connector, { backgroundColor: p.border }]} />}
               </View>
               <View style={d.grow}>
                 <View style={[d.row, { justifyContent: 'space-between', flexWrap: 'wrap', columnGap: 10, rowGap: 0 }]}>
-                  <Text style={{ color: active ? p.primary : p.mutedForeground, fontSize: 12 }}>{date === today ? 'اليوم' : shortDate(date)}</Text>
+                  <Text style={{ color: active ? p.primary : p.mutedForeground, fontSize: 12 }}>{date === today ? t('common.today') : shortDate(date)}</Text>
                   {!!status && <Text style={{ color: active ? p.primary : p.mutedForeground, fontSize: 12, fontWeight: active ? '600' : '400' }}>{status}</Text>}
                 </View>
                 <Text style={{ color: p.foreground, fontSize: 15, fontWeight: active ? '600' : '400' }}>{rangeLabel(index, session.start, session.end)}</Text>
@@ -73,7 +75,7 @@ function WeeklySchedule({ plan, index, today, current }: { plan: SequentialPlan;
 }
 function WeekButton({ previous = false, disabled, onPress }: { previous?: boolean; disabled: boolean; onPress: () => void }) {
   const { palette } = useReadingPreferences();
-  return <Pressable accessibilityRole="button" accessibilityLabel={previous ? 'الأسبوع السابق' : 'الأسبوع التالي'} accessibilityState={{ disabled }} disabled={disabled} onPress={onPress}
+  return <Pressable accessibilityRole="button" accessibilityLabel={previous ? t('goals.previousWeek') : t('goals.nextWeek')} accessibilityState={{ disabled }} disabled={disabled} onPress={onPress}
     style={({ pressed }) => [styles.weekButton, { opacity: disabled ? 0.25 : pressed ? 0.6 : 1, backgroundColor: pressed ? palette.accent : 'transparent' }]}>
     <View style={{ transform: [{ rotate: previous ? '180deg' : '0deg' }] }}><ReaderIcon name="chevron" color={palette.foreground} size={20} /></View>
   </Pressable>;

@@ -2,6 +2,7 @@ import { Children, type ReactNode } from 'react';
 import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
 
 import { rtlTextAlignment } from '@/lib/ui-text-alignment';
+import { localeInfo } from '@/i18n';
 
 // Geist has Latin digits only; Arabic-Indic digits and ٪ stay in Plex Sans Arabic.
 const NUMERIC = /^[\s0-9.,:%+\-–/×]+$/;
@@ -22,7 +23,7 @@ export function ArabicText({ style, ...props }: TextProps) {
   const step = weight >= 700 ? 3 : weight >= 600 ? 2 : weight >= 500 ? 1 : 0;
   const size = resolved?.fontSize ?? 14;
   const numeric = isNumeric(props.children);
-  return <Text accessibilityLanguage="ar" {...props}
+  return <Text accessibilityLanguage={localeInfo().tag} {...props}
     style={[{ writingDirection: 'rtl', ...Platform.select({ native: { direction: 'rtl' as const } }) }, style,
       { textAlign: rtlTextAlignment(resolved?.textAlign ?? 'right', Platform.OS) },
       !resolved?.fontFamily && {

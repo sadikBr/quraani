@@ -6,6 +6,7 @@ import { useReadingPreferences } from '../quran-reader/state/reading-preferences
 import { ReaderIcon, type ReaderIconName } from '../quran-reader/components/ui/reader-chrome';
 import { readerElevation, readerShape } from '../quran-reader/design';
 import { Badge, IconTile, Progress } from '@/components/ui';
+import { t } from '@/i18n';
 
 /** Shared frame keeps every goal type aligned with the existing goals overview.
  * One status line closes the card; the chevron is the only affordance. */
@@ -13,7 +14,7 @@ export function GoalCardFrame({ id, name, status, due, accessibilityDetail = '',
   id: string; name: string; status: string; due: boolean; accessibilityDetail?: string;
 }>) {
   const { palette: p } = useReadingPreferences();
-  return <Pressable accessibilityRole="button" accessibilityLabel={`فتح هدف ${name}، ${status}${accessibilityDetail}`}
+  return <Pressable accessibilityRole="button" accessibilityLabel={t('plans.card.openLabel', { name, status, detail: accessibilityDetail })}
     onPress={() => router.push({ pathname: '/plans/[id]', params: { id } })}
     style={({ pressed }) => [g.card, { backgroundColor: pressed ? p.accent : p.card, borderColor: p.border }, readerElevation(2, p)]}>
     {children}

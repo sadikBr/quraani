@@ -4,6 +4,7 @@ import type { Riwayah } from '../quran-reader/riwayat';
 import { buildPlanIndex, type PlanIndex } from './engine';
 import { usePlans } from './provider';
 import { needsRelink } from './relink';
+import { t } from '@/i18n';
 
 export function usePlanIndex(riwayah: Riwayah) {
   const { plans, memorization, ready, relink } = usePlans();
@@ -12,7 +13,7 @@ export function usePlanIndex(riwayah: Riwayah) {
   useEffect(() => {
     let active = true;
     void loadReaderContent(undefined, riwayah).then(content => { if (active) setResult({ riwayah, index: buildPlanIndex(content.data) }); })
-      .catch(() => { if (active) setResult({ riwayah, error: 'تعذر تحميل حدود المصحف. اتصل بالإنترنت لتحميله أول مرة ثم أعد المحاولة.' }); });
+      .catch(() => { if (active) setResult({ riwayah, error: t('plans.indexLoadFailed') }); });
     return () => { active = false; };
   }, [riwayah, revision]);
   const index = result?.riwayah === riwayah ? result.index : undefined;

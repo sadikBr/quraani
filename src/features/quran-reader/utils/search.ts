@@ -18,19 +18,26 @@ function foldArabic(value: string): string {
         .normalize("NFKD") // Also separates hamza from أ إ آ ؤ ئ.
         .replace(/[\u0640\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, "")
         // Silent waw seat before superscript alef: ٱلصَّلَوٰةَ = الصلاة.
+        // eslint-disable-next-line no-restricted-syntax -- Arabic letters for search normalization
         .replace(/\u0648\u0670/g, "\u0627")
         // Medial alef maksura with superscript alef: ٱلتَّوۡرَىٰةَ = التوراة.
         // A final one keeps the standard spelling: عَلَىٰ = على.
+        // eslint-disable-next-line no-restricted-syntax -- Arabic letters for search normalization
         .replace(/\u0649\p{M}*\u0670(?=\p{M}*\p{L})/gu, "\u0627")
         .replace(/[\u0670\u0621\u0674]/g, OPTIONAL_ALEF)
         .replace(/\u06E5/g, OPTIONAL_WAW)
         .replace(/[\u06E6\u06E7]/g, OPTIONAL_YEH)
         .replace(QURANIC_MARKS, "")
         .replace(/\p{M}/gu, "")
+        // eslint-disable-next-line no-restricted-syntax -- Arabic letters for search normalization
         .replace(/[\u0623\u0625\u0622\u0671\u0672\u0673\u0675]/g, "\u0627")
+        // eslint-disable-next-line no-restricted-syntax -- Arabic letters for search normalization
         .replace(/\u0624/g, "\u0648")
+        // eslint-disable-next-line no-restricted-syntax -- Arabic letters for search normalization
         .replace(/[\u0626\u0649\u06D2\u06CC]/g, "\u064A")
+        // eslint-disable-next-line no-restricted-syntax -- Arabic letters for search normalization
         .replace(/\u0629/g, "\u0647")
+        // eslint-disable-next-line no-restricted-syntax -- Arabic letters for search normalization
         .replace(/[\u06A9\u06AA]/g, "\u0643")
         .replace(/[\u0660-\u0669]/g, digit => String(digit.charCodeAt(0) - 0x0660))
         .replace(/[\u06F0-\u06F9]/g, digit => String(digit.charCodeAt(0) - 0x06F0))
@@ -55,8 +62,11 @@ export function createArabicMatcher(query: string): ((text: string) => boolean) 
     const optional = "[\uE000-\uE002]*";
     const pattern = [...normalized].map((char) => {
         const escaped = char.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        // eslint-disable-next-line no-restricted-syntax -- Arabic letters for search normalization
         return char === "\u0627" ? `(?:\u0627|${OPTIONAL_ALEF})`
+            // eslint-disable-next-line no-restricted-syntax -- Arabic letters for search normalization
             : char === "\u0648" ? `(?:\u0648|${OPTIONAL_WAW})`
+            // eslint-disable-next-line no-restricted-syntax -- Arabic letters for search normalization
             : char === "\u064A" ? `(?:\u064A|${OPTIONAL_YEH})` : escaped;
     }).join(optional);
     const expression = new RegExp(pattern, "u");

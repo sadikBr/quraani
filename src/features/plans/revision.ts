@@ -1,4 +1,5 @@
 import { RIWAYAT } from '../quran-reader/riwayat';
+import { t } from '@/i18n';
 import { addDays, validDate } from './dates';
 import type { PlanIndex } from './engine';
 import { mergeSpans, spanCount, validateSpans } from './memorization';
@@ -217,20 +218,20 @@ export function revisionPassProgress(plan: RevisionPlan): number {
 }
 
 function validateSettings(dailyQuarters: number, weekdays: number[]) {
-  if (!Number.isInteger(dailyQuarters) || dailyQuarters < 1 || dailyQuarters > REVISION_MAX_QUARTERS) throw new Error('اختر مقدارًا يوميًا من ربع حزب إلى القرآن كاملًا.');
-  if (!Array.isArray(weekdays) || !weekdays.length || new Set(weekdays).size !== weekdays.length || weekdays.some(d => !Number.isInteger(d) || d < 0 || d > 6)) throw new Error('اختر يومًا واحدًا على الأقل للمراجعة.');
+  if (!Number.isInteger(dailyQuarters) || dailyQuarters < 1 || dailyQuarters > REVISION_MAX_QUARTERS) throw new Error(t('revision.errors.dailyAmount'));
+  if (!Array.isArray(weekdays) || !weekdays.length || new Set(weekdays).size !== weekdays.length || weekdays.some(d => !Number.isInteger(d) || d < 0 || d > 6)) throw new Error(t('revision.errors.weekdays'));
 }
 
 /** `allowEmpty`: a running memorization goal owns the record, and what it adds joins later. */
 export function createRevisionPlan(draft: RevisionDraft, index: PlanIndex, id: string, { allowEmpty = false } = {}): RevisionPlan {
-  if (!draft.name.trim() || draft.name.trim().length > 80 || !RIWAYAT[draft.riwayah] || index.mushafId !== RIWAYAT[draft.riwayah].mushafId) throw new Error('راجع اسم الهدف وروايته.');
-  if (!validDate(draft.startDate)) throw new Error('تاريخ البداية غير صالح.');
+  if (!draft.name.trim() || draft.name.trim().length > 80 || !RIWAYAT[draft.riwayah] || index.mushafId !== RIWAYAT[draft.riwayah].mushafId) throw new Error(t('revision.errors.nameAndRiwayah'));
+  if (!validDate(draft.startDate)) throw new Error(t('revision.errors.startDate'));
   validateSettings(draft.dailyQuarters, draft.weekdays);
   const { hour, minute, enabled } = draft.reminder;
-  if (typeof enabled !== 'boolean' || !Number.isInteger(hour) || hour < 0 || hour > 23 || !Number.isInteger(minute) || minute < 0 || minute > 59) throw new Error('وقت التذكير غير صالح.');
+  if (typeof enabled !== 'boolean' || !Number.isInteger(hour) || hour < 0 || hour > 23 || !Number.isInteger(minute) || minute < 0 || minute > 59) throw new Error(t('revision.errors.reminderTime'));
   const memorized = mergeSpans(draft.memorized);
   validateSpans(memorized, index.ayahs.length);
-  if (!spanCount(memorized) && !allowEmpty) throw new Error('حدد ما تحفظه أولًا؛ المراجعة تدور على محفوظك.');
+  if (!spanCount(memorized) && !allowEmpty) throw new Error(t('revision.errors.memorizedRequired'));
   const start = memorized[0]?.start ?? 0;
   return { id, name: draft.name.trim(), riwayah: draft.riwayah, goal: { type: 'revision', dailyQuarters: draft.dailyQuarters },
     weekdays: [...draft.weekdays].sort((a, b) => a - b), startDate: draft.startDate, status: 'active', reminder: { ...draft.reminder },
@@ -239,7 +240,7 @@ export function createRevisionPlan(draft: RevisionDraft, index: PlanIndex, id: s
 }
 
 export function validateRevisionPlan(plan: RevisionPlan) {
-  const invalid = (what: string) => { throw new Error(`بيانات المراجعة غير صالحة (${what})`); };
+  const invalid = (what: string) => { throw new Error(t('revision.errors.invalidData', { what })); };
   if (plan.status === 'completed') invalid('status');
   validateSettings(plan.goal?.dailyQuarters, plan.weekdays);
   validateSpans(plan.memorized, plan.totalAyahs);

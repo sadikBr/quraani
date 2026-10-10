@@ -7,6 +7,7 @@ import type { QuranPage } from '../../types/reader';
 import { ReaderIcon, type ReaderIconName } from '../ui/reader-chrome';
 import { ReaderQuickActions } from './reader-quick-actions';
 import { ArabicText as Text } from '@/components/arabic-text';
+import { t } from '@/i18n';
 
 interface Props {
   page: QuranPage;
@@ -75,35 +76,35 @@ export function ReaderControls({ page, totalPages, previous, next, surahName, pa
       </Animated.View>
     </View>
     <View {...hiddenProps} pointerEvents={visible ? 'box-none' : 'none'} style={[styles.edge, styles.bottom]}>
-      <Animated.View accessibilityLabel="التنقل في المصحف" onLayout={(event) => setBottomHeight(event.nativeEvent.layout.height)}
+      <Animated.View accessibilityLabel={t('reader.controls.navigation')} onLayout={(event) => setBottomHeight(event.nativeEvent.layout.height)}
         style={{ backgroundColor: palette.card, opacity: progress, paddingBottom: bottomInset, borderTopWidth: StyleSheet.hairlineWidth,
           borderColor: palette.border, transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [bottomHeight, 0] }) }] }}>
         {planControls && <View style={styles.content}>{planControls}</View>}
-        {practiceActive && <View style={[styles.content, styles.practice]} accessibilityLabel="أدوات مراجعة الصفحة">
-          {practiceButton('eye', 'إظهار الكل', 'إظهار الصفحة كاملة وإنهاء المراجعة', onPractice)}
-          {practiceButton('word', 'كلمة', 'إظهار الكلمة التالية', onRevealWord, practiceComplete)}
-          {practiceButton('lines', 'آية', 'إظهار الآية التالية كاملة', onRevealAyah, practiceComplete)}
+        {practiceActive && <View style={[styles.content, styles.practice]} accessibilityLabel={t('reader.controls.practiceTools')}>
+          {practiceButton('eye', t('reader.controls.showAll'), t('reader.controls.showAllLabel'), onPractice)}
+          {practiceButton('word', t('reader.controls.word'), t('reader.controls.wordLabel'), onRevealWord, practiceComplete)}
+          {practiceButton('lines', t('reader.controls.ayah'), t('reader.controls.ayahLabel'), onRevealAyah, practiceComplete)}
         </View>}
         <View style={[styles.content, styles.navigation]} {...(Platform.OS === 'web' ? { dir: 'ltr' } : {})}>
           <Link href="/bookmarks" asChild style={styles.icon}>
-            <Pressable accessibilityRole="link" accessibilityLabel="العلامات المحفوظة">
+            <Pressable accessibilityRole="link" accessibilityLabel={t('reader.controls.bookmarks')}>
               {({ pressed }) => <ReaderIcon name="bookmark" color={pressed ? palette.primary : palette.foreground} size={20} />}
             </Pressable>
           </Link>
-          {button('chevron', 'انتقل إلى الصفحة التالية', () => next && onNavigate(next.number), !next)}
-          <Pressable accessibilityRole="button" accessibilityLabel={`${pageLabel ?? `الصفحة ${page.number} من ${totalPages}`}، الانتقال إلى صفحة أو آية`}
+          {button('chevron', t('reader.controls.nextPage'), () => next && onNavigate(next.number), !next)}
+          <Pressable accessibilityRole="button" accessibilityLabel={t('reader.controls.jump', { position: pageLabel ?? t('reader.controls.pageOf', { page: page.number, total: totalPages }) })}
             onPress={onJump} style={({ pressed }) => [styles.page, { opacity: pressed ? 0.6 : 1 }]}>
             <View style={[styles.pagePill, { backgroundColor: palette.muted }]}>
-              <Text style={{ color: palette.foreground, fontSize: 13, fontWeight: '500', lineHeight: 22, writingDirection: 'rtl', textAlign: 'center' }}>{pageLabel ?? `صفحة ${page.number}`}</Text>
+              <Text style={{ color: palette.foreground, fontSize: 13, fontWeight: '500', lineHeight: 22, writingDirection: 'rtl', textAlign: 'center' }}>{pageLabel ?? t('reader.controls.page', { page: page.number })}</Text>
               {!pageLabel && <View style={[styles.pageTrack, { backgroundColor: withAlpha(palette.primary, 0.2) }]}>
                 <View style={[styles.pageFill, { backgroundColor: palette.primary, width: `${Math.max(2, Math.min(100, page.number / Math.max(1, totalPages) * 100))}%` }]} />
               </View>}
             </View>
           </Pressable>
-          {button('chevron', 'انتقل إلى الصفحة السابقة', () => previous && onNavigate(previous.number), !previous, true)}
+          {button('chevron', t('reader.controls.previousPage'), () => previous && onNavigate(previous.number), !previous, true)}
           {practiceActive
-            ? button('close', 'إخفاء أدوات القراءة', onDismiss)
-            : button('eye-off', 'إخفاء آيات الصفحة للمراجعة', onPractice)}
+            ? button('close', t('reader.controls.hideTools'), onDismiss)
+            : button('eye-off', t('reader.controls.practice'), onPractice)}
         </View>
       </Animated.View>
     </View>

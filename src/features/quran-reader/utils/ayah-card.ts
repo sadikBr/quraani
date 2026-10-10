@@ -1,9 +1,10 @@
 import { relatedPlainText, type RelatedText } from '@/lib/quranpedia/related-content';
+import { t } from '@/i18n';
 
 export const ayahCardThemes = {
-  emerald: { label: 'زمردي', background: '#103C32', surface: '#16483C', text: '#FAF4DF', muted: '#B6C9BB', accent: '#D7B875', border: '#48705B' },
-  paper: { label: 'ورقي', background: '#F5EEDC', surface: '#FCF8EC', text: '#303D32', muted: '#69705C', accent: '#8C672F', border: '#D8C7A3' },
-  night: { label: 'ليلي', background: '#17202D', surface: '#202C3D', text: '#F6F0E2', muted: '#AEBCCB', accent: '#CDAF78', border: '#475368' },
+  emerald: { get label() { return t('reader.ayahCard.themes.emerald'); }, background: '#103C32', surface: '#16483C', text: '#FAF4DF', muted: '#B6C9BB', accent: '#D7B875', border: '#48705B' },
+  paper: { get label() { return t('reader.ayahCard.themes.paper'); }, background: '#F5EEDC', surface: '#FCF8EC', text: '#303D32', muted: '#69705C', accent: '#8C672F', border: '#D8C7A3' },
+  night: { get label() { return t('reader.ayahCard.themes.night'); }, background: '#17202D', surface: '#202C3D', text: '#F6F0E2', muted: '#AEBCCB', accent: '#CDAF78', border: '#475368' },
 } as const;
 export type AyahCardColors = { background: string; surface: string; text: string; muted: string; accent: string; border: string };
 /** 'app' follows whatever reader theme is in use, so the card matches the screen it came from. */

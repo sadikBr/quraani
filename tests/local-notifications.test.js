@@ -47,10 +47,11 @@ function phoneRuntime(os, { expoGo = true, channelError } = {}) {
     },
   };
   function resolveModule(specifier, parent) {
-    const path = specifier.startsWith('.') ? resolve(dirname(parent), specifier) : createRequire(parent).resolve(specifier);
+    if (specifier.startsWith('@/')) specifier = resolve(import.meta.dir, '../src', specifier.slice(2));
+    const path = specifier.startsWith('.') || specifier.startsWith('/') ? resolve(dirname(parent), specifier) : createRequire(parent).resolve(specifier);
     const extension = extname(path) === '.js' || extname(path) === '.ts' ? extname(path) : '';
     const base = extension ? path.slice(0, -extension.length) : path;
-    for (const suffix of [`.${os}.js`, '.native.js', extension || '.ts', '.js']) {
+    for (const suffix of [`.${os}.js`, '.native.js', extension || '.ts', '.js', '/index.ts']) {
       if (existsSync(base + suffix)) return base + suffix;
     }
     throw new Error(`Cannot resolve ${specifier}`);

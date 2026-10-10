@@ -10,7 +10,8 @@ import { RIWAYAT } from '../quran-reader/riwayat';
 import { usePlans } from './provider';
 import { ARCHIVE_RETENTION_DAYS, archiveDeletionDate, deleteArchivedGoal, restoreArchivedGoal } from './archive';
 import { DuplicateGoalError } from './goal-limit';
-import { arabicNumber, shortDate } from './presentation';
+import { shortDate } from './presentation';
+import { formatNumber, t } from '@/i18n';
 import { buildPlanIndex, unitLabels } from './engine';
 import { PlanNotice } from './components';
 import { isMemorizationPlan, isRecurringPlan, isRevisionPlan, type ReadingPlan } from './types';
@@ -22,9 +23,9 @@ export function ArchivedGoals({ plans, onOpen }: { plans: ReadingPlan[]; onOpen:
   const { palette: p } = useReadingPreferences();
   return <View style={{ gap: 16 }}>
     <View style={[s.notice, { borderColor: p.border }]}>
-      <View style={[s.days, { borderColor: p.border }]}><Text style={{ color: p.foreground, fontSize: 22, fontWeight: '600', textAlign: 'center' }}>{arabicNumber(ARCHIVE_RETENTION_DAYS)}</Text><Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center' }}>يومًا</Text></View>
-      <View style={s.grow}><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>أرشيف مؤقت</Text>
-        <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 20 }}>تُحذف الأهداف نهائيًا بعد أسبوعين من أرشفتها. استعد ما تريد الاحتفاظ به قبل موعد الحذف.</Text></View>
+      <View style={[s.days, { borderColor: p.border }]}><Text style={{ color: p.foreground, fontSize: 22, fontWeight: '600', textAlign: 'center' }}>{formatNumber(ARCHIVE_RETENTION_DAYS)}</Text><Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center' }}>{t('plans.archive.notice.days')}</Text></View>
+      <View style={s.grow}><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{t('plans.archive.notice.title')}</Text>
+        <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 20 }}>{t('plans.archive.notice.description')}</Text></View>
     </View>
     <View style={[s.list, { backgroundColor: p.card, borderColor: p.border }, readerElevation(2, p)]}>
       {plans.map((plan, i) => <View key={plan.id} style={i ? { borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border } : undefined}><ArchivedGoalCard plan={plan} onOpen={onOpen} /></View>)}
@@ -48,27 +49,27 @@ function ArchivedGoalCard({ plan, onOpen }: { plan: ReadingPlan; onOpen: (id: st
       const index = isMemorizationPlan(plan) ? buildPlanIndex((await loadReaderContent(undefined, plan.riwayah)).data) : undefined;
       await commit(items => items.map(item => item.id === plan.id ? restoreArchivedGoal(isMemorizationPlan(item) && index ? reviseMemorization(item, index, memoryFor(memorization, item.riwayah, index), memorizationReplanDate(item, today)) : item) : item));
     }
-    catch (e) { setError(e instanceof Error ? e.message : 'تعذرت استعادة الهدف.'); if (e instanceof DuplicateGoalError) setConflictId(e.goalId); }
+    catch (e) { setError(e instanceof Error ? e.message : t('plans.archive.errors.restore')); if (e instanceof DuplicateGoalError) setConflictId(e.goalId); }
     finally { setBusy(false); }
   };
   return <View>
-    <Pressable accessibilityRole="button" accessibilityLabel={`تفاصيل الهدف المؤرشف ${plan.name}`} onPress={() => onOpen(plan.id)} style={({ pressed }) => [s.cardBody, { backgroundColor: pressed ? p.accent : 'transparent' }]}>
+    <Pressable accessibilityRole="button" accessibilityLabel={t('plans.archive.card.openLabel', { name: plan.name })} onPress={() => onOpen(plan.id)} style={({ pressed }) => [s.cardBody, { backgroundColor: pressed ? p.accent : 'transparent' }]}>
       <View style={s.row}>
         <IconTile name={plan.goal.type === 'khatma' ? 'calendar' : plan.goal.type === 'revision' ? 'loop' : 'book'} tone={p.mutedForeground} />
         <View style={s.grow}><Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{plan.name}</Text>
-          <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{isMemorizationPlan(plan) ? `حفظ القرآن · ${quarterLabel(plan.goal.weeklyQuarters)} أسبوعيًا` : isRecurringPlan(plan) ? `قراءة متكررة · ${weekdaysLabel(plan.weekdays)}` : isRevisionPlan(plan) ? `مراجعة · ${quarterLabel(plan.goal.dailyQuarters)} في الجلسة` : plan.goal.type === 'khatma' ? `ختمة · ${arabicNumber(plan.goal.weeks)} أسابيع` : `ورد يومي · ${arabicNumber(plan.goal.amount)} ${unitLabels[plan.unit]}`} · {RIWAYAT[plan.riwayah].label}</Text></View>
+          <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{isMemorizationPlan(plan) ? t('plans.summary.memorization', { amount: quarterLabel(plan.goal.weeklyQuarters) }) : isRecurringPlan(plan) ? t('plans.summary.recurring', { days: weekdaysLabel(plan.weekdays) }) : isRevisionPlan(plan) ? t('plans.summary.revision', { amount: quarterLabel(plan.goal.dailyQuarters) }) : plan.goal.type === 'khatma' ? t('plans.summary.khatma', { weeks: plan.goal.weeks }) : t('plans.summary.wird', { amount: plan.goal.amount, unit: unitLabels[plan.unit] })} · {RIWAYAT[plan.riwayah].label}</Text></View>
         <ReaderIcon name="chevron" color={p.mutedForeground} size={16} />
       </View>
-      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{isMemorizationPlan(plan) ? `${arabicNumber(completed)} جلسة حفظ مكتملة · محفوظك باقٍ` : isRecurringPlan(plan) ? `${arabicNumber(completed)} قراءة مكتملة` : isRevisionPlan(plan) ? `أيام المراجعة المكتملة: ${arabicNumber(completed)} · محفوظك باقٍ` : `${arabicNumber(completed)} من ${arabicNumber(plan.cycle.sessions.length)} وردًا مكتملًا`}</Text>
+      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{isMemorizationPlan(plan) ? t('plans.archive.card.memorizationDone', { completed }) : isRecurringPlan(plan) ? t('plans.archive.card.recurringDone', { completed }) : isRevisionPlan(plan) ? t('plans.archive.card.revisionDone', { completed }) : t('plans.progress.completedOfTotal', { completed, total: plan.cycle.sessions.length })}</Text>
       {deletionDate && <View style={[s.row, { gap: 7 }]}><ReaderIcon name="archive" color={p.mutedForeground} size={16} />
-        <Text style={{ color: p.mutedForeground, fontSize: 13, flexShrink: 1 }}>الحذف التلقائي: {shortDate(deletionDate)}</Text></View>}
+        <Text style={{ color: p.mutedForeground, fontSize: 13, flexShrink: 1 }}>{t('plans.archive.card.autoDelete', { date: shortDate(deletionDate) })}</Text></View>}
     </Pressable>
     {!!error && <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}><PlanNotice message={error} />
-      {conflictId && <Button variant="link" onPress={() => onOpen(conflictId)}>عرض الهدف الحالي</Button>}
+      {conflictId && <Button variant="link" onPress={() => onOpen(conflictId)}>{t('goals.viewCurrent')}</Button>}
     </View>}
     <View style={[s.row, { paddingHorizontal: 16, paddingBottom: 16, gap: 8 }]}>
-      <Button variant="outline" icon="restore" label={`استعادة ${plan.name}`} disabled={busy} onPress={() => void restore()} style={s.grow}>{busy ? 'جارٍ الاستعادة…' : 'استعادة'}</Button>
-      <Button variant="ghost" icon="trash" tone={p.destructive} label={`حذف ${plan.name}`} disabled={busy} onPress={() => setDeleting(true)} style={s.grow}>حذف</Button>
+      <Button variant="outline" icon="restore" label={t('plans.archive.card.restoreLabel', { name: plan.name })} disabled={busy} onPress={() => void restore()} style={s.grow}>{busy ? t('plans.archive.card.restoring') : t('plans.archive.card.restore')}</Button>
+      <Button variant="ghost" icon="trash" tone={p.destructive} label={t('plans.archive.card.deleteLabel', { name: plan.name })} disabled={busy} onPress={() => setDeleting(true)} style={s.grow}>{t('plans.archive.card.delete')}</Button>
     </View>
     {deleting && <DeleteArchivedGoalDialog plan={plan} onClose={() => setDeleting(false)} />}
   </View>;
@@ -86,21 +87,21 @@ export function DeleteArchivedGoalDialog({ plan, onClose, onDeleted }: { plan: R
     if (saving.current) return;
     saving.current = true; setBusy(true); setError('');
     try { await commit(items => deleteArchivedGoal(items, plan.id)); onDeleted?.(); onClose(); }
-    catch (e) { setError(e instanceof Error ? e.message : 'تعذر حذف الهدف. حاول مرة أخرى.'); }
+    catch (e) { setError(e instanceof Error ? e.message : t('plans.archive.errors.delete')); }
     finally { saving.current = false; setBusy(false); }
   };
   return <Modal visible transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={dismiss}
     onShow={() => { if (Platform.OS === 'web') cancel.current?.focus(); else if (cancel.current) AccessibilityInfo.sendAccessibilityEvent(cancel.current, 'focus'); }}>
     <SafeAreaView style={[s.backdrop, { backgroundColor: p.overlay }]}>
-      <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="إلغاء الحذف" disabled={busy} onPress={dismiss} />
+      <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel={t('plans.archive.dialog.dismiss')} disabled={busy} onPress={dismiss} />
       <View accessibilityViewIsModal onAccessibilityEscape={dismiss} style={[s.dialog, { backgroundColor: p.background, borderColor: p.border }, readerElevation(4, p)]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
         <ScrollView contentContainerStyle={{ padding: 24, gap: 12 }}>
-          <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>حذف الهدف نهائيًا؟</Text>
-          <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22 }}>سيُحذف «{plan.name}» مع سجل الإنجاز الخاص بهذا الهدف. {isMemorizationPlan(plan) ? 'يبقى محفوظك من القرآن في سجل الحفظ. ' : ''}لا يمكن التراجع عن هذا الحذف.</Text>
+          <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('plans.archive.dialog.title')}</Text>
+          <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22 }}>{isMemorizationPlan(plan) ? t('plans.archive.dialog.bodyMemorization', { name: plan.name }) : t('plans.archive.dialog.body', { name: plan.name })}</Text>
           <PlanNotice message={error} />
           <View style={{ gap: 8, marginTop: 12 }}>
-            <Button variant="destructive" size="lg" icon="trash" label="حذف نهائيًا" disabled={busy} onPress={() => void remove()} block>{busy ? 'جارٍ الحذف…' : 'حذف نهائيًا'}</Button>
-            <Button ref={cancel} variant="outline" size="lg" label="الاحتفاظ بالهدف" disabled={busy} onPress={dismiss} block>إلغاء</Button>
+            <Button variant="destructive" size="lg" icon="trash" label={t('plans.archive.dialog.confirm')} disabled={busy} onPress={() => void remove()} block>{busy ? t('plans.archive.dialog.deleting') : t('plans.archive.dialog.confirm')}</Button>
+            <Button ref={cancel} variant="outline" size="lg" label={t('plans.archive.dialog.keep')} disabled={busy} onPress={dismiss} block>{t('common.cancel')}</Button>
           </View>
         </ScrollView>
       </View>

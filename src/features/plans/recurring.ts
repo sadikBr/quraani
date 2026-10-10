@@ -1,21 +1,22 @@
+import { formatList, t } from '@/i18n';
 import { RIWAYAT } from '../quran-reader/riwayat';
 import { addDays, validDate } from './dates';
 import type { PlanIndex } from './engine';
 import type { RecurringDraft, RecurringPlan } from './types';
 
-export const WEEKDAYS = [
-  { value: 1, label: 'الإثنين', short: 'ن' }, { value: 2, label: 'الثلاثاء', short: 'ث' },
-  { value: 3, label: 'الأربعاء', short: 'ر' }, { value: 4, label: 'الخميس', short: 'خ' },
-  { value: 5, label: 'الجمعة', short: 'ج' }, { value: 6, label: 'السبت', short: 'س' },
-  { value: 0, label: 'الأحد', short: 'ح' },
-] as const;
+/** Monday first. Labels are read from the catalog when used, so they follow the language. */
+export const WEEKDAYS = ([1, 2, 3, 4, 5, 6, 0] as const).map(value => ({
+  value,
+  get label() { return t(`common.weekdays.long.${value}`); },
+  get short() { return t(`common.weekdays.letter.${value}`); },
+}));
 export const RECURRING_PRESETS = {
-  kahf: { name: 'الكهف كل جمعة', surahs: [18], weekdays: [5], hour: 9, minute: 0, description: 'موعد أسبوعي مع سورة الكهف', icon: 'sun' },
-  mulk: { name: 'الملك كل ليلة', surahs: [67], weekdays: [0, 1, 2, 3, 4, 5, 6], hour: 21, minute: 0, description: 'سورة الملك في ختام يومك', icon: 'moon' },
+  kahf: { get name() { return t('recurring.presets.kahf.name'); }, surahs: [18], weekdays: [5], hour: 9, minute: 0, get description() { return t('recurring.presets.kahf.description'); }, icon: 'sun' },
+  mulk: { get name() { return t('recurring.presets.mulk.name'); }, surahs: [67], weekdays: [0, 1, 2, 3, 4, 5, 6], hour: 21, minute: 0, get description() { return t('recurring.presets.mulk.description'); }, icon: 'moon' },
 } as const;
 export type RecurringPreset = keyof typeof RECURRING_PRESETS;
 export function weekdaysLabel(days: number[]) {
-  return days.length === 7 ? 'كل يوم' : WEEKDAYS.filter(d => days.includes(d.value)).map(d => d.label).join('، ');
+  return days.length === 7 ? t('common.weekdays.everyDay') : formatList(WEEKDAYS.filter(d => days.includes(d.value)).map(d => d.label));
 }
 export function calendarWeekday(date: string) { return new Date(`${date}T12:00:00Z`).getUTCDay(); }
 export function scheduledOn(plan: Pick<RecurringPlan, 'weekdays' | 'startDate'>, date: string) {
@@ -24,7 +25,7 @@ export function scheduledOn(plan: Pick<RecurringPlan, 'weekdays' | 'startDate'>,
 export function nextScheduledDate(plan: Pick<RecurringPlan, 'weekdays' | 'startDate'>, from: string) {
   const first = from < plan.startDate ? plan.startDate : from;
   for (let i = 0; i < 7; i++) { const date = addDays(first, i); if (scheduledOn(plan, date)) return date; }
-  throw new Error('اختر يومًا واحدًا على الأقل للقراءة.');
+  throw new Error(t('recurring.errors.weekdays'));
 }
 export function occurrenceProgress(plan: RecurringPlan, date: string) {
   const logs = plan.occurrences.find(o => o.date === date)?.progress ?? [];
@@ -35,19 +36,19 @@ export function occurrenceProgress(plan: RecurringPlan, date: string) {
   return { logs, cursors, completed, read, total, done: completed === plan.ranges.length };
 }
 export function createRecurringPlan(draft: RecurringDraft, index: PlanIndex, id: string): RecurringPlan {
-  if (!draft.name.trim() || draft.name.trim().length > 80 || !validDate(draft.startDate) || !RIWAYAT[draft.riwayah] || index.mushafId !== RIWAYAT[draft.riwayah].mushafId) throw new Error('راجع اسم الهدف وتاريخه وروايته.');
+  if (!draft.name.trim() || draft.name.trim().length > 80 || !validDate(draft.startDate) || !RIWAYAT[draft.riwayah] || index.mushafId !== RIWAYAT[draft.riwayah].mushafId) throw new Error(t('recurring.errors.draft'));
   const weekdays = [...new Set(draft.weekdays)].sort((a, b) => a - b);
-  if (!weekdays.length || weekdays.some(d => !Number.isInteger(d) || d < 0 || d > 6)) throw new Error('اختر يومًا واحدًا على الأقل للقراءة.');
+  if (!weekdays.length || weekdays.some(d => !Number.isInteger(d) || d < 0 || d > 6)) throw new Error(t('recurring.errors.weekdays'));
   const surahs = [...new Set(draft.surahs)].sort((a, b) => a - b);
-  if (!surahs.length || surahs.some(s => !Number.isInteger(s) || s < 1 || s > 114)) throw new Error('اختر سورة واحدة على الأقل.');
+  if (!surahs.length || surahs.some(s => !Number.isInteger(s) || s < 1 || s > 114)) throw new Error(t('recurring.errors.surahs'));
   const ranges = surahs.map(surah => {
     const start = index.ayahs.findIndex(a => a.surahNumber === surah);
     const end = index.ayahs.findLastIndex(a => a.surahNumber === surah) + 1;
-    if (start < 0 || end <= start) throw new Error('تعذر العثور على السورة في هذه الرواية.');
+    if (start < 0 || end <= start) throw new Error(t('recurring.errors.surahNotFound'));
     return { surah, start, end };
   });
   const { hour, minute } = draft.reminder;
-  if (!Number.isInteger(hour) || hour < 0 || hour > 23 || !Number.isInteger(minute) || minute < 0 || minute > 59) throw new Error('وقت التذكير غير صالح.');
+  if (!Number.isInteger(hour) || hour < 0 || hour > 23 || !Number.isInteger(minute) || minute < 0 || minute > 59) throw new Error(t('recurring.errors.reminderTime'));
   return { id, name: draft.name.trim(), riwayah: draft.riwayah, goal: { type: 'recurring', surahs }, startDate: draft.startDate,
     status: 'active', weekdays, reminder: { ...draft.reminder }, corpus: index.corpus, totalAyahs: index.ayahs.length, ranges, occurrences: [] };
 }
@@ -81,7 +82,7 @@ export function completedOccurrences(plan: RecurringPlan) {
 
 /** Validate persisted ranges and ordered progress before publishing any saved data. */
 export function validateRecurringPlan(plan: RecurringPlan) {
-  const invalid = () => { throw new Error('بيانات القراءة المتكررة غير صالحة'); };
+  const invalid = () => { throw new Error(t('recurring.errors.invalidData')); };
   if (plan.status === 'completed' || !Array.isArray(plan.goal.surahs) || !plan.goal.surahs.length || plan.goal.surahs.length > 114 ||
     !Array.isArray(plan.ranges) || plan.ranges.length !== plan.goal.surahs.length || !Array.isArray(plan.occurrences) ||
     new Set(plan.weekdays).size !== plan.weekdays.length) invalid();

@@ -13,8 +13,9 @@ import { ReaderButton } from '../reading/reader-button';
 import { ReaderIcon } from '../ui/reader-chrome';
 import { LibraryEmpty, LibraryHeader, LibrarySearch, LibraryTabs, libraryStyles as l, listRowFrame } from '../ui/library-chrome';
 import { RIWAYAT } from '../../riwayat';
+import { t } from '@/i18n';
 
-const tabs = [{ value: 'surah', label: 'السور' }, { value: 'juz', label: 'الأجزاء' }, { value: 'hizb', label: 'الأحزاب' }] as const;
+const tabs = [{ value: 'surah', get label() { return t('library.index.tabs.surah'); } }, { value: 'juz', get label() { return t('library.index.tabs.juz'); } }, { value: 'hizb', get label() { return t('library.index.tabs.hizb'); } }] as const;
 export function IndexScreen() {
   const { content, loading, error, refresh } = useReaderContent();
   const { palette: p, dark, preferences } = useReadingPreferences();
@@ -24,27 +25,27 @@ export function IndexScreen() {
   const items = useMemo(() => content ? readerIndexItems(content.data, kind, query) : [], [content, kind, query]);
   const open = (item: ReaderIndexItem) => router.dismissTo({ pathname: '/', params: { surah: String(item.start.surahNumber), ayah: String(item.start.ayahNumber) } });
   const changeQuery = (value: string) => { setQuery(value); list.current?.scrollToOffset({ offset: 0, animated: false }); };
-  const placeholder = kind === 'surah' ? 'اسم السورة أو رقمها' : kind === 'juz' ? 'رقم الجزء أو سورة بدايته' : 'رقم الحزب أو سورة بدايته';
+  const placeholder = t(`library.index.search.placeholder.${kind}`);
   return <SafeAreaView style={[l.root, { backgroundColor: p.background }]}>
     <StatusBar style={dark ? 'light' : 'dark'} />
-    <LibraryHeader title="فهرس القرآن" subtitle={`رواية ${RIWAYAT[preferences.riwayah].label}`} icon="index" palette={p} onBack={() => router.canGoBack() ? router.back() : router.replace('/')} />
+    <LibraryHeader title={t('library.index.title')} subtitle={t('common.riwayahOf', { riwayah: RIWAYAT[preferences.riwayah].label })} icon="index" palette={p} onBack={() => router.canGoBack() ? router.back() : router.replace('/')} />
     <View style={l.filters}>
-      <LibrarySearch value={query} onChange={changeQuery} label="البحث في الفهرس" placeholder={placeholder} palette={p} />
-      <LibraryTabs options={tabs} value={kind} onChange={value => { setKind(value); changeQuery(''); }} label="أقسام الفهرس" palette={p} />
+      <LibrarySearch value={query} onChange={changeQuery} label={t('library.index.search.label')} placeholder={placeholder} palette={p} />
+      <LibraryTabs options={tabs} value={kind} onChange={value => { setKind(value); changeQuery(''); }} label={t('library.index.tabs.label')} palette={p} />
     </View>
     <FlatList ref={list} data={content ? items : []} keyExtractor={item => `${kind}:${item.number}`} style={l.list} contentContainerStyle={l.content}
       keyboardShouldPersistTaps="handled" keyboardDismissMode={Platform.OS === 'web' ? 'none' : 'on-drag'} showsVerticalScrollIndicator={false} initialNumToRender={12} windowSize={7}
-      ListHeaderComponent={content ? <View style={l.results}><Text style={{ color: p.foreground, fontSize: 13, fontWeight: '600' }}>{query.trim() ? 'نتائج البحث' : 'اختر موضعًا وابدأ القراءة'}</Text><Text accessibilityLiveRegion="polite" style={{ color: p.mutedForeground, fontSize: 13 }}>{items.length} {kind === 'surah' ? 'سورة' : kind === 'juz' ? 'جزءًا' : 'حزبًا'}</Text></View> : null}
-      ListEmptyComponent={!content ? loading ? <View style={l.status}><ActivityIndicator accessibilityLabel="جارٍ تحميل الفهرس" color={p.primary} /></View> : <LibraryEmpty title="تعذر فتح الفهرس" description={error ? 'تحقق من الاتصال، ثم أعد المحاولة.' : 'الفهرس غير متوفر الآن.'} icon="book" palette={p}><ReaderButton palette={p} onPress={refresh}>إعادة المحاولة</ReaderButton></LibraryEmpty>
-        : <LibraryEmpty title="لا توجد نتائج" description="جرّب اسمًا أو رقمًا آخر، أو امسح البحث لعرض الفهرس كاملًا." icon="search" palette={p}><ReaderButton palette={p} onPress={() => changeQuery('')}>مسح البحث</ReaderButton></LibraryEmpty>}
-      renderItem={({ item, index }) => <Pressable accessibilityRole="button" accessibilityLabel={`${item.title}، ${item.detail}، الصفحة ${item.pageNumber}`} accessibilityHint="افتح المصحف عند بداية الموضع" onPress={() => open(item)}
+      ListHeaderComponent={content ? <View style={l.results}><Text style={{ color: p.foreground, fontSize: 13, fontWeight: '600' }}>{query.trim() ? t('library.searchResults') : t('library.index.prompt')}</Text><Text accessibilityLiveRegion="polite" style={{ color: p.mutedForeground, fontSize: 13 }}>{t(`library.index.count.${kind}`, { n: items.length })}</Text></View> : null}
+      ListEmptyComponent={!content ? loading ? <View style={l.status}><ActivityIndicator accessibilityLabel={t('library.index.loading')} color={p.primary} /></View> : <LibraryEmpty title={t('library.index.error.title')} description={error ? t('common.checkConnection') : t('library.index.error.unavailable')} icon="book" palette={p}><ReaderButton palette={p} onPress={refresh}>{t('common.retry')}</ReaderButton></LibraryEmpty>
+        : <LibraryEmpty title={t('library.index.empty.title')} description={t('library.index.empty.description')} icon="search" palette={p}><ReaderButton palette={p} onPress={() => changeQuery('')}>{t('common.clearSearch')}</ReaderButton></LibraryEmpty>}
+      renderItem={({ item, index }) => <Pressable accessibilityRole="button" accessibilityLabel={t('library.index.item.label', { title: item.title, detail: item.detail, page: item.pageNumber })} accessibilityHint={t('library.index.item.hint')} onPress={() => open(item)}
         style={({ pressed }) => [s.item, listRowFrame(index, items.length), { borderColor: p.border, backgroundColor: pressed ? p.accent : p.card }]}>
         <Text style={[s.number, { color: p.mutedForeground }]}>{item.number}</Text>
         <View style={s.name}>
           <Text accessibilityLabel={item.title} style={{ color: kind === 'surah' ? p.ornament : p.foreground, fontSize: 19, fontWeight: kind === 'surah' ? '400' : '600', ...(kind === 'surah' && font.loaded ? calligraphyStyle(34) : {}) }}>{kind === 'surah' && font.loaded ? surahNameGlyph(item.number) : item.title}</Text>
           <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{item.detail}</Text>
         </View>
-        <Text style={{ color: p.mutedForeground, fontSize: 13 }}>صفحة {item.pageNumber}</Text>
+        <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('library.index.item.page', { page: item.pageNumber })}</Text>
         <ReaderIcon name="chevron" color={p.mutedForeground} size={16} />
       </Pressable>} />
   </SafeAreaView>;

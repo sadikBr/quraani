@@ -6,6 +6,8 @@ import { readerThemeOptions, readerThemes, type ReaderAppearance, type ReaderPal
 import { ReaderIcon } from '../ui/reader-chrome';
 import { readerShape } from '../../design';
 import { SettingsSelection } from './settings-ui';
+import { t } from '@/i18n';
+import { tRich } from '@/i18n/rich';
 
 interface Props {
   appearance: ReaderAppearance;
@@ -32,26 +34,26 @@ export function ReaderThemePicker({ appearance, onChange, palette }: Props) {
   const columns = width >= 560 ? 3 : 2;
   const cardWidth = width ? Math.floor((width - (columns - 1) * 12) / columns) : undefined;
   const selectedLabel = readerThemeOptions.find(option => option.id === appearance)?.label;
-  return <View accessibilityRole="radiogroup" accessibilityLabel="مظهر التطبيق" style={styles.panel}>
+  return <View accessibilityRole="radiogroup" accessibilityLabel={t('settings.appearance.label')} style={styles.panel}>
     <View style={styles.current}>
       <View style={[styles.currentDot, { backgroundColor: palette.primary }]} />
-      <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>المظهر الحالي: <Text style={{ color: palette.foreground, fontWeight: '600' }}>{selectedLabel}</Text></Text>
+      <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{tRich('settings.appearance.current', { theme: <Text style={{ color: palette.foreground, fontWeight: '600' }}>{selectedLabel}</Text> })}</Text>
     </View>
-    <Pressable accessibilityRole="radio" accessibilityLabel="حسب الجهاز" accessibilityState={{ checked: appearance === 'system' }} aria-checked={appearance === 'system'}
+    <Pressable accessibilityRole="radio" accessibilityLabel={t('themes.system')} accessibilityState={{ checked: appearance === 'system' }} aria-checked={appearance === 'system'}
       onPress={() => onChange('system')} style={({ pressed }) => [styles.system, { backgroundColor: pressed ? palette.accent : palette.card, borderColor: appearance === 'system' ? palette.primary : palette.border }]}>
       <IconTile name="system" palette={palette} />
-      <View style={{ flex: 1 }}><Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600' }}>حسب الجهاز</Text><Text style={{ color: palette.mutedForeground, fontSize: 14 }}>يتبدّل تلقائيًا بين الفاتح والداكن.</Text></View>
+      <View style={{ flex: 1 }}><Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600' }}>{t('themes.system')}</Text><Text style={{ color: palette.mutedForeground, fontSize: 14 }}>{t('settings.appearance.systemDetail')}</Text></View>
       <SettingsSelection selected={appearance === 'system'} palette={palette} />
     </Pressable>
     <View style={{ gap: 22 }} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
       {[false, true].map(dark => <View key={String(dark)} style={{ gap: 12 }}>
-        <View style={styles.groupHeading}><ReaderIcon name={dark ? 'moon' : 'sun'} color={palette.mutedForeground} size={16} /><Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 16, fontWeight: '600' }}>{dark ? 'درجات داكنة' : 'درجات فاتحة'}</Text><View style={[styles.groupRule, { backgroundColor: palette.border }]} /></View>
+        <View style={styles.groupHeading}><ReaderIcon name={dark ? 'moon' : 'sun'} color={palette.mutedForeground} size={16} /><Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 16, fontWeight: '600' }}>{dark ? t('settings.appearance.darkShades') : t('settings.appearance.lightShades')}</Text><View style={[styles.groupRule, { backgroundColor: palette.border }]} /></View>
         <View style={styles.grid}>{readerThemeOptions.filter(option => option.id !== 'system' && option.dark === dark).map(option => {
           if (option.id === 'system') return null;
           const selected = appearance === option.id;
           const sample = readerThemes[option.id];
           return <Pressable key={option.id} accessibilityRole="radio" accessibilityLabel={option.label}
-            accessibilityState={{ checked: selected }} aria-checked={selected} accessibilityHint="يُطبّق على التطبيق والمصحف ويُحفظ تلقائيًا"
+            accessibilityState={{ checked: selected }} aria-checked={selected} accessibilityHint={t('settings.appearance.themeHint')}
             onPress={() => onChange(option.id)}
             style={({ pressed }) => [styles.card, { width: cardWidth, borderColor: selected ? palette.primary : palette.border,
               backgroundColor: pressed ? palette.accent : palette.card }]}>

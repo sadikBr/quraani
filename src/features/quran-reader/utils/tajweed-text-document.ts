@@ -5,6 +5,7 @@ import { ayahKey } from './references';
 import { ayahWords } from './page-practice';
 import { readerTextLineHeight } from './reader-typography';
 import { sliceTajweed, tajweedColor, type TajweedSurah } from './tajweed';
+import { t } from '@/i18n';
 
 const escape = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -31,9 +32,13 @@ export function tajweedTextDocument(ayahs: readonly Ayah[], layout: ReaderTextLa
   const interaction = preview ? '' : ' role="button" tabindex="0"';
   const rows = ayahs.map((ayah) => {
     const words = ayahWords(ayah.text).map((word) => `<span class="word">${escape(word)}</span>`).join('');
-    const verse = `<span class="ayah" data-key="${ayahKey(ayah)}" data-surah="${ayah.surahNumber}" data-ayah="${ayah.ayahNumber}"><span class="verse"${interaction}>${words}</span>\u00a0<span class="marker"${interaction} aria-label="${preview ? 'الآية' : 'إجراءات الآية'} ${ayah.ayahNumber}">${escape(ayah.marker)}</span></span> `;
+    const verse = `<span class="ayah" data-key="${ayahKey(ayah)}" data-surah="${ayah.surahNumber}" data-ayah="${ayah.ayahNumber}"><span class="verse"${interaction}>${words}</span>\u00a0<span class="marker"${interaction} aria-label="${escape(t(preview ? 'reader.tajweed.ayah' : 'reader.tajweed.ayahActions', { ayah: ayah.ayahNumber }))}">${escape(ayah.marker)}</span></span> `;
     return layout === 'flowing' ? verse : `<div class="row">${preview ? '' : `<div class="reference">${ayah.surahNumber}:${ayah.ayahNumber}</div>`}<div class="paragraph">${verse}</div></div>`;
   }).join('');
+  // The script fills in each ayah's spoken label whenever its words are hidden or revealed.
+  const script = (value: string) => JSON.stringify(value).replace(/</g, '\\u003c');
+  const spokenLabel = script(t('reader.ayah.spokenLabel', { surah: '{{surah}}', ayah: '{{ayah}}', text: '{{text}}' }));
+  const hiddenLabel = script(t('reader.ayah.hidden'));
   return `<!doctype html><html dir="rtl" lang="ar"><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'"><style>
 @font-face{font-family:quran;src:url('${font}') format('truetype');font-display:block}
 *{box-sizing:border-box}html,body{margin:0;padding:0;background:${palette.card};color:${palette.foreground};overflow:hidden;-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}main{opacity:0;font:400 ${fontSize}px/${readerTextLineHeight(fontSize, spacious)}px quran;direction:rtl;text-align:justify;padding:8px 0;white-space:pre-wrap}.word,.verse,.ayah{display:inline}.hidden{visibility:hidden}.marker{color:${palette.ornament}}.selected{background:${palette.highlight}}.row{padding-bottom:18px;margin-bottom:14px;border-bottom:1px solid ${palette.border}}.row:last-child{margin-bottom:0}.paragraph{padding:8px 0}.reference{display:table;font:500 12px/1.6 sans-serif;padding:3px 10px;margin:0 0 6px auto;color:${palette.secondaryForeground};background:${palette.secondary};border-radius:999px}.verse,.marker{cursor:pointer}.marker:focus-visible,.verse:focus-visible{outline:1px solid ${palette.primary}}
@@ -42,7 +47,7 @@ ${preview ? 'main{padding:0}.row,.row:last-child,.paragraph{padding:0;margin:0;b
 const main=document.querySelector('main');let ready=false,applied=false;
 const send=(type,extra={})=>{const data=JSON.stringify({source:'quranni-tajweed-text',type,...extra});if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage(data);else window.parent.postMessage(data,'*')};
 function measure(){if(!ready||!applied)return;main.style.opacity='1';send('layout',{height:Math.ceil(main.getBoundingClientRect().height),ayahs:[...document.querySelectorAll('.ayah')].map(a=>({key:a.dataset.key,y:a.getClientRects()[0]?.top??0}))})}
-window.applyQuranState=(state)=>{for(const value of state){const ayah=[...document.querySelectorAll('.ayah')].find(a=>a.dataset.key===value.key);if(!ayah)continue;ayah.classList.toggle('selected',value.selected);const words=[...ayah.querySelectorAll('.word')];words.forEach((word,i)=>{if(word.dataset.html!==value.words[i]){word.innerHTML=value.words[i];word.dataset.html=value.words[i]}const hidden=value.visible!==null&&i>=value.visible;word.classList.toggle('hidden',hidden);word.setAttribute('aria-hidden',String(hidden))});const spoken=words.filter((_,i)=>value.visible===null||i<value.visible).map(w=>w.textContent).join('');ayah.querySelector('.verse').setAttribute('aria-label','السورة '+ayah.dataset.surah+'، الآية '+ayah.dataset.ayah+'. '+(spoken||'آية مخفية'))}applied=true;measure()};
+window.applyQuranState=(state)=>{for(const value of state){const ayah=[...document.querySelectorAll('.ayah')].find(a=>a.dataset.key===value.key);if(!ayah)continue;ayah.classList.toggle('selected',value.selected);const words=[...ayah.querySelectorAll('.word')];words.forEach((word,i)=>{if(word.dataset.html!==value.words[i]){word.innerHTML=value.words[i];word.dataset.html=value.words[i]}const hidden=value.visible!==null&&i>=value.visible;word.classList.toggle('hidden',hidden);word.setAttribute('aria-hidden',String(hidden))});const spoken=words.filter((_,i)=>value.visible===null||i<value.visible).map(w=>w.textContent).join('');ayah.querySelector('.verse').setAttribute('aria-label',${spokenLabel}.replace('{{surah}}',()=>ayah.dataset.surah).replace('{{ayah}}',()=>ayah.dataset.ayah).replace('{{text}}',()=>spoken||${hiddenLabel}))}applied=true;measure()};
 window.addEventListener('message',e=>{if(e.source===window.parent&&e.data?.source==='quranni-reader-state')window.applyQuranState(e.data.state)});
 document.fonts.load('${fontSize}px quran').then(()=>{ready=true;send('ready');measure()}).catch(()=>send('error'));new ResizeObserver(measure).observe(document.documentElement);
 if(${!preview}){

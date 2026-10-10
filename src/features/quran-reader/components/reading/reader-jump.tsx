@@ -9,6 +9,7 @@ import type { ReaderPalette } from '../../theme';
 import { ayahDestination, parseReaderNumber } from '../../utils/navigation';
 import { pageDivisions } from '../../utils/page-divisions';
 import { ReaderIcon } from '../ui/reader-chrome';
+import { formatList, t } from '@/i18n';
 
 export function ReaderJump({ content, currentPage, palette: p, onJump, limited = false }: {
   content: ReaderContent; currentPage: number; palette: ReaderPalette; onJump: (page: number, ayah?: AyahReference) => void; limited?: boolean;
@@ -25,19 +26,19 @@ export function ReaderJump({ content, currentPage, palette: p, onJump, limited =
   const targetAyah = ayahDestination(content, parseReaderNumber(surah), parseReaderNumber(ayah));
   const destinationPage = kind === 'page' ? content.pages[pageIndex] : content.pages.find(value => value.number === targetAyah?.pageNumber);
   const surahNumbers = kind === 'ayah' ? [targetAyah?.surahNumber] : [...new Set(destinationPage?.ayahs.map(value => value.surahNumber) ?? [])];
-  const destinationName = content.quran.surahs.filter(value => surahNumbers.includes(value.number)).map(value => value.name).join('، ');
+  const destinationName = formatList(content.quran.surahs.filter(value => surahNumbers.includes(value.number)).map(value => value.name));
   const divisions = destinationPage ? pageDivisions(destinationPage) : undefined;
-  const previewDetail = kind === 'ayah' && targetAyah ? `الآية ${targetAyah.ayahNumber} · صفحة ${targetAyah.pageNumber}`
-    : [divisions?.juz.length ? `الجزء ${divisions.juz.join('، ')}` : '', divisions?.quarters.length ? `الحزب ${[...new Set(divisions.quarters.map(value => value.hizb))].join('، ')}` : ''].filter(Boolean).join(' · ');
-  const pageHint = `${limited ? 'صفحات الورد: من' : 'من'} ${firstPage} إلى ${lastPage}`;
-  const ayahHint = selectedSurah ? `من ${selectedSurah.ayahs[0].ayahNumber} إلى ${selectedSurah.ayahs.at(-1)!.ayahNumber}` : 'اختر السورة أولًا';
+  const previewDetail = kind === 'ayah' && targetAyah ? t('reader.ayah.location', { ayah: targetAyah.ayahNumber, page: targetAyah.pageNumber })
+    : [divisions?.juz.length ? t('reader.divisions.juz', { juz: formatList(divisions.juz.map(String)) }) : '', divisions?.quarters.length ? t('reader.divisions.hizb', { hizb: formatList([...new Set(divisions.quarters.map(value => value.hizb))].map(String)) }) : ''].filter(Boolean).join(' · ');
+  const pageHint = t(limited ? 'reader.jump.sessionPages' : 'reader.jump.range', { first: firstPage, last: lastPage });
+  const ayahHint = selectedSurah ? t('reader.jump.range', { first: selectedSurah.ayahs[0].ayahNumber, last: selectedSurah.ayahs.at(-1)!.ayahNumber }) : t('reader.jump.chooseSurahFirst');
   const change = (setter: (value: string) => void) => (value: string) => { setter(value); setError(''); };
   const submit = () => {
     if (kind === 'page') {
-      if (!destinationPage) { setError(`اختر صفحة بين ${firstPage} و${lastPage}.`); return; }
+      if (!destinationPage) { setError(t('reader.jump.pageError', { first: firstPage, last: lastPage })); return; }
       Keyboard.dismiss(); onJump(destinationPage.number);
     } else {
-      if (!targetAyah) { setError(limited ? 'اختر آية ضمن الورد المحدد.' : 'تحقق من رقم السورة والآية في الرواية المختارة.'); return; }
+      if (!targetAyah) { setError(limited ? t('reader.jump.sessionAyahError') : t('reader.jump.ayahError')); return; }
       Keyboard.dismiss(); onJump(targetAyah.pageNumber, targetAyah);
     }
   };
@@ -45,10 +46,10 @@ export function ReaderJump({ content, currentPage, palette: p, onJump, limited =
     const next = pageIndex >= 0 ? content.pages[pageIndex + delta] : undefined;
     if (next) change(setPage)(String(next.number));
   };
-  const actionLabel = destinationPage ? kind === 'page' ? `انتقل إلى الصفحة ${destinationPage.number}` : `انتقل إلى الآية ${targetAyah!.ayahNumber}` : 'الانتقال إلى الموضع';
+  const actionLabel = destinationPage ? kind === 'page' ? t('reader.jump.toPage', { page: destinationPage.number }) : t('reader.jump.toAyah', { ayah: targetAyah!.ayahNumber }) : t('reader.jump.toDestination');
   return <View style={s.form}>
-    <View accessibilityRole="tablist" accessibilityLabel="طريقة الانتقال" style={[s.tabs, { borderColor: p.border }]}>
-      {([{ value: 'page', label: 'بالصفحة', icon: 'book' }, { value: 'ayah', label: 'بالآية', icon: 'lines' }] as const).map(option => {
+    <View accessibilityRole="tablist" accessibilityLabel={t('reader.jump.method')} style={[s.tabs, { borderColor: p.border }]}>
+      {([{ value: 'page', label: t('reader.jump.byPage'), icon: 'book' }, { value: 'ayah', label: t('reader.jump.byAyah'), icon: 'lines' }] as const).map(option => {
         const selected = kind === option.value;
         return <Pressable key={option.value} accessibilityRole="tab" accessibilityLabel={option.label} accessibilityState={{ selected }} aria-selected={selected}
           onPress={() => { Keyboard.dismiss(); setKind(option.value); setError(''); }}
@@ -59,21 +60,21 @@ export function ReaderJump({ content, currentPage, palette: p, onJump, limited =
       })}
     </View>
     {kind === 'page' ? <View style={s.pagePicker}>
-      <PageStep label="زيادة رقم الصفحة" plus disabled={pageIndex < 0 || pageIndex === content.pages.length - 1} palette={p} onPress={() => stepPage(1)} />
-      <NumberField label="رقم الصفحة" value={page} onChange={change(setPage)} hint={pageHint} palette={p} onSubmit={submit} large />
-      <PageStep label="تقليل رقم الصفحة" disabled={pageIndex <= 0} palette={p} onPress={() => stepPage(-1)} />
+      <PageStep label={t('reader.jump.increasePage')} plus disabled={pageIndex < 0 || pageIndex === content.pages.length - 1} palette={p} onPress={() => stepPage(1)} />
+      <NumberField label={t('reader.jump.pageNumber')} value={page} onChange={change(setPage)} hint={pageHint} palette={p} onSubmit={submit} large />
+      <PageStep label={t('reader.jump.decreasePage')} disabled={pageIndex <= 0} palette={p} onPress={() => stepPage(-1)} />
     </View> : <View style={s.ayahFields}>
-      <NumberField label="رقم السورة" value={surah} onChange={change(setSurah)} hint={limited ? 'ضمن الورد' : 'من 1 إلى 114'} palette={p} onSubmit={submit} />
-      <NumberField label="رقم الآية" value={ayah} onChange={change(setAyah)} hint={ayahHint} palette={p} onSubmit={submit} />
+      <NumberField label={t('reader.jump.surahNumber')} value={surah} onChange={change(setSurah)} hint={limited ? t('reader.jump.withinSession') : t('reader.jump.range', { first: 1, last: 114 })} palette={p} onSubmit={submit} />
+      <NumberField label={t('reader.jump.ayahNumber')} value={ayah} onChange={change(setAyah)} hint={ayahHint} palette={p} onSubmit={submit} />
     </View>}
     <View accessibilityLiveRegion="polite" style={[s.preview, { backgroundColor: p.card, borderColor: p.border }]}>
       <IconTile name="book" palette={p} />
       <View style={s.grow}>
-        <Text style={{ color: p.mutedForeground, fontSize: 12 }}>وجهتك {limited ? 'داخل الورد' : 'في المصحف'}</Text>
-        <Text style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{destinationName || 'اختر موضعًا للانتقال'}</Text>
+        <Text style={{ color: p.mutedForeground, fontSize: 12 }}>{limited ? t('reader.jump.destinationSession') : t('reader.jump.destination')}</Text>
+        <Text style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{destinationName || t('reader.jump.chooseDestination')}</Text>
         {!!previewDetail && <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{previewDetail}</Text>}
       </View>
-      {destinationPage && <View style={[s.pageBadge, { borderColor: p.border }]}><Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center' }}>صفحة</Text><Text style={{ color: p.foreground, fontSize: 21, textAlign: 'center' }}>{destinationPage.number}</Text></View>}
+      {destinationPage && <View style={[s.pageBadge, { borderColor: p.border }]}><Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center' }}>{t('reader.jump.page')}</Text><Text style={{ color: p.foreground, fontSize: 21, textAlign: 'center' }}>{destinationPage.number}</Text></View>}
     </View>
     {!!error && <Text accessibilityRole="alert" style={{ color: p.destructive, fontSize: 13 }}>{error}</Text>}
     <Button palette={p} size="lg" label={actionLabel} onPress={submit} iconEnd="chevron" block>{actionLabel}</Button>

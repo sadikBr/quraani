@@ -1,7 +1,8 @@
 import { useRef } from 'react';
 import Slider from '@react-native-community/slider';
 import type { ReaderPalette } from '../../theme';
-import { readerFontLabels } from '../../utils/reader-typography';
+import { readerFontLabel } from '../../utils/reader-typography';
+import { t } from '@/i18n';
 
 export interface ReaderFontSliderProps {
   value: number;
@@ -15,8 +16,8 @@ export function ReaderFontSlider({ value, previewValue, onPreview, onCommit, pal
   const dragging = useRef(false);
   // Give the native control a fixed LTR base, then mirror it once. App-wide RTL
   // alone does not reliably determine the slider's thumb/track direction.
-  return <Slider testID="reader-font-slider" accessibilityLabel="حجم نص القرآن" accessibilityHint="سبعة أحجام، من الأصغر إلى الأكبر"
-    accessibilityValue={{ min: 0, max: 6, now: previewValue, text: `${readerFontLabels[previewValue]}، ${previewValue + 1} من 7` }}
+  return <Slider testID="reader-font-slider" accessibilityLabel={t('settings.fontSize.label')} accessibilityHint={t('settings.fontSize.hint')}
+    accessibilityValue={{ min: 0, max: 6, now: previewValue, text: t('settings.fontSize.value', { label: readerFontLabel(previewValue), step: previewValue + 1, total: 7 }) }}
     minimumValue={0} maximumValue={6} step={1} value={value} tapToSeek
     inverted style={{ width: '100%', height: 48, direction: 'ltr' }}
     minimumTrackTintColor={palette.primary} maximumTrackTintColor={palette.muted} thumbTintColor={palette.primary}

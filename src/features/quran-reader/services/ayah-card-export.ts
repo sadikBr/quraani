@@ -1,6 +1,7 @@
 import { PixelRatio, Platform, type View } from 'react-native';
 import { captureRef, releaseCapture } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
+import { t } from '@/i18n';
 
 export interface PreparedAyahCard {
   uri: string;
@@ -18,7 +19,7 @@ export async function prepareAyahCard(view: View, width: number, height: number,
   return {
     uri,
     action: 'share',
-    share: async () => { await Sharing.shareAsync(uri, { mimeType: 'image/png', UTI: 'public.png', dialogTitle: 'مشاركة بطاقة الآية' }); return 'shared'; },
+    share: async () => { await Sharing.shareAsync(uri, { mimeType: 'image/png', UTI: 'public.png', dialogTitle: t('reader.ayahCard.shareDialogTitle') }); return 'shared'; },
     dispose: () => releaseCapture(uri),
   };
 }

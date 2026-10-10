@@ -6,12 +6,13 @@ import { ArabicText as Text } from '@/components/arabic-text';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { readerElevation, readerLayout, readerShape, withAlpha } from '../quran-reader/design';
 import { IconButton } from '../quran-reader/components/ui/reader-chrome';
+import { t } from '@/i18n';
 
 export function PlanScreen({ title, subtitle, onBack, children }: PropsWithChildren<{ title: string; subtitle?: string; onBack: () => void }>) {
   const { palette } = useReadingPreferences();
   return <SafeAreaView style={{ flex: 1, backgroundColor: palette.background }}>
     <View style={styles.header}>
-      <IconButton name="back" label="رجوع" palette={palette} onPress={onBack} />
+      <IconButton name="back" label={t('plans.back')} palette={palette} onPress={onBack} />
       <View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ fontSize: 24, fontWeight: '600', color: palette.foreground }}>{title}</Text>
         {!!subtitle && <Text style={{ color: palette.mutedForeground, fontSize: 14 }}>{subtitle}</Text>}</View>
     </View>
@@ -29,7 +30,7 @@ export function Copy({ children, muted = false, title = false }: PropsWithChildr
 }
 /** A destructive Alert, so warnings read as a message rather than stray text. */
 export function PlanNotice({ message, retry }: { message?: string; retry?: () => void }) {
-  return message ? <Alert variant="destructive" action={retry && <Button variant="outline" size="sm" icon="restore" onPress={retry} style={{ alignSelf: 'flex-start' }}>إعادة المحاولة</Button>}>{message}</Alert> : null;
+  return message ? <Alert variant="destructive" action={retry && <Button variant="outline" size="sm" icon="restore" onPress={retry} style={{ alignSelf: 'flex-start' }}>{t('common.retry')}</Button>}>{message}</Alert> : null;
 }
 /** Field: label, then an Input (`input` border, `radius-md`, shadow-xs; focus → `ring`). */
 export function PlanField({ label, value, onChange, numeric = false, placeholder }: { label: string; value: string; onChange: (value: string) => void; numeric?: boolean; placeholder?: string }) {
@@ -48,7 +49,7 @@ export function PlanSwitch({ label, detail, checked, onChange, disabled = false 
     <SwitchMark checked={checked} />
   </Pressable>;
 }
-export function PlanLoading() { const { palette } = useReadingPreferences(); return <ActivityIndicator accessibilityLabel="جارٍ تحميل الهدف" color={palette.mutedForeground} style={{ marginVertical: 24 }} />; }
+export function PlanLoading() { const { palette } = useReadingPreferences(); return <ActivityIndicator accessibilityLabel={t('plans.loading')} color={palette.mutedForeground} style={{ marginVertical: 24 }} />; }
 export function ProgressBar({ value }: { value: number }) {
   return <Progress value={value} />;
 }

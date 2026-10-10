@@ -10,7 +10,7 @@ import { ReaderButton } from '../quran-reader/components/reading/reader-button';
 import { readerLayout, readerShape } from '../quran-reader/design';
 import { startChoices, filterStartChoices } from './start-point';
 import type { PlanIndex } from './engine';
-import { arabicNumber } from './presentation';
+import { formatNumber, t } from '@/i18n';
 import { sheet } from './components';
 
 export function SurahSelectionSheet({ index, selected, onSave, onClose }: { index: PlanIndex; selected: number[]; onSave: (surahs: number[]) => void; onClose: () => void }) {
@@ -26,24 +26,24 @@ export function SurahSelectionSheet({ index, selected, onSave, onClose }: { inde
         <SafeAreaView edges={['bottom']} accessibilityViewIsModal onAccessibilityEscape={onClose} style={{ height: '92%', width: '100%', maxWidth: readerLayout.maxWidth, backgroundColor: p.background, borderTopLeftRadius: readerShape.sheet, borderTopRightRadius: readerShape.sheet, borderWidth: StyleSheet.hairlineWidth, borderBottomWidth: 0, borderColor: p.border }} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
           <View style={[sheet.grabber, { backgroundColor: p.border }]} />
           <View style={{ padding: 16, paddingTop: 8, gap: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>سور ترافقك</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>اختر سورة أو أكثر، بترتيب المصحف.</Text></View>
-              <Pressable ref={close} accessibilityRole="button" accessibilityLabel="إغلاق اختيار السور" onPress={onClose} hitSlop={4} style={({ pressed }) => [sheet.close, { backgroundColor: pressed ? p.accent : 'transparent' }]}><ReaderIcon name="close" color={p.mutedForeground} size={18} /></Pressable>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('plans.surahSheet.title')}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('plans.surahSheet.subtitle')}</Text></View>
+              <Pressable ref={close} accessibilityRole="button" accessibilityLabel={t('plans.surahSheet.close')} onPress={onClose} hitSlop={4} style={({ pressed }) => [sheet.close, { backgroundColor: pressed ? p.accent : 'transparent' }]}><ReaderIcon name="close" color={p.mutedForeground} size={18} /></Pressable>
             </View>
-            <LibrarySearch palette={p} value={query} onChange={setQuery} label="البحث عن سورة" placeholder="اسم السورة أو رقمها" />
+            <LibrarySearch palette={p} value={query} onChange={setQuery} label={t('plans.surahSheet.searchLabel')} placeholder={t('plans.surahSheet.searchPlaceholder')} />
           </View>
           <FlatList data={filtered} keyExtractor={item => String(item.number)} extraData={draft} keyboardShouldPersistTaps="handled" initialNumToRender={12} windowSize={5} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
-            ListEmptyComponent={<Text style={{ color: p.mutedForeground, textAlign: 'center', padding: 16 }}>لا توجد سورة بهذا الاسم أو الرقم.</Text>}
+            ListEmptyComponent={<Text style={{ color: p.mutedForeground, textAlign: 'center', padding: 16 }}>{t('plans.surahSheet.empty')}</Text>}
             renderItem={({ item, index: position }) => {
               const checked = draft.includes(item.number);
               const first = position === 0, last = position === filtered.length - 1;
               return <Pressable accessibilityRole="checkbox" accessibilityLabel={index.surahNames[item.number]} accessibilityState={{ checked }} aria-checked={checked}
                 onPress={() => setDraft(items => checked ? items.filter(n => n !== item.number) : [...items, item.number])}
                 style={({ pressed }) => [sheet.row, { gap: 14, borderColor: p.border, backgroundColor: checked || pressed ? p.accent : p.card, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: last ? StyleSheet.hairlineWidth : 0 }, first && sheet.rowFirst, last && sheet.rowLast]}>
-                <Text style={{ color: p.mutedForeground, fontSize: 13, minWidth: 28 }}>{arabicNumber(item.number)}</Text><Text style={{ color: p.foreground, fontSize: 16, fontWeight: checked ? '600' : '400', flex: 1 }}>{index.surahNames[item.number]}</Text>
+                <Text style={{ color: p.mutedForeground, fontSize: 13, minWidth: 28 }}>{formatNumber(item.number)}</Text><Text style={{ color: p.foreground, fontSize: 16, fontWeight: checked ? '600' : '400', flex: 1 }}>{index.surahNames[item.number]}</Text>
                 <CheckMark checked={checked} />
               </Pressable>;
             }} />
-          <View style={{ padding: 16, borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }}><ReaderButton palette={p} selected disabled={!draft.length} onPress={() => onSave([...draft].sort((a, b) => a - b))}>{`اعتماد الاختيار · ${arabicNumber(draft.length)}`}</ReaderButton></View>
+          <View style={{ padding: 16, borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }}><ReaderButton palette={p} selected disabled={!draft.length} onPress={() => onSave([...draft].sort((a, b) => a - b))}>{t('plans.surahSheet.confirm', { selected: draft.length })}</ReaderButton></View>
         </SafeAreaView>
       </KeyboardAvoidingView>
     </SafeAreaView>

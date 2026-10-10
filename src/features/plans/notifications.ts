@@ -4,6 +4,7 @@ import * as Notifications from './local-notifications';
 import type { ReadingPlan } from './types';
 import { planReminderQueue, REMINDER_PREFIX } from './reminder-schedule';
 import { ReminderSetupError } from './reminder-errors';
+import { t } from '@/i18n';
 
 export const remindersSupported = true;
 Notifications.setNotificationHandler({ handleNotification: async () => ({ shouldPlaySound: false, shouldSetBadge: false, shouldShowBanner: true, shouldShowList: true }) });
@@ -12,7 +13,7 @@ async function channel(): Promise<string | undefined> {
   // Expo Go's SDK 57 channel manager can lack its scoped provider. Omitting
   // channelId uses Expo's built-in fallback channel instead of that manager.
   if (Platform.OS !== 'android' || isRunningInExpoGo()) return undefined;
-  channelResult ??= Notifications.setNotificationChannelAsync('reading-plans', { name: 'تذكيرات الأهداف', importance: Notifications.AndroidImportance.DEFAULT })
+  channelResult ??= Notifications.setNotificationChannelAsync('reading-plans', { name: t('plans.reminders.channelName'), importance: Notifications.AndroidImportance.DEFAULT })
     .then(result => result ? 'reading-plans' : undefined)
     .catch(error => {
       if (error instanceof Error && /NotificationsChannelsProvider/.test(error.message)) return undefined;

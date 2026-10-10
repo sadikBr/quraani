@@ -1,12 +1,15 @@
 import type { TajweedLine } from './tajweed';
 import type { ReaderPalette } from '../theme';
+import { t } from '@/i18n';
 export interface TajweedBlock { surah: number; title: string; opens: boolean; lines: TajweedLine[] }
 const escape = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 /** Build our own minimal document from validated glyphs. No source scripts/HTML. */
 export function tajweedDocument(blocks: TajweedBlock[], font: string, palette: ReaderPalette, dark: boolean, selected: string | null, openingHeights: Record<number, number> = {}) {
   const body = blocks.map((block) => `${block.opens ? `<div data-opening="${block.surah}" style="height:${openingHeights[block.surah] ?? 100}px"></div>` : ''}` + block.lines.map((line) => `<div class="line ${line.centered ? 'centered' : ''}">${line.words.map((w) => {
     const ref = `${w.surah}:${w.ayah}`;
-    return `<span data-surah="${w.surah}" data-ayah="${w.ayah}" data-marker="${w.marker ? '1' : '0'}"${w.marker ? ' role="button" tabindex="0"' : ''} aria-label="${w.marker ? 'إجراءات' : ''} الآية ${w.ayah}" class="word ${selected === ref ? 'selected' : ''}">${escape(w.glyph)}</span>`;
+    // Word labels have always started with a space.
+    const label = w.marker ? t('reader.tajweed.ayahActions', { ayah: w.ayah }) : ` ${t('reader.tajweed.ayah', { ayah: w.ayah })}`;
+    return `<span data-surah="${w.surah}" data-ayah="${w.ayah}" data-marker="${w.marker ? '1' : '0'}"${w.marker ? ' role="button" tabindex="0"' : ''} aria-label="${escape(label)}" class="word ${selected === ref ? 'selected' : ''}">${escape(w.glyph)}</span>`;
   }).join('')}</div>`).join('')).join('');
   return `<!doctype html><html dir="rtl" lang="ar"><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'"><style>
 @font-face{font-family:tajweed;src:url('${font}') format('woff2');font-display:block}

@@ -5,10 +5,11 @@ import type { ReaderPalette } from '../../theme';
 import { readerElevation, readerLayout, readerShape, withAlpha } from '../../design';
 import { Button, Empty, IconTile, Tabs } from '@/components/ui';
 import { ReaderIcon, type ReaderIconName } from './reader-chrome';
+import { t } from '@/i18n';
 
 export function LibraryHeader({ title, subtitle, icon, palette: p, onBack }: { title: string; subtitle: string; icon: ReaderIconName; palette: ReaderPalette; onBack: () => void }) {
   return <View style={[l.header, { borderColor: p.border }]}>
-    <Button icon="back" label="العودة إلى القراءة" onPress={onBack} palette={p} variant="outline" />
+    <Button icon="back" label={t('common.backToReading')} onPress={onBack} palette={p} variant="outline" />
     <View style={l.grow}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 24, fontWeight: '600' }}>{title}</Text><Text style={{ color: p.mutedForeground, fontSize: 14 }}>{subtitle}</Text></View>
     <IconTile name={icon} palette={p} />
   </View>;
@@ -21,7 +22,7 @@ export function LibrarySearch({ value, onChange, label, placeholder, palette: p 
     <ReaderIcon name="search" color={p.mutedForeground} size={18} />
     <TextInput accessibilityLabel={label} placeholder={placeholder} placeholderTextColor={p.mutedForeground} value={value} onChangeText={onChange}
       onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} autoCorrect={false} returnKeyType="search" selectionColor={p.primary} style={[l.input, { color: p.foreground }]} />
-    {!!value && <Pressable accessibilityRole="button" accessibilityLabel="مسح البحث" onPress={() => onChange('')} style={l.clear}><ReaderIcon name="close" color={p.mutedForeground} size={16} /></Pressable>}
+    {!!value && <Pressable accessibilityRole="button" accessibilityLabel={t('common.clearSearch')} onPress={() => onChange('')} style={l.clear}><ReaderIcon name="close" color={p.mutedForeground} size={16} /></Pressable>}
   </View>;
 }
 

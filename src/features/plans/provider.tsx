@@ -11,6 +11,7 @@ import { isSequentialPlan, type MemorizationRecord, type ReadingPlan } from './t
 import { reminderFailureMessage } from './reminder-errors';
 import { currentGoal } from './goal-limit';
 import { maintainArchives } from './archive';
+import { t } from '@/i18n';
 
 interface PlansContextValue {
   plans: ReadingPlan[]; memorization: MemorizationRecord[]; ready: boolean; error: string; reminderError: string; today: string;
@@ -36,7 +37,7 @@ export function PlansProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     let active = true;
     void repository.current.load().then(value => { if (active) { setPlans(value); setMemorization(repository.current.memorization()); setReady(true); setError(''); } })
-      .catch(() => { if (active) setError('تعذر تحميل الأهداف المحفوظة. بياناتك لم تُستبدل. أعد المحاولة.'); });
+      .catch(() => { if (active) setError(t('plans.storage.loadFailed')); });
     return () => { active = false; };
   }, [revision]);
   const commit = useCallback(async (change: (plans: ReadingPlan[]) => ReadingPlan[]) => {
@@ -54,7 +55,7 @@ export function PlansProvider({ children }: PropsWithChildren) {
     let active = true;
     void commit(items => maintainArchives(items, today))
       .then(() => { if (active) setArchiveError(''); })
-      .catch(() => { if (active) setArchiveError('تعذر تنظيف الأرشيف. بياناتك محفوظة؛ أعد المحاولة.'); });
+      .catch(() => { if (active) setArchiveError(t('plans.storage.archiveCleanupFailed')); });
     return () => { active = false; };
   }, [ready, today, clockRevision, commit]);
   useEffect(() => {
@@ -89,7 +90,7 @@ export function PlansProvider({ children }: PropsWithChildren) {
           ? currentGoal(items, p.id) ? { ...p, repeat: false } : rollCompletedCycle(p, index, today)
           : p));
       }).then(() => { rollovers.current.delete(plan.id); setRolloverError(''); })
-        .catch(() => { rollovers.current.set(plan.id, Date.now() + 5 * 60_000); setRolloverError('تعذر بدء دورة جديدة. سنعيد المحاولة تلقائيًا عند توفر المصحف.'); });
+        .catch(() => { rollovers.current.set(plan.id, Date.now() + 5 * 60_000); setRolloverError(t('plans.storage.rolloverFailed')); });
     }
   }, [plans, ready, today, commit, clockRevision]);
   return <Context.Provider value={{ plans, memorization, ready, error: error || archiveError || rolloverError, reminderError, today, commit, relink, retry: () => { rollovers.current.clear(); setRevision(x => x + 1); setClockRevision(x => x + 1); } }}>{children}</Context.Provider>;
