@@ -68,11 +68,11 @@ export function ReaderJump({ content, currentPage, palette: p, onJump, limited =
     <View accessibilityLiveRegion="polite" style={[s.preview, { backgroundColor: p.accentSoft }]}>
       <ReaderIcon name="book" color={p.accent} size={26} />
       <View style={s.grow}>
-        <Text style={{ color: p.muted, fontSize: 11 }}>وجهتك {limited ? 'داخل الورد' : 'في المصحف'}</Text>
+        <Text style={{ color: p.muted, fontSize: 12 }}>وجهتك {limited ? 'داخل الورد' : 'في المصحف'}</Text>
         <Text style={{ color: p.text, fontSize: 19, fontWeight: '600' }}>{destinationName || 'اختر موضعًا للانتقال'}</Text>
-        {!!previewDetail && <Text style={{ color: p.muted, fontSize: 12 }}>{previewDetail}</Text>}
+        {!!previewDetail && <Text style={{ color: p.muted, fontSize: 13 }}>{previewDetail}</Text>}
       </View>
-      {destinationPage && <View style={[s.pageBadge, { borderColor: p.border }]}><Text style={{ color: p.accent, fontSize: 11, textAlign: 'center' }}>صفحة</Text><Text style={{ color: p.accent, fontSize: 21, textAlign: 'center' }}>{destinationPage.number}</Text></View>}
+      {destinationPage && <View style={[s.pageBadge, { borderColor: p.border }]}><Text style={{ color: p.muted, fontSize: 12, textAlign: 'center' }}>صفحة</Text><Text style={{ color: p.text, fontSize: 21, textAlign: 'center' }}>{destinationPage.number}</Text></View>}
     </View>
     {!!error && <Text accessibilityRole="alert" style={{ color: p.warning, fontSize: 13 }}>{error}</Text>}
     <Pressable accessibilityRole="button" accessibilityLabel={actionLabel} onPress={submit}
@@ -87,11 +87,11 @@ function NumberField({ label, value, onChange, hint, palette: p, onSubmit, large
 }) {
   const [focused, setFocused] = useState(false);
   return <View style={s.field}>
-    <Text style={{ color: p.muted, fontSize: 12, textAlign: 'center' }}>{label}</Text>
+    <Text style={{ color: p.muted, fontSize: 13, textAlign: 'center' }}>{label}</Text>
     <TextInput accessibilityLabel={label} value={value} onChangeText={onChange} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
       keyboardType="number-pad" inputMode="numeric" maxLength={3} selectTextOnFocus selectionColor={p.accent} onSubmitEditing={onSubmit} returnKeyType="go"
       style={[s.input, large && s.largeInput, { color: p.text, borderColor: focused ? p.accent : p.border, backgroundColor: p.background }]} />
-    <Text style={{ color: p.muted, fontSize: 11, textAlign: 'center' }}>{hint}</Text>
+    <Text style={{ color: p.muted, fontSize: 12, textAlign: 'center' }}>{hint}</Text>
   </View>;
 }
 function PageStep({ label, onPress, disabled, plus = false, palette: p }: { label: string; onPress: () => void; disabled: boolean; plus?: boolean; palette: ReaderPalette }) {
@@ -103,14 +103,14 @@ function PageStep({ label, onPress, disabled, plus = false, palette: p }: { labe
 }
 const s = StyleSheet.create({
   form: { gap: 20 }, grow: { flex: 1, minWidth: 0 },
-  tabs: { flexDirection: 'row', borderBottomWidth: 1, gap: 20 },
+  tabs: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, gap: 20 },
   tab: { flex: 1, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', minHeight: 48, paddingBottom: 8, borderBottomWidth: 2, marginBottom: -1 },
   pagePicker: { flexDirection: 'row', gap: 18, alignItems: 'center', paddingVertical: 2 },
   ayahFields: { flexDirection: 'row', gap: 16 }, field: { flex: 1, minWidth: 0, gap: 6 },
   input: { minHeight: 64, borderWidth: 1, borderRadius: readerShape.control, paddingHorizontal: 8, paddingVertical: 4, fontFamily: 'ReaderNaskh', fontSize: 30, textAlign: 'center', writingDirection: 'ltr', includeFontPadding: false },
   largeInput: { minHeight: 80, fontSize: 42 },
-  step: { width: 44, height: 44, borderWidth: 1, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
+  step: { width: 44, height: 44, borderWidth: StyleSheet.hairlineWidth * 2, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
   preview: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: readerShape.card },
-  pageBadge: { minWidth: 46, borderStartWidth: 1, paddingStart: 12 },
+  pageBadge: { minWidth: 46, borderStartWidth: StyleSheet.hairlineWidth, paddingStart: 12 },
   submit: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, paddingHorizontal: 16, borderRadius: readerShape.control },
 });

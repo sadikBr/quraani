@@ -17,7 +17,7 @@ import { goalsOverview, type GoalsView } from './overview';
 import { MemorizationGoalCard } from './memorization-components';
 import { isMemorizationPlan, isRecurringPlan, type ReadingPlan } from './types';
 import { RecurringGoalCard } from './recurring-components';
-import { GoalCardFrame, GoalCardHeading } from './goal-card';
+import { GoalCardFrame, GoalCardHeading, GoalProgress } from './goal-card';
 import { PlanLoading, PlanNotice } from './components';
 import { ArchivedGoals } from './archive-components';
 
@@ -42,9 +42,9 @@ export function PlansScreen() {
       </Pressable>
     </View>
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
-      <View>
-        <Text accessibilityRole="header" style={{ fontSize: 31, fontWeight: '700', color: p.text }}>أهدافك القرآنية</Text>
-        <Text style={{ fontSize: 14, color: p.muted }}>قراءة وحفظ، ومواعيد تتجدد مع القرآن.</Text>
+      <View style={{ gap: 2 }}>
+        <Text accessibilityRole="header" style={{ fontSize: 28, fontWeight: '700', color: p.text }}>أهدافك القرآنية</Text>
+        <Text style={{ fontSize: 15, color: p.muted }}>قراءة وحفظ، ومواعيد تتجدد مع القرآن.</Text>
       </View>
       <PlanNotice message={error} retry={retry} /><PlanNotice message={reminderError} />
       {!ready ? !error && <PlanLoading /> : <>
@@ -54,7 +54,7 @@ export function PlansScreen() {
             const selected = view === tab.value;
             return <Pressable key={tab.value} accessibilityRole="tab" accessibilityLabel={tab.label} accessibilityState={{ selected }} aria-selected={selected} onPress={() => setView(tab.value)}
               style={({ pressed }) => [s.tab, selected && [{ backgroundColor: p.paper }, readerElevation(1, p)], { opacity: pressed ? 0.7 : 1 }]}>
-              <Text style={{ color: selected ? p.accent : p.muted, fontSize: 14, fontWeight: selected ? '700' : '400' }}>{tab.label}</Text>
+              <Text style={{ color: selected ? p.accent : p.muted, fontSize: 14, fontWeight: selected ? '600' : '400' }}>{tab.label}</Text>
               {tab.count > 0 && <View style={[s.count, { backgroundColor: selected ? p.accent : withAlpha(p.text, 0.1) }]}><Text style={{ fontSize: 11, lineHeight: 18, color: selected ? p.paper : p.muted, textAlign: 'center' }}>{arabicNumber(tab.count)}</Text></View>}
             </Pressable>;
           })}
@@ -83,12 +83,12 @@ function DailyOverview({ today, due, completed, hasGoals }: { today: string; due
         <Text style={{ color: p.onHero, fontSize: 24, fontWeight: '600', marginTop: 4 }}>{due ? 'وردك بانتظارك' : completed ? 'خطوة أخرى أنجزتها' : 'وقتٌ للقرآن'}</Text>
         <Text style={{ color: p.heroMuted, fontSize: 13 }}>{due ? 'خطوة صغيرة اليوم، تقرّبك من هدفك.' : hasGoals ? 'رحلتك مستمرة، على مهلٍ وثبات.' : 'اجعل للقرآن نصيبًا من يومك.'}</Text>
       </View>
-      <View style={[s.heroIcon, { borderColor: `${p.onHero}33` }]}><ReaderIcon name={completed && !due ? 'check' : 'book'} color={p.onHero} size={32} strokeWidth={1.35} /></View>
+      <View style={[s.heroIcon, { borderColor: withAlpha(p.onHero, 0.2) }]}><ReaderIcon name={completed && !due ? 'check' : 'book'} color={p.onHero} size={28} strokeWidth={1.35} /></View>
     </View>
-    {hasGoals && <View style={[s.stats, { borderColor: `${p.onHero}26` }]}>
-      <View style={s.stat}><Text style={{ color: p.onHero, fontSize: 25 }}>{arabicNumber(due)}</Text><Text style={{ color: p.heroMuted, fontSize: 12, flexShrink: 1 }}>بانتظارك اليوم</Text></View>
-      <View style={{ width: 1, alignSelf: 'stretch', backgroundColor: `${p.onHero}26` }} />
-      <View style={s.stat}><Text style={{ color: p.onHero, fontSize: 25 }}>{arabicNumber(completed)}</Text><Text style={{ color: p.heroMuted, fontSize: 12, flexShrink: 1 }}>أوراد أتممتها اليوم</Text></View>
+    {hasGoals && <View style={[s.stats, { borderColor: withAlpha(p.onHero, 0.15) }]}>
+      <View style={s.stat}><Text style={{ color: p.onHero, fontSize: 22, fontWeight: '600' }}>{arabicNumber(due)}</Text><Text style={{ color: p.heroMuted, fontSize: 12, flexShrink: 1 }}>بانتظارك اليوم</Text></View>
+      <View style={{ width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: withAlpha(p.onHero, 0.2) }} />
+      <View style={s.stat}><Text style={{ color: p.onHero, fontSize: 22, fontWeight: '600' }}>{arabicNumber(completed)}</Text><Text style={{ color: p.heroMuted, fontSize: 12, flexShrink: 1 }}>أوراد أتممتها اليوم</Text></View>
     </View>}
   </View>;
 }
@@ -105,14 +105,8 @@ function GoalCard({ plan, today }: { plan: ReadingPlan; today: string }) {
   const description = plan.goal.type === 'khatma' ? `ختمة · ${arabicNumber(plan.goal.weeks)} أسابيع` : `ورد يومي · ${arabicNumber(plan.goal.amount)} ${unitLabels[plan.unit]}`;
   return <GoalCardFrame id={plan.id} name={plan.name} status={status} due={!!next?.due} accessibilityDetail={`، اكتمل ${percent} بالمئة`}>
     <GoalCardHeading name={plan.name} description={description} icon={plan.goal.type === 'khatma' ? 'calendar' : 'book'}
-      trailing={<Text style={{ color: p.accent, fontSize: 24, textAlign: 'center' }}>{arabicNumber(percent)}٪</Text>} />
-      <View style={{ gap: 8 }}>
-        <View style={[s.row, { justifyContent: 'space-between', flexWrap: 'wrap', rowGap: 0 }]}>
-          <Text style={{ color: p.muted, fontSize: 12 }}>{arabicNumber(completed)} من {arabicNumber(plan.cycle.sessions.length)} وردًا</Text>
-          <Text style={{ color: p.muted, fontSize: 11 }}>{RIWAYAT[plan.riwayah].label}</Text>
-        </View>
-        <View style={[s.progress, { backgroundColor: p.border }]}><View style={{ height: '100%', width: `${progress * 100}%`, backgroundColor: p.accent }} /></View>
-      </View>
+      trailing={<Text style={{ color: p.text, fontSize: 22, fontWeight: '600', lineHeight: 28 }}>{arabicNumber(percent)}٪</Text>} />
+    <GoalProgress value={progress} label={`${arabicNumber(completed)} من ${arabicNumber(plan.cycle.sessions.length)} وردًا`} trailing={RIWAYAT[plan.riwayah].label} />
   </GoalCardFrame>;
 }
 
@@ -123,28 +117,27 @@ function EmptyGoals({ view, hasGoals, completed, onCreate, onShowAll }: { view: 
   const description = view === 'archived' ? 'تُحفظ الأهداف هنا لمدة أسبوعين بعد أرشفتها، ثم تُحذف نهائيًا.' : waiting ? 'تجد أهدافك القادمة والموقوفة في «أهدافي».' : 'ختمة، أو حفظ متدرّج، أو سور تختار لها مواعيد تتجدد.';
   return <View style={[s.empty, { borderColor: p.border }]}>
     <View style={[s.emptyIcon, { backgroundColor: p.accentSoft }]}><ReaderIcon name={view === 'archived' ? 'bookmark' : waiting && completed ? 'check' : 'book'} color={p.accent} size={28} /></View>
-    <Text accessibilityRole="header" style={{ color: p.text, fontSize: 21, fontWeight: '600', textAlign: 'center' }}>{title}</Text>
-    <Text style={{ color: p.muted, fontSize: 14, textAlign: 'center' }}>{description}</Text>
+    <Text accessibilityRole="header" style={{ color: p.text, fontSize: 19, fontWeight: '600', textAlign: 'center' }}>{title}</Text>
+    <Text style={{ color: p.muted, fontSize: 13, lineHeight: 22, textAlign: 'center', maxWidth: 320 }}>{description}</Text>
     {view !== 'archived' && <View style={{ alignSelf: 'stretch', marginTop: 8 }}><ReaderButton palette={p} selected={!waiting} onPress={waiting ? onShowAll : onCreate}>{waiting ? 'عرض أهدافي' : 'إنشاء أول هدف'}</ReaderButton></View>}
   </View>;
 }
 
 const s = StyleSheet.create({
   navigation: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 20, paddingVertical: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  back: { flexDirection: 'row', gap: 6, minHeight: 44, alignItems: 'center', paddingStart: 12, paddingEnd: 16, borderRadius: readerShape.pill, borderWidth: StyleSheet.hairlineWidth * 2 },
-  create: { flexDirection: 'row', gap: 6, minHeight: 44, paddingHorizontal: 16, alignItems: 'center', borderRadius: readerShape.pill },
-  content: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', padding: 20, paddingTop: 6, paddingBottom: 40, gap: 22 },
+  back: { flexDirection: 'row', gap: 6, minHeight: 44, alignItems: 'center', paddingStart: 12, paddingEnd: 16, borderRadius: readerShape.control, borderWidth: 1 },
+  create: { flexDirection: 'row', gap: 6, minHeight: 44, paddingHorizontal: 16, alignItems: 'center', borderRadius: readerShape.control },
+  content: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', padding: 20, paddingTop: 6, paddingBottom: 40, gap: 24 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   grow: { flex: 1, minWidth: 0 },
   hero: { borderRadius: readerShape.hero, padding: 22, gap: 16, overflow: 'hidden' },
-  heroIcon: { width: 58, height: 66, borderWidth: 1, borderTopLeftRadius: 29, borderTopRightRadius: 29, borderBottomLeftRadius: 4, borderBottomRightRadius: 4, alignItems: 'center', justifyContent: 'center' },
+  heroIcon: { width: 56, height: 56, borderWidth: 1, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
   motif: { position: 'absolute', left: -80, top: -25 },
-  stats: { flexDirection: 'row', borderTopWidth: 1, paddingTop: 12, gap: 16 },
+  stats: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 12, gap: 16 },
   stat: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
   tabs: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: readerShape.control + 2 },
-  tab: { flex: 1, flexDirection: 'row', gap: 7, minHeight: 42, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, paddingVertical: 6, borderRadius: readerShape.control - 2 },
-  count: { minWidth: 20, height: 20, paddingHorizontal: 5, borderRadius: 10, justifyContent: 'center' },
-  progress: { height: 5, borderRadius: 3, overflow: 'hidden' },
-  empty: { borderWidth: 1.5, borderStyle: 'dashed', borderRadius: readerShape.card, padding: 28, gap: 8, alignItems: 'center' },
-  emptyIcon: { width: 64, height: 64, borderRadius: readerShape.pill, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+  tab: { flex: 1, flexDirection: 'row', gap: 7, minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, paddingVertical: 6, borderRadius: readerShape.control - 2 },
+  count: { minWidth: 20, height: 20, paddingHorizontal: 5, borderRadius: readerShape.pill, justifyContent: 'center' },
+  empty: { borderWidth: 1, borderStyle: 'dashed', borderRadius: readerShape.card, padding: 28, gap: 8, alignItems: 'center' },
+  emptyIcon: { width: 56, height: 56, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
 });

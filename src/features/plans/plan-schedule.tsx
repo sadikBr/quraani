@@ -25,17 +25,17 @@ function WeeklySchedule({ plan, index, today, current }: { plan: SequentialPlan;
   const navigate = (offset: number) => { setWeek(w => w + offset); setExpanded(null); };
   return <View style={{ gap: 12 }}>
     <View style={[d.row, { justifyContent: 'space-between' }]}>
-      <Text accessibilityRole="header" style={{ color: p.text, fontSize: 21, fontWeight: '600' }}>{plan.goal.type === 'khatma' ? 'جدول الختمة' : 'مسار القراءة'}</Text>
-      <Text style={{ color: p.muted, fontSize: 12 }}>{arabicNumber(plan.cycle.sessions.length)} وردًا</Text>
+      <Text accessibilityRole="header" style={{ color: p.text, fontSize: 19, fontWeight: '600' }}>{plan.goal.type === 'khatma' ? 'جدول الختمة' : 'مسار القراءة'}</Text>
+      <Text style={{ color: p.muted, fontSize: 13 }}>{arabicNumber(plan.cycle.sessions.length)} وردًا</Text>
     </View>
-    {plan.goal.type === 'wird' && <Text style={{ color: p.muted, fontSize: 12 }}>المواعيد القادمة تقديرية، وتتبع آخر ورد أكملته.</Text>}
+    {plan.goal.type === 'wird' && <Text style={{ color: p.muted, fontSize: 13, lineHeight: 22 }}>المواعيد القادمة تقديرية، وتتبع آخر ورد أكملته.</Text>}
     <View style={[styles.calendar, { backgroundColor: p.paper, borderColor: p.border }]}>
       <View style={[styles.week, { borderColor: p.border }]}>
         <WeekButton previous disabled={week === 0} onPress={() => navigate(-1)} />
-        <Text accessibilityLiveRegion="polite" style={{ color: p.text, fontSize: 15, fontWeight: '600', flex: 1, textAlign: 'center' }}>الأسبوع {arabicNumber(week + 1)} <Text style={{ color: p.muted, fontSize: 12 }}>من {arabicNumber(weeks)}</Text></Text>
+        <Text accessibilityLiveRegion="polite" style={{ color: p.text, fontSize: 15, fontWeight: '600', flex: 1, textAlign: 'center' }}>الأسبوع {arabicNumber(week + 1)} <Text style={{ color: p.muted, fontSize: 13, fontWeight: '400' }}>من {arabicNumber(weeks)}</Text></Text>
         <WeekButton disabled={week === weeks - 1} onPress={() => navigate(1)} />
       </View>
-      <View style={{ padding: 8 }}>
+      <View style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
         {plan.cycle.sessions.slice(week * 7, week * 7 + 7).map((session, offset, visible) => {
           const slot = week * 7 + offset;
           const done = session.end <= plan.cycle.cursor;
@@ -57,11 +57,11 @@ function WeeklySchedule({ plan, index, today, current }: { plan: SequentialPlan;
               </View>
               <View style={d.grow}>
                 <View style={[d.row, { justifyContent: 'space-between', flexWrap: 'wrap', columnGap: 10, rowGap: 0 }]}>
-                  <Text style={{ color: active ? p.accent : p.muted, fontSize: 11 }}>{date === today ? 'اليوم' : shortDate(date)}</Text>
-                  {!!status && <Text style={{ color: active ? p.accent : p.muted, fontSize: 11, fontWeight: active ? '600' : '400' }}>{status}</Text>}
+                  <Text style={{ color: active ? p.accent : p.muted, fontSize: 12 }}>{date === today ? 'اليوم' : shortDate(date)}</Text>
+                  {!!status && <Text style={{ color: active ? p.accent : p.muted, fontSize: 12, fontWeight: active ? '600' : '400' }}>{status}</Text>}
                 </View>
-                <Text style={{ color: p.text, fontSize: 16, fontWeight: active ? '600' : '400' }}>{rangeLabel(index, session.start, session.end)}</Text>
-                {isExpanded && <Text style={{ color: p.muted, fontSize: 12, marginTop: 4 }}>{ayahRangeLabel(index, session.start, session.end)}</Text>}
+                <Text style={{ color: p.text, fontSize: 15, fontWeight: active ? '600' : '400' }}>{rangeLabel(index, session.start, session.end)}</Text>
+                {isExpanded && <Text style={{ color: p.muted, fontSize: 13, marginTop: 4 }}>{ayahRangeLabel(index, session.start, session.end)}</Text>}
               </View>
               <View style={{ transform: [{ rotate: isExpanded ? '-90deg' : '0deg' }], marginTop: 15 }}><ReaderIcon name="chevron" color={p.muted} size={15} /></View>
             </Pressable>
@@ -83,6 +83,6 @@ const styles = StyleSheet.create({
   week: { flexDirection: 'row', alignItems: 'center', padding: 6, borderBottomWidth: StyleSheet.hairlineWidth },
   weekButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.control },
   session: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 8, paddingHorizontal: 10, borderRadius: readerShape.control },
-  marker: { width: 26, minHeight: 26, borderRadius: 13, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  marker: { width: 26, minHeight: 26, borderRadius: readerShape.control - 2, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   connector: { position: 'absolute', top: 39, bottom: -12, width: 1 },
 });

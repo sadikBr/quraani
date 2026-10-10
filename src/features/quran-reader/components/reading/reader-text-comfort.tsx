@@ -11,6 +11,7 @@ import { useTajweed } from '../../hooks/use-tajweed';
 import { useReadingPreferences } from '../../state/reading-preferences-provider';
 import { readerFontLabels, readerFontStep, readerFontSteps, readerTextLineHeight, snapReaderFontSize } from '../../utils/reader-typography';
 import { Segments } from '../ui/reader-chrome';
+import { readerShape } from '../../design';
 import { SettingsCardHeading, settingsStyles } from './settings-ui';
 import { ReaderFontSlider } from './reader-font-slider';
 import { ReaderButton } from './reader-button';
@@ -46,7 +47,7 @@ export function ReaderTextComfort({ palette, fontSize, setFontSize, spacious, se
             {readerFontSteps.map((size, index) => <View key={size} style={[styles.tick, { backgroundColor: index <= selectedStep ? palette.accent : palette.muted }]} />)}
           </View>
           <View style={styles.rangeLabels}>
-            <Text style={{ color: palette.muted, fontSize: 11 }}>صغير</Text><Text style={{ color: palette.muted, fontSize: 11 }}>كبير</Text>
+            <Text style={{ color: palette.muted, fontSize: 12 }}>صغير</Text><Text style={{ color: palette.muted, fontSize: 12 }}>كبير</Text>
           </View>
         </View>
         <View style={{ gap: 10, marginTop: 8 }}>
@@ -70,11 +71,11 @@ function TextPreview({ palette, fontSize, spacious, textLayout }: { palette: Rea
   const quranStyle = { color: palette.text, fontFamily, fontSize, lineHeight: readerTextLineHeight(fontSize, spacious), writingDirection: 'rtl' as const, textAlign: 'justify' as const, includeFontPadding: true };
   return <View testID="reader-text-preview" style={[styles.preview, { backgroundColor: palette.paper, borderColor: palette.border }]}>
     <View style={styles.previewHeading}>
-      <View style={styles.live}><View style={[styles.liveDot, { backgroundColor: palette.accent }]} /><Text style={{ color: palette.accent, fontSize: 11, fontWeight: '600' }}>معاينة مباشرة</Text></View>
-      <Text style={{ color: palette.muted, fontSize: 11 }}>{surah?.name ?? 'سورة الفاتحة'}</Text>
+      <View style={styles.live}><View style={[styles.liveDot, { backgroundColor: palette.accent }]} /><Text style={{ color: palette.accent, fontSize: 12, fontWeight: '600' }}>معاينة مباشرة</Text></View>
+      <Text style={{ color: palette.muted, fontSize: 12 }}>{surah?.name ?? 'سورة الفاتحة'}</Text>
     </View>
     {loading || (!loaded && !fontError) ? <ActivityIndicator color={palette.accent} accessibilityLabel="جارٍ تحميل معاينة النص" style={{ marginVertical: 28 }} />
-      : error || fontError || !ayahs?.length ? <View style={{ gap: 10 }}><Text style={{ color: palette.muted, fontSize: 12 }}>تعذر عرض المعاينة. يمكنك متابعة ضبط النص.</Text>{error && <ReaderButton palette={palette} onPress={refresh}>إعادة تحميل المعاينة</ReaderButton>}</View>
+      : error || fontError || !ayahs?.length ? <View style={{ gap: 10 }}><Text style={{ color: palette.muted, fontSize: 13 }}>تعذر عرض المعاينة. يمكنك متابعة ضبط النص.</Text>{error && <ReaderButton palette={palette} onPress={refresh}>إعادة تحميل المعاينة</ReaderButton>}</View>
         : <View><SurahOpening number={1} name={surah!.name} fontSize={fontSize} palette={palette}
             bismillah={content?.data.quran.id === 4 ? content.data.quran.bismillah : undefined} />
           {tajweed && content ? <TajweedPreview key={content.data.quran.id} content={content.data} ayahs={ayahs} palette={palette} dark={dark} fontSize={fontSize} spacious={spacious} textLayout={textLayout} />
@@ -93,7 +94,7 @@ function TajweedPreview({ content, ayahs, palette, dark, fontSize, spacious, tex
     <TajweedTextSection preview ayahs={ayahs} pageNumber={1} layout={textLayout} fontSize={fontSize} spacious={spacious}
       palette={palette} dark={dark} runs={coloring.data[1]} selectedAyah={null} />
     {coloring.error && <View style={{ gap: 8, marginTop: 12 }}>
-      <Text style={{ color: palette.muted, fontSize: 12 }}>تعذر تحميل ألوان التجويد. النص ظاهر دون ألوان.</Text>
+      <Text style={{ color: palette.muted, fontSize: 13 }}>تعذر تحميل ألوان التجويد. النص ظاهر دون ألوان.</Text>
       <ReaderButton palette={palette} onPress={coloring.retry}>إعادة تحميل الألوان</ReaderButton>
     </View>}
   </View>;
@@ -102,10 +103,10 @@ function TajweedPreview({ content, ayahs, palette, dark, fontSize, spacious, tex
 const styles = StyleSheet.create({
   body: { gap: 20 }, wide: { flexDirection: 'row', alignItems: 'flex-start' },
   controls: { minWidth: 0, gap: 8 }, sizeHeading: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  sizeLabel: { fontSize: 12, paddingHorizontal: 12, paddingVertical: 2, borderRadius: 20, overflow: 'hidden', textAlign: 'center' },
+  sizeLabel: { fontSize: 13, lineHeight: 22, paddingHorizontal: 10, paddingVertical: 2, borderRadius: readerShape.detail, overflow: 'hidden', textAlign: 'center' },
   slider: { paddingHorizontal: 2 }, ticks: { flexDirection: 'row-reverse', ...Platform.select({ native: { direction: 'ltr' as const } }), justifyContent: 'space-between', marginHorizontal: 12, marginTop: -2 },
   tick: { width: 4, height: 4, borderRadius: 2 }, rangeLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
-  preview: { borderWidth: 1, borderRadius: 14, padding: 14, gap: 14 }, previewHeading: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
+  preview: { borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card, padding: 14, gap: 14 }, previewHeading: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
   live: { flexDirection: 'row', alignItems: 'center', gap: 6 }, liveDot: { width: 5, height: 5, borderRadius: 3 },
-  caption: { fontSize: 10, borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 10 },
+  caption: { fontSize: 12, borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 10 },
 });

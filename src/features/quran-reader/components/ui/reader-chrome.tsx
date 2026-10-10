@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { ArabicText as Text } from '@/components/arabic-text';
 import type { ReaderPalette } from '../../theme';
-import { readerElevation, readerShape, withAlpha } from '../../design';
+import { readerShape, withAlpha } from '../../design';
 
 export type ReaderIconName = 'back' | 'search' | 'book' | 'settings' | 'menu' | 'index' | 'calendar' | 'jump' | 'close' | 'sun' | 'moon' | 'system' | 'lines' | 'check' | 'chevron' | 'bookmark' | 'eye' | 'eye-off' | 'word' | 'copy' | 'share' | 'translate' | 'trash' | 'restore' | 'archive' | 'clock' | 'plus' | 'sparkle' | 'flame';
 export function ReaderIcon({ name, color, size = 22, strokeWidth = 1.65 }: { name: ReaderIconName; color: string; size?: number; strokeWidth?: number }) {
@@ -50,14 +50,15 @@ export function Segments<T extends string>({ options, value, onChange, palette }
   return <View style={[styles.segments, { backgroundColor: withAlpha(palette.text, 0.06) }]}>
     {options.map((option) => <Pressable key={option.value} accessibilityRole="button" accessibilityState={{ selected: value === option.value }} onPress={() => onChange(option.value)}
       aria-pressed={value === option.value}
-      style={({ pressed }) => [styles.segment, value === option.value && [{ backgroundColor: palette.paper }, readerElevation(1, palette)], { opacity: pressed ? 0.7 : 1 }]}>
+      style={({ pressed }) => [styles.segment, { backgroundColor: value === option.value ? palette.paper : 'transparent', borderColor: value === option.value ? palette.border : 'transparent', opacity: pressed ? 0.7 : 1 }]}>
       <Text style={{ fontSize: 14, fontWeight: '600', textAlign: 'center', color: value === option.value ? palette.accent : palette.muted }}>{option.label}</Text>
     </Pressable>)}
   </View>;
 }
 
 const styles = StyleSheet.create({
-  iconButton: { width: 44, height: 44, borderRadius: readerShape.pill, borderWidth: StyleSheet.hairlineWidth * 2, alignItems: 'center', justifyContent: 'center' },
-  segments: { flexDirection: 'row', padding: 4, borderRadius: readerShape.control + 2, gap: 4 },
-  segment: { flex: 1, minHeight: 42, paddingHorizontal: 8, paddingVertical: 6, justifyContent: 'center', borderRadius: readerShape.control - 2 },
+  iconButton: { width: 44, height: 44, borderRadius: readerShape.control, borderWidth: StyleSheet.hairlineWidth * 2, alignItems: 'center', justifyContent: 'center' },
+  // Outer `control` minus the 4px inset leaves `detail` for the selected segment, so the corners stay concentric.
+  segments: { flexDirection: 'row', padding: 4, borderRadius: readerShape.control, gap: 4 },
+  segment: { flex: 1, minHeight: 44, paddingHorizontal: 8, paddingVertical: 6, justifyContent: 'center', borderRadius: readerShape.detail, borderWidth: StyleSheet.hairlineWidth },
 });

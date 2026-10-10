@@ -1,11 +1,13 @@
+import { SurahName } from '../quran-reader/components/ui/surah-name';
 import { useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, FlatList, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { ReaderIcon, type ReaderIconName } from '../quran-reader/components/ui/reader-chrome';
-import { readerLayout, readerShape } from '../quran-reader/design';
+import { readerLayout, readerShape, withAlpha } from '../quran-reader/design';
 import type { PlanIndex } from './engine';
+import { sheet } from './components';
 import type { PlanStart } from './types';
 import { arabicNumber } from './presentation';
 import { filterStartChoices, resolvePlanStart, startAtPosition, startChoices } from './start-point';
@@ -38,15 +40,14 @@ export function StartPointPicker({ index, value, onChange, onCurrentPosition }: 
       })}
     </View>
     <Pressable accessibilityRole="button" accessibilityLabel={`تغيير ${names[value.kind]}: ${ayah ? `${index.surahNames[ayah.surahNumber]}، الصفحة ${ayah.pageNumber}، الآية ${ayah.ayahNumber}` : 'اختر موضع البداية'}`}
-      onPress={() => { Keyboard.dismiss(); setOpen(true); }} style={({ pressed }) => [s.preview, { borderColor: pressed ? p.accent : p.border, backgroundColor: p.background }]}>
+      onPress={() => { Keyboard.dismiss(); setOpen(true); }} style={({ pressed }) => [s.preview, { borderColor: pressed ? withAlpha(p.accent, 0.5) : p.border, backgroundColor: pressed ? p.accentSoft : 'transparent' }]}>
       <View style={[s.row, { justifyContent: 'space-between' }]}>
-        <View style={s.row}><View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: p.accent }} /><Text style={{ color: p.muted, fontSize: 12 }}>تبدأ رحلتك من هنا</Text></View>
-        <Text style={{ color: p.accent, fontSize: 12 }}>{names[value.kind]} {arabicNumber(value.number)}</Text>
+        <Text style={{ color: p.muted, fontSize: 13 }}>تبدأ رحلتك من هنا</Text>
+        <Text style={{ color: p.muted, fontSize: 13 }}>{names[value.kind]} {arabicNumber(value.number)}</Text>
       </View>
-      <View style={{ alignItems: 'center', gap: 3, paddingVertical: 12 }}>
-        <ReaderIcon name="book" color={p.ornament} size={31} strokeWidth={1.3} />
-        <Text style={{ color: p.text, fontSize: 28, fontWeight: '600', textAlign: 'center' }}>{ayah ? index.surahNames[ayah.surahNumber] : 'اختر بداية القراءة'}</Text>
-        {ayah && <Text style={{ color: p.muted, fontSize: 13, textAlign: 'center' }}>الآية {arabicNumber(ayah.ayahNumber)} · صفحة {arabicNumber(ayah.pageNumber)}</Text>}
+      <View style={{ gap: 2, paddingVertical: 6 }}>
+        {ayah ? <SurahName number={ayah.surahNumber} name={index.surahNames[ayah.surahNumber]} size={40} color={p.ornament} /> : <Text style={{ color: p.text, fontSize: 24, fontWeight: '600' }}>اختر بداية القراءة</Text>}
+        {ayah && <Text style={{ color: p.muted, fontSize: 13 }}>الآية {arabicNumber(ayah.ayahNumber)} · صفحة {arabicNumber(ayah.pageNumber)}</Text>}
       </View>
       <View style={[s.row, { justifyContent: 'space-between', borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border, paddingTop: 12 }]}>
         <Text style={{ color: p.accent, fontSize: 14, fontWeight: '600' }}>اختيار {names[value.kind]}</Text><ReaderIcon name="chevron" size={18} color={p.accent} />
@@ -70,37 +71,39 @@ function StartPointSheet({ index, value, onClose, onSelect }: { index: PlanIndex
   const select = (number: number) => { Keyboard.dismiss(); onSelect({ kind: value.kind, number }); };
   return <Modal transparent visible animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={onClose}
     onShow={() => { if (Platform.OS === 'web') close.current?.focus(); else if (close.current) AccessibilityInfo.sendAccessibilityEvent(close.current, 'focus'); }}>
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: 'rgba(0, 15, 13, 0.58)' }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: withAlpha(p.hero, 0.6) }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end' }}>
         <Pressable accessibilityRole="button" accessibilityLabel="إغلاق اختيار البداية" onPress={onClose} style={StyleSheet.absoluteFill} />
         <SafeAreaView edges={['bottom']} accessibilityViewIsModal onAccessibilityEscape={onClose} style={[s.sheet, { backgroundColor: p.paper }]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
+          <View style={[sheet.grabber, { backgroundColor: withAlpha(p.text, 0.18) }]} />
           <View style={s.sheetHeader}>
             <View style={[s.row, { justifyContent: 'space-between' }]}>
-              <View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.text, fontSize: 24, fontWeight: '600' }}>اختر {names[value.kind]}</Text>
-                <Text style={{ color: p.muted, fontSize: 12 }}>بداية تناسب رحلتك مع القرآن</Text></View>
-              <Pressable ref={close} accessibilityRole="button" accessibilityLabel="إغلاق" onPress={onClose} style={[s.close, { backgroundColor: p.background }]}><ReaderIcon name="close" color={p.muted} /></Pressable>
+              <View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.text, fontSize: 19, fontWeight: '600' }}>اختر {names[value.kind]}</Text>
+                <Text style={{ color: p.muted, fontSize: 13 }}>بداية تناسب رحلتك مع القرآن</Text></View>
+              <Pressable ref={close} accessibilityRole="button" accessibilityLabel="إغلاق" onPress={onClose} style={[sheet.close, { backgroundColor: withAlpha(p.text, 0.06) }]}><ReaderIcon name="close" color={p.muted} size={20} /></Pressable>
             </View>
-            <View style={[s.search, { backgroundColor: p.background, borderColor: searchFocused ? p.accent : p.border }]}>
+            <View style={[s.search, { backgroundColor: p.paper, borderColor: searchFocused ? p.accent : p.border }]}>
               <ReaderIcon name="search" color={p.muted} size={20} />
               <TextInput accessibilityLabel={`البحث عن ${names[value.kind]}`} placeholder={value.kind === 'surah' ? 'اسم السورة أو رقمها' : `رقم ${names[value.kind]} أو اسم السورة`} placeholderTextColor={p.muted}
                 value={query} onChangeText={setQuery} onFocus={() => setSearchFocused(true)} onBlur={() => setSearchFocused(false)} autoCorrect={false} returnKeyType="search"
                 style={[s.input, { color: p.text }]} />
               {!!query && <Pressable accessibilityRole="button" accessibilityLabel="مسح البحث" onPress={() => setQuery('')} style={s.clear}><ReaderIcon name="close" color={p.muted} size={18} /></Pressable>}
             </View>
-            <Text style={{ color: p.muted, fontSize: 11 }}>{query ? `${arabicNumber(filtered.length)} نتيجة` : `${arabicNumber(choices.length)} ${value.kind === 'surah' ? 'سورة' : value.kind === 'hizb' ? 'حزبًا' : 'صفحة'} · اختر موضع البداية`}</Text>
+            <Text style={{ color: p.muted, fontSize: 12 }}>{query ? `${arabicNumber(filtered.length)} نتيجة` : `${arabicNumber(choices.length)} ${value.kind === 'surah' ? 'سورة' : value.kind === 'hizb' ? 'حزبًا' : 'صفحة'} · اختر موضع البداية`}</Text>
           </View>
           <FlatList data={filtered} keyExtractor={choice => String(choice.number)} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
-            initialNumToRender={12} maxToRenderPerBatch={12} windowSize={5} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20, gap: 8 }}
-            ListEmptyComponent={<Text style={{ color: p.muted, fontSize: 16, paddingVertical: 32, textAlign: 'center' }}>لا توجد نتائج. جرّب رقمًا آخر أو اسم السورة.</Text>}
-            renderItem={({ item }) => {
+            initialNumToRender={12} maxToRenderPerBatch={12} windowSize={5} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
+            ListEmptyComponent={<Text style={{ color: p.muted, fontSize: 15, paddingVertical: 32, textAlign: 'center' }}>لا توجد نتائج. جرّب رقمًا آخر أو اسم السورة.</Text>}
+            renderItem={({ item, index: position }) => {
               const ayah = index.ayahs[item.position], selected = item.number === value.number;
+              const first = position === 0, last = position === filtered.length - 1;
               const title = value.kind === 'surah' ? index.surahNames[ayah.surahNumber] : `${names[value.kind]} ${arabicNumber(item.number)}`;
               const detail = value.kind === 'surah' ? `صفحة ${arabicNumber(ayah.pageNumber)}` : `${index.surahNames[ayah.surahNumber]} · الآية ${arabicNumber(ayah.ayahNumber)}`;
               return <Pressable accessibilityRole="button" accessibilityLabel={`${title}، ${detail}`} accessibilityState={{ selected }} onPress={() => select(item.number)}
-                style={({ pressed }) => [s.choice, { backgroundColor: selected || pressed ? p.accentSoft : p.paper, borderColor: selected ? p.accent : p.border }]}>
-                <View style={[s.number, { backgroundColor: p.background }]}><Text style={{ color: p.accent, fontSize: 16, textAlign: 'center' }}>{arabicNumber(item.number)}</Text></View>
-                <View style={{ flex: 1, minWidth: 0 }}><Text style={{ color: p.text, fontSize: 19, fontWeight: '600' }}>{title}</Text><Text style={{ color: p.muted, fontSize: 12 }}>{detail}</Text></View>
-                <ReaderIcon name={selected ? 'check' : 'chevron'} color={selected ? p.accent : p.muted} size={19} />
+                style={({ pressed }) => [sheet.row, { borderColor: p.border, backgroundColor: selected || pressed ? p.accentSoft : p.paper, borderTopWidth: first ? 1 : StyleSheet.hairlineWidth, borderBottomWidth: last ? 1 : 0 }, first && sheet.rowFirst, last && sheet.rowLast]}>
+                <Text style={{ color: p.muted, fontSize: 13, minWidth: 28 }}>{arabicNumber(item.number)}</Text>
+                <View style={{ flex: 1, minWidth: 0 }}><Text style={{ color: p.text, fontSize: 16, fontWeight: selected ? '600' : '400' }}>{title}</Text><Text style={{ color: p.muted, fontSize: 13 }}>{detail}</Text></View>
+                <ReaderIcon name={selected ? 'check' : 'chevron'} color={selected ? p.accent : p.muted} size={18} />
               </Pressable>;
             }} />
         </SafeAreaView>
@@ -112,15 +115,12 @@ function StartPointSheet({ index, value, onClose, onSelect }: { index: PlanIndex
 const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   modes: { flexDirection: 'row', gap: 8 },
-  mode: { flex: 1, minWidth: 0, minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1, borderRadius: readerShape.control, paddingVertical: 8 },
-  preview: { borderWidth: 1, borderRadius: readerShape.card, padding: 16, gap: 4 },
+  mode: { flex: 1, minWidth: 0, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1, borderRadius: readerShape.control, paddingVertical: 8 },
+  preview: { borderWidth: 1, borderRadius: readerShape.control, padding: 16, gap: 6 },
   saved: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44 },
   sheet: { width: '100%', maxWidth: readerLayout.maxWidth, height: '88%', borderTopLeftRadius: readerShape.sheet, borderTopRightRadius: readerShape.sheet, overflow: 'hidden' },
-  sheetHeader: { padding: 20, paddingBottom: 12, gap: 12 },
-  close: { width: 44, height: 44, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 50, borderWidth: 1, borderRadius: readerShape.control, paddingHorizontal: 12 },
+  sheetHeader: { padding: 20, paddingTop: 8, paddingBottom: 12, gap: 12 },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 52, borderWidth: 1, borderRadius: readerShape.control, paddingHorizontal: 12 },
   input: { flex: 1, minWidth: 0, minHeight: 48, fontFamily: 'ReaderNaskh', fontSize: 16, writingDirection: 'rtl', textAlign: Platform.OS === 'android' ? 'left' : 'right', ...Platform.select({ web: { outlineWidth: 0 } }) },
   clear: { width: 36, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  choice: { minHeight: 82, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderWidth: 1, borderRadius: readerShape.card },
-  number: { width: 42, height: 46, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
 });

@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { readerElevation, readerShape } from '../quran-reader/design';
+import { readerElevation, readerShape, withAlpha } from '../quran-reader/design';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { ReaderIcon } from '../quran-reader/components/ui/reader-chrome';
+import { SurahName } from '../quran-reader/components/ui/surah-name';
+
 import { ReaderButton } from '../quran-reader/components/reading/reader-button';
 import { usePlans } from './provider';
 import { usePlanIndex } from './use-plan-index';
@@ -72,33 +74,36 @@ export function RecurringDetail({ plan, initialReminderIssue }: { plan: Recurrin
     <PlanNotice message={message || mismatch || error} retry={error ? retry : undefined} /><PlanNotice message={reminderError} />
     <View style={[{ backgroundColor: p.hero, borderRadius: readerShape.hero, padding: 22, gap: 18 }, readerElevation(3, p)]}>
       <View style={[d.row, { gap: 16 }]}><View style={d.grow}>
-        <Text style={{ color: p.heroMuted, fontSize: 12 }}>قراءة متكررة · {weekdaysLabel(plan.weekdays)}</Text>
-        <Text style={{ color: p.onHero, fontSize: 23, fontWeight: '600', marginVertical: 4 }}>{progress.done ? 'قراءة طيبة، تقبّل الله منك' : next?.due ? 'موعدك مع القرآن اليوم' : 'رفقة تتجدد'}</Text>
+        <Text style={{ color: p.heroMuted, fontSize: 13 }}>قراءة متكررة · {weekdaysLabel(plan.weekdays)}</Text>
+        <Text style={{ color: p.onHero, fontSize: 22, fontWeight: '600', marginVertical: 4 }}>{progress.done ? 'قراءة طيبة، تقبّل الله منك' : next?.due ? 'موعدك مع القرآن اليوم' : 'رفقة تتجدد'}</Text>
         <Text style={{ color: p.heroMuted, fontSize: 13 }}>{arabicNumber(completedOccurrences(plan))} قراءة مكتملة منذ البداية</Text>
-      </View><ReaderIcon name={progress.done ? 'check' : 'restore'} color={p.onHero} size={32} /></View>
-      <View style={{ flexDirection: 'row', gap: 6, borderTopWidth: 1, borderColor: `${p.onHero}26`, paddingTop: 16 }}>{Array.from({ length: 7 }, (_, i) => addDays(today, i - 6)).map(date => {
+      </View><View style={{ width: 56, height: 56, borderRadius: readerShape.control, borderWidth: 1, borderColor: withAlpha(p.onHero, 0.2), alignItems: 'center', justifyContent: 'center' }}><ReaderIcon name={progress.done ? 'check' : 'restore'} color={p.onHero} size={28} strokeWidth={1.35} /></View></View>
+      <View style={{ flexDirection: 'row', gap: 6, borderTopWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(p.onHero, 0.2), paddingTop: 16 }}>{Array.from({ length: 7 }, (_, i) => addDays(today, i - 6)).map(date => {
         const state = occurrenceProgress(plan, date), scheduled = scheduledOn(plan, date);
         const label = new Intl.DateTimeFormat('ar', { weekday: 'short', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
         return <View key={date} accessible accessibilityLabel={`${dateLabel(date)}، ${state.done ? 'مكتمل' : state.read ? 'قراءة جزئية' : scheduled ? date === today ? 'اليوم' : 'دون تسجيل قراءة' : 'غير مقرر'}`} style={{ flex: 1, alignItems: 'center', gap: 6 }}>
-          <Text style={{ color: p.heroMuted, fontSize: 9 }}>{label}</Text>
-          <View style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: state.done ? p.onHero : 'transparent', borderWidth: 1, borderColor: date === today ? p.onHero : `${p.onHero}40` }}>
-            {state.done ? <ReaderIcon name="check" size={16} color={p.hero} /> : <View style={{ width: state.read ? 9 : 4, height: state.read ? 9 : 4, borderRadius: 5, backgroundColor: scheduled || state.read ? p.heroMuted : 'transparent' }} />}
+          <Text style={{ color: p.heroMuted, fontSize: 11 }}>{label}</Text>
+          <View style={{ width: 30, height: 30, borderRadius: readerShape.control - 2, alignItems: 'center', justifyContent: 'center', backgroundColor: state.done ? p.ornament : 'transparent', borderWidth: 1, borderColor: state.done ? p.ornament : date === today ? p.onHero : withAlpha(p.onHero, 0.25) }}>
+            {state.done ? <ReaderIcon name="check" size={16} color={p.hero} strokeWidth={2.4} /> : <View style={{ width: state.read ? 8 : 4, height: state.read ? 8 : 4, borderRadius: readerShape.detail, backgroundColor: scheduled || state.read ? p.heroMuted : 'transparent' }} />}
           </View>
         </View>;
       })}</View>
     </View>
     {!index && !error && <PlanLoading />}
-    {next && index && !mismatch && <PlanCard>
-      <View style={d.row}><ReaderIcon name="book" color={p.accent} size={23} /><Text accessibilityRole="header" style={{ color: p.text, fontSize: 21, fontWeight: '600', flex: 1 }}>{next.due ? 'قراءة اليوم' : 'موعدك القادم'}</Text><Text style={{ color: p.muted, fontSize: 12 }}>{shortDate(next.date)}</Text></View>
-      {plan.ranges.map((range, slot) => <View key={range.surah} style={[d.row, { backgroundColor: slot === next.slot ? p.accentSoft : p.background, borderRadius: readerShape.control, padding: 12 }]}>
-        <View style={{ width: 26, height: 26, justifyContent: 'center', alignItems: 'center' }}>{upcomingProgress.cursors[slot] === range.end ? <ReaderIcon name="check" color={p.accent} size={19} /> : <Text style={{ color: p.muted, fontSize: 13 }}>{arabicNumber(slot + 1)}</Text>}</View>
-        <Text style={{ color: p.text, fontSize: 18, fontWeight: slot === next.slot ? '600' : '400', flex: 1 }}>{index.surahNames[range.surah]}</Text>
-        {slot === next.slot && <Text style={{ color: p.accent, fontSize: 11 }}>{next.start > range.start ? 'نكمل قراءتها' : 'نبدأ بها'}</Text>}
-      </View>)}
+    {next && index && !mismatch && <PlanCard prominent>
+      <View style={d.row}><View style={{ width: 36, height: 36, borderRadius: readerShape.control, backgroundColor: p.accentSoft, alignItems: 'center', justifyContent: 'center' }}><ReaderIcon name="book" color={p.accent} size={20} /></View><Text accessibilityRole="header" style={{ color: next.due ? p.accent : p.muted, fontSize: 15, fontWeight: '600', flex: 1 }}>{next.due ? 'قراءة اليوم' : 'موعدك القادم'}</Text><Text style={{ color: p.muted, fontSize: 13 }}>{shortDate(next.date)}</Text></View>
+      <SurahName number={plan.ranges[next.slot].surah} name={index.surahNames[plan.ranges[next.slot].surah]} size={48} color={p.ornament} />
+      {plan.ranges.length > 1 && <View>{plan.ranges.map((range, slot) => <View key={range.surah} style={[d.row, { paddingVertical: 10, borderTopWidth: slot ? StyleSheet.hairlineWidth : 0, borderColor: p.border }]}>
+        <View style={{ width: 24, alignItems: 'center' }}>{upcomingProgress.cursors[slot] === range.end ? <ReaderIcon name="check" color={p.accent} size={18} strokeWidth={2.4} /> : <Text style={{ color: p.muted, fontSize: 13 }}>{arabicNumber(slot + 1)}</Text>}</View>
+        <Text style={{ color: slot === next.slot ? p.text : p.muted, fontSize: 15, fontWeight: slot === next.slot ? '600' : '400', flex: 1 }}>{index.surahNames[range.surah]}</Text>
+        {slot === next.slot && <Text style={{ color: p.accent, fontSize: 12, fontWeight: '600' }}>{next.start > range.start ? 'نكمل قراءتها' : 'نبدأ بها'}</Text>}
+      </View>)}</View>}
       <ReadingBounds index={index} start={next.start} end={next.end} />
-      <DetailAction primary icon="book" label={next.due ? next.start > plan.ranges[next.slot].start ? 'تابع القراءة' : 'ابدأ القراءة' : `متاح ${shortDate(next.date)}`} disabled={!next.due || busy} onPress={openReading} />
-      {next.due && <DetailAction icon="check" label="أتممت هذه السورة" disabled={busy} onPress={() => void mutate(current => recordProgress(current, { cycle: next.cycle, slot: next.slot, to: next.end }, localDate()))} />}
-      <Text style={{ color: p.muted, fontSize: 12 }}>{plan.ranges.length > 1 ? 'جلسة مخصصة لكل سورة، ثم نتابع إلى التي تليها.' : 'قراءة الأيام الفائتة لا تتراكم. كل موعد بداية جديدة.'}</Text>
+      <View style={{ gap: 4 }}>
+        <DetailAction primary icon="book" label={next.due ? next.start > plan.ranges[next.slot].start ? 'تابع القراءة' : 'ابدأ القراءة' : `متاح ${shortDate(next.date)}`} disabled={!next.due || busy} onPress={openReading} />
+        {next.due && <DetailAction icon="check" label="أتممت هذه السورة" disabled={busy} onPress={() => void mutate(current => recordProgress(current, { cycle: next.cycle, slot: next.slot, to: next.end }, localDate()))} />}
+      </View>
+      <Text style={{ color: p.muted, fontSize: 13, lineHeight: 22 }}>{plan.ranges.length > 1 ? 'جلسة مخصصة لكل سورة، ثم نتابع إلى التي تليها.' : 'قراءة الأيام الفائتة لا تتراكم. كل موعد بداية جديدة.'}</Text>
     </PlanCard>}
     {plan.status !== 'active' && <PlanCard>
       <Copy title>{plan.status === 'paused' ? 'موعدك في انتظارك' : 'هذا الهدف في الأرشيف'}</Copy>
@@ -108,16 +113,16 @@ export function RecurringDetail({ plan, initialReminderIssue }: { plan: Recurrin
     </PlanCard>}
     {!!progress.logs.length && plan.status !== 'archived' && <DetailAction label="التراجع عن آخر تسجيل اليوم" disabled={busy} onPress={() => void mutate(current => undoRecurringProgress(current, localDate()))} />}
     <View style={{ gap: 12 }}>
-      <Text accessibilityRole="header" style={{ color: p.text, fontSize: 22, fontWeight: '600' }}>سجل القراءة</Text>
-      {plan.occurrences.length ? <PlanCard>{[...plan.occurrences].reverse().slice(0, historyLimit).map(occurrence => {
+      <Text accessibilityRole="header" style={{ color: p.text, fontSize: 19, fontWeight: '600' }}>سجل القراءة</Text>
+      {plan.occurrences.length ? <PlanCard><View>{[...plan.occurrences].reverse().slice(0, historyLimit).map((occurrence, i) => {
         const state = occurrenceProgress(plan, occurrence.date);
-        return <View key={occurrence.date} style={[d.row, { paddingVertical: 5, gap: 12 }]}><ReaderIcon name={state.done ? 'check' : 'book'} color={state.done ? p.accent : p.muted} size={22} />
-          <View style={d.grow}><Text style={{ color: p.text, fontSize: 16 }}>{dateLabel(occurrence.date)}</Text><Text style={{ color: p.muted, fontSize: 12 }}>{state.done ? 'قراءة مكتملة' : `قراءة جزئية · ${arabicNumber(state.completed)} من ${arabicNumber(plan.ranges.length)} سور`}</Text></View>
+        return <View key={occurrence.date} style={[d.row, { paddingVertical: 10, gap: 12, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: p.border }]}><ReaderIcon name={state.done ? 'check' : 'book'} color={state.done ? p.accent : p.muted} size={20} />
+          <View style={d.grow}><Text style={{ color: p.text, fontSize: 15 }}>{dateLabel(occurrence.date)}</Text><Text style={{ color: p.muted, fontSize: 13 }}>{state.done ? 'قراءة مكتملة' : `قراءة جزئية · ${arabicNumber(state.completed)} من ${arabicNumber(plan.ranges.length)} سور`}</Text></View>
         </View>;
-      })}{plan.occurrences.length > historyLimit && <DetailAction label="عرض قراءات أقدم" onPress={() => setHistoryLimit(limit => limit + 14)} />}</PlanCard>
-        : <Text style={{ color: p.muted, fontSize: 14 }}>ستجد هنا قراءاتك بعد حفظ تقدمك الأول.</Text>}
+      })}</View>{plan.occurrences.length > historyLimit && <DetailAction label="عرض قراءات أقدم" onPress={() => setHistoryLimit(limit => limit + 14)} />}</PlanCard>
+        : <Text style={{ color: p.muted, fontSize: 15 }}>ستجد هنا قراءاتك بعد حفظ تقدمك الأول.</Text>}
     </View>
-    <Text style={{ color: p.muted, fontSize: 12 }}>{weekdaysLabel(plan.weekdays)} · {plan.reminder.enabled ? `التذكير ${String(plan.reminder.hour).padStart(2, '0')}:${String(plan.reminder.minute).padStart(2, '0')}` : 'التذكير غير مفعّل'}</Text>
+    <Text style={{ color: p.muted, fontSize: 13, paddingHorizontal: 4 }}>{weekdaysLabel(plan.weekdays)} · {plan.reminder.enabled ? `التذكير ${String(plan.reminder.hour).padStart(2, '0')}:${String(plan.reminder.minute).padStart(2, '0')}` : 'التذكير غير مفعّل'}</Text>
     {editing && <PlanSettingsSheet onClose={() => { if (!busy) setEditing(false); }}>
       <PlanNotice message={message} />
       <PlanField label="اسم الهدف" value={name} onChange={setName} />
@@ -125,7 +130,7 @@ export function RecurringDetail({ plan, initialReminderIssue }: { plan: Recurrin
       <PlanSwitch label="تذكير بالقراءة" checked={reminder} onChange={setReminder} disabled={!remindersSupported} detail={remindersSupported ? 'في الأيام المختارة فقط.' : 'غيّر التذكيرات من تطبيق الهاتف.'} />
       {reminder && <PlanDateField label="وقت التذكير" mode="time" value={time} onChange={setTime} />}
       <ReaderButton palette={p} selected disabled={busy || !days.length} onPress={() => void saveSettings()}>حفظ الإعدادات</ReaderButton>
-      <View style={{ borderTopWidth: 1, borderColor: p.border, paddingTop: 12, gap: 4 }}>
+      <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border, paddingTop: 12, gap: 4 }}>
         {plan.status !== 'archived' && <DetailAction label={plan.status === 'paused' ? 'استئناف الهدف' : 'إيقاف الهدف مؤقتًا'} disabled={busy} onPress={() => void mutate(current => setPlanPaused(current, current.status === 'active', localDate())).then(saved => { if (saved) setEditing(false); })} />}
         <DetailAction label={plan.status === 'archived' ? 'استعادة الهدف' : 'أرشفة الهدف'} disabled={busy} onPress={() => void mutate(current => current.status === 'archived' ? restoreArchivedGoal(current) : { ...current, status: 'archived' }).then(saved => { if (saved) setEditing(false); })} />
         <Copy muted>الأهداف المؤرشفة تُحذف بعد أسبوعين. يمكنك استعادتها خلال هذه المدة.</Copy>

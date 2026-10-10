@@ -12,11 +12,11 @@ import { useReadingPreferences } from '../../state/reading-preferences-provider'
 import { quranpedia } from '../../services/reader-service';
 import { prepareAyahCard, type PreparedAyahCard } from '../../services/ayah-card-export';
 import { parallelAyahs } from '../../utils/ayah-actions';
-import { ayahCardThemes, cardMinimumHeight, cardTranslation, type AyahCardFormat, type AyahCardTheme, type CardTranslation } from '../../utils/ayah-card';
+import { ayahCardThemes, cardColors, cardMinimumHeight, cardTranslation, type AyahCardFormat, type AyahCardTheme, type CardTranslation } from '../../utils/ayah-card';
 import { IconButton, ReaderIcon, Segments } from '../ui/reader-chrome';
 import { ReaderButton } from '../reading/reader-button';
 import { AyahShareCard } from './ayah-share-card';
-import { readerShape } from '../../design';
+import { readerElevation, readerLayout, readerShape } from '../../design';
 import type { ReaderPalette } from '../../theme';
 
 export function ShareAyahScreen() {
@@ -29,8 +29,8 @@ export function ShareAyahScreen() {
   return <SafeAreaView style={[styles.root, { backgroundColor: palette.background }]}>
     <StatusBar style={dark ? 'light' : 'dark'} hidden={false} />
     <View style={[styles.header, { borderColor: palette.border }]}>
-      <View><Text accessibilityRole="header" style={{ color: palette.text, fontSize: 21, fontWeight: '600' }}>بطاقة آية</Text>
-        <Text style={{ color: palette.muted, fontSize: 11 }}>آية تتأملها، وأثر تشاركه</Text></View>
+      <View style={{ flex: 1, minWidth: 0 }}><Text accessibilityRole="header" style={{ color: palette.text, fontSize: 28, fontWeight: '700' }}>بطاقة آية</Text>
+        <Text style={{ color: palette.muted, fontSize: 13 }}>آية تتأملها، وأثر تشاركه</Text></View>
       <IconButton name="close" label="العودة إلى القراءة" onPress={() => router.canGoBack() ? router.back() : router.replace('/')} palette={palette} />
     </View>
     {loading || (!fontsLoaded && !fontError) ? <View style={styles.center}><ActivityIndicator color={palette.accent} accessibilityLabel="جارٍ تجهيز البطاقة" /></View>
@@ -44,7 +44,7 @@ export function ShareAyahScreen() {
 
 function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: string; palette: ReaderPalette }) {
   const { width: windowWidth } = useWindowDimensions();
-  const [theme, setTheme] = useState<AyahCardTheme>('emerald');
+  const [theme, setTheme] = useState<AyahCardTheme>('app');
   const [format, setFormat] = useState<AyahCardFormat>('status');
   const [showBrand, setShowBrand] = useState(true);
   const [brandReady, setBrandReady] = useState(false);
@@ -63,7 +63,7 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
   const [exportRevision, setExportRevision] = useState(0);
   const [sharing, setSharing] = useState(false);
   const [message, setMessage] = useState('');
-  const exportKey = `${theme}:${format}:${showBrand}:${translationKey}:${width}:${height}:${exportRevision}`;
+  const exportKey = `${theme}${theme === 'app' ? palette.background : ''}:${format}:${showBrand}:${translationKey}:${width}:${height}:${exportRevision}`;
   const ready = prepared?.key === exportKey && !translating && !translationError && (!showBrand || brandReady);
   const busy = useRef(false);
 
@@ -120,23 +120,23 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
       <View pointerEvents={sharing ? 'none' : 'auto'} style={{ gap: 18 }}>
         <Segments palette={palette} value={format} onChange={setFormat} options={[{ value: 'status', label: 'حالة واتساب · 9:16' }, { value: 'square', label: 'منشور مربع · 1:1' }]} />
         <View style={[styles.preview, { backgroundColor: palette.paper, borderColor: palette.border }]}>
-          <View style={styles.previewLabel}><Text style={{ color: palette.muted, fontSize: 11 }}>معاينة البطاقة</Text>
-            <Text style={{ color: palette.muted, fontSize: 10 }}>{height ? `1080 × ${Math.round(1080 * height / width)}` : ''}</Text></View>
-          <View style={styles.cardShadow}>
-            <AyahShareCard cardRef={card} ayah={ayah} surahName={surahName} theme={theme} format={format}
+          <View style={styles.previewLabel}><Text style={{ color: palette.muted, fontSize: 13 }}>معاينة البطاقة</Text>
+            <Text style={{ color: palette.muted, fontSize: 12 }}>{height ? `1080 × ${Math.round(1080 * height / width)}` : ''}</Text></View>
+          <View style={readerElevation(2, palette)}>
+            <AyahShareCard cardRef={card} ayah={ayah} surahName={surahName} colors={cardColors(theme, palette)} format={format}
               brandRevision={exportRevision} onBrandReady={() => setBrandReady(true)} onBrandError={() => { setBrandReady(false); setExportError({ message: 'تعذر تحميل شعار التطبيق. أعد المحاولة.', retry: true }); }}
               showBrand={showBrand} translation={displayedTranslation} width={width} onLayout={(event) => setHeight(event.nativeEvent.layout.height)} />
             {ready && <View pointerEvents="none" style={StyleSheet.absoluteFill}><Image testID="exported-ayah-card" source={{ uri: prepared.image.uri }} resizeMode="contain" accessible={false} style={StyleSheet.absoluteFill} /></View>}
           </View>
-          {height > cardMinimumHeight(width, format) + 2 && <Text style={{ color: palette.muted, fontSize: 11, textAlign: 'center' }}>امتدت البطاقة لإظهار النص كاملًا.</Text>}
+          {height > cardMinimumHeight(width, format) + 2 && <Text style={{ color: palette.muted, fontSize: 12, textAlign: 'center' }}>امتدت البطاقة لإظهار النص كاملًا.</Text>}
         </View>
         <View style={{ gap: 10 }}>
           <Text style={{ color: palette.text, fontSize: 15, fontWeight: '600' }}>لون البطاقة</Text>
           <View style={styles.themes}>
-            {(Object.entries(ayahCardThemes) as [AyahCardTheme, typeof ayahCardThemes[AyahCardTheme]][]).map(([id, colors]) => <Pressable key={id} accessibilityRole="button" accessibilityLabel={colors.label} accessibilityState={{ selected: theme === id }} aria-pressed={theme === id} onPress={() => setTheme(id)}
+            {([['app', { label: 'مثل التطبيق', ...cardColors('app', palette) }], ...Object.entries(ayahCardThemes)] as [AyahCardTheme, { label: string; background: string; border: string; accent: string }][]).map(([id, colors]) => <Pressable key={id} accessibilityRole="button" accessibilityLabel={colors.label} accessibilityState={{ selected: theme === id }} aria-pressed={theme === id} onPress={() => setTheme(id)}
               style={({ pressed }) => [styles.theme, { borderColor: theme === id ? palette.accent : palette.border, backgroundColor: theme === id ? palette.accentSoft : palette.paper, opacity: pressed ? 0.7 : 1 }]}>
               <View style={[styles.swatch, { backgroundColor: colors.background, borderColor: colors.border }]}>{theme === id && <ReaderIcon name="check" color={colors.accent} size={16} />}</View>
-              <Text style={{ color: palette.text, fontSize: 12 }}>{colors.label}</Text>
+              <Text style={{ color: palette.text, fontSize: 13 }}>{colors.label}</Text>
             </Pressable>)}
           </View>
         </View>
@@ -148,14 +148,14 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
             <Segments palette={palette} value={language} onChange={setLanguage} options={[{ value: 'fr', label: 'الفرنسية' }, { value: 'en', label: 'الإنجليزية' }]} />
             {translating ? <ActivityIndicator color={palette.accent} accessibilityLabel="جارٍ تحميل الترجمة" />
               : translationError ? <><Text accessibilityRole="alert" style={{ color: palette.warning, fontSize: 12 }}>تعذر تحميل ترجمة كاملة لهذه الآية. أعد المحاولة أو أوقف الترجمة.</Text><ReaderButton palette={palette} onPress={() => setRevision((value) => value + 1)}>إعادة تحميل الترجمة</ReaderButton></>
-              : <Text style={{ color: palette.muted, fontSize: 11 }}>المصدر: {displayedTranslation?.source} · المراجع الموازية حسب ترقيم حفص: {parallelAyahs(ayah).map((n) => `${ayah.surahNumber}:${n}`).join('، ')}</Text>}
+              : <Text style={{ color: palette.muted, fontSize: 12 }}>المصدر: {displayedTranslation?.source} · المراجع الموازية حسب ترقيم حفص: {parallelAyahs(ayah).map((n) => `${ayah.surahNumber}:${n}`).join('، ')}</Text>}
           </View>}
         </View>
       </View>
     </ScrollView>
     <View style={[styles.footer, { backgroundColor: palette.paper, borderColor: palette.border }]}>
-      {!!message && <Text accessibilityLiveRegion="polite" style={{ color: palette.text, fontSize: 12, textAlign: 'center' }}>{message}</Text>}
-      {exportError ? <><Text accessibilityRole="alert" style={{ color: palette.warning, fontSize: 12 }}>{exportError.message}</Text>{exportError.retry && <ReaderButton palette={palette} onPress={() => setExportRevision((value) => value + 1)}>إعادة تجهيز الصورة</ReaderButton>}</>
+      {!!message && <Text accessibilityLiveRegion="polite" style={{ color: palette.text, fontSize: 13, textAlign: 'center' }}>{message}</Text>}
+      {exportError ? <><Text accessibilityRole="alert" style={{ color: palette.warning, fontSize: 13 }}>{exportError.message}</Text>{exportError.retry && <ReaderButton palette={palette} onPress={() => setExportRevision((value) => value + 1)}>إعادة تجهيز الصورة</ReaderButton>}</>
         : <Pressable accessibilityRole="button" accessibilityLabel={prepared?.image.action === 'download' ? 'تنزيل الصورة' : 'مشاركة الصورة'} accessibilityState={{ disabled: !ready || sharing }} disabled={!ready || sharing} onPress={() => void share()}
           style={({ pressed }) => [styles.share, { backgroundColor: palette.accent, opacity: !ready || sharing ? 0.5 : pressed ? 0.75 : 1 }]}>
           {(!ready && !translationError) || sharing ? <ActivityIndicator color={palette.paper} /> : <ReaderIcon name="share" color={palette.paper} size={20} />}
@@ -167,21 +167,21 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
 
 function Toggle({ label, value, onChange, palette }: { label: string; value: boolean; onChange: () => void; palette: ReaderPalette }) {
   return <Pressable accessibilityRole="switch" accessibilityLabel={label} accessibilityState={{ checked: value }} aria-checked={value} onPress={onChange} style={styles.toggle}>
-    <Text style={{ color: palette.text, fontSize: 14 }}>{label}</Text>
+    <Text style={{ color: palette.text, fontSize: 15 }}>{label}</Text>
     <View style={[styles.checkbox, { borderColor: value ? palette.accent : palette.border, backgroundColor: value ? palette.accent : 'transparent' }]}>{value && <ReaderIcon name="check" color={palette.paper} size={14} />}</View>
   </Pressable>;
 }
 const styles = StyleSheet.create({
   root: { flex: 1 }, center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  header: { width: '100%', maxWidth: 600, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
+  header: { width: '100%', maxWidth: 600, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: readerLayout.gutter, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   content: { width: '100%', maxWidth: 600, alignSelf: 'center', padding: 18, paddingBottom: 24 },
-  preview: { borderWidth: 1, borderRadius: readerShape.card, alignItems: 'center', padding: 14, gap: 12 },
+  preview: { borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card, alignItems: 'center', padding: 14, gap: 12 },
   previewLabel: { width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardShadow: { boxShadow: '0 8px 22px rgba(0,0,0,0.14)' },
-  themes: { flexDirection: 'row', gap: 8 }, theme: { flex: 1, borderWidth: 1, borderRadius: readerShape.control, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 10, gap: 8 },
-  swatch: { width: 26, height: 26, borderRadius: 4, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  options: { borderTopWidth: 1, paddingTop: 4 }, toggle: { minHeight: 52, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  checkbox: { width: 24, height: 24, borderRadius: 4, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  footer: { width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: 1, gap: 8 },
+  // Option tiles: a constant 1.5 border keeps the layout still when the accent colour marks the selection.
+  themes: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, theme: { flexGrow: 1, flexBasis: '45%', borderWidth: 1.5, borderRadius: readerShape.control, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', minHeight: 48, paddingVertical: 8, gap: 8 },
+  swatch: { width: 24, height: 24, borderRadius: readerShape.detail, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  options: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 4 }, toggle: { minHeight: 52, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  checkbox: { width: 22, height: 22, borderRadius: readerShape.detail, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  footer: { width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 18, paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth, gap: 8 },
   share: { minHeight: 52, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 10 },
 });

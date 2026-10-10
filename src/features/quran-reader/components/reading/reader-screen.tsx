@@ -18,7 +18,6 @@ import { QuranPage } from './quran-page';
 import { PrintedQuranPage } from './printed-quran-page';
 import { ReaderButton } from './reader-button';
 import { ReaderDrawer } from './reader-drawer';
-import { ReaderMenu } from './reader-menu';
 import { useReadingPreferences } from '../../state/reading-preferences-provider';
 import { Stack, router, useIsFocused, useLocalSearchParams } from 'expo-router';
 import { indexRouteDestination } from '../../utils/reader-index';
@@ -67,7 +66,6 @@ function RiwayahReaderScreen() {
   const font = useQuranFont();
   const { preferences: { mode, textLayout, fontSize, spacious, tajweed, riwayah }, palette, dark } = useReadingPreferences();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [actionsVisible, setActionsVisible] = useState(false);
   const [controlsProgress] = useState(() => new Animated.Value(0));
   const [actionAyah, setActionAyah] = useState<Ayah | null>(null);
@@ -146,7 +144,7 @@ function RiwayahReaderScreen() {
     scroll.current?.scrollTo({ y: practiceScrollY.current, animated: !reduceMotion });
   }, [practiceTargetKey, reduceMotion, mode, toolbarHeight, session, pageNumber, firstPage]);
   const totalPages = content?.data.pages.length ?? 604;
-  const overlayOpen = drawerOpen || menuOpen || !!actionAyah;
+  const overlayOpen = drawerOpen || !!actionAyah;
   const immersive = ready && !actionsVisible && !overlayOpen;
 
   const navigate = useCallback((number: number, ayah?: AyahReference) => {
@@ -415,7 +413,7 @@ function RiwayahReaderScreen() {
         bottomInset={bottomInset} practiceActive={practicing}
         planControls={session ? <PlanReadingControls session={session} pageNumber={displayNumber} actions={planActions} /> : undefined}
         practiceComplete={!!practicePlan && !!practice && practice.revealed >= practicePlan.totalWords}
-        onNavigate={navigate} onJump={() => setDrawerOpen(true)} onMenu={() => setMenuOpen(true)} onPractice={togglePractice}
+        onNavigate={navigate} onJump={() => setDrawerOpen(true)} onMenu={() => router.push('/home')} onPractice={togglePractice}
         onRevealWord={() => reveal('word')} onRevealAyah={() => reveal('ayah')}
         onDismiss={() => setActionsVisible(false)} />}
       </Animated.View>;
@@ -423,7 +421,6 @@ function RiwayahReaderScreen() {
       </View>
       {actionAyah && content && <AyahActionSheet key={ayahKey(actionAyah)} ayah={actionAyah} quran={content.data.quran} palette={palette} onClose={() => setActionAyah(null)} />}
       {drawerOpen && <ReaderDrawer content={session?.content ?? content?.data} limited={!!session} currentPage={pageNumber} onJump={navigate} onClose={() => setDrawerOpen(false)} palette={palette} />}
-      {menuOpen && <ReaderMenu onClose={() => setMenuOpen(false)} palette={palette} />}
     </SafeAreaView>
   );
 }

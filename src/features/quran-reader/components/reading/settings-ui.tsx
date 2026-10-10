@@ -2,6 +2,7 @@ import type { PropsWithChildren } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
 import type { ReaderPalette } from '../../theme';
+import { readerShape } from '../../design';
 import { ReaderIcon, type ReaderIconName } from '../ui/reader-chrome';
 
 export function SettingsCard({ palette, children }: PropsWithChildren<{ palette: ReaderPalette }>) {
@@ -13,7 +14,7 @@ export function SettingsCardHeading({ title, detail, icon, palette }: { title: s
     <View style={[settingsStyles.icon, { backgroundColor: palette.accentSoft }]}><ReaderIcon name={icon} color={palette.accent} size={20} /></View>
     <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
       <Text accessibilityRole="header" style={{ color: palette.text, fontSize: 18, fontWeight: '600' }}>{title}</Text>
-      {!!detail && <Text style={{ color: palette.muted, fontSize: 11 }}>{detail}</Text>}
+      {!!detail && <Text style={{ color: palette.muted, fontSize: 13 }}>{detail}</Text>}
     </View>
   </View>;
 }
@@ -21,7 +22,7 @@ export function SettingsCardHeading({ title, detail, icon, palette }: { title: s
 export function SettingsSelection({ selected, palette }: { selected: boolean; palette: ReaderPalette }) {
   return <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden
     style={[settingsStyles.selection, { backgroundColor: selected ? palette.accent : 'transparent', borderColor: selected ? palette.accent : palette.border }]}>
-    {selected && <ReaderIcon name="check" size={13} strokeWidth={2.4} color={palette.paper} />}
+    {selected && <ReaderIcon name="check" size={14} strokeWidth={2.4} color={palette.paper} />}
   </View>;
 }
 
@@ -46,12 +47,13 @@ export function ReadingLayoutPreview({ kind, palette, selected }: { kind: 'page'
 }
 
 export const settingsStyles = StyleSheet.create({
-  card: { padding: 18, borderRadius: 20, borderWidth: 1, gap: 18 },
+  card: { padding: 18, borderRadius: readerShape.card, borderWidth: StyleSheet.hairlineWidth, gap: 18 },
   heading: { flexDirection: 'row', alignItems: 'center', gap: 11 },
-  icon: { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  selection: { width: 21, height: 21, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  toggle: { width: 48, height: 28, borderRadius: 14, padding: 3.5, ...Platform.select({ native: { direction: 'ltr' as const } }) },
-  thumb: { width: 21, height: 21, borderRadius: 11 },
-  layoutPreview: { height: 82, borderRadius: 9, padding: 14, alignItems: 'flex-start', justifyContent: 'center', overflow: 'hidden' },
-  layoutFrame: { position: 'absolute', top: 6, bottom: 6, left: 7, right: 7, borderWidth: 1, borderRadius: 3 },
+  icon: { width: 36, height: 36, borderRadius: readerShape.control, justifyContent: 'center', alignItems: 'center' },
+  selection: { width: 20, height: 20, borderRadius: readerShape.detail, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  // A switch is one of the few genuine pills: the thumb travels inside a rounded track.
+  toggle: { width: 48, height: 28, borderRadius: readerShape.pill, padding: 3.5, ...Platform.select({ native: { direction: 'ltr' as const } }) },
+  thumb: { width: 21, height: 21, borderRadius: readerShape.pill },
+  layoutPreview: { height: 82, borderRadius: readerShape.control, padding: 14, alignItems: 'flex-start', justifyContent: 'center', overflow: 'hidden' },
+  layoutFrame: { position: 'absolute', top: 6, bottom: 6, left: 7, right: 7, borderWidth: 1, borderRadius: 2 },
 });

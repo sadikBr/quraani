@@ -95,8 +95,8 @@ export function ReaderControls({ page, totalPages, previous, next, surahName, pa
             onPress={onJump} style={({ pressed }) => [styles.page, { opacity: pressed ? 0.6 : 1 }]}>
             <View style={[styles.pagePill, { backgroundColor: palette.accentSoft }]}>
               <Text style={{ color: palette.text, fontSize: 13, lineHeight: 22, writingDirection: 'rtl', textAlign: 'center' }}>{pageLabel ?? `صفحة ${page.number}`}</Text>
-              {!pageLabel && <View style={[styles.pageTrack, { backgroundColor: withAlpha(palette.accent, 0.18) }]}>
-                <View style={[styles.pageFill, { backgroundColor: palette.accent, width: `${Math.max(2, Math.min(100, page.number / Math.max(1, totalPages) * 100))}%` }]} />
+              {!pageLabel && <View style={[styles.pageTrack, { backgroundColor: withAlpha(palette.ornament, 0.22) }]}>
+                <View style={[styles.pageFill, { backgroundColor: palette.ornament, width: `${Math.max(2, Math.min(100, page.number / Math.max(1, totalPages) * 100))}%` }]} />
               </View>}
             </View>
           </Pressable>
@@ -116,12 +116,12 @@ const styles = StyleSheet.create({
   content: { width: '100%', maxWidth: 700, alignSelf: 'center' },
   navigation: { ...Platform.select({ native: { direction: 'ltr' as const } }), flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 8, paddingVertical: 4, gap: 4 },
-  icon: { width: 44, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.pill },
+  icon: { width: 44, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.control },
   page: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
-  pagePill: { minWidth: 120, paddingHorizontal: 18, paddingTop: 3, paddingBottom: 7, borderRadius: readerShape.pill, alignItems: 'center', gap: 3 },
+  pagePill: { minWidth: 120, paddingHorizontal: 18, paddingTop: 3, paddingBottom: 7, borderRadius: readerShape.control, alignItems: 'center', gap: 3 },
   // The track fills from the reading start (right), like the mushaf.
-  pageTrack: { width: 72, height: 3, borderRadius: 2, overflow: 'hidden', flexDirection: 'row-reverse' },
-  pageFill: { height: '100%', borderRadius: 2 },
+  pageTrack: { width: 72, height: 3, borderRadius: readerShape.detail, overflow: 'hidden', flexDirection: 'row-reverse' },
+  pageFill: { height: '100%', borderRadius: readerShape.detail },
   practice: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingTop: 6, paddingBottom: 4 },
-  practiceButton: { flex: 1, minHeight: 44, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.pill },
+  practiceButton: { flex: 1, minHeight: 44, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.control },
 });

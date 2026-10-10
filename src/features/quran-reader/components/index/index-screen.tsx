@@ -11,8 +11,7 @@ import { calligraphyStyle, surahNameGlyph } from '../../utils/reader-typography'
 import { readerIndexItems, type IndexKind, type ReaderIndexItem } from '../../utils/reader-index';
 import { ReaderButton } from '../reading/reader-button';
 import { ReaderIcon } from '../ui/reader-chrome';
-import { LibraryEmpty, LibraryHeader, LibrarySearch, LibraryTabs, libraryStyles as l } from '../ui/library-chrome';
-import { readerShape } from '../../design';
+import { LibraryEmpty, LibraryHeader, LibrarySearch, LibraryTabs, libraryStyles as l, listRowFrame } from '../ui/library-chrome';
 import { RIWAYAT } from '../../riwayat';
 
 const tabs = [{ value: 'surah', label: 'السور' }, { value: 'juz', label: 'الأجزاء' }, { value: 'hizb', label: 'الأحزاب' }] as const;
@@ -35,24 +34,23 @@ export function IndexScreen() {
     </View>
     <FlatList ref={list} data={content ? items : []} keyExtractor={item => `${kind}:${item.number}`} style={l.list} contentContainerStyle={l.content}
       keyboardShouldPersistTaps="handled" keyboardDismissMode={Platform.OS === 'web' ? 'none' : 'on-drag'} showsVerticalScrollIndicator={false} initialNumToRender={12} windowSize={7}
-      ListHeaderComponent={content ? <View style={l.results}><Text style={{ color: p.muted, fontSize: 12 }}>{query.trim() ? 'نتائج البحث' : 'اختر موضعًا وابدأ القراءة'}</Text><Text accessibilityLiveRegion="polite" style={{ color: p.accent, fontSize: 12 }}>{items.length} {kind === 'surah' ? 'سورة' : kind === 'juz' ? 'جزءًا' : 'حزبًا'}</Text></View> : null}
+      ListHeaderComponent={content ? <View style={l.results}><Text style={{ color: p.text, fontSize: 13, fontWeight: '600' }}>{query.trim() ? 'نتائج البحث' : 'اختر موضعًا وابدأ القراءة'}</Text><Text accessibilityLiveRegion="polite" style={{ color: p.muted, fontSize: 13 }}>{items.length} {kind === 'surah' ? 'سورة' : kind === 'juz' ? 'جزءًا' : 'حزبًا'}</Text></View> : null}
       ListEmptyComponent={!content ? loading ? <View style={l.status}><ActivityIndicator accessibilityLabel="جارٍ تحميل الفهرس" color={p.accent} /></View> : <LibraryEmpty title="تعذر فتح الفهرس" description={error ? 'تحقق من الاتصال، ثم أعد المحاولة.' : 'الفهرس غير متوفر الآن.'} icon="book" palette={p}><ReaderButton palette={p} onPress={refresh}>إعادة المحاولة</ReaderButton></LibraryEmpty>
         : <LibraryEmpty title="لا توجد نتائج" description="جرّب اسمًا أو رقمًا آخر، أو امسح البحث لعرض الفهرس كاملًا." icon="search" palette={p}><ReaderButton palette={p} onPress={() => changeQuery('')}>مسح البحث</ReaderButton></LibraryEmpty>}
-      renderItem={({ item }) => <Pressable accessibilityRole="button" accessibilityLabel={`${item.title}، ${item.detail}، الصفحة ${item.pageNumber}`} accessibilityHint="افتح المصحف عند بداية الموضع" onPress={() => open(item)}
-        style={({ pressed }) => [s.item, { borderColor: pressed ? p.accent : p.border, backgroundColor: pressed ? p.accentSoft : p.paper }]}>
-        <View style={[s.number, { backgroundColor: p.accentSoft }]}><Text style={{ color: p.accent, fontSize: 14, fontWeight: '600', textAlign: 'center' }}>{item.number}</Text></View>
+      renderItem={({ item, index }) => <Pressable accessibilityRole="button" accessibilityLabel={`${item.title}، ${item.detail}، الصفحة ${item.pageNumber}`} accessibilityHint="افتح المصحف عند بداية الموضع" onPress={() => open(item)}
+        style={({ pressed }) => [s.item, listRowFrame(index, items.length), { borderColor: p.border, backgroundColor: pressed ? p.accentSoft : p.paper }]}>
+        <Text style={[s.number, { color: p.muted }]}>{item.number}</Text>
         <View style={s.name}>
-          <Text accessibilityLabel={item.title} style={{ color: kind === 'surah' ? p.ornament : p.text, fontSize: 21, ...(kind === 'surah' && font.loaded ? calligraphyStyle(34) : {}) }}>{kind === 'surah' && font.loaded ? surahNameGlyph(item.number) : item.title}</Text>
-          <Text style={{ color: p.muted, fontSize: 11 }}>{item.detail}</Text>
+          <Text accessibilityLabel={item.title} style={{ color: kind === 'surah' ? p.ornament : p.text, fontSize: 19, fontWeight: kind === 'surah' ? '400' : '600', ...(kind === 'surah' && font.loaded ? calligraphyStyle(34) : {}) }}>{kind === 'surah' && font.loaded ? surahNameGlyph(item.number) : item.title}</Text>
+          <Text style={{ color: p.muted, fontSize: 13 }}>{item.detail}</Text>
         </View>
-        <View style={[s.page, { borderColor: p.border }]}><Text style={{ color: p.muted, fontSize: 10, textAlign: 'center' }}>صفحة</Text><Text style={{ color: p.text, fontSize: 17, textAlign: 'center' }}>{item.pageNumber}</Text></View>
+        <Text style={{ color: p.muted, fontSize: 13 }}>صفحة {item.pageNumber}</Text>
         <ReaderIcon name="chevron" color={p.muted} size={16} />
       </Pressable>} />
   </SafeAreaView>;
 }
 const s = StyleSheet.create({
-  item: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12, borderWidth: 1, borderRadius: readerShape.card, minHeight: 88, marginBottom: 8 },
-  number: { width: 34, height: 40, borderRadius: readerShape.control, justifyContent: 'center' },
-  name: { flex: 1, minWidth: 0, gap: 5 },
-  page: { minWidth: 40, borderStartWidth: 1, paddingStart: 12 },
+  item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 14, gap: 12, minHeight: 72 },
+  number: { width: 28, fontSize: 13, textAlign: 'center' },
+  name: { flex: 1, minWidth: 0, gap: 2 },
 });
