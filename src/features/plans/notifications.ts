@@ -31,7 +31,6 @@ export async function requestPlanReminders(): Promise<void> {
   }
 }
 let queue: Promise<unknown> = Promise.resolve();
-const reminderBody = 'حان وقت وردك. افتح هدفك لمتابعة القراءة.';
 export function syncPlanReminders(plans: ReadingPlan[]) {
   const task = queue.catch(() => {}).then(async () => {
     const permission = await Notifications.getPermissionsAsync();
@@ -43,10 +42,10 @@ export function syncPlanReminders(plans: ReadingPlan[]) {
     const channelId = wanted.length ? await channel() : undefined;
     for (const n of wanted) if (!existing.some(x => {
       const previousChannel = x.trigger && 'channelId' in x.trigger ? x.trigger.channelId : undefined;
-      return x.identifier === n.id && x.content.title === n.title && x.content.body === reminderBody && previousChannel === channelId;
+      return x.identifier === n.id && x.content.title === n.title && x.content.body === n.body && previousChannel === channelId;
     })) {
       await Notifications.scheduleNotificationAsync({ identifier: n.id,
-        content: { title: n.title, body: reminderBody, data: { planId: n.planId } },
+        content: { title: n.title, body: n.body, data: { planId: n.planId } },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: n.date, ...(channelId ? { channelId } : {}) } });
     }
     if (!allowed && plans.some(p => p.reminder.enabled && p.status === 'active')) throw new ReminderSetupError('permission');

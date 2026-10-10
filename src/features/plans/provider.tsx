@@ -7,19 +7,20 @@ import { createPlansRepository } from './repository';
 import { buildPlanIndex, rollCompletedCycle } from './engine';
 import { localDate } from './dates';
 import { observePlanNotifications, syncPlanReminders } from './notifications';
-import { isRecurringPlan, type ReadingPlan } from './types';
+import { isSequentialPlan, type MemorizationRecord, type ReadingPlan } from './types';
 import { reminderFailureMessage } from './reminder-errors';
 import { currentGoal } from './goal-limit';
 import { maintainArchives } from './archive';
 
 interface PlansContextValue {
-  plans: ReadingPlan[]; ready: boolean; error: string; reminderError: string; today: string;
+  plans: ReadingPlan[]; memorization: MemorizationRecord[]; ready: boolean; error: string; reminderError: string; today: string;
   commit: (change: (plans: ReadingPlan[]) => ReadingPlan[]) => Promise<void>;
   retry: () => void;
 }
 const Context = createContext<PlansContextValue | null>(null);
 export function PlansProvider({ children }: PropsWithChildren) {
   const [plans, setPlans] = useState<ReadingPlan[]>([]);
+  const [memorization, setMemorization] = useState<MemorizationRecord[]>([]);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
   const [reminderError, setReminderError] = useState('');
@@ -31,13 +32,14 @@ export function PlansProvider({ children }: PropsWithChildren) {
   const repository = useRef(createPlansRepository(contentStorage));
   useEffect(() => {
     let active = true;
-    void repository.current.load().then(value => { if (active) { setPlans(value); setReady(true); setError(''); } })
+    void repository.current.load().then(value => { if (active) { setPlans(value); setMemorization(repository.current.memorization()); setReady(true); setError(''); } })
       .catch(() => { if (active) setError('تعذر تحميل الأهداف المحفوظة. بياناتك لم تُستبدل. أعد المحاولة.'); });
     return () => { active = false; };
   }, [revision]);
   const commit = useCallback(async (change: (plans: ReadingPlan[]) => ReadingPlan[]) => {
     const value = await repository.current.update(change);
     setPlans(value);
+    setMemorization(repository.current.memorization());
   }, []);
   useEffect(() => {
     if (!ready) return;
@@ -66,16 +68,16 @@ export function PlansProvider({ children }: PropsWithChildren) {
   }, [plans, ready, clockRevision]);
   useEffect(() => {
     if (!ready) return;
-    for (const plan of plans) if (!isRecurringPlan(plan) && plan.status === 'completed' && plan.repeat && plan.cycle.completedOn && plan.cycle.completedOn < today) {
+    for (const plan of plans) if (isSequentialPlan(plan) && plan.status === 'completed' && plan.repeat && plan.cycle.completedOn && plan.cycle.completedOn < today) {
       void loadReaderContent(undefined, plan.riwayah).then(content => {
         const index = buildPlanIndex(content.data);
-        return commit(items => items.map(p => p.id === plan.id && !isRecurringPlan(p) && p.status === 'completed' && p.repeat
+        return commit(items => items.map(p => p.id === plan.id && isSequentialPlan(p) && p.status === 'completed' && p.repeat
           ? currentGoal(items, p.id) ? { ...p, repeat: false } : rollCompletedCycle(p, index, today)
           : p));
       }).catch(() => { setError('تعذر بدء دورة جديدة. أعد فتح الهدف بعد تحميل مصحفه.'); });
     }
   }, [plans, ready, today, commit]);
-  return <Context.Provider value={{ plans, ready, error: error || archiveError, reminderError, today, commit, retry: () => { setRevision(x => x + 1); setClockRevision(x => x + 1); } }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ plans, memorization, ready, error: error || archiveError, reminderError, today, commit, retry: () => { setRevision(x => x + 1); setClockRevision(x => x + 1); } }}>{children}</Context.Provider>;
 }
 export function usePlans() {
   const value = useContext(Context);

@@ -27,7 +27,7 @@ export function DetailScreen({ plan, onBack, onSettings, children }: PropsWithCh
       <View>
         <View style={d.row}>
           <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: plan.status === 'active' ? palette.accent : palette.muted }} />
-          <Text style={{ color: palette.muted, fontSize: 12 }}>{statusLabels[plan.status]} · رواية {RIWAYAT[plan.riwayah].label}</Text>
+          <Text style={{ color: palette.muted, fontSize: 12 }}>{plan.status === 'active' && plan.goal.type === 'memorization' ? 'قيد الحفظ' : statusLabels[plan.status]} · رواية {RIWAYAT[plan.riwayah].label}</Text>
         </View>
         <Text accessibilityRole="header" style={{ color: palette.text, fontSize: 31, fontWeight: '700' }}>{plan.name}</Text>
       </View>

@@ -1,6 +1,7 @@
 import type { CacheStorage } from '@/lib/quranpedia/cache';
 import { localDate, validDate } from './dates';
-import type { ReadingPlan } from './types';
+import { isMemorizationPlan, type MemorizationRecord, type ReadingPlan } from './types';
+import { mergeSpans, subtractSpans, validateMemorizationPlan, validateSpans } from './memorization';
 import { enforceGoalLimit } from './goal-limit';
 import { maintainArchives, stampArchiveTransitions } from './archive';
 import { validateRecurringPlan } from './recurring';
@@ -22,6 +23,7 @@ export function decodePlans(raw: string | null): ReadingPlan[] {
       (p.pausedOn !== undefined && !validDate(p.pausedOn)) ||
       (p.archivedOn !== undefined && !validDate(p.archivedOn))) throw new Error('تعذر التحقق من بيانات الأهداف المحفوظة');
     ids.add(p.id);
+    if (p.goal?.type === 'memorization') { validateMemorizationPlan(p); continue; }
     if (p.goal?.type === 'recurring') { validateRecurringPlan(p); continue; }
     if (!['pages', 'hizbs', 'juzs'].includes(p.unit) || typeof p.repeat !== 'boolean') throw new Error('إعدادات هدف غير صالحة');
     if (!p.goal || !['khatma', 'wird'].includes(p.goal.type) ||
@@ -49,17 +51,57 @@ export function decodePlans(raw: string | null): ReadingPlan[] {
   return saved.plans;
 }
 
+export function decodeMemorization(raw: string | null): MemorizationRecord[] {
+  if (!raw) return [];
+  const saved = JSON.parse(raw);
+  const records = saved.memorization ?? [];
+  if (!Array.isArray(records) || records.length > 2) throw new Error('سجل المحفوظ غير صالح.');
+  const seen = new Set<string>();
+  for (const record of records) {
+    if (!record || !['warsh', 'hafs'].includes(record.riwayah) || seen.has(record.riwayah) || typeof record.corpus !== 'string' || !Number.isInteger(record.totalAyahs) || record.totalAyahs < 1 || record.totalAyahs > 10000) throw new Error('سجل المحفوظ غير صالح.');
+    validateSpans(record.ranges, record.totalAyahs); seen.add(record.riwayah);
+  }
+  return records;
+}
+/** Update the lifelong record and the goal in the same disk write. Deleting a goal
+ * never deletes its memorized passages. Only explicit corrections/undo remove them. */
+function syncMemorization(previous: ReadingPlan[], next: ReadingPlan[], records: MemorizationRecord[]): MemorizationRecord[] {
+  let result = records;
+  for (const plan of next) {
+    if (!isMemorizationPlan(plan)) continue;
+    const before = previous.find(p => p.id === plan.id);
+    const old = before && isMemorizationPlan(before) ? before.memorized : plan.initialRecord;
+    const saved = result.find(r => r.riwayah === plan.riwayah);
+    if (before && JSON.stringify(old) === JSON.stringify(plan.memorized)) {
+      if ((plan.status === 'active' || plan.status === 'paused') && JSON.stringify(mergeSpans(saved?.ranges ?? [])) !== JSON.stringify(mergeSpans(plan.memorized))) throw new Error('تغيّر سجل محفوظك. أعد فتح الهدف لتحديثه.');
+      continue;
+    }
+    if (saved && (saved.corpus !== plan.corpus || saved.totalAyahs !== plan.totalAyahs)) throw new Error('نسخة سجل الحفظ لا تطابق الهدف.');
+    if (!before && JSON.stringify(mergeSpans(saved?.ranges ?? [])) !== JSON.stringify(plan.initialRecord)) throw new Error('تغيّر محفوظك. أعد فتح إنشاء هدف الحفظ لتحديثه.');
+    const added = subtractSpans(plan.memorized, old), removed = subtractSpans(old, plan.memorized);
+    const ranges = mergeSpans([...subtractSpans(saved?.ranges ?? [], removed), ...added]);
+    if ((plan.status === 'active' || plan.status === 'paused') && JSON.stringify(ranges) !== JSON.stringify(mergeSpans(plan.memorized))) throw new Error('تغيّر سجل محفوظك. أعد فتح الهدف لتحديثه.');
+    result = [...result.filter(r => r.riwayah !== plan.riwayah), { riwayah: plan.riwayah, corpus: plan.corpus, totalAyahs: plan.totalAyahs, ranges }];
+  }
+  return result;
+}
+
 /** Persist before publishing. A failed disk write never reports successful completion. */
 export function createPlansRepository(storage: CacheStorage, today: () => string = localDate) {
   let current: ReadingPlan[] | undefined;
+  let memorization: MemorizationRecord[] = [];
   let queue: Promise<unknown> = Promise.resolve();
   return {
+    memorization: () => memorization,
     load() {
       const next = queue.then(async () => {
-        const loaded = decodePlans(await storage.getItem(PLANS_KEY));
+        const raw = await storage.getItem(PLANS_KEY);
+        const loaded = decodePlans(raw);
+        const memory = decodeMemorization(raw);
         const maintained = maintainArchives(loaded, today());
-        if (maintained !== loaded) await storage.setItem(PLANS_KEY, JSON.stringify({ version: 1, plans: maintained }));
+        if (maintained !== loaded) await storage.setItem(PLANS_KEY, JSON.stringify({ version: 1, plans: maintained, memorization: memory }));
         current = maintained;
+        memorization = memory;
         return current;
       });
       queue = next.catch(() => {});
@@ -73,9 +115,12 @@ export function createPlansRepository(storage: CacheStorage, today: () => string
         decodePlans(JSON.stringify({ version: 1, plans: updated }));
         const date = today();
         const limited = maintainArchives(stampArchiveTransitions(current, enforceGoalLimit(current, updated), date), date);
-        const raw = JSON.stringify({ version: 1, plans: limited });
+        const memory = syncMemorization(current, updated, memorization);
+        const raw = JSON.stringify({ version: 1, plans: limited, memorization: memory });
+        decodeMemorization(raw);
         await storage.setItem(PLANS_KEY, raw);
         current = limited;
+        memorization = memory;
         return current;
       });
       queue = next.catch(() => {});

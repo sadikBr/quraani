@@ -1,8 +1,12 @@
-import { isRecurringPlan, type SequentialGoal, type SequentialPlan, type ReadingPlan } from './types';
+import { isMemorizationPlan, isSequentialPlan, type SequentialGoal, type SequentialPlan, type ReadingPlan } from './types';
 
 export const isCurrentGoal = (goal: ReadingPlan) => goal.status === 'active' || goal.status === 'paused';
 export function currentGoal(plans: ReadingPlan[], exceptId?: string) {
-  return plans.find((p): p is SequentialPlan => !isRecurringPlan(p) && p.id !== exceptId && isCurrentGoal(p));
+  return plans.find((p): p is SequentialPlan => isSequentialPlan(p) && p.id !== exceptId && isCurrentGoal(p));
+}
+
+export function currentMemorizationGoal(plans: ReadingPlan[], exceptId?: string) {
+  return plans.find(p => isMemorizationPlan(p) && p.id !== exceptId && isCurrentGoal(p));
 }
 
 export class DuplicateGoalError extends Error {
@@ -15,10 +19,17 @@ export class DuplicateGoalError extends Error {
  * Existing duplicates remain readable/editable; never delete old progress. */
 export function enforceGoalLimit(previous: ReadingPlan[], next: ReadingPlan[]): ReadingPlan[] {
   for (const goal of next) {
-    if (isRecurringPlan(goal)) continue;
+    if (isMemorizationPlan(goal)) {
+      const before = previous.find(p => p.id === goal.id);
+      if (isCurrentGoal(goal) && (!before || !isCurrentGoal(before))) {
+        const conflict = currentMemorizationGoal(next, goal.id);
+        if (conflict) throw new Error('لديك هدف حفظ جارٍ بالفعل. تابعه أو أرشفه قبل إنشاء هدف حفظ جديد.');
+      }
+    }
+    if (!isSequentialPlan(goal)) continue;
     const before = previous.find(p => p.id === goal.id);
     const claimsSlot = isCurrentGoal(goal) && (!before || !isCurrentGoal(before) || before.goal.type !== goal.goal.type);
-    const enablesRepeat = goal.status === 'completed' && goal.repeat && before?.status === 'completed' && !isRecurringPlan(before) && !before.repeat;
+    const enablesRepeat = goal.status === 'completed' && goal.repeat && before?.status === 'completed' && isSequentialPlan(before) && !before.repeat;
     if (claimsSlot || enablesRepeat) {
       const conflict = currentGoal(next, goal.id);
       if (conflict) throw new DuplicateGoalError(conflict.id, conflict.goal.type);
@@ -26,6 +37,6 @@ export function enforceGoalLimit(previous: ReadingPlan[], next: ReadingPlan[]): 
   }
   // A new/current goal supersedes automatic repetition of an already finished
   // reading goal. Its completed cycle and history remain untouched.
-  return next.map(goal => !isRecurringPlan(goal) && goal.status === 'completed' && goal.repeat && currentGoal(next, goal.id)
+  return next.map(goal => isSequentialPlan(goal) && goal.status === 'completed' && goal.repeat && currentGoal(next, goal.id)
     ? { ...goal, repeat: false } : goal);
 }

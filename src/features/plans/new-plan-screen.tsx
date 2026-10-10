@@ -16,7 +16,8 @@ import { arabicNumber, shortDate } from './presentation';
 import { remindersSupported, requestPlanReminders } from './notifications';
 import { usePlanIndex } from './use-plan-index';
 import { PlanDateField } from './plan-date-field';
-import { isRecurringPlan, type SequentialGoal, type PlanStart, type PlanUnit } from './types';
+import { isSequentialPlan, type SequentialGoal, type PlanStart, type PlanUnit } from './types';
+import { MemorizationCreationScreen } from './memorization-creation-screen';
 import { GoalChooser } from './goal-chooser';
 import { RecurringCreationScreen } from './recurring-creation-screen';
 import { saveWithReminder } from './save-with-reminder';
@@ -32,6 +33,7 @@ export function NewPlanScreen() {
   const { ready, error, retry } = usePlans();
   const { type, preset } = useLocalSearchParams<{ type?: string; preset?: string }>();
   if (!ready) return <PlanScreen title="هدف جديد" onBack={() => router.back()}><PlanNotice message={error} retry={retry} />{!error && <PlanLoading />}</PlanScreen>;
+  if (type === 'memorization') return <MemorizationCreationScreen />;
   if (type === 'recurring') return <RecurringCreationScreen preset={preset === 'kahf' || preset === 'mulk' ? preset : undefined} />;
   if (type === 'khatma' || type === 'wird') return <GoalCreationForm key={type} initialKind={type} />;
   return <GoalChooser />;
@@ -58,7 +60,7 @@ function GoalCreationForm({ initialKind }: { initialKind: SequentialGoal['type']
   const scroll = useRef<ScrollView>(null);
   const { index, error, retry } = usePlanIndex(riwayah);
   const blocked = currentGoal(plans);
-  const replacesRepeat = plans.some(goal => !isRecurringPlan(goal) && goal.status === 'completed' && goal.repeat);
+  const replacesRepeat = plans.some(goal => isSequentialPlan(goal) && goal.status === 'completed' && goal.repeat);
   const preview = useMemo(() => {
     if (!index) return {};
     try {

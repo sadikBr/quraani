@@ -7,10 +7,10 @@ import { arabicNumber, shortDate } from './presentation';
 import { completedOccurrences, nextRecurringPortion, occurrenceProgress, WEEKDAYS, weekdaysLabel } from './recurring';
 import type { RecurringPlan } from './types';
 
-export function WeekdayPicker({ days, onChange }: { days: number[]; onChange: (days: number[]) => void }) {
+export function WeekdayPicker({ days, onChange, quickOptions = [{ label: 'كل يوم', value: [0, 1, 2, 3, 4, 5, 6] }, { label: 'الجمعة فقط', value: [5] }] }: { days: number[]; onChange: (days: number[]) => void; quickOptions?: { label: string; value: number[] }[] }) {
   const { palette: p } = useReadingPreferences();
   return <View style={{ gap: 10 }}>
-    <View style={{ flexDirection: 'row', gap: 8 }}>{[{ label: 'كل يوم', value: [0, 1, 2, 3, 4, 5, 6] }, { label: 'الجمعة فقط', value: [5] }].map(option => <Pressable key={option.label} accessibilityRole="button" onPress={() => onChange(option.value)}
+    <View style={{ flexDirection: 'row', gap: 8 }}>{quickOptions.map(option => <Pressable key={option.label} accessibilityRole="button" onPress={() => onChange(option.value)}
       style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 14, justifyContent: 'center', borderRadius: readerShape.control, backgroundColor: p.background, opacity: pressed ? 0.6 : 1 })}>
       <Text style={{ color: p.accent, fontSize: 13 }}>{option.label}</Text>
     </Pressable>)}</View>

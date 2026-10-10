@@ -10,9 +10,11 @@ import { usePlans } from './provider';
 import { ARCHIVE_RETENTION_DAYS, archiveDeletionDate, deleteArchivedGoal, restoreArchivedGoal } from './archive';
 import { DuplicateGoalError } from './goal-limit';
 import { arabicNumber, shortDate } from './presentation';
-import { unitLabels } from './engine';
+import { buildPlanIndex, unitLabels } from './engine';
 import { PlanNotice } from './components';
-import { isRecurringPlan, type ReadingPlan } from './types';
+import { isMemorizationPlan, isRecurringPlan, type ReadingPlan } from './types';
+import { memoryFor, quarterLabel, reviseMemorization } from './memorization';
+import { loadReaderContent } from '../quran-reader/services/reader-service';
 import { completedOccurrences, weekdaysLabel } from './recurring';
 
 export function ArchivedGoals({ plans, onOpen }: { plans: ReadingPlan[]; onOpen: (id: string) => void }) {
@@ -29,17 +31,20 @@ export function ArchivedGoals({ plans, onOpen }: { plans: ReadingPlan[]; onOpen:
 
 function ArchivedGoalCard({ plan, onOpen }: { plan: ReadingPlan; onOpen: (id: string) => void }) {
   const { palette: p } = useReadingPreferences();
-  const { commit } = usePlans();
+  const { commit, memorization, today } = usePlans();
   const [deleting, setDeleting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [conflictId, setConflictId] = useState<string>();
   const deletionDate = archiveDeletionDate(plan);
-  const completed = isRecurringPlan(plan) ? completedOccurrences(plan) : plan.cycle.sessions.filter(s => s.end <= plan.cycle.cursor).length;
+  const completed = isMemorizationPlan(plan) ? plan.progress.filter(log => log.finished).length : isRecurringPlan(plan) ? completedOccurrences(plan) : plan.cycle.sessions.filter(s => s.end <= plan.cycle.cursor).length;
   const restore = async () => {
     if (busy) return;
     setBusy(true); setError(''); setConflictId(undefined);
-    try { await commit(items => items.map(item => item.id === plan.id ? restoreArchivedGoal(item) : item)); }
+    try {
+      const index = isMemorizationPlan(plan) ? buildPlanIndex((await loadReaderContent(undefined, plan.riwayah)).data) : undefined;
+      await commit(items => items.map(item => item.id === plan.id ? restoreArchivedGoal(isMemorizationPlan(item) && index ? reviseMemorization(item, index, memoryFor(memorization, item.riwayah, index), today) : item) : item));
+    }
     catch (e) { setError(e instanceof Error ? e.message : 'تعذرت استعادة الهدف.'); if (e instanceof DuplicateGoalError) setConflictId(e.goalId); }
     finally { setBusy(false); }
   };
@@ -48,10 +53,10 @@ function ArchivedGoalCard({ plan, onOpen }: { plan: ReadingPlan; onOpen: (id: st
       <View style={s.row}>
         <View style={[s.icon, { backgroundColor: p.background }]}><ReaderIcon name={plan.goal.type === 'khatma' ? 'calendar' : 'book'} color={p.muted} size={23} /></View>
         <View style={s.grow}><Text style={{ color: p.text, fontSize: 21, fontWeight: '600' }}>{plan.name}</Text>
-          <Text style={{ color: p.muted, fontSize: 12 }}>{isRecurringPlan(plan) ? `قراءة متكررة · ${weekdaysLabel(plan.weekdays)}` : plan.goal.type === 'khatma' ? `ختمة · ${arabicNumber(plan.goal.weeks)} أسابيع` : `ورد يومي · ${arabicNumber(plan.goal.amount)} ${unitLabels[plan.unit]}`} · {RIWAYAT[plan.riwayah].label}</Text></View>
+          <Text style={{ color: p.muted, fontSize: 12 }}>{isMemorizationPlan(plan) ? `حفظ القرآن · ${quarterLabel(plan.goal.weeklyQuarters)} أسبوعيًا` : isRecurringPlan(plan) ? `قراءة متكررة · ${weekdaysLabel(plan.weekdays)}` : plan.goal.type === 'khatma' ? `ختمة · ${arabicNumber(plan.goal.weeks)} أسابيع` : `ورد يومي · ${arabicNumber(plan.goal.amount)} ${unitLabels[plan.unit]}`} · {RIWAYAT[plan.riwayah].label}</Text></View>
         <ReaderIcon name="chevron" color={p.muted} size={18} />
       </View>
-      <Text style={{ color: p.muted, fontSize: 12 }}>{isRecurringPlan(plan) ? `${arabicNumber(completed)} قراءة مكتملة` : `${arabicNumber(completed)} من ${arabicNumber(plan.cycle.sessions.length)} وردًا مكتملًا`}</Text>
+      <Text style={{ color: p.muted, fontSize: 12 }}>{isMemorizationPlan(plan) ? `${arabicNumber(completed)} جلسة حفظ مكتملة · محفوظك باقٍ` : isRecurringPlan(plan) ? `${arabicNumber(completed)} قراءة مكتملة` : `${arabicNumber(completed)} من ${arabicNumber(plan.cycle.sessions.length)} وردًا مكتملًا`}</Text>
       {deletionDate && <View style={[s.row, { gap: 7 }]}><ReaderIcon name="archive" color={p.ornament} size={16} />
         <Text style={{ color: p.muted, fontSize: 12, flexShrink: 1 }}>الحذف التلقائي: {shortDate(deletionDate)}</Text></View>}
     </Pressable>
@@ -96,7 +101,7 @@ export function DeleteArchivedGoalDialog({ plan, onClose, onDeleted }: { plan: R
         <ScrollView contentContainerStyle={{ padding: 24, gap: 14 }}>
           <View style={[s.icon, { backgroundColor: p.background }]}><ReaderIcon name="trash" color={p.warning} size={25} /></View>
           <Text accessibilityRole="header" style={{ color: p.text, fontSize: 24, fontWeight: '600' }}>حذف الهدف نهائيًا؟</Text>
-          <Text style={{ color: p.muted, fontSize: 15 }}>سيُحذف «{plan.name}» مع سجل القراءة والإنجاز الخاص به. لا يمكن التراجع عن هذا الحذف.</Text>
+          <Text style={{ color: p.muted, fontSize: 15 }}>سيُحذف «{plan.name}» مع سجل الإنجاز الخاص بهذا الهدف. {isMemorizationPlan(plan) ? 'يبقى محفوظك من القرآن في سجل الحفظ. ' : ''}لا يمكن التراجع عن هذا الحذف.</Text>
           <PlanNotice message={error} />
           <View style={[s.row, { marginTop: 6 }]}>
             <Pressable accessibilityRole="button" accessibilityLabel="حذف نهائيًا" disabled={busy} onPress={() => void remove()}

@@ -14,7 +14,8 @@ import { dateLabel } from './dates';
 import { usePlanIndex } from './use-plan-index';
 import { PlanDateField } from './plan-date-field';
 import { remindersSupported, requestPlanReminders } from './notifications';
-import { isRecurringPlan, type SequentialPlan } from './types';
+import { isMemorizationPlan, isSequentialPlan, isRecurringPlan, type SequentialPlan } from './types';
+import { MemorizationDetail } from './memorization-detail-screen';
 import { RecurringDetail } from './recurring-detail-screen';
 import { saveWithReminder } from './save-with-reminder';
 import { savedReminderNotice, type ReminderIssue } from './reminder-errors';
@@ -30,6 +31,7 @@ export function PlanDetailScreen() {
   if (!ready || !plan) return <PlanScreen title="الهدف" onBack={() => router.replace('/plans')}>
     <PlanNotice message={error} retry={retry} />{!ready ? <PlanLoading /> : <Copy>هذا الهدف غير موجود.</Copy>}
   </PlanScreen>;
+  if (isMemorizationPlan(plan)) return <MemorizationDetail key={plan.id} plan={plan} initialReminderIssue={reminderIssue === 'permission' || reminderIssue === 'unavailable' ? reminderIssue : undefined} />;
   if (isRecurringPlan(plan)) return <RecurringDetail key={plan.id} plan={plan} initialReminderIssue={reminderIssue === 'permission' || reminderIssue === 'unavailable' ? reminderIssue : undefined} />;
   return <PlanDetail key={plan.id} plan={plan} initialReminderIssue={reminderIssue === 'permission' || reminderIssue === 'unavailable' ? reminderIssue : undefined} />;
 }
@@ -53,7 +55,7 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
   const mutate = async (change: (p: SequentialPlan) => SequentialPlan) => {
     if (busy) return false;
     setBusy(true); setMessage(''); setConflictId(undefined);
-    try { await commit(items => items.map(p => p.id === plan.id && !isRecurringPlan(p) ? change(p) : p)); return true; }
+    try { await commit(items => items.map(p => p.id === plan.id && isSequentialPlan(p) ? change(p) : p)); return true; }
     catch (e) {
       setMessage(e instanceof Error ? e.message : 'تعذر حفظ التغيير. حاول مرة أخرى.');
       if (e instanceof DuplicateGoalError) setConflictId(e.goalId);

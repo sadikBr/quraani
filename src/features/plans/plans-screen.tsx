@@ -14,7 +14,8 @@ import { nextPortion, unitLabels } from './engine';
 import { dateLabel } from './dates';
 import { arabicNumber, shortDate } from './presentation';
 import { goalsOverview, type GoalsView } from './overview';
-import { isRecurringPlan, type ReadingPlan } from './types';
+import { MemorizationGoalCard } from './memorization-components';
+import { isMemorizationPlan, isRecurringPlan, type ReadingPlan } from './types';
 import { RecurringGoalCard } from './recurring-components';
 import { GoalCardFrame, GoalCardHeading } from './goal-card';
 import { PlanLoading, PlanNotice } from './components';
@@ -43,7 +44,7 @@ export function PlansScreen() {
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
       <View>
         <Text accessibilityRole="header" style={{ fontSize: 31, fontWeight: '700', color: p.text }}>أهدافك القرآنية</Text>
-        <Text style={{ fontSize: 14, color: p.muted }}>وردٌ وختمة، ومواعيد تتجدد مع القرآن.</Text>
+        <Text style={{ fontSize: 14, color: p.muted }}>قراءة وحفظ، ومواعيد تتجدد مع القرآن.</Text>
       </View>
       <PlanNotice message={error} retry={retry} /><PlanNotice message={reminderError} />
       {!ready ? !error && <PlanLoading /> : <>
@@ -79,13 +80,13 @@ function DailyOverview({ today, due, completed, hasGoals }: { today: string; due
     <View style={[s.row, { gap: 18 }]}>
       <View style={s.grow}>
         <Text style={{ color: p.heroMuted, fontSize: 12 }}>{dateLabel(today)}</Text>
-        <Text style={{ color: p.onHero, fontSize: 24, fontWeight: '600', marginTop: 4 }}>{due ? 'وردك بانتظارك' : completed ? 'قرأت اليوم، فهنيئًا لك' : 'وقتٌ للقرآن'}</Text>
+        <Text style={{ color: p.onHero, fontSize: 24, fontWeight: '600', marginTop: 4 }}>{due ? 'وردك بانتظارك' : completed ? 'خطوة أخرى أنجزتها' : 'وقتٌ للقرآن'}</Text>
         <Text style={{ color: p.heroMuted, fontSize: 13 }}>{due ? 'خطوة صغيرة اليوم، تقرّبك من هدفك.' : hasGoals ? 'رحلتك مستمرة، على مهلٍ وثبات.' : 'اجعل للقرآن نصيبًا من يومك.'}</Text>
       </View>
       <View style={[s.heroIcon, { borderColor: `${p.onHero}33` }]}><ReaderIcon name={completed && !due ? 'check' : 'book'} color={p.onHero} size={32} strokeWidth={1.35} /></View>
     </View>
     {hasGoals && <View style={[s.stats, { borderColor: `${p.onHero}26` }]}>
-      <View style={s.stat}><Text style={{ color: p.onHero, fontSize: 25 }}>{arabicNumber(due)}</Text><Text style={{ color: p.heroMuted, fontSize: 12, flexShrink: 1 }}>بانتظار القراءة</Text></View>
+      <View style={s.stat}><Text style={{ color: p.onHero, fontSize: 25 }}>{arabicNumber(due)}</Text><Text style={{ color: p.heroMuted, fontSize: 12, flexShrink: 1 }}>بانتظارك اليوم</Text></View>
       <View style={{ width: 1, alignSelf: 'stretch', backgroundColor: `${p.onHero}26` }} />
       <View style={s.stat}><Text style={{ color: p.onHero, fontSize: 25 }}>{arabicNumber(completed)}</Text><Text style={{ color: p.heroMuted, fontSize: 12, flexShrink: 1 }}>أوراد أتممتها اليوم</Text></View>
     </View>}
@@ -95,6 +96,7 @@ function DailyOverview({ today, due, completed, hasGoals }: { today: string; due
 function GoalCard({ plan, today }: { plan: ReadingPlan; today: string }) {
   const { palette: p } = useReadingPreferences();
   const next = nextPortion(plan, today);
+  if (isMemorizationPlan(plan)) return <MemorizationGoalCard plan={plan} today={today} />;
   if (isRecurringPlan(plan)) return <RecurringGoalCard plan={plan} today={today} />;
   const completed = plan.cycle.sessions.filter(s => s.end <= plan.cycle.cursor).length;
   const progress = Math.max(0, Math.min(1, (plan.cycle.cursor - plan.cycle.start) / Math.max(1, plan.totalAyahs - plan.cycle.start)));
@@ -118,7 +120,7 @@ function EmptyGoals({ view, hasGoals, completed, onCreate, onShowAll }: { view: 
   const { palette: p } = useReadingPreferences();
   const waiting = view === 'today' && hasGoals;
   const title = view === 'archived' ? 'أرشيفك فارغ' : waiting ? completed ? 'أتممت وردك، تقبّل الله منك' : 'لا أوراد مطلوبة الآن' : 'لكل رحلة بداية';
-  const description = view === 'archived' ? 'تُحفظ الأهداف هنا لمدة أسبوعين بعد أرشفتها، ثم تُحذف نهائيًا.' : waiting ? 'تجد أهدافك القادمة والموقوفة في «أهدافي».' : 'ختمة، أو ورد يومي، أو سور تختار لها مواعيد تتجدد.';
+  const description = view === 'archived' ? 'تُحفظ الأهداف هنا لمدة أسبوعين بعد أرشفتها، ثم تُحذف نهائيًا.' : waiting ? 'تجد أهدافك القادمة والموقوفة في «أهدافي».' : 'ختمة، أو حفظ متدرّج، أو سور تختار لها مواعيد تتجدد.';
   return <View style={[s.empty, { borderColor: p.border }]}>
     <View style={[s.emptyIcon, { backgroundColor: p.accentSoft }]}><ReaderIcon name={view === 'archived' ? 'bookmark' : waiting && completed ? 'check' : 'book'} color={p.accent} size={28} /></View>
     <Text accessibilityRole="header" style={{ color: p.text, fontSize: 21, fontWeight: '600', textAlign: 'center' }}>{title}</Text>

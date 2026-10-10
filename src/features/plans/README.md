@@ -1,6 +1,7 @@
 # Reading goals
 
-Supports a dated khatma, a continuous daily wird, and recurring surah reading.
+Supports a dated khatma, a continuous daily wird, memorization, and recurring
+surah reading.
 Each goal owns its riwayah, schedule, progress and optional reminder. No
 account or server is needed. Routes live in `src/app/plans`; the reader menu opens
 the goals overview.
@@ -13,7 +14,8 @@ complete recurring occurrences, excluding partial progress and archived goals.
 
 Creation is a two-step flow: choose the type, amount and starting point, then
 review the schedule, name, repeat and reminder settings. Khatma and daily wird are two
-strategies for a single reading goal. Only one current reading goal is allowed
+strategies for a single reading goal. Memorization is a separate goal slot and can
+coexist with one current reading goal. Only one current reading goal is allowed
 across both strategies and riwayat. Active, paused and future goals occupy this
 slot; completed and archived goals free it. Creating or restoring a replacement
 stops repetition of any completed reading goal
@@ -52,6 +54,19 @@ without overwriting saved progress.
   adding missed-day debt. Once a portion is completed, the next is available on
   the following local calendar day. Division quotas align to the corresponding
   boundaries; the first/final portion can be shorter.
+- A memorization goal uses a weekly quota measured in quarter-hizbs (at least one
+  quarter) and selected weekdays. The quota is divided across those days using
+  complete ayahs and real quarter-hizb boundaries, so every assigned session is
+  readable and no ayah is counted twice. If a day would receive no new ayahs
+  because a boundary is larger than its share, that slot stays empty and the
+  remaining quota carries forward. Missed days are re-anchored to the next
+  selected day rather than creating duplicate assignments.
+- Memorization is edition-specific. The creation flow can start with surahs,
+  juzs, quarters, or exact ayah ranges already known. Confirming a session adds
+  its exact ranges to the durable memorized record; correction and undo subtract
+  only the affected ranges. That record remains after a goal is completed,
+  archived or deleted, and it is reused when creating the next memorization goal.
+  Warsh and Hafs records are kept separate and a changed Quran corpus is rejected.
 - Opening or swiping a page does not record reading. Reader controls explicitly
   save through the current page or complete the assigned portion. Receipts bind
   writes to a cycle and portion so stale/repeated taps cannot advance another
@@ -115,7 +130,8 @@ compatible through the optional field. Failed writes keep the old data intact.
 `repository.ts` stores a validated versioned envelope under `plans:v1` using the
 app's existing SQLite/IndexedDB storage adapter. Existing sequential records are
 unchanged; recurring records use a distinct goal type, range list and dated
-occurrence logs, validated before loading or saving. Reads and writes are serialized;
+occurrence logs, and memorization records use edition-bound ayah spans independent
+of goal lifecycle. All are validated before loading or saving. Reads and writes are serialized;
 successful storage is required before publishing progress to the UI. A future
 schema must add an explicit migration, not silently discard older plans.
 
@@ -150,7 +166,8 @@ reminder; partial reading keeps it scheduled.
 
 ## Adding other plan types
 
-`ReadingPlan` separates `SequentialPlan` from `RecurringPlan`; use
+`ReadingPlan` separates `SequentialPlan`, `MemorizationPlan` and
+`RecurringPlan`; use `isSequentialPlan`, `isMemorizationPlan` and
 `isRecurringPlan` to narrow it before accessing strategy-specific progress.
 Future goals such as memorization revision should define their own range and
 completion rules while reusing calendar, storage, reminders, reader actions and
@@ -166,3 +183,7 @@ date/time picker interaction still require testing on a phone/development build.
 `tests/recurring-goals.test.js` covers weekday/date boundaries, independent
 occurrences, multiple nonadjacent surahs in both editions, stale receipts,
 undo, schedule edits, pause/archive, persistence coexistence and reminder filtering.
+`tests/memorization-goals.test.js` covers edition-specific durable memory,
+quarter-hizb quotas, weekdays and carry-forward, disjoint ranges, exact bounded
+reader sessions, confirmation/undo/correction, stale writes, archive/delete,
+reloading, reminders, and completion of the full Quran.

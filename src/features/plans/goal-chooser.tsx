@@ -8,7 +8,7 @@ import { ReaderIcon } from '../quran-reader/components/ui/reader-chrome';
 import { calligraphyStyle, surahNameGlyph } from '../quran-reader/utils/reader-typography';
 import { PlanScreen, Copy } from './components';
 import { usePlans } from './provider';
-import { currentGoal } from './goal-limit';
+import { currentGoal, currentMemorizationGoal } from './goal-limit';
 import { RECURRING_PRESETS } from './recurring';
 import { SURAH_NAME_FONT_FAMILY } from '../quran-reader/config';
 
@@ -17,6 +17,7 @@ export function GoalChooser() {
   const { plans } = usePlans();
   const [calligraphyReady] = useFonts({ [SURAH_NAME_FONT_FAMILY]: require('@/assets/fonts/surah_name.ttf') });
   const existing = currentGoal(plans);
+  const memorization = currentMemorizationGoal(plans);
   return <PlanScreen title="هدف جديد" subtitle="اختر ما تحب أن تواظب عليه." onBack={() => router.dismissTo('/plans')}>
     <View style={{ backgroundColor: p.hero, borderRadius: readerShape.card, padding: 20, gap: 8 }}>
       <ReaderIcon name="calendar" color={p.heroMuted} size={28} />
@@ -37,6 +38,10 @@ export function GoalChooser() {
     <Pressable accessibilityRole="button" accessibilityLabel="إنشاء قراءة متكررة مخصصة" onPress={() => router.push({ pathname: '/plans/new', params: { type: 'recurring' } })}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 18, borderRadius: readerShape.card, borderWidth: 1, borderColor: p.accent, backgroundColor: p.accentSoft, opacity: pressed ? 0.7 : 1 })}>
       <ReaderIcon name="restore" color={p.accent} size={27} /><View style={{ flex: 1 }}><Text style={{ color: p.text, fontSize: 18, fontWeight: '600' }}>قراءة متكررة من اختيارك</Text><Text style={{ color: p.muted, fontSize: 12 }}>سورة أو أكثر · أيام تختارها</Text></View><ReaderIcon name="chevron" color={p.accent} size={20} />
+    </Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel={memorization ? 'متابعة هدف الحفظ' : 'إنشاء هدف حفظ القرآن'} onPress={() => memorization ? router.push({ pathname: '/plans/[id]', params: { id: memorization.id } }) : router.push({ pathname: '/plans/new', params: { type: 'memorization' } })}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 18, borderRadius: readerShape.card, borderWidth: 1, borderColor: p.border, backgroundColor: p.paper, opacity: pressed ? 0.7 : 1 })}>
+      <ReaderIcon name="book" color={p.accent} size={27} /><View style={{ flex: 1 }}><Text style={{ color: p.text, fontSize: 19, fontWeight: '600' }}>القرآن في صدرك</Text><Text style={{ color: p.muted, fontSize: 12 }}>{memorization ? `تابع ${memorization.name}` : 'حفظ متدرّج، يبدأ من ربع حزب أسبوعيًا'}</Text></View><ReaderIcon name="chevron" color={p.accent} size={20} />
     </Pressable>
     <View style={{ gap: 12, marginTop: 8 }}><Copy title>رحلتك عبر المصحف</Copy>
       <View style={{ flexDirection: 'row', gap: 12 }}>{([{ type: 'khatma', title: 'ختمة', detail: 'ورد محسوب لإتمام القراءة', icon: 'calendar' }, { type: 'wird', title: 'ورد يومي', detail: 'مقدار ثابت، بلا موعد إتمام', icon: 'book' }] as const).map(option => <Pressable key={option.type}

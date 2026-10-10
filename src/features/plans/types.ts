@@ -2,7 +2,7 @@ import type { Riwayah } from '../quran-reader/riwayat';
 
 export type PlanUnit = 'pages' | 'hizbs' | 'juzs';
 export type SequentialGoal = { type: 'khatma'; weeks: number } | { type: 'wird'; amount: number };
-export type PlanGoal = SequentialGoal | { type: 'recurring'; surahs: number[] };
+export type PlanGoal = SequentialGoal | { type: 'recurring'; surahs: number[] } | { type: 'memorization'; weeklyQuarters: number };
 export type PlanStart = { kind: 'page' | 'surah' | 'hizb'; number: number };
 export type PlanStatus = 'active' | 'paused' | 'completed' | 'archived';
 export interface PlanSession { date: string; start: number; end: number }
@@ -49,8 +49,40 @@ export interface RecurringPlan extends PlanBase {
   ranges: RecurringRange[];
   occurrences: RecurringOccurrence[];
 }
-export type ReadingPlan = SequentialPlan | RecurringPlan;
+export interface AyahSpan { start: number; end: number }
+export interface MemorizationRecord {
+  riwayah: Riwayah;
+  corpus: string;
+  totalAyahs: number;
+  ranges: AyahSpan[];
+}
+export interface MemorizationSession { date: string; ranges: AyahSpan[] }
+export interface MemorizationPlan extends PlanBase {
+  goal: { type: 'memorization'; weeklyQuarters: number };
+  /** A snapshot of the durable memorization record for this edition. */
+  memorized: AyahSpan[];
+  initialRecord: AyahSpan[];
+  sessions: MemorizationSession[];
+  revision: number;
+  progress: { date: string; from: number; to: number; finished: boolean }[];
+  /** Manual corrections/rescheduling invalidate undo of older progress. */
+  undoable: boolean;
+  undoSession?: MemorizationSession;
+}
+export interface MemorizationDraft {
+  name: string;
+  riwayah: Riwayah;
+  weeklyQuarters: number;
+  weekdays: number[];
+  startDate: string;
+  memorized: AyahSpan[];
+  initialRecord?: AyahSpan[];
+  reminder: ReadingPlan['reminder'];
+}
+export type ReadingPlan = SequentialPlan | RecurringPlan | MemorizationPlan;
 export function isRecurringPlan(plan: ReadingPlan): plan is RecurringPlan { return plan.goal.type === 'recurring'; }
+export function isMemorizationPlan(plan: ReadingPlan): plan is MemorizationPlan { return plan.goal.type === 'memorization'; }
+export function isSequentialPlan(plan: ReadingPlan): plan is SequentialPlan { return plan.goal.type === 'khatma' || plan.goal.type === 'wird'; }
 export interface PlanDraft {
   name: string;
   riwayah: Riwayah;
