@@ -3,6 +3,7 @@ import { AccessibilityInfo, KeyboardAvoidingView, Modal, Platform, Pressable, Sc
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import { ArabicText as Text } from '@/components/arabic-text';
+import { AnimatedSafeAreaView, GestureDetector, GestureHandlerRootView, useSwipeToClose } from '@/components/swipe-to-close';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { IconButton, ReaderIcon, type ReaderIconName } from '../quran-reader/components/ui/reader-chrome';
 import { SurahName } from '../quran-reader/components/ui/surah-name';
@@ -124,21 +125,24 @@ export function DetailAction({ label, onPress, icon, primary = false, disabled =
 export function PlanSettingsSheet({ onClose, children }: PropsWithChildren<{ onClose: () => void }>) {
   const { palette } = useReadingPreferences();
   const close = useRef<View>(null);
+  const swipe = useSwipeToClose(onClose);
   return <Modal transparent visible statusBarTranslucent navigationBarTranslucent animationType="slide" onRequestClose={onClose}
     onShow={() => { if (Platform.OS === 'web') close.current?.focus(); else if (close.current) AccessibilityInfo.sendAccessibilityEvent(close.current, 'focus'); }}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: palette.overlay }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, justifyContent: 'flex-end', alignItems: 'center' }}>
         <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel={t('plans.detail.closeSettings')} onPress={onClose} />
-        <SafeAreaView edges={['bottom']} accessibilityViewIsModal onAccessibilityEscape={onClose} style={[d.sheet, { backgroundColor: palette.background, borderColor: palette.border }, readerElevation(4, palette)]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
+        <GestureDetector gesture={swipe.gesture}><AnimatedSafeAreaView edges={['bottom']} accessibilityViewIsModal onAccessibilityEscape={onClose} onLayout={swipe.onSheetLayout} style={[d.sheet, { backgroundColor: palette.background, borderColor: palette.border }, readerElevation(4, palette), swipe.sheetStyle]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
           <View style={[d.grabber, { backgroundColor: palette.border }]} />
-          <View style={[d.row, { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: palette.border }]}>
+          <View onLayout={swipe.onHeaderLayout} style={[d.row, { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: palette.border }]}>
             <View style={d.grow}><Text accessibilityRole="header" style={{ fontSize: 18, fontWeight: '600', color: palette.foreground }}>{t('plans.detail.settings')}</Text></View>
             <Pressable ref={close} accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={onClose} hitSlop={4} style={({ pressed }) => [d.close, { backgroundColor: pressed ? palette.accent : 'transparent' }]}><ReaderIcon name="close" color={palette.mutedForeground} size={18} /></Pressable>
           </View>
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 20 }}>{children}</ScrollView>
-        </SafeAreaView>
+          <GestureDetector gesture={swipe.scrollGesture}><ScrollView {...swipe.scrollProps} keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 20 }}>{children}</ScrollView></GestureDetector>
+        </AnimatedSafeAreaView></GestureDetector>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </GestureHandlerRootView>
   </Modal>;
 }
 

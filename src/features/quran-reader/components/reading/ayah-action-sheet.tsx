@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { ArabicText as Text } from '@/components/arabic-text';
+import { AnimatedSafeAreaView, GestureDetector, GestureHandlerRootView, useSwipeToClose } from '@/components/swipe-to-close';
 import type { Ayah, Quran } from '@/lib/quranpedia/types';
 import { relatedPlainText, type RelatedText } from '@/lib/quranpedia/related-content';
 import { quranpedia } from '../../services/reader-service';
@@ -36,14 +37,17 @@ export function AyahActionSheet({ ayah, quran, palette, onClose }: { ayah: Ayah;
     onClose();
     router.push({ pathname: '/share-ayah', params: { surah: ayah.surahNumber, ayah: ayah.ayahNumber } });
   };
+  const swipe = useSwipeToClose(onClose);
   // Cover the system bars with the backdrop; SafeAreaView keeps controls inset.
   return <Modal visible transparent statusBarTranslucent navigationBarTranslucent animationType="slide" onRequestClose={onClose} onShow={() => { if (Platform.OS === 'web') close.current?.focus(); else if (close.current) AccessibilityInfo.sendAccessibilityEvent(close.current, 'focus'); }}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaView edges={['top', 'left', 'right']} style={styles.root}>
       <View style={styles.body}>
       <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel={t('reader.actions.close')} onPress={onClose} />
-      <SafeAreaView edges={['bottom']} accessibilityViewIsModal onAccessibilityEscape={onClose}
-        style={[styles.sheet, { backgroundColor: palette.background, borderColor: palette.border }, readerElevation(4, palette)]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
-        <View style={styles.heading}>
+      <GestureDetector gesture={swipe.gesture}><AnimatedSafeAreaView edges={['bottom']} accessibilityViewIsModal onAccessibilityEscape={onClose} onLayout={swipe.onSheetLayout}
+        style={[styles.sheet, { backgroundColor: palette.background, borderColor: palette.border }, readerElevation(4, palette), swipe.sheetStyle]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
+        <View style={[styles.grabber, { backgroundColor: palette.border }]} />
+        <View onLayout={swipe.onHeaderLayout} style={styles.heading}>
           <View style={styles.title}>
             <Text accessibilityRole="header" accessibilityLabel={t('reader.ayah.reference', { surah: surahName, ayah: ayah.ayahNumber })}
               style={[styles.surah, { color: palette.ornament }]}>
@@ -56,7 +60,7 @@ export function AyahActionSheet({ ayah, quran, palette, onClose }: { ayah: Ayah;
             <ReaderIcon name="close" color={palette.mutedForeground} size={18} />
           </Pressable>
         </View>
-        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+        <GestureDetector gesture={swipe.scrollGesture}><ScrollView {...swipe.scrollProps} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
           <View style={[styles.quickActions, { backgroundColor: palette.card, borderColor: palette.border }, readerElevation(2, palette)]}>
             <QuickAction palette={palette} icon={bookmarked ? 'check' : 'bookmark'} disabled={!ready} selected={bookmarked}
               label={bookmarked ? t('reader.actions.bookmarked') : t('reader.actions.bookmark')} accessibilityLabel={bookmarked ? t('reader.actions.removeBookmark') : t('reader.actions.bookmark')} onPress={() => toggle(ayahKey(ayah))} />
@@ -75,10 +79,11 @@ export function AyahActionSheet({ ayah, quran, palette, onClose }: { ayah: Ayah;
             {kind === 'translation' && <View style={styles.relatedContent}><RelatedContent ayah={ayah} kind="translation" palette={palette} /></View>}
           </View>
           <Text style={[styles.edition, { color: palette.mutedForeground }]}>{t('common.riwayahOf', { riwayah: editionForMushaf(quran.id).label })}</Text>
-        </ScrollView>
-      </SafeAreaView>
+        </ScrollView></GestureDetector>
+      </AnimatedSafeAreaView></GestureDetector>
       </View>
     </SafeAreaView>
+    </GestureHandlerRootView>
   </Modal>;
 }
 
@@ -140,7 +145,8 @@ const styles = StyleSheet.create({
   sheet: { width: '100%', maxWidth: 560, alignSelf: 'center', maxHeight: '85%', borderWidth: StyleSheet.hairlineWidth, borderBottomWidth: 0,
     borderTopLeftRadius: readerShape.sheet, borderTopRightRadius: readerShape.sheet,
     ...Platform.select({ native: { direction: 'rtl' as const } }) },
-  heading: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 },
+  grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: readerShape.pill, marginTop: 10 },
+  heading: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
   title: { flex: 1, minWidth: 0, gap: 2 },
   surah: calligraphyStyle(38),
   reference: { fontSize: 13 },

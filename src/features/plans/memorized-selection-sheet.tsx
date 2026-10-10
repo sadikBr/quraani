@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AnimatedSafeAreaView, GestureDetector, GestureHandlerRootView, useSwipeToClose } from '@/components/swipe-to-close';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { readerLayout, readerShape } from '../quran-reader/design';
@@ -41,18 +42,20 @@ export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy
   const validRange = customStart >= 0 && customEnd > customStart;
   const customRange = { start: customStart, end: customEnd };
   const toggle = ({ start, end }: AyahSpan) => setDraft(items => coversSpan(items, { start, end }) ? subtractSpans(items, [{ start, end }]) : mergeSpans([...items, { start, end }]));
+  const swipe = useSwipeToClose(onClose, { enabled: !busy });
   return <Modal transparent visible animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => { if (!busy) onClose(); }}
     onShow={() => { if (Platform.OS === 'web') close.current?.focus(); else if (close.current) AccessibilityInfo.sendAccessibilityEvent(close.current, 'focus'); }}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: p.overlay }}>
       <KeyboardAvoidingView style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <SafeAreaView edges={['bottom']} accessibilityViewIsModal onAccessibilityEscape={() => { if (!busy) onClose(); }} style={{ height: '94%', width: '100%', maxWidth: readerLayout.maxWidth, backgroundColor: p.background, borderTopLeftRadius: readerShape.sheet, borderTopRightRadius: readerShape.sheet, borderWidth: StyleSheet.hairlineWidth, borderBottomWidth: 0, borderColor: p.border }} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
+        <GestureDetector gesture={swipe.gesture}><AnimatedSafeAreaView edges={['bottom']} accessibilityViewIsModal onLayout={swipe.onSheetLayout} onAccessibilityEscape={() => { if (!busy) onClose(); }} style={[{ height: '94%', width: '100%', maxWidth: readerLayout.maxWidth, backgroundColor: p.background, borderTopLeftRadius: readerShape.sheet, borderTopRightRadius: readerShape.sheet, borderWidth: StyleSheet.hairlineWidth, borderBottomWidth: 0, borderColor: p.border }, swipe.sheetStyle]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
           <View style={[sheet.grabber, { backgroundColor: p.border }]} />
-          <View style={{ padding: 16, paddingTop: 8, paddingBottom: 10, gap: 12 }}>
+          <View onLayout={swipe.onHeaderLayout} style={{ padding: 16, paddingTop: 8, paddingBottom: 10, gap: 12 }}>
             <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}><View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('memorization.selection.title')}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('memorization.selection.subtitle')}</Text></View><Pressable ref={close} accessibilityRole="button" accessibilityLabel={t('memorization.selection.close')} disabled={busy} onPress={onClose} hitSlop={4} style={({ pressed }) => [sheet.close, { backgroundColor: pressed ? p.accent : 'transparent' }]}><ReaderIcon name="close" color={p.mutedForeground} size={18} /></Pressable></View>
             <LibraryTabs palette={p} label={t('memorization.selection.tabsLabel')} value={tab} onChange={value => { setTab(value as SelectionTab); setQuery(''); list.current?.scrollToOffset({ offset: 0, animated: false }); }} options={[{ value: 'surahs', label: t('memorization.selection.tabs.surahs') }, { value: 'juzs', label: t('memorization.selection.tabs.juzs') }, { value: 'hizbs', label: t('memorization.selection.tabs.hizbs') }, { value: 'quarters', label: t('memorization.selection.tabs.quarters') }, { value: 'ayahs', label: t('memorization.selection.tabs.ayahs') }]} />
             {tab !== 'ayahs' && <LibrarySearch palette={p} value={query} onChange={setQuery} placeholder={t('memorization.selection.searchPlaceholder')} label={t('memorization.selection.searchLabel')} />}
           </View>
-          <FlatList ref={list} data={filtered} keyExtractor={item => String(item.number)} extraData={draft} keyboardShouldPersistTaps="handled" initialNumToRender={10} windowSize={5} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
+          <GestureDetector gesture={swipe.scrollGesture}><FlatList {...swipe.scrollProps} ref={list} data={filtered} keyExtractor={item => String(item.number)} extraData={draft} keyboardShouldPersistTaps="handled" initialNumToRender={10} windowSize={5} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
             ListHeaderComponent={tab === 'ayahs' ? <View style={{ gap: 14, paddingTop: 12, paddingBottom: 8 }}>
               <Text style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('memorization.selection.custom.title')}</Text>
               <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 22 }}>{t('memorization.selection.custom.hint')}</Text>
@@ -71,14 +74,15 @@ export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy
                 <View style={{ flex: 1 }}><Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{item.label}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{tab === 'surahs' ? partial ? t('memorization.selection.partial', { count: item.end - item.start }) : t('memorization.ayahCount', { count: item.end - item.start }) : ayahRangeLabel(index, item.start, item.end)}</Text></View>
                 <View style={[sheet.check, { borderColor: checked || partial ? p.primary : p.input, backgroundColor: checked ? p.primary : p.background }]}>{checked ? <ReaderIcon name="check" color={p.primaryForeground} size={14} /> : partial ? <View style={{ width: 10, height: 2, backgroundColor: p.primary }} /> : null}</View>
               </Pressable>;
-            }} />
+            }} /></GestureDetector>
           <View style={{ padding: 16, gap: 8, borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }}>
             <PlanNotice message={error} /><Text accessibilityLiveRegion="polite" style={{ color: p.mutedForeground, fontSize: 13 }}>{t('memorization.selection.total', { count: spanCount(draft) })}</Text>
             <ReaderButton palette={p} selected disabled={busy} onPress={() => onSave(draft)}>{busy ? t('memorization.selection.saving') : t('memorization.selection.confirm')}</ReaderButton>
           </View>
-        </SafeAreaView>
+        </AnimatedSafeAreaView></GestureDetector>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </GestureHandlerRootView>
   </Modal>;
 }
 

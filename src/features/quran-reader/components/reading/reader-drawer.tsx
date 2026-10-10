@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Modal, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArabicText as Text } from '@/components/arabic-text';
+import { GestureDetector, GestureHandlerRootView, useSwipeToClose } from '@/components/swipe-to-close';
 import { readerElevation, readerShape } from '../../design';
 import type { ReaderPalette } from '../../theme';
 import type { ReaderContent } from '../../types/reader';
@@ -23,6 +24,8 @@ interface Props {
 export function ReaderDrawer({ onClose, palette, content, currentPage, onJump, limited }: Props) {
   const close = useRef<View>(null);
   const [translation] = useState(() => new Animated.Value(500));
+  const swipe = useSwipeToClose(onClose);
+  const [position] = useState(() => Animated.add(translation, swipe.offset));
   const show = () => {
     translation.setValue(500);
     void AccessibilityInfo.isReduceMotionEnabled().then((reduceMotion) => {
@@ -32,13 +35,14 @@ export function ReaderDrawer({ onClose, palette, content, currentPage, onJump, l
     else if (close.current) AccessibilityInfo.sendAccessibilityEvent(close.current, 'focus');
   };
   return <Modal visible transparent statusBarTranslucent navigationBarTranslucent animationType="none" onShow={show} onRequestClose={onClose}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaView edges={['top', 'left', 'right']} style={[styles.root, { backgroundColor: palette.overlay }]}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.body} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
         <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel={t('reader.drawer.close')} onPress={onClose} />
-        <Animated.View accessibilityViewIsModal onAccessibilityEscape={onClose} style={[styles.drawer, readerElevation(4, palette), { backgroundColor: palette.background, borderColor: palette.border, transform: [{ translateY: translation }] }]}>
+        <GestureDetector gesture={swipe.gesture}><Animated.View accessibilityViewIsModal onAccessibilityEscape={onClose} onLayout={swipe.onSheetLayout} style={[styles.drawer, readerElevation(4, palette), { backgroundColor: palette.background, borderColor: palette.border, transform: [{ translateY: position }] }]}>
           <SafeAreaView edges={['bottom']} style={styles.sheetContent}>
             <View style={[styles.handle, { backgroundColor: palette.border }]} />
-            <View style={styles.heading}>
+            <View onLayout={swipe.onHeaderLayout} style={styles.heading}>
               <IconTile name="jump" palette={palette} />
               <View style={styles.title}>
                 <Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 18, fontWeight: '600' }}>{limited ? t('reader.drawer.titleSession') : t('reader.drawer.title')}</Text>
@@ -47,13 +51,14 @@ export function ReaderDrawer({ onClose, palette, content, currentPage, onJump, l
               <Pressable ref={close} accessibilityRole="button" accessibilityLabel={t('reader.drawer.close')} onPress={onClose}
                 hitSlop={4} style={({ pressed }) => [styles.close, { backgroundColor: pressed ? palette.accent : 'transparent' }]}><ReaderIcon name="close" color={palette.mutedForeground} size={18} /></Pressable>
             </View>
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.formContent}>
+            <GestureDetector gesture={swipe.scrollGesture}><ScrollView {...swipe.scrollProps} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.formContent}>
               {content && <ReaderJump key={currentPage} content={content} currentPage={currentPage} palette={palette} onJump={onJump} limited={limited} />}
-            </ScrollView>
+            </ScrollView></GestureDetector>
           </SafeAreaView>
-        </Animated.View>
+        </Animated.View></GestureDetector>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </GestureHandlerRootView>
   </Modal>;
 }
 

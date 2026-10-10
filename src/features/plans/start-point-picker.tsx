@@ -2,6 +2,7 @@ import { SurahName } from '../quran-reader/components/ui/surah-name';
 import { useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, FlatList, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AnimatedSafeAreaView, GestureDetector, GestureHandlerRootView, useSwipeToClose } from '@/components/swipe-to-close';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { ReaderIcon, type ReaderIconName } from '../quran-reader/components/ui/reader-chrome';
@@ -68,14 +69,16 @@ function StartPointSheet({ index, value, onClose, onSelect }: { index: PlanIndex
   const choices = useMemo(() => startChoices(index, value.kind), [index, value.kind]);
   const filtered = useMemo(() => filterStartChoices(choices, index, query), [choices, index, query]);
   const select = (number: number) => { Keyboard.dismiss(); onSelect({ kind: value.kind, number }); };
+  const swipe = useSwipeToClose(onClose);
   return <Modal transparent visible animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={onClose}
     onShow={() => { if (Platform.OS === 'web') close.current?.focus(); else if (close.current) AccessibilityInfo.sendAccessibilityEvent(close.current, 'focus'); }}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: p.overlay }}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end' }}>
         <Pressable accessibilityRole="button" accessibilityLabel={t('khatma.startPoint.sheet.close')} onPress={onClose} style={StyleSheet.absoluteFill} />
-        <SafeAreaView edges={['bottom']} accessibilityViewIsModal onAccessibilityEscape={onClose} style={[s.sheet, { backgroundColor: p.background, borderColor: p.border }, readerElevation(4, p)]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
+        <GestureDetector gesture={swipe.gesture}><AnimatedSafeAreaView edges={['bottom']} accessibilityViewIsModal onLayout={swipe.onSheetLayout} onAccessibilityEscape={onClose} style={[s.sheet, { backgroundColor: p.background, borderColor: p.border }, readerElevation(4, p), swipe.sheetStyle]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
           <View style={[sheet.grabber, { backgroundColor: p.border }]} />
-          <View style={s.sheetHeader}>
+          <View onLayout={swipe.onHeaderLayout} style={s.sheetHeader}>
             <View style={[s.row, { justifyContent: 'space-between' }]}>
               <View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t(`khatma.startPoint.kinds.${value.kind}.title`)}</Text>
                 <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('khatma.startPoint.sheet.subtitle')}</Text></View>
@@ -90,7 +93,7 @@ function StartPointSheet({ index, value, onClose, onSelect }: { index: PlanIndex
             </View>
             <Text style={{ color: p.mutedForeground, fontSize: 12 }}>{query ? t('khatma.startPoint.sheet.results', { count: filtered.length }) : `${t(`khatma.startPoint.kinds.${value.kind}.total`, { count: choices.length })} · ${t('khatma.startPoint.choosePosition')}`}</Text>
           </View>
-          <FlatList data={filtered} keyExtractor={choice => String(choice.number)} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
+          <GestureDetector gesture={swipe.scrollGesture}><FlatList {...swipe.scrollProps} data={filtered} keyExtractor={choice => String(choice.number)} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
             initialNumToRender={12} maxToRenderPerBatch={12} windowSize={5} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
             ListEmptyComponent={<Text style={{ color: p.mutedForeground, fontSize: 15, paddingVertical: 32, textAlign: 'center' }}>{t('khatma.startPoint.sheet.empty')}</Text>}
             renderItem={({ item, index: position }) => {
@@ -104,10 +107,11 @@ function StartPointSheet({ index, value, onClose, onSelect }: { index: PlanIndex
                 <View style={{ flex: 1, minWidth: 0 }}><Text style={{ color: p.foreground, fontSize: 16, fontWeight: selected ? '600' : '400' }}>{title}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{detail}</Text></View>
                 <ReaderIcon name={selected ? 'check' : 'chevron'} color={selected ? p.primary : p.mutedForeground} size={18} />
               </Pressable>;
-            }} />
-        </SafeAreaView>
+            }} /></GestureDetector>
+        </AnimatedSafeAreaView></GestureDetector>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </GestureHandlerRootView>
   </Modal>;
 }
 
