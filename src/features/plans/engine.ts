@@ -20,7 +20,8 @@ export interface PlanIndex {
   quarters: number[];
   surahNames: Record<number, string>;
 }
-export const unitLabels: Record<PlanUnit, string> = { get pages() { return t('plans.units.pages'); }, get hizbs() { return t('plans.units.hizbs'); }, get juzs() { return t('plans.units.juzs'); } };
+/** A daily wird amount counted in its unit: "٥ صفحات", "حزبان", "٠٫٢٥ جزء". */
+export const unitAmount = (unit: PlanUnit, amount: number) => t(`plans.units.${unit}`, { count: amount });
 const indices = new WeakMap<ReaderContent, PlanIndex>();
 export function buildPlanIndex(content: ReaderContent): PlanIndex {
   const cached = indices.get(content);

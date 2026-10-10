@@ -101,7 +101,7 @@ export function RevisionCreationScreen() {
             </CreationSection>
             {!existing && <>
               <CreationSection title={t('revision.creation.amount.title')} icon="loop" description={t('revision.creation.amount.description')}>
-                <AmountPicker label={t('revision.amount.label')} value={amount} onChange={setAmount} unit={t('revision.amount.unit')} presets={['1', '2', '4', '8']} minimum={1} maximum={REVISION_MAX_QUARTERS} parse={value => Number(normalizeArabicSearch(value))} />
+                <AmountPicker label={t('revision.amount.label')} value={amount} onChange={setAmount} unit={t('revision.amount.unit')} presets={['1', '2', '4', '8']} presetLabel={quarterLabel} minimum={1} maximum={REVISION_MAX_QUARTERS} parse={value => Number(normalizeArabicSearch(value))} />
                 {Number.isInteger(dailyQuarters) && dailyQuarters > 0 && <Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600', textAlign: 'center' }}>{t('revision.dailyAmount', { amount: quarterLabel(dailyQuarters) })}</Text>}
               </CreationSection>
               <CreationSection title={t('revision.creation.days.title')} icon="calendar" description={t('revision.creation.days.description')}>

@@ -184,7 +184,7 @@ test('manual changes and undo persist atomically, and stale initial snapshots ca
   expect(t.repo.memorization()[0].ranges).toEqual([]);
   await t.repo.update(items => items.map(p => reviseMemorization(p, index, [{ start: 0, end: 20 }], monday)));
   await t.repo.update(items => items.map(p => ({ ...p, status: 'archived' })));
-  await expect(t.repo.update(items => [...items, make({}, index, 'plan-stale')])).rejects.toThrow('تغيّر محفوظك');
+  await expect(t.repo.update(items => [...items, make({}, index, 'plan-stale')])).rejects.toThrow('تغيّر سجلّ محفوظك');
   await t.repo.update(items => [...items, make({ initialRecord: [{ start: 0, end: 20 }], memorized: [{ start: 0, end: 8 }] }, index, 'plan-corrected')]);
   expect(t.repo.memorization()[0].ranges).toEqual([{ start: 0, end: 8 }]);
   await expect(t.repo.update(items => items.map(p => p.id === 'plan-memory' ? restoreArchivedGoal(p) : p))).rejects.toThrow();

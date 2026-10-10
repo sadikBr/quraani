@@ -1,50 +1,53 @@
 /** The settings screen: riwayah, reading mode, tajweed, text comfort and appearance. */
 export default {
   tabs: { label: 'أقسام الإعدادات', reading: 'القراءة', appearance: 'المظهر' },
+  /** Headline and sentence at the top of each settings tab. */
   intro: {
-    reading: { title: 'قراءتك، كما تحب', detail: 'روايتك المفضّلة، والطريقة الأقرب إليك.' },
-    appearance: { title: 'ألوان تريح عينك', detail: 'اختر طابعًا يرافقك في كل صفحة.' },
+    reading: { title: 'قراءة تناسبك', detail: 'اختر روايتك وطريقة العرض التي تريحك.' },
+    appearance: { title: 'ألوان تريح عينك', detail: 'اختر مظهرًا يرافقك في كل صفحة.' },
   },
   riwayah: {
     title: 'رواية القرآن',
     /** Shown under the riwayah name, e.g. "ورش" then "عن نافع". */
     from: { warsh: 'عن نافع', hafs: 'عن عاصم' },
-    savedSeparately: 'موضع القراءة والعلامات محفوظة لكل رواية.',
+    savedSeparately: 'يُحتفظ بموضع القراءة والعلامات لكل رواية على حدة.',
   },
   mode: {
     title: 'طريقة القراءة',
-    detail: 'اختر كيف تظهر لك صفحات القرآن.',
-    page: { label: 'صفحات المصحف', detail: 'التنسيق الأصلي' },
-    text: { label: 'النص القرآني', detail: 'مرن وقابل للتكبير' },
-    pageNote: 'يحافظ على حجم الخط وتباعد المصحف المطبوع.',
+    detail: 'اختر كيف يظهر لك المصحف.',
+    page: { label: 'صفحات المصحف', detail: 'كالمصحف المطبوع' },
+    text: { label: 'النص القرآني', detail: 'بالحجم الذي يناسبك' },
+    /** Shown when the printed pages are chosen: their font size and spacing can't be changed. */
+    pageNote: 'يبقى حجم الخط وتباعد السطور كما في المصحف المطبوع.',
   },
   textLayout: {
-    title: 'تنسيق الآيات',
-    label: 'تنسيق النص القرآني',
+    title: 'عرض الآيات',
+    label: 'طريقة عرض الآيات',
     ayah: 'آيات منفصلة',
     flowing: 'نص متصل',
-    ayahDetail: 'كل آية في سطر مستقل.',
-    flowingDetail: 'آيات متتابعة، بسطور تتكيّف مع شاشتك.',
+    ayahDetail: 'تبدأ كل آية في سطر جديد.',
+    flowingDetail: 'تتوالى الآيات متصلة، وتتكيّف السطور مع شاشتك.',
   },
   tajweed: {
     title: 'ألوان التجويد',
     /** State of the tajweed colors (feminine: agrees with ألوان). */
     on: 'مفعّلة',
     off: 'غير مفعّلة',
-    detail: 'تمييز أحكام التلاوة',
-    warshNote: 'ورش من طريق الأزرق. تظهر الألوان في النص القرآني، وتبقى صفحات المصحف المطبوع كما هي.',
-    hafsNote: 'ألوان مصحف التجويد في الموسوعة القرآنية، في الصفحات والنص.',
-    stopNote: 'تُعرض الأحكام على أساس الوقف عند نهاية كل آية.',
+    detail: 'تمييز أحكام التجويد',
+    warshNote: 'الأحكام وفق رواية ورش من طريق الأزرق. تظهر الألوان في النص القرآني، وتبقى صفحات المصحف كما هي.',
+    hafsNote: 'تظهر ألوان مصحف التجويد من الموسوعة القرآنية في الصفحات والنص معًا.',
+    stopNote: 'تُعرض الأحكام باعتبار الوقف على رأس كل آية.',
   },
   footer: {
-    autoSaved: 'تُحفظ اختياراتك تلقائيًا',
+    /** Avoids «تُحفظ», which reads as memorizing. */
+    autoSaved: 'تُسجَّل اختياراتك تلقائيًا',
     sourceLabel: 'المحتوى القرآني من الموسوعة القرآنية',
     /** Link text; the arrow marks an external link. */
     source: 'المحتوى من الموسوعة القرآنية ↗',
   },
   textComfort: {
-    title: 'راحة النص',
-    detail: 'اضبط الحجم والتباعد، وشاهد الفرق مباشرةً.',
+    title: 'راحة القراءة',
+    detail: 'اضبط حجم الخط وتباعد السطور، وعاين النتيجة فورًا.',
     /** Labels at the two ends of the size slider. */
     rangeSmall: 'صغير',
     rangeLarge: 'كبير',
@@ -54,27 +57,30 @@ export default {
       live: 'معاينة مباشرة',
       /** Shown while the surah name of the preview is not loaded yet. */
       fallbackSurah: 'سورة الفاتحة',
-      loading: 'جارٍ تحميل معاينة النص',
-      error: 'تعذر عرض المعاينة. يمكنك متابعة ضبط النص.',
+      loading: 'جارٍ تحميل المعاينة',
+      error: 'تعذّر عرض المعاينة، ويمكنك مع ذلك ضبط الخط والتباعد.',
       reload: 'إعادة تحميل المعاينة',
-      tajweedError: 'تعذر تحميل ألوان التجويد. النص ظاهر دون ألوان.',
+      tajweedError: 'تعذّر تحميل ألوان التجويد، فعُرض النص دونها.',
       reloadTajweed: 'إعادة تحميل الألوان',
     },
   },
   fontSize: {
-    label: 'حجم نص القرآن',
+    label: 'حجم الخط',
     hint: 'سبعة أحجام، من الأصغر إلى الأكبر',
     /** Spoken value of the slider: "عادي، 3 من 7". */
     value: '{{label}}، {{step}} من {{total}}',
-    steps: { smallest: 'الأصغر', small: 'صغير', normal: 'عادي', medium: 'متوسط', large: 'كبير', larger: 'أكبر', largest: 'الأكبر' },
+    /** The seven sizes in order; «عادي» is the default and «مكبَّر» the step just above it. */
+    steps: { smallest: 'الأصغر', small: 'صغير', normal: 'عادي', medium: 'مكبَّر', large: 'كبير', larger: 'أكبر', largest: 'الأكبر' },
   },
   appearance: {
     label: 'مظهر التطبيق',
     /** {{theme}} is the selected theme name, shown in bold. */
     current: 'المظهر الحالي: {{theme}}',
     systemDetail: 'يتبدّل تلقائيًا بين الفاتح والداكن.',
-    darkShades: 'درجات داكنة',
-    lightShades: 'درجات فاتحة',
-    themeHint: 'يُطبّق على التطبيق والمصحف ويُحفظ تلقائيًا',
+    /** Headings of the two groups of themes. */
+    darkShades: 'ألوان داكنة',
+    lightShades: 'ألوان فاتحة',
+    /** Accessibility hint of each theme. */
+    themeHint: 'يُطبَّق على التطبيق والمصحف، ويُحتفظ به تلقائيًا',
   },
 } as const;

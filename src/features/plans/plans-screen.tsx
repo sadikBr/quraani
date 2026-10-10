@@ -9,7 +9,7 @@ import { ReaderButton } from '../quran-reader/components/reading/reader-button';
 import { readerLayout, readerShape } from '../quran-reader/design';
 import { RIWAYAT } from '../quran-reader/riwayat';
 import { usePlans } from './provider';
-import { nextPortion, unitLabels } from './engine';
+import { nextPortion, unitAmount } from './engine';
 import { dateLabel } from './dates';
 import { shortDate } from './presentation';
 import { formatNumber, t } from '@/i18n';
@@ -72,7 +72,7 @@ function DailyOverview({ today, due, completed, hasGoals }: { today: string; due
     {hasGoals && <View style={[s.stats, { borderColor: p.border }]}>
       <View style={s.stat}><Text style={{ color: p.foreground, fontSize: 24, fontWeight: '600' }}>{formatNumber(due)}</Text><Text style={{ color: p.mutedForeground, fontSize: 13, flexShrink: 1 }}>{t('plans.list.overview.due')}</Text></View>
       <Separator vertical />
-      <View style={s.stat}><Text style={{ color: p.foreground, fontSize: 24, fontWeight: '600' }}>{formatNumber(completed)}</Text><Text style={{ color: p.mutedForeground, fontSize: 13, flexShrink: 1 }}>{t('plans.list.overview.completed')}</Text></View>
+      <View style={s.stat}><Text style={{ color: p.foreground, fontSize: 24, fontWeight: '600' }}>{formatNumber(completed)}</Text><Text style={{ color: p.mutedForeground, fontSize: 13, flexShrink: 1 }}>{t('plans.list.overview.completed', { count: completed })}</Text></View>
     </View>}
   </Card>;
 }
@@ -87,11 +87,11 @@ function GoalCard({ plan, today }: { plan: ReadingPlan; today: string }) {
   const progress = Math.max(0, Math.min(1, (plan.cycle.cursor - plan.cycle.start) / Math.max(1, plan.totalAyahs - plan.cycle.start)));
   const percent = progress === 1 ? 100 : Math.floor(progress * 100);
   const status = plan.status === 'paused' ? t('goals.status.paused') : plan.status === 'archived' ? t('goals.status.archived') : plan.status === 'completed' ? plan.repeat ? plan.cycle.completedOn && plan.cycle.completedOn < today ? t('plans.card.status.nextCycleSoon') : t('plans.card.status.nextCycleTomorrow') : t('goals.status.completed') : next && !next.due ? t('plans.card.status.next', { date: shortDate(next.date) }) : next && next.date < today ? t('plans.card.status.overdue') : t('plans.card.status.today');
-  const description = plan.goal.type === 'khatma' ? t('plans.summary.khatma', { weeks: plan.goal.weeks }) : t('plans.summary.wird', { amount: plan.goal.amount, unit: unitLabels[plan.unit] });
+  const description = plan.goal.type === 'khatma' ? t('plans.summary.khatma', { count: plan.goal.weeks }) : t('plans.summary.wird', { amount: unitAmount(plan.unit, plan.goal.amount) });
   return <GoalCardFrame id={plan.id} name={plan.name} status={status} due={!!next?.due} accessibilityDetail={t('plans.card.percentDetail', { percent })}>
     <GoalCardHeading name={plan.name} description={description} icon={plan.goal.type === 'khatma' ? 'calendar' : 'book'}
       trailing={<Text style={{ color: p.foreground, fontSize: 20, fontWeight: '600' }}>{t('plans.percent', { percent })}</Text>} />
-    <GoalProgress value={progress} label={t('plans.progress.ofTotal', { completed, total: plan.cycle.sessions.length })} trailing={RIWAYAT[plan.riwayah].label} />
+    <GoalProgress value={progress} label={t('plans.progress.ofTotal', { completed, count: plan.cycle.sessions.length })} trailing={RIWAYAT[plan.riwayah].label} />
   </GoalCardFrame>;
 }
 

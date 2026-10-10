@@ -28,7 +28,7 @@ function WeeklySchedule({ plan, index, today, current }: { plan: SequentialPlan;
   return <View style={{ gap: 12 }}>
     <View style={[d.row, { justifyContent: 'space-between' }]}>
       <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{plan.goal.type === 'khatma' ? t('session.plan.khatmaTitle') : t('session.plan.wirdTitle')}</Text>
-      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('session.plan.total', { total: plan.cycle.sessions.length })}</Text>
+      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('session.plan.total', { count: plan.cycle.sessions.length })}</Text>
     </View>
     {plan.goal.type === 'wird' && <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 22 }}>{t('session.plan.wirdNote')}</Text>}
     <View style={[styles.calendar, { backgroundColor: p.card, borderColor: p.border }]}>

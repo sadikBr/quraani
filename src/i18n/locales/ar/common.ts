@@ -9,9 +9,9 @@ export default {
   save: 'حفظ',
   today: 'اليوم',
   settings: 'الإعدادات',
-  backToReading: 'العودة إلى القراءة',
+  backToReading: 'العودة إلى المصحف',
   clearSearch: 'مسح البحث',
-  checkConnection: 'تحقق من الاتصال، ثم أعد المحاولة.',
+  checkConnection: 'تحقّق من اتصالك بالإنترنت ثم أعد المحاولة.',
   /** "رواية حفص عن عاصم" */
   riwayahOf: 'رواية {{riwayah}}',
   riwayah: {
@@ -20,7 +20,7 @@ export default {
   },
   weekdays: {
     /** Indexed like Date.getUTCDay(): 0 is Sunday. */
-    long: { 0: 'الأحد', 1: 'الإثنين', 2: 'الثلاثاء', 3: 'الأربعاء', 4: 'الخميس', 5: 'الجمعة', 6: 'السبت' },
+    long: { 0: 'الأحد', 1: 'الاثنين', 2: 'الثلاثاء', 3: 'الأربعاء', 4: 'الخميس', 5: 'الجمعة', 6: 'السبت' },
     /** One-letter labels for compact day pickers. */
     letter: { 0: 'ح', 1: 'ن', 2: 'ث', 3: 'ر', 4: 'خ', 5: 'ج', 6: 'س' },
     everyDay: 'كل يوم',

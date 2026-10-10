@@ -126,7 +126,7 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
             <Text style={{ color: p.mutedForeground, fontSize: 12 }}>{stat.label}</Text><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{stat.value}</Text>
           </View>)}
       </View>
-      {plan.sessions[0].ranges.length > 1 && <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 22 }}>{t('memorization.detail.next.segments', { segments: plan.sessions[0].ranges.length })}</Text>}
+      {plan.sessions[0].ranges.length > 1 && <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 22 }}>{t('memorization.detail.next.segments', { count: plan.sessions[0].ranges.length })}</Text>}
       {next.due ? <View style={{ gap: 4 }}>
         <DetailAction primary icon="book" label={t('memorization.detail.next.start')} disabled={busy} onPress={openReading} />
         <DetailAction icon="check" label={t('memorization.detail.next.done')} disabled={busy} onPress={() => void mutate(current => recordMemorizationProgress(current, { cycle: next.cycle, slot: next.slot, to: next.end }, localDate()))} />
@@ -145,7 +145,7 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
       {!!plan.progress.length && <PlanCard><Copy title>{t('memorization.detail.recent')}</Copy><View>{plan.progress.slice(-5).reverse().map((log, i) => <View key={`${log.date}-${i}`} style={{ gap: 2, paddingVertical: 10, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: p.border }}><Text style={{ color: p.foreground, fontSize: 15 }}>{ayahRangeLabel(index, log.from, log.to)}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{shortDate(log.date)}</Text></View>)}</View></PlanCard>}
     </>}
     {editing && <PlanSettingsSheet onClose={() => { if (!busy) setEditing(false); }}><PlanNotice message={message} /><PlanField label={t('goals.name')} value={name} onChange={setName} />
-      <AmountPicker label={t('memorization.weeklyAmountLabel')} value={amount} onChange={setAmount} unit={t('memorization.detail.settings.amountUnit')} presets={['1', '2', '4', '8']} minimum={1} maximum={240} parse={value => Number(normalizeArabicSearch(value))} />
+      <AmountPicker label={t('memorization.weeklyAmountLabel')} value={amount} onChange={setAmount} unit={t('memorization.detail.settings.amountUnit')} presets={['1', '2', '4', '8']} presetLabel={quarterLabel} minimum={1} maximum={240} parse={value => Number(normalizeArabicSearch(value))} />
       <WeekdayPicker days={days} onChange={setDays} quickOptions={[{ label: t('memorization.mondayAndWednesday'), value: [1, 3] }, { label: t('common.weekdays.everyDay'), value: [0, 1, 2, 3, 4, 5, 6] }]} />
       <Copy muted>{t('memorization.detail.settings.note')}</Copy>
       <PlanSwitch label={t('memorization.remindMe')} checked={reminder} onChange={setReminder} disabled={!remindersSupported} detail={remindersSupported ? t('memorization.detail.settings.reminderDetail') : t('goals.reminder.enableOnPhone')} />{reminder && <PlanDateField label={t('goals.reminder.time')} value={time} onChange={setTime} mode="time" />}

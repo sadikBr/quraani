@@ -78,7 +78,7 @@ export function RecurringDetail({ plan, initialReminderIssue }: { plan: Recurrin
       <View style={[d.row, { gap: 16 }]}><View style={d.grow}>
         <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('recurring.summary', { days: weekdaysLabel(plan.weekdays) })}</Text>
         <Text style={{ color: p.foreground, fontSize: 20, fontWeight: '600', marginVertical: 4 }}>{progress.done ? t('recurring.detail.title.done') : next?.due ? t('recurring.detail.title.dueToday') : t('recurring.detail.title.waiting')}</Text>
-        <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('recurring.detail.completedSinceStart', { n: completedOccurrences(plan) })}</Text>
+        <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('recurring.detail.completedSinceStart', { count: completedOccurrences(plan) })}</Text>
       </View><IconTile name={progress.done ? 'check' : 'restore'} /></View>
       <View style={{ flexDirection: 'row', gap: 6, borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border, paddingTop: 16 }}>{Array.from({ length: 7 }, (_, i) => addDays(today, i - 6)).map(date => {
         const state = occurrenceProgress(plan, date), scheduled = scheduledOn(plan, date);
@@ -119,7 +119,7 @@ export function RecurringDetail({ plan, initialReminderIssue }: { plan: Recurrin
       {plan.occurrences.length ? <PlanCard><View>{[...plan.occurrences].reverse().slice(0, historyLimit).map((occurrence, i) => {
         const state = occurrenceProgress(plan, occurrence.date);
         return <View key={occurrence.date} style={[d.row, { paddingVertical: 10, gap: 12, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: p.border }]}><ReaderIcon name={state.done ? 'check' : 'book'} color={state.done ? p.primary : p.mutedForeground} size={20} />
-          <View style={d.grow}><Text style={{ color: p.foreground, fontSize: 15 }}>{dateLabel(occurrence.date)}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{state.done ? t('recurring.detail.history.completed') : t('recurring.detail.history.partial', { completed: state.completed, total: plan.ranges.length })}</Text></View>
+          <View style={d.grow}><Text style={{ color: p.foreground, fontSize: 15 }}>{dateLabel(occurrence.date)}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{state.done ? t('recurring.detail.history.completed') : t('recurring.detail.history.partial', { completed: state.completed, count: plan.ranges.length })}</Text></View>
         </View>;
       })}</View>{plan.occurrences.length > historyLimit && <DetailAction label={t('recurring.detail.history.older')} onPress={() => setHistoryLimit(limit => limit + 14)} />}</PlanCard>
         : <Text style={{ color: p.mutedForeground, fontSize: 15 }}>{t('recurring.detail.history.empty')}</Text>}

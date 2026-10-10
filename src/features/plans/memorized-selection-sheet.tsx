@@ -68,12 +68,12 @@ export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy
               const first = position === 0, last = position === filtered.length - 1;
               return <Pressable accessibilityRole="checkbox" accessibilityLabel={item.label} accessibilityState={{ checked: partial ? 'mixed' : checked }} aria-checked={partial ? 'mixed' : checked} disabled={busy} onPress={() => toggle(item)}
                 style={({ pressed }) => [sheet.row, { borderColor: p.border, backgroundColor: checked || pressed ? p.accent : p.card, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: last ? StyleSheet.hairlineWidth : 0 }, first && sheet.rowFirst, last && sheet.rowLast]}>
-                <View style={{ flex: 1 }}><Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{item.label}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{tab === 'surahs' ? partial ? t('memorization.selection.partial', { ayahs: item.end - item.start }) : t('memorization.ayahCount', { ayahs: item.end - item.start }) : ayahRangeLabel(index, item.start, item.end)}</Text></View>
+                <View style={{ flex: 1 }}><Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{item.label}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{tab === 'surahs' ? partial ? t('memorization.selection.partial', { count: item.end - item.start }) : t('memorization.ayahCount', { count: item.end - item.start }) : ayahRangeLabel(index, item.start, item.end)}</Text></View>
                 <View style={[sheet.check, { borderColor: checked || partial ? p.primary : p.input, backgroundColor: checked ? p.primary : p.background }]}>{checked ? <ReaderIcon name="check" color={p.primaryForeground} size={14} /> : partial ? <View style={{ width: 10, height: 2, backgroundColor: p.primary }} /> : null}</View>
               </Pressable>;
             }} />
           <View style={{ padding: 16, gap: 8, borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }}>
-            <PlanNotice message={error} /><Text accessibilityLiveRegion="polite" style={{ color: p.mutedForeground, fontSize: 13 }}>{t('memorization.selection.total', { ayahs: spanCount(draft) })}</Text>
+            <PlanNotice message={error} /><Text accessibilityLiveRegion="polite" style={{ color: p.mutedForeground, fontSize: 13 }}>{t('memorization.selection.total', { count: spanCount(draft) })}</Text>
             <ReaderButton palette={p} selected disabled={busy} onPress={() => onSave(draft)}>{busy ? t('memorization.selection.saving') : t('memorization.selection.confirm')}</ReaderButton>
           </View>
         </SafeAreaView>

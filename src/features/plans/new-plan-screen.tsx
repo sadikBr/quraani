@@ -10,7 +10,7 @@ import { RIWAYAT, readingPositionKey, type Riwayah } from '../quran-reader/riway
 import { contentStorage } from '../quran-reader/storage/content-storage';
 import { Badge, Card } from '@/components/ui';
 import { usePlans } from './provider';
-import { createPlan, rangeLabel, unitLabels } from './engine';
+import { createPlan, rangeLabel } from './engine';
 import { localDate } from './dates';
 import { shortDate } from './presentation';
 import { formatNumber, t } from '@/i18n';
@@ -128,8 +128,9 @@ function GoalCreationForm({ initialKind }: { initialKind: SequentialGoal['type']
               description={kind === 'khatma' ? t('khatma.create.amount.khatmaDescription') : t('khatma.create.amount.wirdDescription')}>
               {kind === 'wird' && <Segments palette={p} value={unit} onChange={value => { setUnit(value); setAmount(value === 'pages' ? '5' : '1'); }} options={unitOptions} />}
               <AmountPicker label={kind === 'khatma' ? t('khatma.create.amount.khatmaLabel') : t('khatma.create.amount.wirdLabel')} value={kind === 'khatma' ? weeks : amount} onChange={kind === 'khatma' ? setWeeks : setAmount}
-                unit={kind === 'khatma' ? t('khatma.create.amount.weeks') : t('khatma.create.amount.perDay', { unit: unitLabels[unit] })} presets={kind === 'khatma' ? ['2', '4', '8', '12'] : unit === 'pages' ? ['2', '5', '10', '20'] : unit === 'hizbs' ? ['0.25', '0.5', '1', '2'] : ['0.125', '0.25', '0.5', '1']}
-                minimum={kind === 'khatma' ? 1 : increment} maximum={kind === 'khatma' ? 52 : (index?.[unit].length ?? 2) - 1} increment={kind === 'khatma' ? 1 : increment} parse={parsePlanNumber} />
+                unit={kind === 'khatma' ? t('khatma.create.amount.weeks', { count: parsePlanNumber(weeks) }) : t(`khatma.create.amount.perDay.${unit}`, { count: parsePlanNumber(amount) })} presets={kind === 'khatma' ? ['2', '4', '8', '12'] : unit === 'pages' ? ['2', '5', '10', '20'] : unit === 'hizbs' ? ['0.25', '0.5', '1', '2'] : ['0.125', '0.25', '0.5', '1']}
+                minimum={kind === 'khatma' ? 1 : increment} maximum={kind === 'khatma' ? 52 : (index?.[unit].length ?? 2) - 1} increment={kind === 'khatma' ? 1 : increment} parse={parsePlanNumber}
+                presetLabel={value => t(`plans.units.${kind === 'khatma' ? 'weeks' : unit}`, { count: value })} />
               {kind === 'khatma' && <View style={{ gap: 8, borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border, paddingTop: 16 }}><Copy muted>{t('khatma.create.amount.divideBy')}</Copy><Segments palette={p} value={unit} onChange={setUnit} options={unitOptions} /></View>}
             </CreationSection>
             <CreationSection title={t('khatma.create.timing.title')} icon="calendar">
@@ -143,7 +144,7 @@ function GoalCreationForm({ initialKind }: { initialKind: SequentialGoal['type']
             {preview.plan && index && <>
               <Card style={{ padding: 16, gap: 14 }}>
                 <Badge variant="outline">{t('common.riwayahOf', { riwayah: RIWAYAT[riwayah].label })}</Badge>
-                <Text style={{ color: p.foreground, fontSize: 22, fontWeight: '600' }}>{kind === 'khatma' ? t('khatma.create.summary.khatma', { weeks: parsePlanNumber(weeks) }) : t('khatma.create.summary.wird', { amount: parsePlanNumber(amount), unit: unitLabels[unit] })}</Text>
+                <Text style={{ color: p.foreground, fontSize: 22, fontWeight: '600' }}>{kind === 'khatma' ? t('khatma.create.summary.khatma', { count: parsePlanNumber(weeks) }) : t(`khatma.create.summary.wird.${unit}`, { count: parsePlanNumber(amount) })}</Text>
                 <View style={[c.row, { borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border, paddingTop: 14, alignItems: 'flex-start' }]}>
                   <View style={c.grow}><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('khatma.create.summary.start')}</Text><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{shortDate(startDate)}</Text></View>
                   <View style={c.grow}><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{kind === 'khatma' ? t('khatma.create.summary.completion') : t('khatma.create.summary.rhythm')}</Text><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{kind === 'khatma' ? shortDate(preview.plan.cycle.sessions.at(-1)!.date) : t('khatma.create.summary.noEndDate')}</Text></View>
@@ -174,7 +175,7 @@ function GoalCreationForm({ initialKind }: { initialKind: SequentialGoal['type']
         <PlanNotice message={message || preview.error} />
         {conflictId ? <ReaderButton palette={p} onPress={() => openGoal(conflictId)}>{t('goals.viewCurrent')}</ReaderButton>
           : <>
-            {step === 0 && preview.plan && <Text style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>{t('khatma.create.sessionsPreview', { sessions: preview.plan.cycle.sessions.length })}</Text>}
+            {step === 0 && preview.plan && <Text style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>{t('khatma.create.sessionsPreview', { count: preview.plan.cycle.sessions.length })}</Text>}
             <ReaderButton palette={p} selected disabled={!preview.plan || busy} onPress={() => step === 0 ? changeStep(1) : void save()}>{busy ? t('goals.saving') : step === 0 ? t('khatma.create.continueToReview') : t('khatma.create.create')}</ReaderButton>
           </>}
       </View>}

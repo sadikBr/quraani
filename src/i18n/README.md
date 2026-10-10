@@ -15,6 +15,9 @@ t('revision.days', { count: 3 });                    // picks days_few: '٣ أي
 
 ## Messages
 
+- **Arabic wording** follows `locales/ar/STYLE.md`: voice, grammar, the glossary of Quran
+  terms, and the calques to avoid. Read it before writing new text.
+
 - **Namespaces** follow the areas of the app: `home`, `reader`, `settings`, `themes`,
   `library` (index, search, bookmarks), `share`, `plans` (list, chooser, archive, shared
   goal pieces), `khatma` (khatma and daily wird), `session` (schedules and the reading bar),

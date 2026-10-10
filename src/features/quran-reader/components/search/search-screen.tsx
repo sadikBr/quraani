@@ -74,7 +74,7 @@ export function SearchScreen({ saved = false }: { saved?: boolean }) {
         </View>}
         {available && (saved && savedItems.length > 0 || hasSearch) && <View style={l.results}>
           <Text style={{ color: p.foreground, fontSize: 13, fontWeight: '600' }}>{saved ? filtering ? t('library.bookmarks.results.filtered') : order === 'recent' ? t('library.bookmarks.results.recent') : t('library.bookmarks.results.quran') : t('library.searchResults')}</Text>
-          {searching ? <ActivityIndicator accessibilityLabel={t('library.search.searching')} size="small" color={p.primary} /> : <Text accessibilityLiveRegion="polite" style={{ color: p.mutedForeground, fontSize: 13 }}>{saved ? t('library.bookmarks.count', { n: matches.total }) : t('library.search.count', { n: matches.total })}</Text>}
+          {searching ? <ActivityIndicator accessibilityLabel={t('library.search.searching')} size="small" color={p.primary} /> : <Text accessibilityLiveRegion="polite" style={{ color: p.mutedForeground, fontSize: 13 }}>{saved ? t('library.bookmarks.count', { count: matches.total }) : t('library.search.count', { count: matches.total })}</Text>}
         </View>}
       </View>}
       ListEmptyComponent={error && !content || font.error ? <LibraryEmpty title={t('library.loadError')} description={t('common.checkConnection')} icon="book" palette={p}><ReaderButton palette={p} onPress={refresh}>{t('common.retry')}</ReaderButton></LibraryEmpty>

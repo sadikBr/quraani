@@ -33,7 +33,7 @@ export function RecurringGoalCard({ plan, today }: { plan: RecurringPlan; today:
   const status = plan.status === 'paused' ? t('goals.status.paused') : progress.done ? t('recurring.card.status.done') : next?.due ? t('recurring.card.status.dueToday') : next ? t('recurring.card.status.upcoming', { date: shortDate(next.date) }) : t('goals.status.archived');
   return <GoalCardFrame id={plan.id} name={plan.name} status={status} due={!!next?.due}>
     <GoalCardHeading name={plan.name} description={t('recurring.summary', { days: weekdaysLabel(plan.weekdays) })} icon="restore" />
-    <GoalProgress value={progress.done ? 1 : next?.due ? progress.completed / plan.ranges.length : 0} label={t('recurring.card.completedOccurrences', { n: completedOccurrences(plan) })}
-      trailing={next?.due && progress.read ? t('recurring.card.todayProgress', { completed: progress.completed, total: plan.ranges.length }) : t('recurring.card.surahsPerOccurrence', { count: plan.ranges.length })} />
+    <GoalProgress value={progress.done ? 1 : next?.due ? progress.completed / plan.ranges.length : 0} label={t('recurring.card.completedOccurrences', { count: completedOccurrences(plan) })}
+      trailing={next?.due && progress.read ? t('recurring.card.todayProgress', { completed: progress.completed, count: plan.ranges.length }) : t('recurring.card.surahsPerOccurrence', { count: plan.ranges.length })} />
   </GoalCardFrame>;
 }

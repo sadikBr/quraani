@@ -88,7 +88,7 @@ function StartPointSheet({ index, value, onClose, onSelect }: { index: PlanIndex
                 style={[s.input, { color: p.foreground }]} />
               {!!query && <Pressable accessibilityRole="button" accessibilityLabel={t('common.clearSearch')} onPress={() => setQuery('')} style={s.clear}><ReaderIcon name="close" color={p.mutedForeground} size={18} /></Pressable>}
             </View>
-            <Text style={{ color: p.mutedForeground, fontSize: 12 }}>{query ? t('khatma.startPoint.sheet.results', { results: filtered.length }) : `${t(`khatma.startPoint.kinds.${value.kind}.total`, { total: choices.length })} · ${t('khatma.startPoint.choosePosition')}`}</Text>
+            <Text style={{ color: p.mutedForeground, fontSize: 12 }}>{query ? t('khatma.startPoint.sheet.results', { count: filtered.length }) : `${t(`khatma.startPoint.kinds.${value.kind}.total`, { count: choices.length })} · ${t('khatma.startPoint.choosePosition')}`}</Text>
           </View>
           <FlatList data={filtered} keyExtractor={choice => String(choice.number)} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
             initialNumToRender={12} maxToRenderPerBatch={12} windowSize={5} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}

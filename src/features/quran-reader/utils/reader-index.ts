@@ -16,7 +16,7 @@ export interface ReaderIndexItem {
 export function readerIndexItems(content: ReaderContent, kind: IndexKind, query = ''): ReaderIndexItem[] {
   if (kind === 'surah') return searchSurahs(content.quran, query).flatMap((surah) => {
     const first = surah.ayahs.find((ayah) => ayah.ayahNumber === 1) ?? surah.ayahs[0];
-    return first ? [{ number: surah.number, title: surah.name, detail: t('reader.index.ayahCount', { ayahs: surah.ayahs.length }),
+    return first ? [{ number: surah.number, title: surah.name, detail: t('reader.index.ayahCount', { count: surah.ayahs.length }),
       pageNumber: first.pageNumber, start: { mushafId: content.quran.id, surahNumber: surah.number, ayahNumber: first.ayahNumber } }] : [];
   });
   const entries = kind === 'juz' ? content.juzIndex : content.hizbIndex;

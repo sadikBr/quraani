@@ -93,6 +93,6 @@ export function RevisionGoalCard({ plan, today }: { plan: RevisionPlan; today: s
   return <GoalCardFrame id={plan.id} name={plan.name} status={status} due={!!day?.due}>
     <GoalCardHeading name={plan.name} description={`${t('goals.types.revision')} · ${t('revision.perSession', { amount: quarterLabel(plan.goal.dailyQuarters) })}`} icon="loop"
       trailing={plan.memorized.length ? <Text style={{ color: p.foreground, fontSize: 20, fontWeight: '600' }}>{t('revision.percent', { percent: Math.floor(progress * 100) })}</Text> : undefined} />
-    <GoalProgress value={progress} label={`${t('revision.passNumber', { pass: plan.pass })} · ${plan.log.length ? t('revision.card.daysRevised', { days: revisionDaysLabel(plan.log.length) }) : t('revision.card.notStarted')}`} trailing={plan.memorized.length ? t('revision.ayahCount', { count: spanCount(plan.memorized) }) : undefined} />
+    <GoalProgress value={progress} label={`${t('revision.passNumber', { pass: plan.pass })} · ${plan.log.length ? t('revision.card.daysRevised', { count: plan.log.length }) : t('revision.card.notStarted')}`} trailing={plan.memorized.length ? t('revision.ayahCount', { count: spanCount(plan.memorized) }) : undefined} />
   </GoalCardFrame>;
 }

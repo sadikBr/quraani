@@ -104,7 +104,7 @@ for (const os of ['android', 'ios']) for (const expoGo of [true, false]) {
     const original = reminders[0];
     phone.scheduled.set(original.identifier, { ...original, content: { ...original.content, body: 'حان وقت وردك. افتح خطتك لمتابعة القراءة.' } });
     await api.syncPlanReminders([plan]);
-    expect(phone.scheduled.get(original.identifier).content.body).toContain('هدفك');
+    expect(phone.scheduled.get(original.identifier).content.body).toContain('وردك اليوم بانتظارك');
     expect(phone.scheduled.get(original.identifier).content.data.planId).toBe(plan.id);
     await api.syncPlanReminders([{ ...plan, status: 'paused' }]);
     expect([...phone.scheduled.keys()]).toEqual(['unrelated']);

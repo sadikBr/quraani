@@ -23,7 +23,7 @@ export function MemorizationHero({ index, ranges, compact = false }: { index: Pl
     <View style={[d.row, { gap: 14 }]}>
       <View style={d.grow}><Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('memorization.hero.label')}</Text>
         <Text style={{ color: p.foreground, fontSize: 20, fontWeight: '600', marginVertical: 4 }}>{done ? t('memorization.hero.complete') : quarters ? t('memorization.hero.growing') : t('memorization.hero.start')}</Text>
-        <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('memorization.hero.summary', { ayahs: spanCount(ranges), amount: quarterLabel(Math.round(quarters)) })}</Text>
+        <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('memorization.hero.summary', { count: spanCount(ranges), amount: Math.round(quarters) ? t('memorization.hero.approximately', { amount: quarterLabel(Math.round(quarters)) }) : quarterLabel(0) })}</Text>
       </View>
       <View accessibilityRole="progressbar" accessibilityLabel={t('memorization.hero.progressLabel')} accessibilityValue={{ min: 0, max: 100, now: percent }} style={d.ring}>
         <Svg width={108} height={108} viewBox="0 0 108 108" aria-hidden><Circle cx={54} cy={54} r={47} fill="none" stroke={withAlpha(p.primary, 0.2)} strokeWidth={8} />
@@ -43,7 +43,7 @@ export function MemorizationGoalCard({ plan, today }: { plan: MemorizationPlan; 
   return <GoalCardFrame id={plan.id} name={plan.name} status={status} due={!!next?.due}>
     <GoalCardHeading name={plan.name} description={t('memorization.card.description', { amount: quarterLabel(plan.goal.weeklyQuarters) })} icon="book"
       trailing={fraction !== null ? <Text style={{ color: p.foreground, fontSize: 20, fontWeight: '600' }}>{t('memorization.percent', { percent: spanCount(plan.memorized) === plan.totalAyahs ? 100 : Math.min(99, Math.floor(fraction * 100)) })}</Text> : undefined} />
-    <GoalProgress value={fraction ?? 0} label={t('memorization.memorizedAyahs', { ayahs: spanCount(plan.memorized) })} />
+    <GoalProgress value={fraction ?? 0} label={t('memorization.memorizedAyahs', { count: spanCount(plan.memorized) })} />
   </GoalCardFrame>;
 }
 

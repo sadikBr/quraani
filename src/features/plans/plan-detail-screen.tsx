@@ -12,7 +12,7 @@ import { DetailAction, DetailScreen, PlanSettingsSheet, ProgressHero, ReadingBou
 import { shortDate } from './presentation';
 import { t } from '@/i18n';
 import { PlanSchedule } from './plan-schedule';
-import { assertPlanIndex, nextPortion, rangeLabel, recordProgress, reschedulePlan, setPlanPaused, undoProgress, unitLabels } from './engine';
+import { assertPlanIndex, nextPortion, rangeLabel, recordProgress, reschedulePlan, setPlanPaused, undoProgress } from './engine';
 import { dateLabel } from './dates';
 import { usePlanIndex } from './use-plan-index';
 import { PlanDateField } from './plan-date-field';
@@ -147,7 +147,7 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
     {plan.cycle.progress.length > 0 && plan.status !== 'archived' && <DetailAction label={t('khatma.detail.undo')} disabled={busy} onPress={() => { const count = plan.cycle.progress.length; void mutate(p => p.cycle.progress.length === count ? undoProgress(p) : p); }} />}
     {index && !mismatch && <PlanSchedule plan={plan} index={index} today={today} />}
     <View style={{ gap: 4, paddingHorizontal: 4 }}>
-      <Text style={{ color: palette.mutedForeground, fontSize: 13, lineHeight: 22 }}>{plan.goal.type === 'khatma' ? t('khatma.detail.info.dividedBy', { unit: unitLabels[plan.unit] }) : t('khatma.detail.info.dailyAmount', { amount: plan.goal.amount, unit: unitLabels[plan.unit] })} · {plan.repeat ? t('khatma.detail.info.repeats') : t('khatma.detail.info.once')}</Text>
+      <Text style={{ color: palette.mutedForeground, fontSize: 13, lineHeight: 22 }}>{plan.goal.type === 'khatma' ? t(`khatma.detail.info.dividedBy.${plan.unit}`) : t(`khatma.detail.info.dailyAmount.${plan.unit}`, { count: plan.goal.amount })} · {plan.repeat ? t('khatma.detail.info.repeats') : t('khatma.detail.info.once')}</Text>
       <Text style={{ color: palette.mutedForeground, fontSize: 13, lineHeight: 22 }}>{t('khatma.detail.info.cycleStart', { date: dateLabel(plan.cycle.sessions[0].date) })}{plan.reminder.enabled ? ` · ${t('khatma.detail.info.reminderAt', { time: `${String(plan.reminder.hour).padStart(2, '0')}:${String(plan.reminder.minute).padStart(2, '0')}` })}` : ` · ${t('khatma.detail.info.reminderOff')}`}</Text>
     </View>
     {!!plan.history.length && <PlanCard><Copy title>{t('khatma.detail.history.title')}</Copy>

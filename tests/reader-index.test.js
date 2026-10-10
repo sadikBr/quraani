@@ -8,7 +8,7 @@ const content = { quran: { id: 4, surahs: [
 ] }, juzIndex: [{ number: 2, pageNumber: 3, start: boundary }], hizbIndex: [{ number: 3, pageNumber: 3, start: boundary }] };
 
 test('surah filtering ignores diacritics and alef variants without altering source names', () => {
-  expect(readerIndexItems(content, 'surah', 'البقرة')).toEqual([{ number: 2, title: 'سُورَة الْبَقَرَة', detail: 'الآيات: 2',
+  expect(readerIndexItems(content, 'surah', 'البقرة')).toEqual([{ number: 2, title: 'سُورَة الْبَقَرَة', detail: 'آيتان',
     pageNumber: 2, start: { mushafId: 4, surahNumber: 2, ayahNumber: 1 } }]);
   expect(readerIndexItems(content, 'surah', 'اسراء').map((item) => item.number)).toEqual([17]);
   expect(readerIndexItems(content, 'surah', 'غير موجود')).toEqual([]);

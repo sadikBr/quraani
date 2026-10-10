@@ -3,7 +3,7 @@ import { addDays, validDate } from './dates';
 import type { PlanIndex } from './engine';
 import { calendarWeekday, nextScheduledDate } from './recurring';
 import type { AyahSpan, MemorizationDraft, MemorizationPlan, MemorizationRecord, MemorizationSession } from './types';
-import { formatNumber, t } from '@/i18n';
+import { t } from '@/i18n';
 
 export function mergeSpans(ranges: AyahSpan[]): AyahSpan[] {
   const result: AyahSpan[] = [];
@@ -65,7 +65,7 @@ export function quarterLabel(amount: number) {
   if (amount === 3) return t('memorization.quarterAmount.threeQuarters');
   if (amount === 4) return t('memorization.quarterAmount.oneHizb');
   if (amount === 8) return t('memorization.quarterAmount.oneJuz');
-  return t('memorization.quarterAmount.hizbs', { amount: formatNumber(amount / 4, { maximumFractionDigits: 2 }) });
+  return t('memorization.quarterAmount.hizbs', { count: amount / 4 });
 }
 function validateSettings(weeklyQuarters: number, weekdays: number[]) {
   if (!Number.isInteger(weeklyQuarters) || weeklyQuarters < 1 || weeklyQuarters > 240) throw new Error(t('memorization.errors.weeklyAmount'));

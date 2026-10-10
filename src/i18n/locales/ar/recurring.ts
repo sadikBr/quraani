@@ -1,14 +1,14 @@
-/** Recurring reading goals: surahs read again on chosen weekdays (e.g. al-Kahf every Friday). */
+/** Recurring reading goals: surahs read again on chosen weekdays (e.g. al-Kahf every Friday). Each occurrence is a «موعد». */
 export default {
   presets: {
     kahf: {
-      /** Also the default name of a goal created from this preset. */
-      name: 'الكهف كل جمعة',
+      /** Also the default name of a goal created from this preset, and the title of its creation screen. */
+      name: 'سورة الكهف يوم الجمعة',
       description: 'موعد أسبوعي مع سورة الكهف',
     },
     mulk: {
-      /** Also the default name of a goal created from this preset. */
-      name: 'الملك كل ليلة',
+      /** Also the default name of a goal created from this preset, and the title of its creation screen. */
+      name: 'سورة الملك كل ليلة',
       description: 'سورة الملك في ختام يومك',
     },
   },
@@ -16,13 +16,14 @@ export default {
   summary: 'قراءة متكررة · {{days}}',
   errors: {
     weekdays: 'اختر يومًا واحدًا على الأقل للقراءة.',
-    draft: 'راجع اسم الهدف وتاريخه وروايته.',
+    draft: 'تحقّق من اسم الهدف وتاريخ البدء والرواية.',
     surahs: 'اختر سورة واحدة على الأقل.',
-    surahNotFound: 'تعذر العثور على السورة في هذه الرواية.',
-    reminderTime: 'وقت التذكير غير صالح.',
-    invalidData: 'بيانات القراءة المتكررة غير صالحة',
+    surahNotFound: 'تعذّر العثور على السورة في هذه الرواية.',
+    reminderTime: 'اختر وقتًا صالحًا للتذكير.',
+    invalidData: 'بيانات القراءة المتكررة غير صالحة.',
   },
   weekdayPicker: {
+    /** Quick option chip, next to "كل يوم". */
     fridayOnly: 'الجمعة فقط',
     chooseDay: 'اختر يومًا واحدًا على الأقل.',
   },
@@ -30,31 +31,43 @@ export default {
     status: {
       done: 'أتممت قراءة اليوم',
       dueToday: 'موعدك اليوم',
-      upcoming: 'الموعد القادم · {{date}}',
+      upcoming: 'موعدك القادم · {{date}}',
     },
-    completedOccurrences: '{{n, number}} قراءة مكتملة',
-    todayProgress: '{{completed, number}} من {{total, number}} سور اليوم',
-    /** Number of surahs read at each scheduled time. The current design uses "سور" for every count except 1. */
-    surahsPerOccurrence_zero: '{{count, number}} سور في الموعد',
-    surahsPerOccurrence_one: '{{count, number}} سورة في الموعد',
-    surahsPerOccurrence_two: '{{count, number}} سور في الموعد',
-    surahsPerOccurrence_few: '{{count, number}} سور في الموعد',
-    surahsPerOccurrence_many: '{{count, number}} سور في الموعد',
-    surahsPerOccurrence_other: '{{count, number}} سور في الموعد',
+    /** Number of occurrences read in full since the goal began. */
+    completedOccurrences_zero: 'لم تكتمل أي قراءة بعد',
+    completedOccurrences_one: 'قراءة واحدة مكتملة',
+    completedOccurrences_two: 'قراءتان مكتملتان',
+    completedOccurrences_few: '{{count, number}} قراءات مكتملة',
+    completedOccurrences_many: '{{count, number}} قراءة مكتملة',
+    completedOccurrences_other: '{{count, number}} قراءة مكتملة',
+    /** Surahs finished today out of the surahs of the occurrence ({{count}}, at least 1): "٢ من ٣ سور اليوم". */
+    todayProgress_zero: '{{completed, number}} من {{count, number}} سورة اليوم',
+    todayProgress_one: '{{completed, number}} من سورة واحدة اليوم',
+    todayProgress_two: '{{completed, number}} من سورتين اليوم',
+    todayProgress_few: '{{completed, number}} من {{count, number}} سور اليوم',
+    todayProgress_many: '{{completed, number}} من {{count, number}} سورة اليوم',
+    todayProgress_other: '{{completed, number}} من {{count, number}} سورة اليوم',
+    /** Number of surahs read at each occurrence (always at least 1). */
+    surahsPerOccurrence_zero: 'لا سور مختارة',
+    surahsPerOccurrence_one: 'سورة واحدة في كل موعد',
+    surahsPerOccurrence_two: 'سورتان في كل موعد',
+    surahsPerOccurrence_few: '{{count, number}} سور في كل موعد',
+    surahsPerOccurrence_many: '{{count, number}} سورة في كل موعد',
+    surahsPerOccurrence_other: '{{count, number}} سورة في كل موعد',
   },
   creation: {
-    /** Default goal name when one surah is chosen: "قراءة الكهف". */
-    fallbackNameSurah: 'قراءة {{surah}}',
+    /** Default goal name when one surah is chosen; {{surah}} comes from the data and already includes the word سورة: "سورة الكهف". */
+    fallbackNameSurah: '{{surah}}',
     /** Default goal name for several surahs. */
     fallbackName: 'قراءتي المتكررة',
     backToSetup: 'العودة إلى إعداد القراءة المتكررة',
     setup: {
       title: 'سور تحب العودة إليها',
-      subtitle: 'اختر السور، ثم امنحها موعدًا في أسبوعك.',
+      subtitle: 'اختر السور، ثم الأيام التي تقرؤها فيها.',
     },
     review: {
-      title: 'موعد خير يتجدد',
-      subtitle: 'هذه قراءتك ومواعيدها. كل موعد بداية جديدة.',
+      title: 'مواعيد قراءتك',
+      subtitle: 'هذه سورك وأول مواعيدها.',
     },
     what: {
       title: 'ماذا تقرأ؟',
@@ -66,76 +79,91 @@ export default {
     },
     when: {
       title: 'متى تعود إليها؟',
-      description: 'يتجدد الهدف في الأيام المختارة، دون تراكم قراءة الأيام الفائتة.',
+      description: 'تتجدد القراءة في الأيام التي تختارها، ولا يتراكم عليك ما فاتك.',
     },
     sessions: {
-      several: 'تقرأ السور بالترتيب، في جلسة مخصصة لكل سورة.',
-      single: 'جلسة قراءة مخصصة للسورة، مع حفظ تقدمك خلال اليوم.',
+      several: 'تقرأ السور بالترتيب، كل سورة على حدة.',
+      single: 'يُحتفظ بموضع توقفك في السورة حتى آخر اليوم.',
     },
     firstDates: 'مواعيدك الأولى',
     reminder: 'ذكّرني بالقراءة',
-    reminderDetail: 'تذكير في الأيام المختارة فقط.',
-    alongside: 'يمكنك متابعة هذا الهدف بجانب ختمتك أو وردك اليومي، وإيقافه أو أرشفته متى شئت.',
+    reminderDetail: 'في الأيام المختارة فقط.',
+    alongside: 'يمكنك متابعة هذا الهدف إلى جانب ختمتك أو وردك اليومي، وإيقافه مؤقتًا أو أرشفته متى شئت.',
     chooseToContinue: 'اختر السور وأيام القراءة للمتابعة.',
     create: 'إنشاء القراءة المتكررة',
-    reviewSchedule: 'مراجعة الموعد',
+    /** Button that opens the second step (avoids «مراجعة», which names the revision goal). */
+    reviewSchedule: 'متابعة',
   },
   detail: {
     errors: {
-      saveChange: 'تعذر حفظ التغيير.',
-      settings: 'راجع اسم الهدف، الأيام ووقت التذكير.',
+      saveChange: 'تعذّر حفظ التعديل. أعد المحاولة.',
+      settings: 'تحقّق من اسم الهدف وأيام القراءة ووقت التذكير.',
     },
     title: {
-      done: 'قراءة طيبة، تقبّل الله منك',
+      done: 'تقبّل الله قراءتك',
       dueToday: 'موعدك مع القرآن اليوم',
-      waiting: 'رفقة تتجدد',
+      /** Before the next occurrence, and while the goal is paused or archived. */
+      waiting: 'موعد يتجدد مع القرآن',
     },
-    completedSinceStart: '{{n, number}} قراءة مكتملة منذ البداية',
+    completedSinceStart_zero: 'لم تكتمل أي قراءة بعد',
+    completedSinceStart_one: 'قراءة واحدة مكتملة منذ البداية',
+    completedSinceStart_two: 'قراءتان مكتملتان منذ البداية',
+    completedSinceStart_few: '{{count, number}} قراءات مكتملة منذ البداية',
+    completedSinceStart_many: '{{count, number}} قراءة مكتملة منذ البداية',
+    completedSinceStart_other: '{{count, number}} قراءة مكتملة منذ البداية',
     week: {
-      /** Accessibility label of a day in the last-7-days strip: "الجمعة ٩ أكتوبر، مكتمل". */
+      /** Accessibility label of a day in the last-7-days strip: "٩ أكتوبر ٢٠٢٦، قراءة مكتملة". */
       day: '{{date}}، {{state}}',
-      done: 'مكتمل',
+      done: 'قراءة مكتملة',
       partial: 'قراءة جزئية',
-      missed: 'دون تسجيل قراءة',
-      notScheduled: 'غير مقرر',
+      missed: 'لم تُسجَّل قراءة',
+      notScheduled: 'ليس من أيام القراءة',
     },
     next: {
       today: 'قراءة اليوم',
       upcoming: 'موعدك القادم',
-      /** Badge on the surah the next session reads. */
-      continuing: 'نكمل قراءتها',
-      starting: 'نبدأ بها',
-      /** Disabled action before the date: "متاح السبت ١٠ أكتوبر". */
-      availableOn: 'متاح {{date}}',
+      /** Badges on the surah the next reading continues or starts with, in a list of several surahs. */
+      continuing: 'قيد القراءة',
+      starting: 'التالية',
+      /** Disabled reading button before the date: "تُتاح يوم ١٧ أكتوبر". */
+      availableOn: 'تُتاح يوم {{date}}',
       finishSurah: 'أتممت هذه السورة',
-      several: 'جلسة مخصصة لكل سورة، ثم نتابع إلى التي تليها.',
-      single: 'قراءة الأيام الفائتة لا تتراكم. كل موعد بداية جديدة.',
+      several: 'تقرأ كل سورة على حدة، ثم تنتقل إلى التي تليها.',
+      single: 'لا يتراكم عليك ما فاتك، فكل موعد بداية جديدة.',
     },
     paused: {
       title: 'موعدك في انتظارك',
-      body: 'تذكيراتك متوقفة. عند الاستئناف تعود إلى أيامك المعتادة، دون إضافة قراءة فائتة.',
+      body: 'التذكيرات متوقفة. عند استئناف الهدف تعود إلى أيامك المعتادة، دون أن يتراكم عليك ما فاتك.',
     },
     archived: {
-      deletionOn: 'التذكيرات متوقفة. الحذف التلقائي: {{date}}.',
-      deletionLater: 'التذكيرات متوقفة. الحذف التلقائي: بعد أسبوعين.',
+      deletionOn: 'تذكيراته متوقفة. سيُحذف نهائيًا في {{date}}. استعده قبل ذلك للاحتفاظ به.',
+      deletionLater: 'تذكيراته متوقفة. سيُحذف نهائيًا بعد أسبوعين. استعده قبل ذلك للاحتفاظ به.',
     },
-    undo: 'التراجع عن آخر تسجيل اليوم',
+    /** Removes the last progress recorded today. */
+    undo: 'التراجع عن آخر ما سجّلته اليوم',
     history: {
-      title: 'سجل القراءة',
+      title: 'سجلّ القراءة',
       completed: 'قراءة مكتملة',
-      partial: 'قراءة جزئية · {{completed, number}} من {{total, number}} سور',
-      older: 'عرض قراءات أقدم',
-      empty: 'ستجد هنا قراءاتك بعد حفظ تقدمك الأول.',
+      /** Surahs finished out of the surahs of the occurrence ({{count}}, at least 1). */
+      partial_zero: 'قراءة جزئية · {{completed, number}} من {{count, number}} سورة',
+      partial_one: 'قراءة جزئية · {{completed, number}} من سورة واحدة',
+      partial_two: 'قراءة جزئية · {{completed, number}} من سورتين',
+      partial_few: 'قراءة جزئية · {{completed, number}} من {{count, number}} سور',
+      partial_many: 'قراءة جزئية · {{completed, number}} من {{count, number}} سورة',
+      partial_other: 'قراءة جزئية · {{completed, number}} من {{count, number}} سورة',
+      /** Button under the list that shows more past occurrences. */
+      older: 'قراءات أقدم',
+      empty: 'يظهر هنا كل ما تقرؤه في مواعيدك.',
     },
     /** Reminder time in 24-hour Latin digits: "التذكير 20:00". */
     reminderAt: 'التذكير {{time}}',
-    reminderOff: 'التذكير غير مفعّل',
+    reminderOff: 'بلا تذكير',
     settings: {
       days: 'أيام القراءة',
-      daysNote: 'تطبق الأيام الجديدة على المواعيد القادمة، وتبقى قراءاتك السابقة محفوظة.',
-      reminder: 'تذكير بالقراءة',
+      daysNote: 'تسري الأيام الجديدة على المواعيد القادمة، ولا تتغير قراءاتك السابقة.',
+      reminder: 'ذكّرني بالقراءة',
       reminderDetail: 'في الأيام المختارة فقط.',
-      archiveNote: 'الأهداف المؤرشفة تُحذف بعد أسبوعين. يمكنك استعادتها خلال هذه المدة.',
+      archiveNote: 'يُحذف الهدف المؤرشف نهائيًا بعد أسبوعين، ويمكنك استعادته قبل ذلك.',
     },
   },
 } as const;

@@ -4,15 +4,17 @@ export default {
   goals: 'الأهداف',
   name: 'اسم الهدف',
   setup: 'الإعداد',
-  saving: 'جارٍ الحفظ…',
-  startingFrom: 'ابتداءً من',
-  makeItYours: 'اجعله موعدك',
-  firstSchedule: 'جدولك الأول',
-  viewCurrent: 'عرض الهدف الحالي',
+  /** On a button while a goal or progress is being saved; avoids «الحفظ», which reads as memorizing. */
+  saving: 'جارٍ التسجيل…',
+  startingFrom: 'تاريخ البدء',
+  /** Section with the goal's name and reminder. */
+  makeItYours: 'الاسم والتذكير',
+  firstSchedule: 'مواعيدك الأولى',
+  viewCurrent: 'فتح هدفك الحالي',
   backToGoals: 'العودة إلى الأهداف',
   backToGoal: 'العودة إلى الهدف',
   backToGoalTypes: 'العودة إلى أنواع الأهداف',
-  unavailable: 'هذا الهدف لم يعد متاحًا.',
+  unavailable: 'لم يعد هذا الهدف موجودًا.',
   startReading: 'ابدأ القراءة',
   continueReading: 'تابع القراءة',
   previousWeek: 'الأسبوع السابق',
@@ -22,8 +24,8 @@ export default {
   status: { paused: 'متوقف مؤقتًا', archived: 'مؤرشف', completed: 'مكتمل' },
   reminder: {
     time: 'وقت التذكير',
-    enableOnPhone: 'فعّل التذكير من تطبيق الهاتف.',
-    changeOnPhone: 'غيّر التذكيرات من تطبيق الهاتف.',
+    enableOnPhone: 'التذكير متوفر في تطبيق الهاتف.',
+    changeOnPhone: 'تُعدَّل التذكيرات من تطبيق الهاتف.',
   },
   archived: { title: 'هذا الهدف في الأرشيف' },
   actions: {
@@ -35,11 +37,12 @@ export default {
     delete: 'حذف الهدف',
   },
   errors: {
-    startDate: 'اختر اليوم أو تاريخًا قادمًا للبداية.',
+    startDate: 'اختر تاريخ بدء من اليوم فصاعدًا.',
     reminderTime: 'اختر وقتًا صالحًا للتذكير.',
-    checkChoices: 'راجع اختياراتك.',
-    saveGoal: 'تعذر حفظ الهدف. حاول مرة أخرى.',
-    saveChange: 'تعذر حفظ التغيير. حاول مرة أخرى.',
-    saveSettings: 'تعذر حفظ الإعدادات.',
+    /** Also shown in the revision flow: «تحقّق» rather than «راجع», which reads as revising. */
+    checkChoices: 'تحقّق من اختياراتك.',
+    saveGoal: 'تعذّر حفظ الهدف. أعد المحاولة.',
+    saveChange: 'تعذّر حفظ التعديل. أعد المحاولة.',
+    saveSettings: 'تعذّر حفظ الإعدادات. أعد المحاولة.',
   },
 } as const;

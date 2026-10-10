@@ -178,7 +178,7 @@ test('settings keep the place, pause holds the day, and the overview and reminde
 });
 
 test('creation and stored data are validated', () => {
-  expect(() => make({ memorized: [] })).toThrow('حدد ما تحفظه');
+  expect(() => make({ memorized: [] })).toThrow('حدد محفوظك');
   expect(() => make({ dailyQuarters: 0 })).toThrow();
   expect(() => make({ weekdays: [] })).toThrow();
   expect(() => make({ riwayah: 'hafs' })).toThrow();

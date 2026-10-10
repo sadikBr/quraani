@@ -50,8 +50,9 @@ export function CreationSteps({ step, canReview, onChange }: { step: 0 | 1; canR
   </View>;
 }
 
-export function AmountPicker({ label, value, onChange, unit, presets, minimum, maximum, increment = 1, parse }: {
-  label: string; value: string; onChange: (value: string) => void; unit: string; presets: string[]; minimum: number; maximum: number; increment?: number; parse: (value: string) => number;
+/** `presetLabel` gives each quick choice its spoken label ("٥ صفحات"); without it, the number is followed by `unit`. */
+export function AmountPicker({ label, value, onChange, unit, presets, minimum, maximum, increment = 1, parse, presetLabel }: {
+  label: string; value: string; onChange: (value: string) => void; unit: string; presets: string[]; minimum: number; maximum: number; increment?: number; parse: (value: string) => number; presetLabel?: (amount: number) => string;
 }) {
   const { palette: p } = useReadingPreferences();
   const amount = parse(value);
@@ -69,7 +70,7 @@ export function AmountPicker({ label, value, onChange, unit, presets, minimum, m
     <View style={{ flexDirection: 'row', gap: 8 }}>
       {presets.map(preset => {
         const selected = amount === Number(preset);
-        return <Pressable key={preset} accessibilityRole="button" accessibilityLabel={t('plans.creation.amount.preset', { amount: Number(preset), unit })} accessibilityState={{ selected }} aria-pressed={selected} onPress={() => onChange(preset)} hitSlop={4}
+        return <Pressable key={preset} accessibilityRole="button" accessibilityLabel={presetLabel ? presetLabel(Number(preset)) : t('plans.creation.amount.preset', { amount: Number(preset), unit })} accessibilityState={{ selected }} aria-pressed={selected} onPress={() => onChange(preset)} hitSlop={4}
           style={({ pressed }) => [c.preset, { backgroundColor: selected ? p.primary : pressed ? p.accent : p.background, borderColor: selected ? p.primary : p.input }, !selected && readerElevation(1, p)]}>
           <Text style={{ color: selected ? p.primaryForeground : p.foreground, fontSize: 14, fontWeight: '500', textAlign: 'center' }}>{formatNumber(Number(preset))}</Text>
         </Pressable>;

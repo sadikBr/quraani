@@ -52,7 +52,7 @@ export function ProgressHero({ plan }: { plan: SequentialPlan }) {
       <View style={d.grow}>
         <Text style={{ fontSize: 14, color: p.mutedForeground }}>{t('plans.detail.hero.cycle', { cycle: plan.cycle.number })}</Text>
         <Text style={{ fontSize: 20, fontWeight: '600', color: p.foreground, marginVertical: 4 }}>{fraction === 1 ? t('plans.detail.hero.finished') : fraction > 0 ? t('plans.detail.hero.started') : t('plans.detail.hero.notStarted')}</Text>
-        <Text style={{ fontSize: 14, color: p.mutedForeground }}>{t('plans.progress.completedOfTotal', { completed: finished, total })}</Text>
+        <Text style={{ fontSize: 14, color: p.mutedForeground }}>{t('plans.progress.completedOfTotal', { completed: finished, count: total })}</Text>
       </View>
       <View accessibilityRole="progressbar" accessibilityLabel={t('plans.detail.hero.progressLabel')} accessibilityValue={{ min: 0, max: 100, now: percent }} style={d.ring}>
         <Svg width={108} height={108} viewBox="0 0 108 108" aria-hidden>
@@ -66,9 +66,9 @@ export function ProgressHero({ plan }: { plan: SequentialPlan }) {
       </View>
     </View>
     <View style={[d.heroStats, { borderColor: p.border }]}>
-      <HeroStat label={plan.goal.type === 'khatma' ? t('plans.detail.hero.duration') : t('plans.detail.hero.dailyWird')} value={plan.goal.type === 'khatma' ? t('plans.detail.hero.weeks', { weeks: plan.goal.weeks }) : t('plans.detail.hero.dailyAmount', { amount: plan.goal.amount, unit: t(`plans.units.${plan.unit}`) })} />
+      <HeroStat label={plan.goal.type === 'khatma' ? t('plans.detail.hero.duration') : t('plans.detail.hero.dailyWird')} value={plan.goal.type === 'khatma' ? t('plans.units.weeks', { count: plan.goal.weeks }) : t(`plans.units.${plan.unit}`, { count: plan.goal.amount })} />
       <Separator vertical />
-      <HeroStat label={plan.cycle.completedOn ? t('plans.detail.hero.completedOn') : plan.goal.type === 'khatma' ? t('plans.detail.hero.completionDate') : t('plans.detail.hero.remainingLabel')} value={plan.cycle.completedOn ? shortDate(plan.cycle.completedOn) : plan.goal.type === 'khatma' ? shortDate(plan.cycle.sessions.at(-1)!.date) : t('plans.detail.hero.remaining', { remaining: total - finished })} />
+      <HeroStat label={plan.cycle.completedOn ? t('plans.detail.hero.completedOn') : plan.goal.type === 'khatma' ? t('plans.detail.hero.completionDate') : t('plans.detail.hero.remainingLabel')} value={plan.cycle.completedOn ? shortDate(plan.cycle.completedOn) : plan.goal.type === 'khatma' ? shortDate(plan.cycle.sessions.at(-1)!.date) : t('plans.detail.hero.remaining', { count: total - finished })} />
     </View>
   </Card>;
 }
