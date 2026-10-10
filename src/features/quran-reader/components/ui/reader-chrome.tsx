@@ -2,10 +2,9 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { ArabicText as Text } from '@/components/arabic-text';
 import type { ReaderPalette } from '../../theme';
-import { readerShape } from '../../design';
-import { QuranniLogo } from './quranni-logo';
+import { readerElevation, readerShape, withAlpha } from '../../design';
 
-export type ReaderIconName = 'back' | 'search' | 'book' | 'settings' | 'menu' | 'index' | 'calendar' | 'jump' | 'close' | 'sun' | 'moon' | 'system' | 'lines' | 'check' | 'chevron' | 'bookmark' | 'eye' | 'eye-off' | 'word' | 'copy' | 'share' | 'translate' | 'trash' | 'restore' | 'archive';
+export type ReaderIconName = 'back' | 'search' | 'book' | 'settings' | 'menu' | 'index' | 'calendar' | 'jump' | 'close' | 'sun' | 'moon' | 'system' | 'lines' | 'check' | 'chevron' | 'bookmark' | 'eye' | 'eye-off' | 'word' | 'copy' | 'share' | 'translate' | 'trash' | 'restore' | 'archive' | 'clock' | 'plus' | 'sparkle' | 'flame';
 export function ReaderIcon({ name, color, size = 22, strokeWidth = 1.65 }: { name: ReaderIconName; color: string; size?: number; strokeWidth?: number }) {
   return <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden><Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
     {name === 'back' && <Path d="m9 5 7 7-7 7M16 12H4" />}
@@ -32,53 +31,33 @@ export function ReaderIcon({ name, color, size = 22, strokeWidth = 1.65 }: { nam
     {name === 'jump' && <Path d="M5 5h14v14H5zM8 12h8m-3-3 3 3-3 3" />}
     {name === 'sun' && <><Circle cx="12" cy="12" r="4" /><Path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" /></>}
     {name === 'moon' && <Path d="M20 14A8 8 0 0 1 10 4a8 8 0 1 0 10 10Z" />}
+    {name === 'clock' && <><Circle cx="12" cy="12" r="9" /><Path d="M12 7v5l3 2" /></>}
+    {name === 'plus' && <Path d="M12 5v14M5 12h14" />}
+    {name === 'sparkle' && <Path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" />}
+    {name === 'flame' && <Path d="M12 21c-3.9 0-7-2.9-7-6.6 0-3.2 2.3-5.6 4-7.4.2 2.1 1.2 3.4 2.6 4 0-3 1.5-5.6 3.9-8 .6 3.1 3.5 5.5 3.5 10.1 0 4.4-3.1 7.9-7 7.9Z" />}
     {name === 'system' && <><Rect x="3" y="4" width="18" height="13" rx="3" /><Path d="M8 21h8m-4-4v4" /></>}
   </Svg></View>;
 }
 
 export function IconButton({ name, label, onPress, palette }: { name: ReaderIconName; label: string; onPress: () => void; palette: ReaderPalette }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
-    style={({ pressed }) => [styles.iconButton, { backgroundColor: pressed ? palette.accentSoft : palette.paper, borderColor: palette.border }]}>
+    style={({ pressed }) => [styles.iconButton, { backgroundColor: pressed ? palette.accentSoft : palette.paper, borderColor: palette.border }]} hitSlop={4}>
     <ReaderIcon name={name} color={palette.text} size={20} />
   </Pressable>;
 }
 
-export function ScreenHeading({ title, subtitle, palette, onBack }: { title: string; subtitle: string; palette: ReaderPalette; onBack: () => void }) {
-  return <View style={styles.heading}>
-    <View style={[styles.bar, { borderColor: palette.border }]}>
-      <View style={styles.brand}><QuranniLogo color={palette.ornament} size={30} /><Text style={{ color: palette.text, fontSize: 18, fontWeight: '600' }}>قرآني</Text></View>
-      <IconButton name="back" label="العودة إلى القراءة" onPress={onBack} palette={palette} />
-    </View>
-    <Text accessibilityRole="header" style={{ color: palette.text, fontSize: 28, fontWeight: '700', lineHeight: 44 }}>{title}</Text>
-    <Text style={{ color: palette.muted, fontSize: 13, lineHeight: 24 }}>{subtitle}</Text>
-  </View>;
-}
-
-export function SectionHeading({ title, description, icon, palette }: { title: string; description?: string; icon: ReaderIconName; palette: ReaderPalette }) {
-  return <View style={{ gap: 4 }}>
-    <View style={styles.sectionTitle}>
-      <ReaderIcon name={icon} color={palette.accent} size={19} />
-      <Text accessibilityRole="header" style={{ color: palette.text, fontSize: 19, fontWeight: '600' }}>{title}</Text>
-    </View>
-    {!!description && <Text style={{ color: palette.muted, fontSize: 13, lineHeight: 24 }}>{description}</Text>}
-  </View>;
-}
-
 export function Segments<T extends string>({ options, value, onChange, palette }: { options: readonly { value: T; label: string }[]; value: T; onChange: (value: T) => void; palette: ReaderPalette }) {
-  return <View style={[styles.segments, { backgroundColor: palette.paper, borderColor: palette.border }]}>
+  return <View style={[styles.segments, { backgroundColor: withAlpha(palette.text, 0.06) }]}>
     {options.map((option) => <Pressable key={option.value} accessibilityRole="button" accessibilityState={{ selected: value === option.value }} onPress={() => onChange(option.value)}
       aria-pressed={value === option.value}
-      style={({ pressed }) => [styles.segment, { backgroundColor: value === option.value ? palette.accent : 'transparent', opacity: pressed ? 0.7 : 1 }]}>
-      <Text style={{ fontSize: 14, fontWeight: '600', textAlign: 'center', color: value === option.value ? palette.paper : palette.muted }}>{option.label}</Text>
+      style={({ pressed }) => [styles.segment, value === option.value && [{ backgroundColor: palette.paper }, readerElevation(1, palette)], { opacity: pressed ? 0.7 : 1 }]}>
+      <Text style={{ fontSize: 14, fontWeight: '600', textAlign: 'center', color: value === option.value ? palette.accent : palette.muted }}>{option.label}</Text>
     </Pressable>)}
   </View>;
 }
 
 const styles = StyleSheet.create({
-  heading: { gap: 2 }, bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, marginBottom: 16, borderBottomWidth: 1 },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  sectionTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  iconButton: { width: 44, height: 44, borderRadius: readerShape.control, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  segments: { flexDirection: 'row', padding: 3, borderWidth: 1, borderRadius: readerShape.card, gap: 3 },
-  segment: { flex: 1, minHeight: 44, paddingHorizontal: 8, paddingVertical: 7, justifyContent: 'center', borderRadius: readerShape.control },
+  iconButton: { width: 44, height: 44, borderRadius: readerShape.pill, borderWidth: StyleSheet.hairlineWidth * 2, alignItems: 'center', justifyContent: 'center' },
+  segments: { flexDirection: 'row', padding: 4, borderRadius: readerShape.control + 2, gap: 4 },
+  segment: { flex: 1, minHeight: 42, paddingHorizontal: 8, paddingVertical: 6, justifyContent: 'center', borderRadius: readerShape.control - 2 },
 });

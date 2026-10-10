@@ -38,3 +38,16 @@ test('index accepts Arabic numbers and filters division starts without changing 
   expect(readerIndexItems(content, 'juz', '3')).toEqual([]);
   expect(readerIndexItems(content, 'hizb', '999')).toEqual([]);
 });
+
+test('juz and hizb numbers match exactly, in Latin or Arabic-Indic digits', () => {
+  const entry = (number) => ({ number, pageNumber: number, start: boundary });
+  const many = { ...content, juzIndex: [2, 20, 22, 29].map(entry), hizbIndex: [5, 50, 55, 59].map(entry) };
+  expect(readerIndexItems(many, 'hizb', 'الحزب 5').map((item) => item.number)).toEqual([5]);
+  expect(readerIndexItems(many, 'hizb', 'الحزب ٥').map((item) => item.number)).toEqual([5]);
+  expect(readerIndexItems(many, 'hizb', 'الحزب٥٠').map((item) => item.number)).toEqual([50]);
+  expect(readerIndexItems(many, 'juz', 'الجزء 2').map((item) => item.number)).toEqual([2]);
+  expect(readerIndexItems(many, 'juz', '۲').map((item) => item.number)).toEqual([2]);
+  expect(readerIndexItems(many, 'juz', 'الجزء').map((item) => item.number)).toEqual([2, 20, 22, 29]);
+  expect(readerIndexItems(many, 'juz', 'البقرة 22').map((item) => item.number)).toEqual([22]);
+  expect(readerIndexItems(many, 'juz', 'الحزب 2')).toEqual([]);
+});

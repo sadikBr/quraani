@@ -12,6 +12,11 @@ import { TajweedSurface } from './tajweed-surface';
 import { ArabicText } from '@/components/arabic-text';
 import { ReaderButton } from './reader-button';
 import { readerTextLineHeight } from '../../utils/reader-typography';
+import { tajweedTextUpdate, withTajweedTextStyleBridge } from './tajweed-bridge';
+
+// The document is generated once at this size; the reader's size and spacing
+// are applied through the state bridge so changing them never reloads the font.
+const DOCUMENT_FONT_SIZE = 32;
 
 interface Props {
   ayahs: Ayah[]; pageNumber: number; layout: ReaderTextLayout; fontSize: number; spacious: boolean; palette: ReaderPalette; dark: boolean;
@@ -34,8 +39,9 @@ export const TajweedTextSection = memo(function TajweedTextSection({ ayahs, page
     void loadQuranDocumentFont(mushafId).then((uri) => { if (active) setFont({ mushafId, uri }); }).catch(() => { if (active) setError(true); });
     return () => { active = false; };
   }, [attempt, mushafId]);
-  const html = useMemo(() => font ? tajweedTextDocument(ayahs, layout, font, fontSize, spacious, palette, preview) : '', [ayahs, layout, font, fontSize, spacious, palette, preview]);
-  const update = useMemo(() => tajweedTextState(ayahs, runs, dark, palette, selectedAyah, visibleWords), [ayahs, runs, dark, palette, selectedAyah, visibleWords]);
+  const html = useMemo(() => font ? withTajweedTextStyleBridge(tajweedTextDocument(ayahs, layout, font, DOCUMENT_FONT_SIZE, false, palette, preview)) : '', [ayahs, layout, font, palette, preview]);
+  const ayahState = useMemo(() => tajweedTextState(ayahs, runs, dark, palette, selectedAyah, visibleWords), [ayahs, runs, dark, palette, selectedAyah, visibleWords]);
+  const update = useMemo(() => tajweedTextUpdate(ayahState, { fontSize, lineHeight: readerTextLineHeight(fontSize, spacious) }), [ayahState, fontSize, spacious]);
   if (error) return <View style={{ padding: 24, gap: 12 }}><ArabicText style={{ color: palette.muted }}>تعذر عرض النص القرآني.</ArabicText><ReaderButton palette={palette} onPress={() => { setError(false); setAttempt((n) => n + 1); }}>إعادة المحاولة</ReaderButton></View>;
   if (!font) return <ActivityIndicator color={palette.accent} accessibilityLabel="جارٍ تحميل خط القرآن" style={{ marginVertical: 40 }} />;
   return <TajweedSurface key={`${mushafId}:${attempt}`} title={preview ? `معاينة نص ${edition.name} بألوان التجويد` : `نص ${edition.name} بألوان التجويد · صفحة ${pageNumber} · سورة ${ayahs[0].surahNumber}`} pageNumber={pageNumber} html={html} update={update} height={height} onError={() => setError(true)} onMessage={(raw) => {

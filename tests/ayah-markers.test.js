@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { expect, test } from 'bun:test';
 import fixtures from './fixtures/quranpedia/warsh-ayah-markers.json';
 import { decodePrintedPage } from '../src/features/quran-reader/utils/printed-page';

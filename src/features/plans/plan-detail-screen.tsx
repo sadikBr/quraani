@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { ReaderIcon } from '../quran-reader/components/ui/reader-chrome';
@@ -40,6 +40,7 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
   const { commit, today, reminderError } = usePlans();
   const { index, error, retry } = usePlanIndex(plan.riwayah);
   const [busy, setBusy] = useState(false);
+  const saving = useRef(false);
   const [conflictId, setConflictId] = useState<string>();
   const [message, setMessage] = useState(() => initialReminderIssue ? savedReminderNotice(initialReminderIssue) : '');
   const [showCatchUp, setShowCatchUp] = useState(false);
@@ -53,15 +54,16 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
   if (index) { try { assertPlanIndex(plan, index); } catch (e) { mismatch = (e as Error).message; } }
   const next = nextPortion(plan, today);
   const mutate = async (change: (p: SequentialPlan) => SequentialPlan) => {
-    if (busy) return false;
-    setBusy(true); setMessage(''); setConflictId(undefined);
+    // A ref, not render state: a second tap queued before the re-render must not undo/pause twice.
+    if (saving.current) return false;
+    saving.current = true; setBusy(true); setMessage(''); setConflictId(undefined);
     try { await commit(items => items.map(p => p.id === plan.id && isSequentialPlan(p) ? change(p) : p)); return true; }
     catch (e) {
       setMessage(e instanceof Error ? e.message : 'تعذر حفظ التغيير. حاول مرة أخرى.');
       if (e instanceof DuplicateGoalError) setConflictId(e.goalId);
       return false;
     }
-    finally { setBusy(false); }
+    finally { saving.current = false; setBusy(false); }
   };
   const openReading = () => {
     if (!index || !next?.due || mismatch) return;
@@ -71,8 +73,9 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
       plan: plan.id, planCycle: String(next.cycle), planSlot: String(next.slot) } });
   };
   const saveSettings = async () => {
+    if (saving.current) return;
     if (!name.trim() || name.trim().length > 80 || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) { setMessage('راجع اسم الهدف والوقت (مثل 20:00).'); return; }
-    setBusy(true); setMessage(''); setConflictId(undefined);
+    saving.current = true; setBusy(true); setMessage(''); setConflictId(undefined);
     try {
       const [hour, minute] = time.split(':').map(Number);
       const issue = await saveWithReminder({ ...plan, name: name.trim(), repeat, reminder: { enabled: reminder, hour, minute } },
@@ -84,14 +87,14 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
       setMessage(e instanceof Error ? e.message : 'تعذر حفظ الإعدادات.');
       if (e instanceof DuplicateGoalError) setConflictId(e.goalId);
     }
-    finally { setBusy(false); }
+    finally { saving.current = false; setBusy(false); }
   };
   const openSettings = () => {
     setName(plan.name); setRepeat(plan.repeat); setReminder(plan.reminder.enabled);
     setTime(`${String(plan.reminder.hour).padStart(2, '0')}:${String(plan.reminder.minute).padStart(2, '0')}`);
     setEditing(true);
   };
-  const archive = () => mutate(p => p.status === 'archived' ? restoreArchivedGoal(p) : { ...p, status: 'archived' });
+  const archive = () => { const restore = plan.status === 'archived'; return mutate(p => restore ? p.status === 'archived' ? restoreArchivedGoal(p) : p : p.status === 'archived' ? p : { ...p, status: 'archived' }); };
   const deletionDate = archiveDeletionDate(plan);
   const openConflict = () => {
     if (conflictId) { setEditing(false); router.replace({ pathname: '/plans/[id]', params: { id: conflictId } }); }
@@ -136,7 +139,7 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
       {plan.status === 'archived' && <><DetailAction primary label="استعادة الهدف" icon="restore" disabled={busy} onPress={() => void archive()} />
         <DetailAction destructive label="حذف الهدف" icon="trash" disabled={busy} onPress={() => setDeleting(true)} /></>}
     </PlanCard>}
-    {plan.cycle.progress.length > 0 && plan.status !== 'archived' && <DetailAction label="التراجع عن آخر تسجيل قراءة" disabled={busy} onPress={() => void mutate(undoProgress)} />}
+    {plan.cycle.progress.length > 0 && plan.status !== 'archived' && <DetailAction label="التراجع عن آخر تسجيل قراءة" disabled={busy} onPress={() => { const count = plan.cycle.progress.length; void mutate(p => p.cycle.progress.length === count ? undoProgress(p) : p); }} />}
     {index && !mismatch && <PlanSchedule plan={plan} index={index} today={today} />}
     <View style={{ gap: 8, paddingHorizontal: 4 }}>
       <Text style={{ color: palette.muted, fontSize: 12 }}>{plan.goal.type === 'khatma' ? `التوزيع حسب ${unitLabels[plan.unit]}` : `المقدار اليومي: ${arabicNumber(plan.goal.amount)} ${unitLabels[plan.unit]}`} · {plan.repeat ? 'تتكرر بعد الإكمال' : 'دورة واحدة'}</Text>
@@ -152,7 +155,7 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
       {reminder && <PlanDateField label="وقت التذكير" value={time} onChange={setTime} mode="time" />}
       <ReaderButton palette={palette} selected disabled={busy} onPress={() => void saveSettings()}>حفظ الإعدادات</ReaderButton>
       <View style={{ borderTopWidth: 1, borderColor: palette.border, paddingTop: 12, gap: 4 }}>
-        {(plan.status === 'active' || plan.status === 'paused') && <DetailAction label={plan.status === 'active' ? 'إيقاف الهدف مؤقتًا' : 'استئناف الهدف'} disabled={busy} onPress={() => void mutate(p => setPlanPaused(p, p.status === 'active', today)).then(saved => { if (saved) setEditing(false); })} />}
+        {(plan.status === 'active' || plan.status === 'paused') && <DetailAction label={plan.status === 'active' ? 'إيقاف الهدف مؤقتًا' : 'استئناف الهدف'} disabled={busy} onPress={() => { const pause = plan.status === 'active'; void mutate(p => setPlanPaused(p, pause, today)).then(saved => { if (saved) setEditing(false); }); }} />}
         <DetailAction label={plan.status === 'archived' ? 'استعادة الهدف' : 'أرشفة الهدف'} disabled={busy} onPress={() => void archive().then(saved => { if (saved) setEditing(false); })} />
         {plan.status !== 'archived' && <Copy muted>يُحذف الهدف نهائيًا بعد أسبوعين من أرشفته. يمكنك استعادته خلال هذه المدة.</Copy>}
       </View>

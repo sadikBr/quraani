@@ -75,7 +75,12 @@ function RiwayahReaderScreen() {
   const practiceScrollY = useRef(0);
   const readingScrollY = useRef(0);
   const practiceOffsets = useRef(new Map<string, number>());
-  const { position, ready: positionReady, move, recordScroll } = useReadingPosition(planId ? session?.content : content?.data);
+  const { position, ready: positionReady, move, selectAyah, setScroll, recordScroll } = useReadingPosition(planId ? session?.content : content?.data);
+  // Callbacks handed to the memoized pages read the latest position here, so a
+  // debounced scroll commit does not give them new identities and re-render
+  // every mounted page.
+  const latestPosition = useRef(position);
+  useLayoutEffect(() => { latestPosition.current = position; }, [position]);
   const ready = positionReady && (!planId || !!session);
   const pageNumber = Math.max(firstPage, Math.min(lastPageNumber, position.pageNumber));
   const [jumpRevision, setJumpRevision] = useState(0);
@@ -115,6 +120,11 @@ function RiwayahReaderScreen() {
   useEffect(() => () => setPrintedPageInteraction(false), []);
   const suppressClick = useRef(0);
   const scroll = useRef<ScrollView>(null);
+  // Content can change height asynchronously (tajweed measurement, printed
+  // artwork, error banners). Keep restoring the intended offset only until the
+  // reader scrolls this page; null means the saved position (pinned once ready).
+  const restore = useRef<{ armed: boolean; y: number | null }>({ armed: true, y: null });
+  const restoreY = () => restore.current.y ?? latestPosition.current.scrollY;
   const openingHeight = useRef(0);
   const tapStart = useRef<{ x: number; y: number } | null>(null);
   const page = ready ? (session?.content.pages ?? readerPages)?.find((value) => value.number === pageNumber) : undefined;
@@ -149,8 +159,20 @@ function RiwayahReaderScreen() {
       setJumpRevision((value) => value + 1);
     }
     move({ mushafId: content!.data.quran.id, pageNumber: number, ayah: ayah ? { mushafId: content!.data.quran.id, surahNumber: ayah.surahNumber, ayahNumber: ayah.ayahNumber } : null, scrollY: 0 });
+    restore.current = { armed: true, y: 0 };
+    // This still targets the outgoing (or same) page, so a later visit starts at
+    // the top. The incoming page is reset by the layout effect below.
     scroll.current?.scrollTo({ y: 0, animated: false });
   }, [ready, content, readerPages, session, move]);
+  // Runs after the scroll ref points to the incoming page, whose already mounted
+  // ScrollView may keep an offset from an earlier visit.
+  useLayoutEffect(() => {
+    if (!ready) return;
+    // Pin the saved offset now: our own restore scrolls (clamped while content
+    // is still short) are recorded and would otherwise replace it.
+    restore.current.y ??= latestPosition.current.scrollY;
+    scroll.current?.scrollTo({ y: jumpPending.current ? 0 : restore.current.y, animated: false });
+  }, [pageNumber, ready]);
   useEffect(() => {
     if (!ready || !content || (!targetSurah && !targetAyah)) return;
     const target = indexRouteDestination(session?.content ?? content.data, targetSurah, targetAyah);
@@ -176,9 +198,9 @@ function RiwayahReaderScreen() {
     suppressClick.current = Date.now() + 500;
     setDrawerOpen(false);
     setActionsVisible(false);
-    move({ ...position, ayah: { mushafId: content!.data.quran.id, surahNumber: ayah.surahNumber, ayahNumber: ayah.ayahNumber } }, true);
+    selectAyah({ mushafId: ayah.mushafId, surahNumber: ayah.surahNumber, ayahNumber: ayah.ayahNumber });
     setActionAyah(ayah);
-  }, [position, move, content, session]);
+  }, [selectAyah, session]);
   const togglePractice = () => {
     if (!page) return;
     setActionAyah(null);
@@ -187,8 +209,9 @@ function RiwayahReaderScreen() {
       // Text practice shares the reading surface, so keep the current place.
       if (mode === 'text') {
         readingScrollY.current = practiceScrollY.current;
-        move({ ...position, scrollY: practiceScrollY.current });
+        setScroll(practiceScrollY.current);
       }
+      restore.current = { armed: true, y: mode === 'text' ? practiceScrollY.current : position.scrollY };
       setPractice(null);
       if (mode === 'page') scroll.current?.scrollTo({ y: position.scrollY, animated: false });
     } else {
@@ -208,6 +231,7 @@ function RiwayahReaderScreen() {
     jumpPending.current = false;
     const offset = y + (session && pageNumber === firstPage ? openingHeight.current : 0);
     scroll.current?.scrollTo({ y: Math.max(0, offset - 12), animated: false });
+    restore.current = { armed: true, y: Math.max(0, offset - 12) };
     recordScroll(Math.max(0, offset - 12));
   }, [recordScroll, session, pageNumber, firstPage]);
   const settleSwipe = useCallback(() => {
@@ -332,9 +356,25 @@ function RiwayahReaderScreen() {
         onTouchCancel={() => { tapStart.current = null; }}>
       {/* The safe starting space scrolls with the page. Padding the viewport
           itself would create an opaque strip that cuts off text below the camera. */}
-      <ScrollView ref={isCurrent ? scroll : undefined} scrollEnabled={isCurrent} scrollEventThrottle={100} onScroll={(event) => { if (isCurrent && ready) { deferPrintedPagePreparation(); if (practicing) practiceScrollY.current = event.nativeEvent.contentOffset.y; else { readingScrollY.current = event.nativeEvent.contentOffset.y; recordScroll(event.nativeEvent.contentOffset.y); } } }}
+      <ScrollView ref={isCurrent ? scroll : undefined} scrollEnabled={isCurrent} scrollEventThrottle={100} onScroll={(event) => {
+          if (!isCurrent || !ready) return;
+          deferPrintedPagePreparation();
+          const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+          if (practicing) { practiceScrollY.current = contentOffset.y; return; }
+          // Restores land on the target, or on the end of shorter content. Any
+          // other offset (wheel, keyboard, scrollbar, assistive scroll) is the reader's.
+          if (restore.current.armed && !jumpPending.current &&
+            Math.abs(contentOffset.y - Math.min(restoreY(), Math.max(0, contentSize.height - layoutMeasurement.height))) > 2) restore.current.armed = false;
+          readingScrollY.current = contentOffset.y; recordScroll(contentOffset.y);
+        }}
         automaticallyAdjustContentInsets={false} contentInsetAdjustmentBehavior="never"
-        onContentSizeChange={() => { if (isCurrent && ready && !jumpPending.current) scroll.current?.scrollTo({ y: practicing ? practiceScrollY.current : position.scrollY, animated: false }); }} onScrollBeginDrag={() => { tapStart.current = null; }} showsVerticalScrollIndicator={false} style={styles.scroll}
+        onContentSizeChange={() => {
+          if (!isCurrent || !ready || jumpPending.current) return;
+          if (practicing) scroll.current?.scrollTo({ y: practiceScrollY.current, animated: false });
+          else if (restore.current.armed) scroll.current?.scrollTo({ y: restoreY(), animated: false });
+        }}
+        onScrollBeginDrag={() => { tapStart.current = null; if (isCurrent && !practicing) restore.current.armed = false; }}
+        onMomentumScrollBegin={() => { if (isCurrent && !practicing) restore.current.armed = false; }} showsVerticalScrollIndicator={false} style={styles.scroll}
         contentContainerStyle={[styles.scrollContent, {
           paddingTop: topInset + (practicing && mode === 'page' ? 64 : 8),
           paddingBottom: (practicing ? 124 : 8) + bottomInset,

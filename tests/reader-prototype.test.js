@@ -1,3 +1,4 @@
+import { spacedAyahMarkers } from '../src/features/quran-reader/utils/printed-page';
 import { expect, test } from 'bun:test';
 import metadata from './fixtures/quranpedia/warsh-metadata.json';
 import samples from './fixtures/quranpedia/warsh-typography.json';
@@ -56,7 +57,6 @@ test('section preparation never modifies original text, markers, or ordering', (
   expect(JSON.stringify(quran)).toBe(snapshot);
 });
 
-import { spacedAyahMarkers } from '../src/features/quran-reader/utils/printed-page';
 
 test('marker spacing scales only decorative frames and preserves numbers and Quran paths', () => {
   const frame = '<path d="M0 0H20V30H0Z"/>';

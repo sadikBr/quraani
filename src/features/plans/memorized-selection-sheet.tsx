@@ -14,7 +14,7 @@ import type { AyahSpan } from './types';
 import { PlanField, PlanNotice } from './components';
 import { arabicNumber } from './presentation';
 
-type SelectionTab = 'surahs' | 'quarters' | 'juzs' | 'ayahs';
+type SelectionTab = 'surahs' | 'juzs' | 'hizbs' | 'quarters' | 'ayahs';
 export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy = false, error }: {
   index: PlanIndex; selected: AyahSpan[]; onSave: (ranges: AyahSpan[]) => void; onClose: () => void; busy?: boolean; error?: string;
 }) {
@@ -27,8 +27,9 @@ export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy
     if (tab === 'ayahs') return [];
     if (tab === 'surahs') return Object.entries(index.surahNames).map(([number, label]) => ({ number: Number(number), label,
       start: index.ayahs.findIndex(a => a.surahNumber === Number(number)), end: index.ayahs.findLastIndex(a => a.surahNumber === Number(number)) + 1 }));
-    const bounds = tab === 'juzs' ? index.juzs : index.quarters;
-    return bounds.slice(0, -1).map((start, i) => ({ number: i + 1, start, end: bounds[i + 1], label: tab === 'juzs' ? `الجزء ${arabicNumber(i + 1)}` : `الحزب ${arabicNumber(Math.floor(i / 4) + 1)} · الربع ${arabicNumber(i % 4 + 1)}` }));
+    const bounds = tab === 'juzs' ? index.juzs : tab === 'hizbs' ? index.hizbs : index.quarters;
+    return bounds.slice(0, -1).map((start, i) => ({ number: i + 1, start, end: bounds[i + 1],
+      label: tab === 'juzs' ? `الجزء ${arabicNumber(i + 1)}` : tab === 'hizbs' ? `الحزب ${arabicNumber(i + 1)}` : `الحزب ${arabicNumber(Math.floor(i / 4) + 1)} · الربع ${arabicNumber(i % 4 + 1)}` }));
   }, [index, tab]);
   const filtered = useMemo(() => {
     const needle = normalizeArabicSearch(query);
@@ -39,7 +40,7 @@ export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy
   const customEnd = index.ayahs.findIndex(a => a.surahNumber === number(toSurah) && a.ayahNumber === number(toAyah)) + 1;
   const validRange = customStart >= 0 && customEnd > customStart;
   const customRange = { start: customStart, end: customEnd };
-  const toggle = (range: AyahSpan) => setDraft(items => coversSpan(items, range) ? subtractSpans(items, [range]) : mergeSpans([...items, range]));
+  const toggle = ({ start, end }: AyahSpan) => setDraft(items => coversSpan(items, { start, end }) ? subtractSpans(items, [{ start, end }]) : mergeSpans([...items, { start, end }]));
   return <Modal transparent visible animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => { if (!busy) onClose(); }}
     onShow={() => { if (Platform.OS === 'web') close.current?.focus(); else if (close.current) AccessibilityInfo.sendAccessibilityEvent(close.current, 'focus'); }}>
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: 'rgba(0,15,13,0.6)' }}>
@@ -47,7 +48,7 @@ export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy
         <SafeAreaView edges={['bottom']} accessibilityViewIsModal onAccessibilityEscape={() => { if (!busy) onClose(); }} style={{ height: '94%', width: '100%', maxWidth: readerLayout.maxWidth, backgroundColor: p.paper, borderTopLeftRadius: readerShape.sheet, borderTopRightRadius: readerShape.sheet }} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
           <View style={{ padding: 20, paddingBottom: 10, gap: 12 }}>
             <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}><View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.text, fontSize: 25, fontWeight: '600' }}>ما استقرّ في صدرك</Text><Text style={{ color: p.muted, fontSize: 12 }}>حدّد ما تحفظه، لنبني رحلتك مما تبقّى.</Text></View><Pressable ref={close} accessibilityRole="button" accessibilityLabel="إغلاق اختيار المحفوظ" disabled={busy} onPress={onClose} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}><ReaderIcon name="close" color={p.text} /></Pressable></View>
-            <LibraryTabs palette={p} label="اختيار المحفوظ حسب" value={tab} onChange={value => { setTab(value as SelectionTab); setQuery(''); list.current?.scrollToOffset({ offset: 0, animated: false }); }} options={[{ value: 'surahs', label: 'سور' }, { value: 'quarters', label: 'أرباع' }, { value: 'juzs', label: 'أجزاء' }, { value: 'ayahs', label: 'آيات' }]} />
+            <LibraryTabs palette={p} label="اختيار المحفوظ حسب" value={tab} onChange={value => { setTab(value as SelectionTab); setQuery(''); list.current?.scrollToOffset({ offset: 0, animated: false }); }} options={[{ value: 'surahs', label: 'سور' }, { value: 'juzs', label: 'أجزاء' }, { value: 'hizbs', label: 'أحزاب' }, { value: 'quarters', label: 'أرباع' }, { value: 'ayahs', label: 'آيات' }]} />
             {tab !== 'ayahs' && <LibrarySearch palette={p} value={query} onChange={setQuery} placeholder="ابحث بالاسم أو الرقم" label="البحث في مقاطع الحفظ" />}
           </View>
           <FlatList ref={list} data={filtered} keyExtractor={item => String(item.number)} extraData={draft} keyboardShouldPersistTaps="handled" initialNumToRender={10} windowSize={5} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 16, gap: 8 }}
@@ -66,7 +67,7 @@ export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy
               return <Pressable accessibilityRole="checkbox" accessibilityLabel={item.label} accessibilityState={{ checked: partial ? 'mixed' : checked }} aria-checked={partial ? 'mixed' : checked} disabled={busy} onPress={() => toggle(item)}
                 style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, minHeight: 70, borderRadius: readerShape.control, borderWidth: 1, borderColor: checked ? p.accent : p.border, backgroundColor: checked || pressed ? p.accentSoft : p.paper })}>
                 <View style={{ flex: 1 }}><Text style={{ color: p.text, fontSize: 18, fontWeight: '600' }}>{item.label}</Text><Text style={{ color: p.muted, fontSize: 11 }}>{tab === 'surahs' ? `${arabicNumber(item.end - item.start)} آية${partial ? ' · محفوظة جزئيًا' : ''}` : ayahRangeLabel(index, item.start, item.end)}</Text></View>
-                <View style={{ width: 24, height: 24, borderRadius: readerShape.control, borderWidth: 1, borderColor: checked || partial ? p.accent : p.border, backgroundColor: checked ? p.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>{checked ? <ReaderIcon name="check" color={p.paper} size={16} /> : partial ? <View style={{ width: 10, height: 2, backgroundColor: p.accent }} /> : null}</View>
+                <View style={{ width: 24, height: 24, borderRadius: readerShape.detail, borderWidth: 1, borderColor: checked || partial ? p.accent : p.border, backgroundColor: checked ? p.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>{checked ? <ReaderIcon name="check" color={p.paper} size={16} /> : partial ? <View style={{ width: 10, height: 2, backgroundColor: p.accent }} /> : null}</View>
               </Pressable>;
             }} />
           <View style={{ padding: 20, gap: 8, borderTopWidth: 1, borderColor: p.border }}>

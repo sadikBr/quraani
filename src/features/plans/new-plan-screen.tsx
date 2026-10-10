@@ -138,7 +138,7 @@ function GoalCreationForm({ initialKind }: { initialKind: SequentialGoal['type']
             </CreationSection>}
           </> : <>
             {preview.plan && index && <>
-              <View style={{ backgroundColor: p.hero, padding: 20, borderRadius: readerShape.card, gap: 14 }}>
+              <View style={{ backgroundColor: p.hero, padding: 22, borderRadius: readerShape.hero, gap: 14 }}>
                 <View style={c.row}><ReaderIcon name="book" color={p.heroMuted} size={21} /><Text style={{ color: p.heroMuted, fontSize: 12 }}>رواية {RIWAYAT[riwayah].label}</Text></View>
                 <Text style={{ color: p.onHero, fontSize: 25, fontWeight: '600' }}>{kind === 'khatma' ? `ختمة في ${arabicNumber(parsePlanNumber(weeks))} أسابيع` : `${arabicNumber(parsePlanNumber(amount))} ${unitLabels[unit]} كل يوم`}</Text>
                 <View style={[c.row, { borderTopWidth: 1, borderColor: `${p.onHero}26`, paddingTop: 12, alignItems: 'flex-start' }]}>

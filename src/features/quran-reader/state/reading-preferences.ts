@@ -1,7 +1,9 @@
+import type { CacheStorage } from '@/lib/quranpedia/cache';
 import type { Riwayah } from '../riwayat';
 import { isReaderAppearance, READER_FONT_DEFAULT, type ReaderAppearance } from '../theme';
 import { snapReaderFontSize } from '../utils/reader-typography';
 import type { ReaderMode, ReaderTextLayout } from '../types/reader';
+import { createPersistedStore } from './persisted-store';
 
 export interface ReadingPreferences {
   riwayah: Riwayah;
@@ -35,4 +37,15 @@ export function decodeReadingPreferences(raw: string | null): ReadingPreferences
   } catch {
     return defaultReadingPreferences;
   }
+}
+
+export const READING_PREFERENCES_KEY = 'reader:preferences:v1';
+
+/** Saved preferences are never replaced by defaults after a failed read. */
+export function createReadingPreferencesStore(storage: CacheStorage) {
+  return createPersistedStore<ReadingPreferences, Partial<ReadingPreferences>>({
+    storage, key: READING_PREFERENCES_KEY, fallback: defaultReadingPreferences, decode: decodeReadingPreferences,
+    apply: (value, changes) => ({ ...value, ...changes }),
+    saveOnLoad: true, // Persist migrated legacy values.
+  });
 }

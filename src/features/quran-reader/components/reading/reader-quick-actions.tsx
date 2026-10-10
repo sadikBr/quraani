@@ -27,7 +27,7 @@ export function ReaderQuickActions({ page, surahName, palette, onMenu }: Props) 
     <Link href={href} asChild style={styles.iconLink}>
       <Pressable accessibilityRole="link" accessibilityLabel={label}>
         {({ pressed }) => <View style={[styles.icon, { backgroundColor: pressed ? palette.accentSoft : 'transparent' }]}>
-          <ReaderIcon name={icon} color={palette.text} size={32} strokeWidth={2.1} />
+          <ReaderIcon name={icon} color={palette.text} size={24} strokeWidth={1.9} />
         </View>}
       </Pressable>
     </Link>
@@ -39,7 +39,7 @@ export function ReaderQuickActions({ page, surahName, palette, onMenu }: Props) 
       <Pressable accessibilityRole="link" accessibilityLabel={`${surahName}، ${location}، فتح الفهرس`}>
         {({ pressed }) => <View style={[styles.locationContent, {
           backgroundColor: pressed ? palette.selected : palette.accentSoft,
-          borderColor: pressed ? palette.accent : palette.border,
+          borderColor: pressed ? palette.accent : 'transparent',
         }]}>
           <View style={styles.locationText}>
             <Text accessibilityLabel={surahName} numberOfLines={1}
@@ -53,7 +53,7 @@ export function ReaderQuickActions({ page, surahName, palette, onMenu }: Props) 
     </Link>
     <Pressable accessibilityRole="button" accessibilityLabel="فتح قائمة التطبيق" onPress={onMenu}
       style={({ pressed }) => [styles.icon, { backgroundColor: pressed ? palette.accentSoft : 'transparent' }]}>
-      <ReaderIcon name="menu" color={palette.text} size={32} strokeWidth={2.1} />
+      <ReaderIcon name="menu" color={palette.text} size={24} strokeWidth={1.9} />
     </Pressable>
   </View>;
 }
@@ -62,10 +62,10 @@ const styles = StyleSheet.create({
   toolbar: { ...Platform.select({ native: { direction: 'ltr' as const } }), flexDirection: 'row', alignItems: 'center',
     width: '100%', maxWidth: 420, alignSelf: 'center', paddingHorizontal: 4, paddingVertical: 4, gap: 4 },
   iconLink: { width: 44, minHeight: 44, justifyContent: 'center' },
-  icon: { width: 44, height: 44, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 44, height: 44, borderRadius: readerShape.pill, alignItems: 'center', justifyContent: 'center' },
   location: { flex: 1, minWidth: 0, minHeight: 44, justifyContent: 'center' },
   locationContent: { width: '100%', maxWidth: 260, minHeight: 44, alignSelf: 'center', flexDirection: 'row',
-    alignItems: 'center', paddingHorizontal: 12, paddingVertical: 2, borderWidth: 1, borderRadius: readerShape.control },
+    alignItems: 'center', paddingHorizontal: 16, paddingVertical: 2, borderWidth: 1, borderRadius: readerShape.pill },
   locationText: { flex: 1, minWidth: 0, alignItems: 'center' },
   surah: { fontSize: 13, lineHeight: 21, fontWeight: '600' },
   surahCalligraphy: { ...calligraphyStyle(28), lineHeight: 28 },

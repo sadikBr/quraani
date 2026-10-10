@@ -1,4 +1,5 @@
-import { MemoryCacheStorage, type CacheStorage } from "@/lib/quranpedia/cache";
+import { MemoryCacheStorage } from "@/lib/quranpedia/cache";
+import { createBoundedStorage } from "./bounded-storage";
 
 // IndexedDB avoids localStorage's small quota for the full mushaf response.
 let database: Promise<IDBDatabase> | undefined;
@@ -47,20 +48,30 @@ async function transact<T>(
     });
 }
 
-export const contentStorage: CacheStorage = {
-    async getItem(key) {
-        if (typeof indexedDB === "undefined") return serverStorage.getItem(key);
-        const value = await transact("readonly", (store) => store.get(key));
-        return typeof value === "string" ? value : null;
+/** Browser quotas are smaller and shared with the page, so the cache budget is too. */
+export const contentStorage = createBoundedStorage(
+    {
+        async getItem(key) {
+            if (typeof indexedDB === "undefined")
+                return serverStorage.getItem(key);
+            const value = await transact("readonly", (store) => store.get(key));
+            return typeof value === "string" ? value : null;
+        },
+        async setItem(key, value) {
+            if (typeof indexedDB === "undefined")
+                return serverStorage.setItem(key, value);
+            await transact("readwrite", (store) => store.put(value, key));
+        },
+        async removeItem(key) {
+            if (typeof indexedDB === "undefined")
+                return serverStorage.removeItem(key);
+            await transact("readwrite", (store) => store.delete(key));
+        },
+        async getAllKeys() {
+            if (typeof indexedDB === "undefined") return [];
+            const keys = await transact("readonly", (store) => store.getAllKeys());
+            return keys.filter((key): key is string => typeof key === "string");
+        },
     },
-    async setItem(key, value) {
-        if (typeof indexedDB === "undefined")
-            return serverStorage.setItem(key, value);
-        await transact("readwrite", (store) => store.put(value, key));
-    },
-    async removeItem(key) {
-        if (typeof indexedDB === "undefined")
-            return serverStorage.removeItem(key);
-        await transact("readwrite", (store) => store.delete(key));
-    },
-};
+    { budget: 50 * 1024 * 1024 },
+);

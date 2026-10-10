@@ -9,7 +9,9 @@ export function mergeSpans(ranges: AyahSpan[]): AyahSpan[] {
   for (const range of [...ranges].sort((a, b) => a.start - b.start)) {
     const last = result.at(-1);
     if (last && range.start <= last.end) last.end = Math.max(last.end, range.end);
-    else result.push({ ...range });
+    // Copy only the bounds: callers pass list rows ({ label, number, start, end })
+    // and stray keys must never reach storage or span comparisons.
+    else result.push({ start: range.start, end: range.end });
   }
   return result;
 }
@@ -29,6 +31,11 @@ export function subtractSpans(source: AyahSpan[], excluded: AyahSpan[]): AyahSpa
     return result;
   });
 }
+/** Compare spans by value, ignoring key order and any extra fields. */
+export const sameSpans = (a: AyahSpan[], b: AyahSpan[]) => {
+  const x = mergeSpans(a), y = mergeSpans(b);
+  return x.length === y.length && x.every((r, i) => r.start === y[i].start && r.end === y[i].end);
+};
 export const spanCount = (ranges: AyahSpan[]) => ranges.reduce((n, r) => n + r.end - r.start, 0);
 export const coversSpan = (ranges: AyahSpan[], range: AyahSpan) => subtractSpans([range], ranges).length === 0;
 export function validateSpans(ranges: AyahSpan[], total: number) {
@@ -99,6 +106,11 @@ export function createMemorizationPlan(draft: MemorizationDraft, index: PlanInde
   return { id, name: draft.name.trim(), riwayah: draft.riwayah, goal: { type: 'memorization', weeklyQuarters: draft.weeklyQuarters }, weekdays: [...draft.weekdays].sort((a, b) => a - b),
     startDate: draft.startDate, status: sessions.length ? 'active' : 'completed', reminder: { ...draft.reminder }, corpus: index.corpus, totalAyahs: index.ayahs.length,
     memorized, initialRecord: mergeSpans(draft.initialRecord ?? []), sessions, revision: 1, progress: [], undoable: false };
+}
+/** Re-plan from tomorrow when a session was already finished today, so a
+ * restore or settings change never assigns a second session on the same day. */
+export function memorizationReplanDate(plan: MemorizationPlan, today: string) {
+  return plan.progress.some(log => log.date === today && log.finished) ? addDays(today, 1) : today;
 }
 /** Missed content is retained, with at most one assignment per selected day. */
 export function memorizationSchedule(plan: MemorizationPlan, today: string): MemorizationSession[] {

@@ -41,8 +41,11 @@ export function stampArchiveTransitions(previous: ReadingPlan[], next: ReadingPl
 
 export function restoreArchivedGoal<T extends ReadingPlan>(plan: T): T {
   if (plan.status !== 'archived') return plan;
-  const { archivedOn: _archivedOn, pausedOn: _pausedOn, ...rest } = plan;
-  return { ...rest, status: (isSequentialPlan(plan) && plan.cycle.completedOn) || (isMemorizationPlan(plan) && !plan.sessions.length) ? 'completed' : 'active' } as T;
+  const { archivedOn: _archivedOn, pausedOn, ...rest } = plan;
+  if ((isSequentialPlan(plan) && plan.cycle.completedOn) || (isMemorizationPlan(plan) && !plan.sessions.length)) return { ...rest, status: 'completed' } as T;
+  // A goal archived while paused comes back paused, so resuming shifts its
+  // pending dates by the real pause instead of restoring a backlog.
+  return (pausedOn ? { ...rest, status: 'paused', pausedOn } : { ...rest, status: 'active' }) as T;
 }
 
 /** Recheck inside the serialized write: a stale delete must not remove a goal

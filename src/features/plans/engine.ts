@@ -127,7 +127,8 @@ export function undoProgress(plan: SequentialPlan): SequentialPlan {
 export function rollCompletedCycle(plan: SequentialPlan, index: PlanIndex, today: string): SequentialPlan {
   assertPlanIndex(plan, index);
   if (plan.status !== 'completed' || !plan.repeat || !plan.cycle.completedOn || today <= plan.cycle.completedOn) return plan;
-  const startDate = addDays(plan.cycle.completedOn, 1);
+  // Never date a new cycle in the past: reopening the app late must not start overdue.
+  const nextDay = addDays(plan.cycle.completedOn, 1), startDate = nextDay > today ? nextDay : today;
   return { ...plan, status: 'active', cycle: createCycle({ ...plan, startDate }, index, 0, plan.cycle.number + 1),
     history: [...plan.history, { number: plan.cycle.number, startedOn: plan.cycle.sessions[0].date, completedOn: plan.cycle.completedOn, ayahs: plan.totalAyahs - plan.cycle.start }] };
 }

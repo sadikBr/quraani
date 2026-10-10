@@ -12,7 +12,10 @@ export class MemoryCacheStorage implements CacheStorage {
 }
 
 export const CACHE_VERSION = 1;
+/** Volatile related content (tafsir, translations). */
 export const CONTENT_TTL_MS = 24 * 60 * 60 * 1000;
+/** Mushaf text and metadata change rarely; expired copies are still served while refreshing. */
+export const CORPUS_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 export interface CacheEntry {
   version: typeof CACHE_VERSION;

@@ -5,7 +5,8 @@ import fatiha from './fixtures/quranpedia/warsh-fatiha.json';
 import page2 from './fixtures/quranpedia/warsh-page2-ayahs.json';
 import regions from './fixtures/quranpedia/warsh-page1-regions.json';
 import { QuranpediaClient } from '../src/lib/quranpedia/client';
-import { MemoryCacheStorage, CONTENT_TTL_MS } from '../src/lib/quranpedia/cache';
+import { syntheticCorpus } from './helpers/synthetic-corpus';
+import { MemoryCacheStorage, CORPUS_TTL_MS } from '../src/lib/quranpedia/cache';
 import { decodeAyah, decodeMushaf, decodeMushafs, decodePageRegions, decodeSurahAyahs } from '../src/lib/quranpedia/validation';
 import { DEFAULT_MUSHAF_ID } from '../src/features/quran-reader/config';
 import { prepareReaderContent, pageAssetEntries } from '../src/features/quran-reader/utils/content';
@@ -54,8 +55,9 @@ describe('Warsh data and reading behavior', () => {
 
   test('groups edition-local pages and derives 60 hizbs from quarter positions', () => {
     const quran = structuredClone(corpus);
-    quran.surahs[0].ayahs.forEach((a) => { a.juzNumber = 1; a.hizbQuarter = 1; });
-    quran.surahs[1].ayahs.forEach((a) => { a.juzNumber = 1; a.hizbQuarter = 5; });
+    // Synthetic tags; no Hafs mapping, so text alignment (divisions.test.js) leaves them as given.
+    quran.surahs[0].ayahs.forEach((a) => { a.juzNumber = 1; a.hizbQuarter = 1; a.hafsAyahNumbers = []; });
+    quran.surahs[1].ayahs.forEach((a) => { a.juzNumber = 1; a.hizbQuarter = 5; a.hafsAyahNumbers = []; });
     const content = prepareReaderContent(quran);
     expect(content.pages.map((p) => p.ayahs.length)).toEqual([7, 4]);
     expect(content.hizbIndex.map((i) => i.number)).toEqual([1, 2]);
@@ -117,47 +119,101 @@ describe('API requests and cache', () => {
     expect(env.calls).toBe(1);
   });
 
-  test('expiry and force refresh retrieve corrections', async () => {
+  test('expired cache is served at once and corrected in the background; force refresh waits for the network', async () => {
     const env = setup();
     await env.client.getSurah(4, 1);
-    env.advance(CONTENT_TTL_MS);
+    env.advance(CORPUS_TTL_MS);
     const corrected = structuredClone(fatiha);
     corrected[0].text += ' ';
     env.setHandler(async () => Response.json(corrected));
-    expect((await env.client.getSurah(4, 1)).data[0].text).toBe(corrected[0].text);
-    await env.client.getSurah(4, 1, { forceRefresh: true });
+    const expired = await env.client.getSurah(4, 1);
+    expect(expired).toMatchObject({ source: 'cache', stale: true, fetchedAt: 1_000_000 });
+    expect(expired.data[0].text).toBe(fatiha[0].text);
+    expect((await expired.revalidated).data[0].text).toBe(corrected[0].text);
+    expect(await env.client.getSurah(4, 1)).toMatchObject({ source: 'cache', stale: false });
+    expect((await env.client.getSurah(4, 1, { forceRefresh: true })).source).toBe('network');
     expect(env.calls).toBe(3);
   });
 
-  test('returns explicitly stale content offline, with optional strict freshness', async () => {
+  test('returns explicitly stale content offline, backs off, with optional strict freshness', async () => {
     const env = setup();
     await env.client.getSurah(4, 1);
-    env.advance(CONTENT_TTL_MS);
+    env.advance(CORPUS_TTL_MS);
     env.setHandler(async () => { throw new Error('Offline'); });
+    const first = await env.client.getSurah(4, 1);
+    expect(first.stale).toBe(true);
+    expect(await first.revalidated).toBeNull();
     const result = await env.client.getSurah(4, 1);
     expect(result.stale).toBe(true);
     expect(result.refreshError.code).toBe('network');
     expect(result.fetchedAt).toBe(1_000_000);
+    expect(await result.revalidated).toBeNull();
+    expect(env.calls).toBe(2); // The failed refresh is not retried on every call.
+    env.advance(5 * 60_000);
+    await (await env.client.getSurah(4, 1)).revalidated;
+    expect(env.calls).toBe(3);
     await expect(env.client.getSurah(4, 1, { allowStale: false })).rejects.toMatchObject({ code: 'network' });
   });
 
-  test('invalid network data cannot overwrite valid cached Quran text', async () => {
+  test('invalid network data is never cached; the validated copy is served instead', async () => {
     const env = setup();
     await env.client.getSurah(4, 1);
-    env.setHandler(async () => Response.json({ error: 'Unexpected shape' }));
-    await expect(env.client.getSurah(4, 1, { forceRefresh: true })).rejects.toMatchObject({ code: 'invalid-response' });
+    for (const invalid of [() => Response.json({ error: 'Unexpected shape' }), () => new Response('<html>Portal</html>', { status: 200 })]) {
+      env.setHandler(async () => invalid());
+      const result = await env.client.getSurah(4, 1, { forceRefresh: true });
+      expect(result).toMatchObject({ source: 'cache', stale: true, refreshError: { code: 'invalid-response' } });
+      await expect(env.client.getSurah(4, 1, { forceRefresh: true, allowStale: false })).rejects.toMatchObject({ code: 'invalid-response' });
+    }
+    env.advance(CORPUS_TTL_MS);
+    const expired = await env.client.getSurah(4, 1);
+    expect(await expired.revalidated).toBeNull();
+    expect((await env.client.getSurah(4, 1)).refreshError.code).toBe('invalid-response');
     expect((await env.client.getSurah(4, 1)).data[0].text).toBe(fatiha[0].text);
   });
 
-  test('404 is not masked by stale cache; 429 reports Retry-After without retrying', async () => {
+  test('every HTTP failure falls back to cache with refreshError; 429 reports Retry-After without retrying', async () => {
     const env = setup();
     await env.client.getSurah(4, 1);
     env.setHandler(async () => new Response('', { status: 404 }));
-    await expect(env.client.getSurah(4, 1, { forceRefresh: true })).rejects.toMatchObject({ status: 404 });
+    expect((await env.client.getSurah(4, 1, { forceRefresh: true })).refreshError.status).toBe(404);
+    await expect(env.client.getSurah(4, 1, { forceRefresh: true, allowStale: false })).rejects.toMatchObject({ status: 404 });
     env.setHandler(async () => new Response('', { status: 429, headers: { 'Retry-After': '60' } }));
     const result = await env.client.getSurah(4, 1, { forceRefresh: true });
     expect(result.refreshError.retryAfterSeconds).toBe(60);
-    expect(env.calls).toBe(3);
+    expect(env.calls).toBe(4);
+  });
+
+  test('a manual refresh without cache surfaces the error', async () => {
+    const env = setup();
+    env.setHandler(async () => new Response('', { status: 503 }));
+    await expect(env.client.getSurah(4, 1, { forceRefresh: true })).rejects.toMatchObject({ status: 503 });
+  });
+
+  test('a finished request never removes a newer in-flight request for the same path', async () => {
+    const env = setup();
+    const releases = [];
+    env.setHandler(() => new Promise((resolve) => releases.push(() => resolve(Response.json(fatiha)))));
+    const first = env.client.getSurah(4, 1, { forceRefresh: true });
+    const joined = env.client.getSurah(4, 1, { forceRefresh: true });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    releases[0]();
+    await Promise.all([first, joined]);
+    const second = env.client.getSurah(4, 1, { forceRefresh: true });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const third = env.client.getSurah(4, 1, { forceRefresh: true });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(env.calls).toBe(2); // third joined second rather than starting another request
+    releases[1]();
+    await Promise.all([second, third]);
+  });
+
+  test('a riwayah mismatch is rejected before the payload is cached', async () => {
+    const env = setup();
+    env.setHandler(async () => Response.json(syntheticCorpus()));
+    await expect(env.client.getMushaf(4, {}, { riwayahName: 'حفص' })).rejects.toThrow('riwayah');
+    expect(await env.storage.getItem('quranpedia:v1:/mushafs/4')).toBeNull();
+    expect((await env.client.getMushaf(4, {}, { riwayahName: 'ورش' })).source).toBe('network');
+    expect(await env.storage.getItem('quranpedia:v1:/mushafs/4')).not.toBeNull();
   });
 
   test('deduplicates concurrent requests', async () => {

@@ -38,7 +38,7 @@ export function SurahSelectionSheet({ index, selected, onSave, onClose }: { inde
                 onPress={() => setDraft(items => checked ? items.filter(n => n !== item.number) : [...items, item.number])}
                 style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, minHeight: 68, borderRadius: readerShape.control, borderWidth: 1, borderColor: checked ? p.accent : p.border, backgroundColor: checked || pressed ? p.accentSoft : p.paper })}>
                 <Text style={{ color: p.muted, fontSize: 14, minWidth: 28 }}>{arabicNumber(item.number)}</Text><Text style={{ color: p.text, fontSize: 19, flex: 1 }}>{index.surahNames[item.number]}</Text>
-                <View style={{ width: 24, height: 24, borderRadius: readerShape.control, borderWidth: 1, borderColor: checked ? p.accent : p.border, backgroundColor: checked ? p.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>{checked && <ReaderIcon name="check" color={p.paper} size={16} />}</View>
+                <View style={{ width: 24, height: 24, borderRadius: readerShape.detail, borderWidth: 1, borderColor: checked ? p.accent : p.border, backgroundColor: checked ? p.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>{checked && <ReaderIcon name="check" color={p.paper} size={16} />}</View>
               </Pressable>;
             }} />
           <View style={{ padding: 20, borderTopWidth: 1, borderColor: p.border }}><ReaderButton palette={p} selected disabled={!draft.length} onPress={() => onSave([...draft].sort((a, b) => a - b))}>{`اعتماد الاختيار · ${arabicNumber(draft.length)}`}</ReaderButton></View>

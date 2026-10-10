@@ -4,7 +4,7 @@ import { ReaderButton } from './reader-button';
 import { readerShape } from '../../design';
 import { ArabicText } from '@/components/arabic-text';
 import { memo, useMemo, useRef } from 'react';
-import { Platform, StyleSheet, Text, type TextStyle, View } from "react-native";
+import { Platform, StyleSheet, Text, type AccessibilityActionEvent, type TextStyle, View, type ViewProps } from "react-native";
 import type { Ayah, AyahReference, Quran } from "@/lib/quranpedia/types";
 import type { ReaderPalette } from "../../theme";
 import type { QuranPage as Page, ReaderTextLayout } from "../../types/reader";
@@ -91,10 +91,31 @@ export const QuranPage = memo(function QuranPage({
         textAlign: 'justify',
         includeFontPadding: true,
     };
+    const spokenLabel = (ayah: Ayah) => {
+        const revealed = visibleWords?.get(ayahKey(ayah));
+        const spokenText = revealed === undefined ? ayah.text : ayahWords(ayah.text).slice(0, revealed).join('');
+        return `السورة ${ayah.surahNumber}، الآية ${ayah.ayahNumber}. ${spokenText || 'آية مخفية'}`;
+    };
+    // iOS exposes nested <Text> buttons only as raw text fragments: their labels,
+    // hints and long-press actions are lost, and a paragraph's own custom actions
+    // are dropped. Group the ayahs in a plain View that reads the spoken text and
+    // offers each ayah's actions, without changing layout or touch handling.
+    const ayahGroupAccessibility = (ayahs: readonly Ayah[]): ViewProps | undefined => Platform.OS !== 'ios' ? undefined : {
+        accessible: true,
+        accessibilityLabel: ayahs.map(spokenLabel).join(' '),
+        accessibilityHint: ayahs.length > 1 ? 'اضغط مرتين لإظهار أدوات القراءة، واستخدم الإجراءات لفتح إجراءات آية' : 'اضغط مرتين لإظهار أدوات القراءة، واستخدم الإجراءات لفتح إجراءات الآية',
+        accessibilityActions: [{ name: 'activate', label: 'إظهار أدوات القراءة' },
+            ...ayahs.map((ayah) => ({ name: `ayah:${ayahKey(ayah)}`, label: `إجراءات الآية ${ayah.ayahNumber}، السورة ${ayah.surahNumber}` }))],
+        onAccessibilityAction: (event: AccessibilityActionEvent) => {
+            const name = event.nativeEvent.actionName;
+            if (name === 'activate') { if (ayahs[0]) onTap(ayahs[0]); return; }
+            const ayah = ayahs.find((value) => `ayah:${ayahKey(value)}` === name);
+            if (ayah) onSelect(ayah);
+        },
+    };
     const renderAyah = (ayah: Ayah) => {
         const revealed = visibleWords?.get(ayahKey(ayah));
         const words = revealed === undefined ? undefined : ayahWords(ayah.text);
-        const spokenText = words ? words.slice(0, revealed).join('') : ayah.text;
         const selected =
             selectedAyah !== null && ayahKey(selectedAyah) === ayahKey(ayah);
         return (
@@ -110,7 +131,7 @@ export const QuranPage = memo(function QuranPage({
                 }
             >
                 <AyahTextAction onPress={() => onTap(ayah)} onLongPress={() => onSelect(ayah)}
-                    label={`السورة ${ayah.surahNumber}، الآية ${ayah.ayahNumber}. ${spokenText || 'آية مخفية'}`}
+                    label={spokenLabel(ayah)}
                     hint="اضغط لإظهار أدوات القراءة، واضغط مطولاً لفتح إجراءات الآية">
                     {/* Keep hidden runs the same color as the page as well as transparent:
                         native nested text can inherit ink instead of honoring transparency. */}
@@ -158,7 +179,7 @@ export const QuranPage = memo(function QuranPage({
                                 if (onAyahOffset) { practiceOffsets.current.rows.set(ayahKey(ayah), { ayah, y }); reportPracticeOffsets(); }
                             }} />
                     </View> : layout === 'flowing' ? (
-                        <View onLayout={(event) => {
+                        <View {...ayahGroupAccessibility(section.ayahs)} onLayout={(event) => {
                             if (section.surah.number === selectedAyah?.surahNumber) { offsets.current.ayahs = event.nativeEvent.layout.y; reportTarget(); }
                             if (onAyahOffset) { practiceOffsets.current.groups.set(section.surah.number, event.nativeEvent.layout.y); reportPracticeOffsets(); }
                         }}>
@@ -183,6 +204,7 @@ export const QuranPage = memo(function QuranPage({
                             {section.ayahs.map((ayah) => (
                                 <View
                                     key={ayahKey(ayah)}
+                                    {...ayahGroupAccessibility([ayah])}
                                     onLayout={(event) => {
                                         if (selectedAyah && ayahKey(selectedAyah) === ayahKey(ayah)) { offsets.current.row = event.nativeEvent.layout.y; reportTarget(); }
                                         if (onAyahOffset) { practiceOffsets.current.rows.set(ayahKey(ayah), { ayah, y: event.nativeEvent.layout.y }); reportPracticeOffsets(); }

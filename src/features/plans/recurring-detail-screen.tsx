@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { View } from 'react-native';
 import { router } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { readerShape } from '../quran-reader/design';
+import { readerElevation, readerShape } from '../quran-reader/design';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { ReaderIcon } from '../quran-reader/components/ui/reader-chrome';
 import { ReaderButton } from '../quran-reader/components/reading/reader-button';
@@ -70,7 +70,7 @@ export function RecurringDetail({ plan, initialReminderIssue }: { plan: Recurrin
   };
   return <DetailScreen plan={plan} onBack={() => router.dismissTo('/plans')} onSettings={openSettings}>
     <PlanNotice message={message || mismatch || error} retry={error ? retry : undefined} /><PlanNotice message={reminderError} />
-    <View style={{ backgroundColor: p.hero, borderRadius: readerShape.card, padding: 20, gap: 18 }}>
+    <View style={[{ backgroundColor: p.hero, borderRadius: readerShape.hero, padding: 22, gap: 18 }, readerElevation(3, p)]}>
       <View style={[d.row, { gap: 16 }]}><View style={d.grow}>
         <Text style={{ color: p.heroMuted, fontSize: 12 }}>قراءة متكررة · {weekdaysLabel(plan.weekdays)}</Text>
         <Text style={{ color: p.onHero, fontSize: 23, fontWeight: '600', marginVertical: 4 }}>{progress.done ? 'قراءة طيبة، تقبّل الله منك' : next?.due ? 'موعدك مع القرآن اليوم' : 'رفقة تتجدد'}</Text>

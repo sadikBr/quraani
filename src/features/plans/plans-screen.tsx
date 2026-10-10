@@ -7,7 +7,7 @@ import { ArabicText as Text } from '@/components/arabic-text';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { ReaderIcon } from '../quran-reader/components/ui/reader-chrome';
 import { ReaderButton } from '../quran-reader/components/reading/reader-button';
-import { readerLayout, readerShape } from '../quran-reader/design';
+import { readerElevation, readerLayout, readerShape, withAlpha } from '../quran-reader/design';
 import { RIWAYAT } from '../quran-reader/riwayat';
 import { usePlans } from './provider';
 import { nextPortion, unitLabels } from './engine';
@@ -32,13 +32,13 @@ export function PlansScreen() {
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <View style={s.navigation}>
       <Pressable accessibilityRole="button" accessibilityLabel="العودة إلى القراءة" onPress={() => router.dismissTo('/')}
-        style={({ pressed }) => [s.back, { opacity: pressed ? 0.6 : 1 }]}>
-        <ReaderIcon name="back" color={p.text} size={21} /><Text style={{ color: p.text, fontSize: 15 }}>المصحف</Text>
+        style={({ pressed }) => [s.back, { backgroundColor: pressed ? p.accentSoft : p.paper, borderColor: p.border }]}>
+        <ReaderIcon name="back" color={p.text} size={19} /><Text style={{ color: p.text, fontSize: 14 }}>المصحف</Text>
       </Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="إنشاء هدف جديد" accessibilityState={{ disabled: !canCreate }} disabled={!canCreate} onPress={create}
-        style={({ pressed }) => [s.create, { backgroundColor: p.accentSoft, opacity: !canCreate ? 0.4 : pressed ? 0.7 : 1 }]}>
-        <View style={{ transform: [{ rotate: '45deg' }] }}><ReaderIcon name="close" color={p.accent} size={20} strokeWidth={2} /></View>
-        <Text style={{ color: p.accent, fontSize: 14, fontWeight: '600' }}>هدف جديد</Text>
+        style={({ pressed }) => [s.create, { backgroundColor: p.accent, opacity: !canCreate ? 0.4 : pressed ? 0.8 : 1 }, canCreate && readerElevation(2, p)]}>
+        <ReaderIcon name="plus" color={p.paper} size={19} strokeWidth={2.2} />
+        <Text style={{ color: p.paper, fontSize: 14, fontWeight: '600' }}>هدف جديد</Text>
       </Pressable>
     </View>
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
@@ -49,13 +49,13 @@ export function PlansScreen() {
       <PlanNotice message={error} retry={retry} /><PlanNotice message={reminderError} />
       {!ready ? !error && <PlanLoading /> : <>
         {view !== 'archived' && <DailyOverview today={today} due={overview.due.length} completed={overview.completedToday} hasGoals={!!overview.all.length} />}
-        <View accessibilityRole="tablist" accessibilityLabel="عرض الأهداف" style={[s.tabs, { borderColor: p.border }]}>
+        <View accessibilityRole="tablist" accessibilityLabel="عرض الأهداف" style={[s.tabs, { backgroundColor: withAlpha(p.text, 0.06) }]}>
           {([{ value: 'today', label: 'اليوم', count: overview.due.length }, { value: 'all', label: 'أهدافي', count: overview.all.length }, { value: 'archived', label: 'الأرشيف', count: overview.archived.length }] as const).map(tab => {
             const selected = view === tab.value;
             return <Pressable key={tab.value} accessibilityRole="tab" accessibilityLabel={tab.label} accessibilityState={{ selected }} aria-selected={selected} onPress={() => setView(tab.value)}
-              style={({ pressed }) => [s.tab, { borderColor: selected ? p.accent : 'transparent', backgroundColor: pressed ? p.accentSoft : 'transparent' }]}>
+              style={({ pressed }) => [s.tab, selected && [{ backgroundColor: p.paper }, readerElevation(1, p)], { opacity: pressed ? 0.7 : 1 }]}>
               <Text style={{ color: selected ? p.accent : p.muted, fontSize: 14, fontWeight: selected ? '700' : '400' }}>{tab.label}</Text>
-              {tab.count > 0 && <Text style={{ fontSize: 11, color: selected ? p.accent : p.muted }}>{arabicNumber(tab.count)}</Text>}
+              {tab.count > 0 && <View style={[s.count, { backgroundColor: selected ? p.accent : withAlpha(p.text, 0.1) }]}><Text style={{ fontSize: 11, lineHeight: 18, color: selected ? p.paper : p.muted, textAlign: 'center' }}>{arabicNumber(tab.count)}</Text></View>}
             </Pressable>;
           })}
         </View>
@@ -71,7 +71,7 @@ export function PlansScreen() {
 
 function DailyOverview({ today, due, completed, hasGoals }: { today: string; due: number; completed: number; hasGoals: boolean }) {
   const { palette: p } = useReadingPreferences();
-  return <View style={[s.hero, { backgroundColor: p.hero }]}>
+  return <View style={[s.hero, { backgroundColor: p.hero }, readerElevation(3, p)]}>
     <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden style={s.motif}>
       <Svg width={200} height={230} viewBox="0 0 200 230" fill="none" stroke={p.onHero} strokeWidth={1} opacity={0.07}>
         <Path d="M10 230V100C10 50 75 50 100 8c25 42 90 42 90 92v130M30 230V108c0-40 50-42 70-76 20 34 70 36 70 76v122M50 230V116c0-30 36-34 50-56 14 22 50 26 50 56v114" />
@@ -101,7 +101,7 @@ function GoalCard({ plan, today }: { plan: ReadingPlan; today: string }) {
   const completed = plan.cycle.sessions.filter(s => s.end <= plan.cycle.cursor).length;
   const progress = Math.max(0, Math.min(1, (plan.cycle.cursor - plan.cycle.start) / Math.max(1, plan.totalAyahs - plan.cycle.start)));
   const percent = progress === 1 ? 100 : Math.floor(progress * 100);
-  const status = plan.status === 'paused' ? 'متوقف مؤقتًا' : plan.status === 'archived' ? 'مؤرشف' : plan.status === 'completed' ? plan.repeat ? 'الدورة التالية غدًا' : 'مكتمل' : next && !next.due ? `الورد القادم · ${shortDate(next.date)}` : next && next.date < today ? 'ورد سابق بانتظارك' : 'ورد اليوم';
+  const status = plan.status === 'paused' ? 'متوقف مؤقتًا' : plan.status === 'archived' ? 'مؤرشف' : plan.status === 'completed' ? plan.repeat ? plan.cycle.completedOn && plan.cycle.completedOn < today ? 'تبدأ الدورة التالية قريبًا' : 'الدورة التالية غدًا' : 'مكتمل' : next && !next.due ? `الورد القادم · ${shortDate(next.date)}` : next && next.date < today ? 'ورد سابق بانتظارك' : 'ورد اليوم';
   const description = plan.goal.type === 'khatma' ? `ختمة · ${arabicNumber(plan.goal.weeks)} أسابيع` : `ورد يومي · ${arabicNumber(plan.goal.amount)} ${unitLabels[plan.unit]}`;
   return <GoalCardFrame id={plan.id} name={plan.name} status={status} due={!!next?.due} accessibilityDetail={`، اكتمل ${percent} بالمئة`}>
     <GoalCardHeading name={plan.name} description={description} icon={plan.goal.type === 'khatma' ? 'calendar' : 'book'}
@@ -131,19 +131,20 @@ function EmptyGoals({ view, hasGoals, completed, onCreate, onShowAll }: { view: 
 
 const s = StyleSheet.create({
   navigation: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 20, paddingVertical: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  back: { flexDirection: 'row', gap: 8, minHeight: 44, alignItems: 'center', paddingEnd: 8 },
-  create: { flexDirection: 'row', gap: 6, minHeight: 44, paddingHorizontal: 12, alignItems: 'center', borderRadius: readerShape.control },
+  back: { flexDirection: 'row', gap: 6, minHeight: 44, alignItems: 'center', paddingStart: 12, paddingEnd: 16, borderRadius: readerShape.pill, borderWidth: StyleSheet.hairlineWidth * 2 },
+  create: { flexDirection: 'row', gap: 6, minHeight: 44, paddingHorizontal: 16, alignItems: 'center', borderRadius: readerShape.pill },
   content: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', padding: 20, paddingTop: 6, paddingBottom: 40, gap: 22 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   grow: { flex: 1, minWidth: 0 },
-  hero: { borderRadius: readerShape.card, padding: 20, gap: 16, overflow: 'hidden' },
+  hero: { borderRadius: readerShape.hero, padding: 22, gap: 16, overflow: 'hidden' },
   heroIcon: { width: 58, height: 66, borderWidth: 1, borderTopLeftRadius: 29, borderTopRightRadius: 29, borderBottomLeftRadius: 4, borderBottomRightRadius: 4, alignItems: 'center', justifyContent: 'center' },
   motif: { position: 'absolute', left: -80, top: -25 },
   stats: { flexDirection: 'row', borderTopWidth: 1, paddingTop: 12, gap: 16 },
   stat: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  tabs: { flexDirection: 'row', borderBottomWidth: 1, gap: 8 },
-  tab: { flex: 1, flexDirection: 'row', gap: 7, minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, paddingVertical: 8, borderBottomWidth: 3, marginBottom: -1 },
+  tabs: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: readerShape.control + 2 },
+  tab: { flex: 1, flexDirection: 'row', gap: 7, minHeight: 42, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, paddingVertical: 6, borderRadius: readerShape.control - 2 },
+  count: { minWidth: 20, height: 20, paddingHorizontal: 5, borderRadius: 10, justifyContent: 'center' },
   progress: { height: 5, borderRadius: 3, overflow: 'hidden' },
-  empty: { borderWidth: 1, borderStyle: 'dashed', borderRadius: readerShape.card, padding: 24, gap: 8, alignItems: 'center' },
-  emptyIcon: { width: 56, height: 56, borderRadius: readerShape.card, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+  empty: { borderWidth: 1.5, borderStyle: 'dashed', borderRadius: readerShape.card, padding: 28, gap: 8, alignItems: 'center' },
+  emptyIcon: { width: 64, height: 64, borderRadius: readerShape.pill, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
 });

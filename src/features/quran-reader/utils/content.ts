@@ -1,5 +1,6 @@
 import type { Ayah, Quran } from "@/lib/quranpedia/types";
 import type { IndexEntry, ReaderContent } from "../types/reader";
+import { alignDivisionsToText } from "./divisions";
 
 function reference(ayah: Ayah) {
     return {
@@ -9,7 +10,8 @@ function reference(ayah: Ayah) {
     };
 }
 
-export function prepareReaderContent(quran: Quran): ReaderContent {
+export function prepareReaderContent(source: Quran): ReaderContent {
+    const quran = alignDivisionsToText(source);
     const pages = new Map<number, Ayah[]>();
     const juz = new Map<number, IndexEntry>();
     const quarters = new Map<number, IndexEntry>();

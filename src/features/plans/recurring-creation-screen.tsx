@@ -82,14 +82,14 @@ export function RecurringCreationScreen({ preset }: { preset?: RecurringPreset }
               <WeekdayPicker days={days} onChange={setDays} /><PlanDateField label="ابتداءً من" mode="date" value={startDate} onChange={setStartDate} minimum={today} />
             </CreationSection>
           </> : <>
-            {preview.plan && index && <View style={{ padding: 20, borderRadius: readerShape.card, backgroundColor: p.hero, gap: 14 }}>
+            {preview.plan && index && <View style={{ padding: 22, borderRadius: readerShape.hero, backgroundColor: p.hero, gap: 14 }}>
               <View style={c.row}><ReaderIcon name="restore" color={p.heroMuted} size={22} /><Text style={{ color: p.heroMuted, fontSize: 12 }}>قراءة متكررة · رواية {RIWAYAT[riwayah].label}</Text></View>
               <Text style={{ color: p.onHero, fontSize: 25, fontWeight: '600' }}>{surahs.map(n => index.surahNames[n]).join('، ')}</Text>
               <Text style={{ color: p.heroMuted, fontSize: 15 }}>{weekdaysLabel(days)}</Text>
               <View style={{ height: 1, backgroundColor: `${p.onHero}26` }} /><Text style={{ color: p.heroMuted, fontSize: 12 }}>{surahs.length > 1 ? 'تقرأ السور بالترتيب، في جلسة مخصصة لكل سورة.' : 'جلسة قراءة مخصصة للسورة، مع حفظ تقدمك خلال اليوم.'}</Text>
             </View>}
             <CreationSection title="مواعيدك الأولى" icon="calendar">{upcoming.map((date, i) => <View key={date} style={[c.row, { gap: 12 }]}>
-              <View style={{ width: 32, height: 32, borderRadius: readerShape.control, backgroundColor: p.accentSoft, justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: p.accent, fontSize: 14 }}>{arabicNumber(i + 1)}</Text></View><Text style={{ color: p.text, fontSize: 16 }}>{dateLabel(date)}</Text>
+              <View style={{ width: 32, height: 32, borderRadius: readerShape.pill, backgroundColor: p.accentSoft, justifyContent: 'center', alignItems: 'center' }}><Text style={{ color: p.accent, fontSize: 14 }}>{arabicNumber(i + 1)}</Text></View><Text style={{ color: p.text, fontSize: 16 }}>{dateLabel(date)}</Text>
             </View>)}</CreationSection>
             <CreationSection title="اجعله موعدك" icon="settings">
               <PlanField label="اسم الهدف" value={name} onChange={setName} placeholder={fallbackName} />

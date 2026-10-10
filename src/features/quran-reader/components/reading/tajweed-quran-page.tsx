@@ -10,6 +10,7 @@ import { printedPageAyah } from '../../utils/printed-page-ayahs';
 import { ReaderButton } from './reader-button';
 import { TajweedSurface } from './tajweed-surface';
 import { SurahOpening } from './surah-opening';
+import { withTajweedPageBridge, type TajweedPageState } from './tajweed-bridge';
 interface Props {
   page: QuranPage; quran: Quran; palette: ReaderPalette; dark: boolean; selectedAyah: AyahReference | null;
   onTap: () => void; onSelect: (ayah: Ayah) => void; onNavigate: (page: number) => void; onTargetOffset?: (y: number) => void;
@@ -28,7 +29,7 @@ export const TajweedQuranPage = memo(function TajweedQuranPage({ page, quran, pa
     const numbers = [...new Set([...required, ...(page.previousAyah ? [page.previousAyah.surahNumber] : [])])];
     void Promise.all([Promise.all(numbers.map(async (n) => {
       const surah = quran.surahs.find((s) => s.number === n)!;
-      const source = await loadTajweedPrintedSurah(surah);
+      const source = await loadTajweedPrintedSurah(surah, quran.id);
       const lines = source[page.number];
       if (!lines?.length) {
         if (required.has(n)) throw new Error('Missing tajweed page');
@@ -43,10 +44,13 @@ export const TajweedQuranPage = memo(function TajweedQuranPage({ page, quran, pa
     return () => { active = false; };
   }, [page, quran, retry]);
   const selected = selectedAyah ? `${selectedAyah.surahNumber}:${selectedAyah.ayahNumber}` : null;
-  const html = useMemo(() => data ? tajweedDocument(data.blocks, data.font, palette, dark, selected, openingHeights) : '', [data, palette, dark, selected, openingHeights]);
+  // The document embeds the page font, so only its content and theme rebuild it.
+  // Selection and measured opening heights are applied in place (see tajweed-bridge).
+  const html = useMemo(() => data ? withTajweedPageBridge(tajweedDocument(data.blocks, data.font, palette, dark, null)) : '', [data, palette, dark]);
+  const update = useMemo(() => JSON.stringify({ selected, openings: openingHeights } satisfies TajweedPageState), [selected, openingHeights]);
   if (error) return <View style={{ padding: 30, gap: 16 }}><Text style={{ color: palette.muted }}>تعذر تحميل مصحف التجويد.</Text><ReaderButton palette={palette} onPress={() => { setError(false); setRetry((n) => n + 1); }}>إعادة المحاولة</ReaderButton></View>;
   if (!data) return <ActivityIndicator color={palette.accent} accessibilityLabel="جارٍ تحميل مصحف التجويد" style={{ marginVertical: 60 }} />;
-  return <View><TajweedSurface pageNumber={page.number} html={html} height={height} onError={() => setError(true)} onMessage={(raw) => {
+  return <View><TajweedSurface pageNumber={page.number} html={html} update={update} height={height} onError={() => setError(true)} onMessage={(raw) => {
     try {
       const message = JSON.parse(raw);
       if (message.source !== 'quranni-tajweed') return;

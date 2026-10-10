@@ -213,6 +213,16 @@ list. Opening a result jumps to and highlights the whole ayah. Substring colouri
 is not applied using normalized offsets. `/bookmarks` lists saved Warsh ayahs and
 opens them the same way; bookmark keys are persisted separately from position.
 
+## Juz and quarter divisions
+
+Quranpedia's Warsh edition tags `juz`/`hizb` by ayah number, as if Warsh ayahs
+were Hafs ayahs with the same number (Warsh 2:142 carries the tag of Hafs 2:142),
+so every division after a numbering difference is one or more ayahs late.
+`utils/divisions.ts` recomputes both tags from each ayah's `number_in_hafs` and the
+standard 240 Hafs quarter starts, so divisions follow the text in every riwayah
+(juz 2 / hizb 3 starts at Warsh 2:141). Edition data already tagged by text, like
+Hafs, is unchanged. Goals saved against the old tags are re-linked automatically.
+
 ## API and cache
 
 `QuranpediaClient` provides corpus/ayah methods plus `getTafsirBooks`,
@@ -231,13 +241,21 @@ search without a crawl. No corpus snapshot ships in the application.
 - Web persistent cache: IndexedDB, avoiding localStorage quota pressure.
 - Non-browser/static rendering: an in-memory store; hooks fetch after mounting.
 - Keys include cache schema version and endpoint, including mushaf identity.
-- Responses remain fresh for **24 hours**. The next load after expiry refetches
-  the entire resource, so source corrections replace cached text. Manual refresh
-  bypasses freshness; `allowStale: false` requires a successful current response.
-- On network errors, timeout, 429, or 5xx, a previously validated cache can be
-  returned with `stale: true`, its original `fetchedAt`, and `refreshError`.
-  The future reader must show that cached content could not be refreshed.
-- Invalid JSON/schema and 4xx other than 429 are not hidden behind stale cache.
+- Corpus data (mushaf text/metadata, tajweed surah data) stays fresh for
+  **30 days** (`CORPUS_TTL_MS`); tafsir and translations for 24 hours.
+- Stale-while-revalidate: an expired entry is returned immediately and refreshed
+  in the background (deduplicated, with back-off: `Retry-After`, otherwise 5 min
+  for network/429/5xx and 1 h for other failures). Manual refresh still waits for
+  the network; `allowStale: false` requires a successful current response.
+- Any refresh failure (network, timeout, 429/5xx, other 4xx, invalid JSON or
+  schema such as a captive-portal page) serves a previously validated cache with
+  `stale: true`, its original `fetchedAt`, and `refreshError`. Invalid payloads
+  are validated before writing and are never persisted.
+- The riwayah/mushaf identity is checked while decoding, so a mismatched payload
+  is never cached.
+- Cache keys (`quranpedia:*`, printed page assets) are tracked in a bounded LRU
+  index (≈150 MB native, 50 MB web); user data (preferences, bookmarks, goals,
+  reading positions) is never evicted.
 - Failed refreshes do not overwrite valid data. Persistence failure allows the
   network response to be used; `onCacheError` supports storage diagnostics.
 - There are no automatic request retries or corpus crawling. Numeric

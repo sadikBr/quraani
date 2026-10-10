@@ -3,15 +3,15 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { ReaderIcon, type ReaderIconName } from '../quran-reader/components/ui/reader-chrome';
-import { readerLayout, readerShape } from '../quran-reader/design';
+import { readerElevation, readerLayout, readerShape, withAlpha } from '../quran-reader/design';
 import { arabicNumber } from './presentation';
 import type { SequentialGoal, SequentialPlan } from './types';
 
 export function CreationSection({ title, icon, children, description }: PropsWithChildren<{ title: string; icon: ReaderIconName; description?: string }>) {
   const { palette: p } = useReadingPreferences();
   return <View style={{ gap: 12 }}>
-    <View style={c.row}><ReaderIcon name={icon} color={p.accent} size={19} /><Text accessibilityRole="header" style={{ color: p.text, fontSize: 20, fontWeight: '600' }}>{title}</Text></View>
-    <View style={[c.panel, { backgroundColor: p.paper, borderColor: p.border }]}>{children}</View>
+    <View style={[c.row, { gap: 10 }]}><View style={[c.sectionIcon, { backgroundColor: p.accentSoft }]}><ReaderIcon name={icon} color={p.accent} size={17} /></View><Text accessibilityRole="header" style={{ color: p.text, fontSize: 19, fontWeight: '600' }}>{title}</Text></View>
+    <View style={[c.panel, { backgroundColor: p.paper, borderColor: withAlpha(p.border, 0.7) }, readerElevation(1, p)]}>{children}</View>
     {!!description && <Text style={{ fontSize: 12, color: p.muted }}>{description}</Text>}
   </View>;
 }
@@ -36,13 +36,17 @@ export function GoalTypeChoices({ kind, onChange, existing }: { kind: Sequential
 
 export function CreationSteps({ step, canReview, onChange }: { step: 0 | 1; canReview: boolean; onChange: (step: 0 | 1) => void }) {
   const { palette: p } = useReadingPreferences();
-  return <View accessibilityRole="tablist" accessibilityLabel="خطوات إنشاء الهدف" style={{ flexDirection: 'row', gap: 20 }}>
+  return <View accessibilityRole="tablist" accessibilityLabel="خطوات إنشاء الهدف" style={{ flexDirection: 'row', gap: 10 }}>
     {(['الإعداد', 'المراجعة'] as const).map((label, i) => <Pressable key={label} accessibilityRole="tab" accessibilityLabel={label}
       accessibilityState={{ selected: step === i, disabled: i === 1 && !canReview }} aria-selected={step === i} disabled={i === 1 && !canReview} onPress={() => onChange(i as 0 | 1)}
-      style={({ pressed }) => [c.step, { borderColor: step === i ? p.accent : p.border, opacity: pressed ? 0.6 : 1 }]}>
-      <Text style={{ color: step === i ? p.accent : p.muted, fontSize: 12 }}>{arabicNumber(i + 1)}</Text>
-      <Text style={{ color: step === i ? p.accent : p.muted, fontSize: 14, fontWeight: step === i ? '600' : '400' }}>{label}</Text>
-      {step > i && <ReaderIcon name="check" color={p.accent} size={15} />}
+      style={({ pressed }) => [c.step, { opacity: pressed ? 0.6 : i === 1 && !canReview ? 0.5 : 1 }]}>
+      <View style={[c.stepBar, { backgroundColor: step >= i ? p.accent : withAlpha(p.text, 0.1) }]} />
+      <View style={c.row}>
+        <View style={[c.stepNumber, { backgroundColor: step > i ? p.accent : step === i ? p.accentSoft : 'transparent', borderColor: step >= i ? p.accent : p.border }]}>
+          {step > i ? <ReaderIcon name="check" color={p.paper} size={13} strokeWidth={2.4} /> : <Text style={{ color: step === i ? p.accent : p.muted, fontSize: 11, lineHeight: 18 }}>{arabicNumber(i + 1)}</Text>}
+        </View>
+        <Text style={{ color: step === i ? p.text : p.muted, fontSize: 14, fontWeight: step === i ? '600' : '400' }}>{label}</Text>
+      </View>
     </Pressable>)}
   </View>;
 }
@@ -100,17 +104,20 @@ export function ExistingGoalCard({ goal, onOpen }: { goal: SequentialPlan; onOpe
 
 export const c = StyleSheet.create({
   navigation: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 20, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  back: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingEnd: 12 },
+  back: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingStart: 12, paddingEnd: 16, borderRadius: readerShape.pill, backgroundColor: 'rgba(127, 127, 127, 0.1)' },
   content: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', padding: 20, paddingTop: 6, paddingBottom: 28, gap: 24 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   grow: { flex: 1, minWidth: 0 },
-  panel: { padding: 18, borderWidth: 1, borderRadius: readerShape.card, gap: 18 },
-  typeCard: { flex: 1, minWidth: 0, borderWidth: 1, borderRadius: readerShape.card, padding: 14 },
-  choiceMark: { width: 19, height: 19, borderRadius: 5, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  step: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingBottom: 8, borderBottomWidth: 2 },
-  amountButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: readerShape.control },
-  preset: { flex: 1, minWidth: 0, minHeight: 44, borderWidth: 1, borderRadius: readerShape.control, justifyContent: 'center', paddingHorizontal: 4, paddingVertical: 4 },
-  existingIcon: { width: 40, height: 40, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
+  panel: { padding: 18, borderWidth: StyleSheet.hairlineWidth * 2, borderRadius: readerShape.card, gap: 18 },
+  sectionIcon: { width: 30, height: 30, borderRadius: readerShape.pill, alignItems: 'center', justifyContent: 'center' },
+  typeCard: { flex: 1, minWidth: 0, borderWidth: StyleSheet.hairlineWidth * 2, borderRadius: readerShape.card, padding: 16 },
+  choiceMark: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  step: { flex: 1, gap: 8, minHeight: 44, justifyContent: 'center' },
+  stepBar: { height: 4, borderRadius: 2 },
+  stepNumber: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  amountButton: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth * 2, borderRadius: readerShape.pill },
+  preset: { flex: 1, minWidth: 0, minHeight: 44, borderWidth: 1, borderRadius: readerShape.pill, justifyContent: 'center', paddingHorizontal: 4, paddingVertical: 4 },
+  existingIcon: { width: 40, height: 40, borderRadius: readerShape.pill, alignItems: 'center', justifyContent: 'center' },
   existingLink: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: readerShape.control, padding: 14 },
   footer: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 20, paddingVertical: 12, gap: 6 },
 });

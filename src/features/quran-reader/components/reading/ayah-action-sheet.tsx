@@ -128,10 +128,14 @@ function RelatedContent({ ayah, kind, palette }: { ayah: Ayah; kind: 'tafsir' | 
       {!!item.content.book.author && <Text style={{ color: palette.muted, fontSize: 12 }}>{item.content.book.author}</Text>}
       <Text style={{ color: palette.muted, fontSize: 11 }}>المرجع الموازي {ayah.surahNumber}:{item.number}{item.stale ? ' · نسخة محفوظة دون تحديث' : ''}</Text>
       {item.content.texts.filter(Boolean).map((text, index) => <NativeText key={index} selectable style={{ color: palette.text, fontSize: 17, lineHeight: 30, writingDirection: item.content.direction, textAlign: item.content.direction === 'ltr' ? 'left' : 'auto', fontFamily: item.content.direction === 'rtl' ? 'ReaderNaskh' : undefined }}>{relatedPlainText(text)}</NativeText>)}
-      <ReaderButton palette={palette} onPress={() => void Linking.openURL(kind === 'tafsir' ? `https://api.quranpedia.net/v1/ayah/${ayah.surahNumber}/${item.number}/book/${item.content.book.id}` : `https://api.quranpedia.net/v1/translations/${ayah.surahNumber}/${item.number}/${language}`).catch(() => {})}>فتح المصدر</ReaderButton>
+      <ReaderButton palette={palette} onPress={() => void Linking.openURL(quranpediaSurahPage(ayah.surahNumber)).catch(() => {})}>فتح المصدر</ReaderButton>
     </View>)}
   </View>;
 }
+// The api.quranpedia.net endpoints return raw JSON. The public site's surah page
+// (the same /surah/1/{surah} path the tajweed service reads, Hafs numbering like
+// these parallel references) is the closest human-readable source we can link.
+const quranpediaSurahPage = (surah: number) => `https://quranpedia.net/surah/1/${surah}`;
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: 'rgba(7,20,15,0.48)' },
   body: { flex: 1, justifyContent: 'flex-end' },

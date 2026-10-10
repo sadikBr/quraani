@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { expect, test } from 'bun:test';
 import { createPreparedImageCache } from '../src/features/quran-reader/services/prepared-image-cache';
 import { createPrintedImageCache } from '../src/features/quran-reader/services/printed-image-cache';

@@ -13,7 +13,7 @@ import { arabicNumber, shortDate } from './presentation';
 import { buildPlanIndex, unitLabels } from './engine';
 import { PlanNotice } from './components';
 import { isMemorizationPlan, isRecurringPlan, type ReadingPlan } from './types';
-import { memoryFor, quarterLabel, reviseMemorization } from './memorization';
+import { memorizationReplanDate, memoryFor, quarterLabel, reviseMemorization } from './memorization';
 import { loadReaderContent } from '../quran-reader/services/reader-service';
 import { completedOccurrences, weekdaysLabel } from './recurring';
 
@@ -43,7 +43,7 @@ function ArchivedGoalCard({ plan, onOpen }: { plan: ReadingPlan; onOpen: (id: st
     setBusy(true); setError(''); setConflictId(undefined);
     try {
       const index = isMemorizationPlan(plan) ? buildPlanIndex((await loadReaderContent(undefined, plan.riwayah)).data) : undefined;
-      await commit(items => items.map(item => item.id === plan.id ? restoreArchivedGoal(isMemorizationPlan(item) && index ? reviseMemorization(item, index, memoryFor(memorization, item.riwayah, index), today) : item) : item));
+      await commit(items => items.map(item => item.id === plan.id ? restoreArchivedGoal(isMemorizationPlan(item) && index ? reviseMemorization(item, index, memoryFor(memorization, item.riwayah, index), memorizationReplanDate(item, today)) : item) : item));
     }
     catch (e) { setError(e instanceof Error ? e.message : 'تعذرت استعادة الهدف.'); if (e instanceof DuplicateGoalError) setConflictId(e.goalId); }
     finally { setBusy(false); }

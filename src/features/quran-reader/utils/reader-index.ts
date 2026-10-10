@@ -19,10 +19,14 @@ export function readerIndexItems(content: ReaderContent, kind: IndexKind, query 
       pageNumber: first.pageNumber, start: { mushafId: content.quran.id, surahNumber: surah.number, ayahNumber: first.ayahNumber } }] : [];
   });
   const entries = kind === 'juz' ? content.juzIndex : content.hizbIndex;
-  const normalized = normalizeArabicSearch(query);
+  // Number tokens (Arabic-Indic or Latin) select the division exactly: "الحزب 5" is not 50–59.
+  const tokens = normalizeArabicSearch(query).match(/\d+|[^\s\d]+/g) ?? [];
   return entries.map((entry) => ({ ...entry, title: `${kind === 'juz' ? 'الجزء' : 'الحزب'} ${entry.number}`,
     detail: `${content.quran.surahs.find((surah) => surah.number === entry.start.surahNumber)?.name ?? `السورة ${entry.start.surahNumber}`} · الآية ${entry.start.ayahNumber}` }))
-    .filter(item => !normalized || (/^\d+$/.test(normalized) ? String(item.number) === normalized : normalizeArabicSearch(`${item.title} ${item.detail}`).includes(normalized)));
+    .filter((item) => {
+      const words = normalizeArabicSearch(`${item.title} ${item.detail}`).replace(/\d+/g, ' ');
+      return tokens.every((token) => /^\d+$/.test(token) ? Number(token) === item.number : words.includes(token));
+    });
 }
 
 /** Route input is validated against the selected edition before jumping. */

@@ -2,12 +2,12 @@ import { useState, type PropsWithChildren } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
 import type { ReaderPalette } from '../../theme';
-import { readerLayout, readerShape } from '../../design';
+import { readerElevation, readerLayout, readerShape, withAlpha } from '../../design';
 import { ReaderIcon, type ReaderIconName } from './reader-chrome';
 
 export function LibraryHeader({ title, subtitle, icon, palette: p, onBack }: { title: string; subtitle: string; icon: ReaderIconName; palette: ReaderPalette; onBack: () => void }) {
   return <View style={[l.header, { borderColor: p.border }]}>
-    <Pressable accessibilityRole="button" accessibilityLabel="العودة إلى القراءة" onPress={onBack} style={({ pressed }) => [l.back, { opacity: pressed ? 0.6 : 1 }]}><ReaderIcon name="back" color={p.text} size={23} /></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel="العودة إلى القراءة" onPress={onBack} style={({ pressed }) => [l.back, { backgroundColor: pressed ? p.accentSoft : p.paper, borderColor: p.border }]}><ReaderIcon name="back" color={p.text} size={21} /></Pressable>
     <View style={l.grow}><Text accessibilityRole="header" style={{ color: p.text, fontSize: 25, fontWeight: '700' }}>{title}</Text><Text style={{ color: p.muted, fontSize: 12 }}>{subtitle}</Text></View>
     <View style={[l.headerIcon, { backgroundColor: p.accentSoft }]}><ReaderIcon name={icon} color={p.accent} size={24} /></View>
   </View>;
@@ -26,11 +26,11 @@ export function LibrarySearch({ value, onChange, label, placeholder, palette: p 
 export function LibraryTabs<T extends string>({ options, value, onChange, label, palette: p }: {
   options: readonly { value: T; label: string }[]; value: T; onChange: (value: T) => void; label: string; palette: ReaderPalette;
 }) {
-  return <View accessibilityRole="tablist" accessibilityLabel={label} style={[l.tabs, { borderColor: p.border }]}>{options.map(option => {
+  return <View accessibilityRole="tablist" accessibilityLabel={label} style={[l.tabs, { backgroundColor: withAlpha(p.text, 0.06) }]}>{options.map(option => {
     const selected = option.value === value;
     return <Pressable key={option.value} accessibilityRole="tab" accessibilityLabel={option.label} accessibilityState={{ selected }} aria-selected={selected} onPress={() => onChange(option.value)}
-      style={({ pressed }) => [l.tab, { borderColor: selected ? p.accent : 'transparent', opacity: pressed ? 0.6 : 1 }]}>
-      <Text style={{ color: selected ? p.accent : p.muted, fontSize: 14, fontWeight: selected ? '600' : '400', textAlign: 'center' }}>{option.label}</Text>
+      style={({ pressed }) => [l.tab, selected && [{ backgroundColor: p.paper }, readerElevation(1, p)], { opacity: pressed ? 0.6 : 1 }]}>
+      <Text numberOfLines={1} style={{ color: selected ? p.accent : p.muted, fontSize: 14, fontWeight: selected ? '600' : '400', textAlign: 'center' }}>{option.label}</Text>
     </Pressable>;
   })}</View>;
 }
@@ -54,13 +54,13 @@ export const libraryStyles = StyleSheet.create({
 });
 const l = StyleSheet.create({
   header: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: StyleSheet.hairlineWidth },
-  grow: { flex: 1, minWidth: 0 }, back: { width: 44, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
-  headerIcon: { width: 42, height: 46, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.control },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, borderWidth: 1, borderRadius: readerShape.control },
+  grow: { flex: 1, minWidth: 0 }, back: { width: 44, height: 44, borderRadius: readerShape.pill, borderWidth: StyleSheet.hairlineWidth * 2, alignItems: 'center', justifyContent: 'center' },
+  headerIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.pill },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, borderWidth: StyleSheet.hairlineWidth * 2, borderRadius: readerShape.control },
   input: { flex: 1, minWidth: 0, minHeight: 52, paddingVertical: 8, fontFamily: 'ReaderNaskh', fontSize: 16, writingDirection: 'rtl', textAlign: Platform.OS === 'android' ? 'left' : 'right', ...Platform.select({ native: { direction: 'rtl' as const }, web: { outlineStyle: 'solid', outlineWidth: 0 } }) },
   clear: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  tabs: { flexDirection: 'row', gap: 16, borderBottomWidth: 1 },
-  tab: { flex: 1, minHeight: 48, justifyContent: 'center', paddingVertical: 8, borderBottomWidth: 2, marginBottom: -1 },
+  tabs: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: readerShape.control + 2 },
+  tab: { flex: 1, minHeight: 42, justifyContent: 'center', paddingVertical: 6, paddingHorizontal: 4, borderRadius: readerShape.control - 2 },
   empty: { alignItems: 'center', paddingVertical: 28, gap: 10 },
-  emptyIcon: { width: 68, height: 68, borderRadius: readerShape.card, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+  emptyIcon: { width: 72, height: 72, borderRadius: readerShape.pill, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
 });

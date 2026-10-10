@@ -1,35 +1,21 @@
-import { createContext, useContext, useEffect, useRef, useState, type PropsWithChildren } from 'react';
+import { createContext, useContext, useEffect, useState, useSyncExternalStore, type PropsWithChildren } from 'react';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { contentStorage } from '../storage/content-storage';
 import { resolveReaderTheme } from '../theme';
-import { decodeReadingPreferences, defaultReadingPreferences, type ReadingPreferences } from './reading-preferences';
+import { createReadingPreferencesStore, type ReadingPreferences } from './reading-preferences';
 
-const STORAGE_KEY = 'reader:preferences:v1';
 const PreferencesContext = createContext<{
   preferences: ReadingPreferences;
   update: (changes: Partial<ReadingPreferences>) => void;
 } | null>(null);
 
 export function ReadingPreferencesProvider({ children }: PropsWithChildren) {
-  const [preferences, setPreferences] = useState(defaultReadingPreferences);
-  const [ready, setReady] = useState(false);
-  const writes = useRef(Promise.resolve());
-  useEffect(() => {
-    let active = true;
-    contentStorage.getItem(STORAGE_KEY).then((value) => {
-      if (active) setPreferences(decodeReadingPreferences(value));
-    }).catch(() => { /* Reading remains available when storage is unavailable. */ })
-      .finally(() => { if (active) setReady(true); });
-    return () => { active = false; };
-  }, []);
-  useEffect(() => {
-    if (ready) {
-      // Serialize writes so rapid taps cannot save an older preference last.
-      writes.current = writes.current.then(() => contentStorage.setItem(STORAGE_KEY, JSON.stringify(preferences)))
-        .catch(() => { /* Keep preferences for this session if persistence fails. */ });
-    }
-  }, [preferences, ready]);
-  return <PreferencesContext.Provider value={{ preferences, update: (changes) => setPreferences((value) => ({ ...value, ...changes })) }}>
+  // Reading remains available with defaults if storage fails, but nothing is
+  // saved until the stored preferences are read (retried in the background).
+  const [store] = useState(() => createReadingPreferencesStore(contentStorage));
+  useEffect(() => store.start(), [store]);
+  const { value: preferences, ready } = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
+  return <PreferencesContext.Provider value={{ preferences, update: store.update }}>
     {ready ? children : null}
   </PreferencesContext.Provider>;
 }

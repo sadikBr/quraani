@@ -3,6 +3,11 @@ import type { Ayah, Mushaf, PageAyahRegion, Quran } from "./types";
 
 type ObjectValue = Record<string, unknown>;
 
+/** Both supported editions (Warsh 4, Hafs 2) use the 604-page Madani layout. */
+export const MUSHAF_PAGE_COUNT = 604;
+/** Longest surah in any counting system (Al-Baqarah, Kufan count). */
+export const MAX_AYAHS_PER_SURAH = 286;
+
 function fail(field: string): never {
     throw new QuranpediaError(
         "invalid-response",
@@ -105,16 +110,20 @@ export function decodeAyah(
     return {
         mushafId,
         surahNumber,
-        ayahNumber: integer(source.number, "number"),
+        ayahNumber: integer(source.number, "number", MAX_AYAHS_PER_SURAH),
         sourceId: integer(source.id, "ayah.id"),
-        pageNumber: integer(source.page_number, "page_number"),
+        pageNumber: integer(
+            source.page_number,
+            "page_number",
+            MUSHAF_PAGE_COUNT,
+        ),
         text: originalText,
         marker: text(source.marker, "marker"),
         availableContent: array(source.options, "options").map((v) =>
             text(v, "options[]"),
         ),
         hafsAyahNumbers: array(source.number_in_hafs, "number_in_hafs").map(
-            (v) => integer(v, "number_in_hafs[]"),
+            (v) => integer(v, "number_in_hafs[]", MAX_AYAHS_PER_SURAH),
         ),
         juzNumber: optionalInteger(source.juz, "juz", 30),
         hizbQuarter: optionalInteger(source.hizb, "hizb", 240),
@@ -134,14 +143,20 @@ export function decodeSurahAyahs(
     ayahs.forEach((ayah, index) => {
         if (ayah.ayahNumber !== index + 1 || ids.has(ayah.sourceId))
             fail("ayah sequence");
-        if (index > 0 && ayah.pageNumber < ayahs[index - 1].pageNumber)
-            fail("page sequence");
+        // Consecutive ayahs stay on the same page or continue on the next one.
+        const step = index > 0 ? ayah.pageNumber - ayahs[index - 1].pageNumber : 0;
+        if (step < 0 || step > 1) fail("page sequence");
         ids.add(ayah.sourceId);
     });
     return ayahs;
 }
 
-export function decodeQuran(value: unknown, expectedMushafId: number): Quran {
+/** The full corpus must cover pages 1..pageCount contiguously, in order. */
+export function decodeQuran(
+    value: unknown,
+    expectedMushafId: number,
+    pageCount = MUSHAF_PAGE_COUNT,
+): Quran {
     const source = object(value, "quran");
     const mushaf = decodeMushaf(source);
     if (mushaf.id !== expectedMushafId) fail("mushaf mismatch");
@@ -161,12 +176,14 @@ export function decodeQuran(value: unknown, expectedMushafId: number): Quran {
     let lastPage = 0;
     for (const surah of surahs) {
         for (const ayah of surah.ayahs) {
-            if (ids.has(ayah.sourceId) || ayah.pageNumber < lastPage)
+            const step = ayah.pageNumber - lastPage;
+            if (ids.has(ayah.sourceId) || step < 0 || step > 1)
                 fail("corpus sequence");
             ids.add(ayah.sourceId);
             lastPage = ayah.pageNumber;
         }
     }
+    if (lastPage !== pageCount) fail("page count");
     return { ...mushaf, surahs };
 }
 

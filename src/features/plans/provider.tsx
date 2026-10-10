@@ -4,7 +4,7 @@ import { router, useRootNavigationState } from 'expo-router';
 import { contentStorage } from '../quran-reader/storage/content-storage';
 import { loadReaderContent } from '../quran-reader/services/reader-service';
 import { createPlansRepository } from './repository';
-import { buildPlanIndex, rollCompletedCycle } from './engine';
+import { buildPlanIndex, rollCompletedCycle, type PlanIndex } from './engine';
 import { localDate } from './dates';
 import { observePlanNotifications, syncPlanReminders } from './notifications';
 import { isSequentialPlan, type MemorizationRecord, type ReadingPlan } from './types';
@@ -15,6 +15,7 @@ import { maintainArchives } from './archive';
 interface PlansContextValue {
   plans: ReadingPlan[]; memorization: MemorizationRecord[]; ready: boolean; error: string; reminderError: string; today: string;
   commit: (change: (plans: ReadingPlan[]) => ReadingPlan[]) => Promise<void>;
+  relink: (index: PlanIndex) => Promise<void>;
   retry: () => void;
 }
 const Context = createContext<PlansContextValue | null>(null);
@@ -25,6 +26,8 @@ export function PlansProvider({ children }: PropsWithChildren) {
   const [error, setError] = useState('');
   const [reminderError, setReminderError] = useState('');
   const [archiveError, setArchiveError] = useState('');
+  const [rolloverError, setRolloverError] = useState('');
+  const rollovers = useRef(new Map<string, number>());
   const [today, setToday] = useState(localDate);
   const [revision, setRevision] = useState(0);
   const [clockRevision, setClockRevision] = useState(0);
@@ -38,6 +41,11 @@ export function PlansProvider({ children }: PropsWithChildren) {
   }, [revision]);
   const commit = useCallback(async (change: (plans: ReadingPlan[]) => ReadingPlan[]) => {
     const value = await repository.current.update(change);
+    setPlans(value);
+    setMemorization(repository.current.memorization());
+  }, []);
+  const relink = useCallback(async (index: PlanIndex) => {
+    const value = await repository.current.relink(index);
     setPlans(value);
     setMemorization(repository.current.memorization());
   }, []);
@@ -68,16 +76,23 @@ export function PlansProvider({ children }: PropsWithChildren) {
   }, [plans, ready, clockRevision]);
   useEffect(() => {
     if (!ready) return;
-    for (const plan of plans) if (isSequentialPlan(plan) && plan.status === 'completed' && plan.repeat && plan.cycle.completedOn && plan.cycle.completedOn < today) {
+    const due = plans.filter(plan => isSequentialPlan(plan) && plan.status === 'completed' && plan.repeat && !!plan.cycle.completedOn && plan.cycle.completedOn < today);
+    if (!due.length) return;
+    for (const plan of due) {
+      // One attempt per goal at a time, with a back-off after a failure, so a
+      // missing mushaf never turns into a download on every state change.
+      if ((rollovers.current.get(plan.id) ?? 0) > Date.now()) continue;
+      rollovers.current.set(plan.id, Number.MAX_SAFE_INTEGER);
       void loadReaderContent(undefined, plan.riwayah).then(content => {
         const index = buildPlanIndex(content.data);
         return commit(items => items.map(p => p.id === plan.id && isSequentialPlan(p) && p.status === 'completed' && p.repeat
           ? currentGoal(items, p.id) ? { ...p, repeat: false } : rollCompletedCycle(p, index, today)
           : p));
-      }).catch(() => { setError('تعذر بدء دورة جديدة. أعد فتح الهدف بعد تحميل مصحفه.'); });
+      }).then(() => { rollovers.current.delete(plan.id); setRolloverError(''); })
+        .catch(() => { rollovers.current.set(plan.id, Date.now() + 5 * 60_000); setRolloverError('تعذر بدء دورة جديدة. سنعيد المحاولة تلقائيًا عند توفر المصحف.'); });
     }
-  }, [plans, ready, today, commit]);
-  return <Context.Provider value={{ plans, memorization, ready, error: error || archiveError, reminderError, today, commit, retry: () => { setRevision(x => x + 1); setClockRevision(x => x + 1); } }}>{children}</Context.Provider>;
+  }, [plans, ready, today, commit, clockRevision]);
+  return <Context.Provider value={{ plans, memorization, ready, error: error || archiveError || rolloverError, reminderError, today, commit, relink, retry: () => { rollovers.current.clear(); setRevision(x => x + 1); setClockRevision(x => x + 1); } }}>{children}</Context.Provider>;
 }
 export function usePlans() {
   const value = useContext(Context);

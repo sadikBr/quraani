@@ -80,7 +80,8 @@ without overwriting saved progress.
   unrestricted. `reading-session.ts` revalidates the edition and exact portion
   inside the serialized progress write, including after a schedule change.
 - Pausing shifts pending dates by the paused calendar days. A completed repeat
-  cycle restarts at the beginning of the Quran the following day and retains a
+  cycle restarts at the beginning of the Quran the following day (or today, if
+  the app is reopened later) and retains a
   summary of the previous cycle. Archiving stops reminders and keeps the goal
   for a 14-day recovery period.
 
@@ -113,7 +114,10 @@ Names and reminders are editable; the selected surahs and riwayah stay fixed.
 
 Archived goals have an `archivedOn` local calendar date. Their deletion date is
 14 calendar days later, displayed in the archive and goal details. Restoration
-clears this date; re-archiving starts a fresh period. Manual permanent deletion
+clears this date; re-archiving starts a fresh period. A goal archived while paused
+is restored paused, so resuming shifts its dates by the real pause instead of
+restoring a backlog. Restored memorization goals re-plan from tomorrow if a
+session was already finished today. Manual permanent deletion
 is available from archive cards and details after an explicit confirmation.
 `deleteArchivedGoal` rechecks status inside the serialized write, so a stale
 confirmation cannot delete a restored/current goal.
@@ -187,3 +191,16 @@ undo, schedule edits, pause/archive, persistence coexistence and reminder filter
 quarter-hizb quotas, weekdays and carry-forward, disjoint ranges, exact bounded
 reader sessions, confirmation/undo/correction, stale writes, archive/delete,
 reloading, reminders, and completion of the full Quran.
+
+## Edition corrections
+
+Goals store ayah ordinals plus an edition fingerprint (`corpus`) that also covers
+page/hizb/juz metadata. When the source corrects metadata only (same ayah count),
+`relink.ts` re-links goals and the memorization record to the new fingerprint the
+first time a screen loads that edition, instead of locking them. Pause, archive
+and delete never need the mushaf, so an offline or re-downloading edition cannot
+block them. Memorized ranges are stored as bare `{ start, end }` and compared by
+value.
+
+A repeating khatma that is reopened days after completion starts its next cycle
+today rather than on the day after completion, so it never starts overdue.

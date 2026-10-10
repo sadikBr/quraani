@@ -19,7 +19,7 @@ export function GoalChooser() {
   const existing = currentGoal(plans);
   const memorization = currentMemorizationGoal(plans);
   return <PlanScreen title="هدف جديد" subtitle="اختر ما تحب أن تواظب عليه." onBack={() => router.dismissTo('/plans')}>
-    <View style={{ backgroundColor: p.hero, borderRadius: readerShape.card, padding: 20, gap: 8 }}>
+    <View style={{ backgroundColor: p.hero, borderRadius: readerShape.hero, padding: 22, gap: 8 }}>
       <ReaderIcon name="calendar" color={p.heroMuted} size={28} />
       <Text style={{ color: p.onHero, fontSize: 27, fontWeight: '600' }}>مواعيد تتجدد مع القرآن</Text>
       <Text style={{ color: p.heroMuted, fontSize: 13 }}>سور تختارها، في أيام تناسبك. ابدأ باقتراح جاهز أو اصنع موعدك الخاص.</Text>

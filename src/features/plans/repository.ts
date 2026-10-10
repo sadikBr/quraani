@@ -1,10 +1,12 @@
 import type { CacheStorage } from '@/lib/quranpedia/cache';
 import { localDate, validDate } from './dates';
 import { isMemorizationPlan, type MemorizationRecord, type ReadingPlan } from './types';
-import { mergeSpans, subtractSpans, validateMemorizationPlan, validateSpans } from './memorization';
+import { mergeSpans, sameSpans, subtractSpans, validateMemorizationPlan, validateSpans } from './memorization';
 import { enforceGoalLimit } from './goal-limit';
 import { maintainArchives, stampArchiveTransitions } from './archive';
 import { validateRecurringPlan } from './recurring';
+import type { PlanIndex } from './engine';
+import { relinkPlans, relinkRecords } from './relink';
 
 export const PLANS_KEY = 'plans:v1';
 export function decodePlans(raw: string | null): ReadingPlan[] {
@@ -72,15 +74,15 @@ function syncMemorization(previous: ReadingPlan[], next: ReadingPlan[], records:
     const before = previous.find(p => p.id === plan.id);
     const old = before && isMemorizationPlan(before) ? before.memorized : plan.initialRecord;
     const saved = result.find(r => r.riwayah === plan.riwayah);
-    if (before && JSON.stringify(old) === JSON.stringify(plan.memorized)) {
-      if ((plan.status === 'active' || plan.status === 'paused') && JSON.stringify(mergeSpans(saved?.ranges ?? [])) !== JSON.stringify(mergeSpans(plan.memorized))) throw new Error('تغيّر سجل محفوظك. أعد فتح الهدف لتحديثه.');
+    if (before && sameSpans(old, plan.memorized)) {
+      if ((plan.status === 'active' || plan.status === 'paused') && !sameSpans(saved?.ranges ?? [], plan.memorized)) throw new Error('تغيّر سجل محفوظك. أعد فتح الهدف لتحديثه.');
       continue;
     }
     if (saved && (saved.corpus !== plan.corpus || saved.totalAyahs !== plan.totalAyahs)) throw new Error('نسخة سجل الحفظ لا تطابق الهدف.');
-    if (!before && JSON.stringify(mergeSpans(saved?.ranges ?? [])) !== JSON.stringify(plan.initialRecord)) throw new Error('تغيّر محفوظك. أعد فتح إنشاء هدف الحفظ لتحديثه.');
+    if (!before && !sameSpans(saved?.ranges ?? [], plan.initialRecord)) throw new Error('تغيّر محفوظك. أعد فتح إنشاء هدف الحفظ لتحديثه.');
     const added = subtractSpans(plan.memorized, old), removed = subtractSpans(old, plan.memorized);
     const ranges = mergeSpans([...subtractSpans(saved?.ranges ?? [], removed), ...added]);
-    if ((plan.status === 'active' || plan.status === 'paused') && JSON.stringify(ranges) !== JSON.stringify(mergeSpans(plan.memorized))) throw new Error('تغيّر سجل محفوظك. أعد فتح الهدف لتحديثه.');
+    if ((plan.status === 'active' || plan.status === 'paused') && !sameSpans(ranges, plan.memorized)) throw new Error('تغيّر سجل محفوظك. أعد فتح الهدف لتحديثه.');
     result = [...result.filter(r => r.riwayah !== plan.riwayah), { riwayah: plan.riwayah, corpus: plan.corpus, totalAyahs: plan.totalAyahs, ranges }];
   }
   return result;
@@ -102,6 +104,21 @@ export function createPlansRepository(storage: CacheStorage, today: () => string
         if (maintained !== loaded) await storage.setItem(PLANS_KEY, JSON.stringify({ version: 1, plans: maintained, memorization: memory }));
         current = maintained;
         memorization = memory;
+        return current;
+      });
+      queue = next.catch(() => {});
+      return next;
+    },
+    /** Re-link goals and the memorization record to a corrected edition fingerprint. */
+    relink(index: PlanIndex) {
+      const next = queue.then(async () => {
+        if (!current) throw new Error('لم تُحمّل الأهداف بعد');
+        const plans = relinkPlans(current, index), memory = relinkRecords(memorization, index);
+        if (plans === current && memory === memorization) return current;
+        const raw = JSON.stringify({ version: 1, plans, memorization: memory });
+        decodePlans(raw); decodeMemorization(raw);
+        await storage.setItem(PLANS_KEY, raw);
+        current = plans; memorization = memory;
         return current;
       });
       queue = next.catch(() => {});

@@ -1,33 +1,33 @@
+import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
+import { ReaderButton } from '../quran-reader/components/reading/reader-button';
 import { ReaderIcon } from '../quran-reader/components/ui/reader-chrome';
 import { readerShape } from '../quran-reader/design';
-import { ReaderButton } from '../quran-reader/components/reading/reader-button';
-import { usePlans } from './provider';
-import { usePlanIndex } from './use-plan-index';
-import { isMemorizationPlan, type MemorizationPlan, type MemorizationSession, type AyahSpan } from './types';
-import { assertPlanIndex, ayahRangeLabel, nextPortion, setPlanPaused } from './engine';
-import { memorizationSchedule, memoryFor, quarterLabel, recordMemorizationProgress, reviseMemorization, spanCount, undoMemorizationProgress } from './memorization';
-import { weekdaysLabel } from './recurring';
-import { addDays, dateLabel, localDate } from './dates';
-import { arabicNumber, shortDate, weekdayDateLabel } from './presentation';
-import { DetailAction, DetailScreen, PlanSettingsSheet, ReadingBounds, d } from './plan-detail-components';
-import { Copy, PlanCard, PlanField, PlanLoading, PlanNotice, PlanSwitch } from './components';
-import { AmountPicker } from './goal-creation-components';
-import { WeekdayPicker } from './recurring-components';
-import { PlanDateField } from './plan-date-field';
-import { saveWithReminder } from './save-with-reminder';
-import { requestPlanReminders, remindersSupported } from './notifications';
-import { savedReminderNotice, type ReminderIssue } from './reminder-errors';
+import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
+import { normalizeArabicSearch } from '../quran-reader/utils/search';
 import { archiveDeletionDate, restoreArchivedGoal } from './archive';
 import { DeleteArchivedGoalDialog } from './archive-components';
+import { Copy, PlanCard, PlanField, PlanLoading, PlanNotice, PlanSwitch } from './components';
+import { dateLabel, localDate } from './dates';
+import { assertPlanIndex, ayahRangeLabel, nextPortion, setPlanPaused } from './engine';
+import { AmountPicker } from './goal-creation-components';
+import { currentMemorizationGoal } from './goal-limit';
+import { memorizationReplanDate, memorizationSchedule, memoryFor, quarterLabel, recordMemorizationProgress, reviseMemorization, spanCount, undoMemorizationProgress } from './memorization';
 import { MemorizationHero } from './memorization-components';
 import { MemorizedSelectionSheet } from './memorized-selection-sheet';
-import { currentMemorizationGoal } from './goal-limit';
-import { normalizeArabicSearch } from '../quran-reader/utils/search';
+import { remindersSupported, requestPlanReminders } from './notifications';
+import { PlanDateField } from './plan-date-field';
+import { DetailAction, DetailScreen, d, PlanSettingsSheet, ReadingBounds } from './plan-detail-components';
+import { arabicNumber, shortDate, weekdayDateLabel } from './presentation';
+import { usePlans } from './provider';
+import { weekdaysLabel } from './recurring';
+import { WeekdayPicker } from './recurring-components';
+import { type ReminderIssue, savedReminderNotice } from './reminder-errors';
+import { saveWithReminder } from './save-with-reminder';
+import { type AyahSpan, isMemorizationPlan, type MemorizationPlan, type MemorizationSession } from './types';
+import { usePlanIndex } from './use-plan-index';
 
 export function MemorizationDetail({ plan, initialReminderIssue }: { plan: MemorizationPlan; initialReminderIssue?: ReminderIssue }) {
   const { palette: p, update } = useReadingPreferences();
@@ -42,13 +42,16 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
   const other = currentMemorizationGoal(plans, plan.id);
   let mismatch = '', ranges = plan.memorized;
   if (index) { try { assertPlanIndex(plan, index); ranges = memoryFor(memorization, plan.riwayah, index); } catch (e) { mismatch = (e as Error).message; } }
-  const mutate = async (change: (current: MemorizationPlan) => MemorizationPlan) => {
-    if (saving.current || !index || mismatch) return false;
+  /** Status-only changes (pause, archive) never need the mushaf, so an offline
+   * or re-downloading edition cannot lock a goal. Content changes do. */
+  const mutate = async (change: (current: MemorizationPlan) => MemorizationPlan, needsIndex = true) => {
+    if (saving.current || (needsIndex && (!index || mismatch))) return false;
     saving.current = true; setBusy(true); setMessage('');
     try {
       await commit(items => items.map(current => {
         if (current.id !== plan.id || !isMemorizationPlan(current)) return current;
-        assertPlanIndex(current, index); return change(current);
+        if (needsIndex && index) assertPlanIndex(current, index);
+        return change(current);
       })); return true;
     } catch (e) { setMessage(e instanceof Error ? e.message : 'تعذر حفظ التغيير. حاول مرة أخرى.'); return false; }
     finally { saving.current = false; setBusy(false); }
@@ -58,7 +61,7 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
     const ayah = index.ayahs[next.start]; update({ riwayah: plan.riwayah });
     router.push({ pathname: '/', params: { surah: String(ayah.surahNumber), ayah: String(ayah.ayahNumber), plan: plan.id, planCycle: String(next.cycle), planSlot: String(next.slot) } });
   };
-  const replanDate = (current: MemorizationPlan) => current.progress.some(log => log.date === localDate() && log.finished) ? addDays(localDate(), 1) : localDate();
+  const replanDate = (current: MemorizationPlan) => memorizationReplanDate(current, localDate());
   const saveMemory = async (selected: AyahSpan[]) => {
     if (!index) return;
     if (await mutate(current => {
@@ -89,9 +92,9 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
     } catch (e) { setMessage(e instanceof Error ? e.message : 'تعذر حفظ الإعدادات.'); }
     finally { saving.current = false; setBusy(false); }
   };
-  const archive = () => mutate(current => current.status === 'archived' && index
-    ? restoreArchivedGoal(reviseMemorization(current, index, memoryFor(memorization, current.riwayah, index), today))
-    : { ...current, status: 'archived' });
+  const archive = () => plan.status === 'archived'
+    ? mutate(current => current.status === 'archived' && index ? restoreArchivedGoal(reviseMemorization(current, index, memoryFor(memorization, current.riwayah, index), replanDate(current))) : current)
+    : mutate(current => ({ ...current, status: 'archived' }), false);
   const deletionDate = archiveDeletionDate(plan);
   return <DetailScreen plan={plan} onBack={() => router.dismissTo('/plans')} onSettings={openSettings}>
     <PlanNotice message={message || mismatch || error} retry={error ? retry : undefined} /><PlanNotice message={reminderError} />
@@ -108,8 +111,8 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
     </PlanCard>}
     {plan.status !== 'active' && <PlanCard><Copy title>{plan.status === 'completed' ? 'أتممت حفظ القرآن، هنيئًا لك' : plan.status === 'paused' ? 'خذ وقتك، محفوظك باقٍ' : 'هذا الهدف في الأرشيف'}</Copy>
       <Copy muted>{plan.status === 'archived' ? `حذف الهدف لا يمس سجل محفوظك. ${deletionDate ? `يُحذف الهدف في ${shortDate(deletionDate)}.` : ''}` : plan.status === 'paused' ? 'عند العودة نتابع ما تبقّى في أيام الحفظ المختارة.' : 'سجلك محفوظ. ويمكنك تصحيح المقاطع المسجلة إذا احتجت.'}</Copy>
-      {plan.status === 'paused' && <DetailAction primary label="استئناف الحفظ" disabled={busy} onPress={() => void mutate(current => setPlanPaused(current, false, today))} />}
-      {plan.status === 'archived' && <><DetailAction primary label="استعادة الهدف" disabled={busy || !!other} onPress={() => void archive()} /><DetailAction destructive icon="trash" label="حذف الهدف" disabled={busy} onPress={() => setDeleting(true)} /></>}
+      {plan.status === 'paused' && <DetailAction primary label="استئناف الحفظ" disabled={busy} onPress={() => void mutate(current => setPlanPaused(current, false, today), false)} />}
+      {plan.status === 'archived' && <><DetailAction primary label="استعادة الهدف" disabled={busy || !!other || !index || !!mismatch} onPress={() => void archive()} /><DetailAction destructive icon="trash" label="حذف الهدف" disabled={busy} onPress={() => setDeleting(true)} /></>}
     </PlanCard>}
     {index && !mismatch && <>
       {plan.status !== 'archived' && !other && <PlanCard><View style={d.row}><ReaderIcon name="check" color={p.accent} size={22} /><View style={d.grow}><Copy title>سجل محفوظك</Copy><Copy muted>أضف ما حفظته خارج الهدف أو صحح اختيارًا سابقًا.</Copy></View></View><DetailAction label="عرض المحفوظ وتعديله" disabled={busy} onPress={() => { setMessage(''); setChoosing(true); }} /></PlanCard>}
@@ -123,8 +126,8 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
       <Copy muted>تغيير الأيام أو المقدار يعيد توزيع المتبقي ويحافظ على محفوظك.</Copy>
       <PlanSwitch label="ذكّرني بالحفظ" checked={reminder} onChange={setReminder} disabled={!remindersSupported} detail={remindersSupported ? 'في أيام الحفظ فقط.' : 'فعّل التذكير من تطبيق الهاتف.'} />{reminder && <PlanDateField label="وقت التذكير" value={time} onChange={setTime} mode="time" />}
       <ReaderButton palette={p} selected disabled={busy || !index || !!mismatch} onPress={() => void saveSettings()}>حفظ الإعدادات</ReaderButton>
-      {(plan.status === 'active' || plan.status === 'paused') && <DetailAction label={plan.status === 'paused' ? 'استئناف الحفظ' : 'إيقاف الحفظ مؤقتًا'} disabled={busy} onPress={() => void mutate(current => setPlanPaused(current, current.status === 'active', today)).then(saved => { if (saved) setEditing(false); })} />}
-      <DetailAction label={plan.status === 'archived' ? 'استعادة الهدف' : 'أرشفة الهدف'} disabled={busy || (plan.status === 'archived' && !!other)} onPress={() => void archive().then(saved => { if (saved) setEditing(false); })} />
+      {(plan.status === 'active' || plan.status === 'paused') && <DetailAction label={plan.status === 'paused' ? 'استئناف الحفظ' : 'إيقاف الحفظ مؤقتًا'} disabled={busy} onPress={() => { const pause = plan.status === 'active'; void mutate(current => setPlanPaused(current, pause, today), false).then(saved => { if (saved) setEditing(false); }); }} />}
+      <DetailAction label={plan.status === 'archived' ? 'استعادة الهدف' : 'أرشفة الهدف'} disabled={busy || (plan.status === 'archived' && (!!other || !index || !!mismatch))} onPress={() => void archive().then(saved => { if (saved) setEditing(false); })} />
       <Copy muted>يبقى سجل المحفوظ بعد أرشفة هذا الهدف وحذفه.</Copy>
     </PlanSettingsSheet>}
     {choosing && index && <MemorizedSelectionSheet index={index} selected={ranges} busy={busy} error={message} onClose={() => { if (!busy) setChoosing(false); }} onSave={value => void saveMemory(value)} />}

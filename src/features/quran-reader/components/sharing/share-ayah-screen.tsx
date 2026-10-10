@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import * as Sharing from 'expo-sharing';
+import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArabicText as Text } from '@/components/arabic-text';
 import type { Ayah } from '@/lib/quranpedia/types';
@@ -58,7 +59,7 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
   const [height, setHeight] = useState(0);
   const card = useRef<View>(null);
   const [prepared, setPrepared] = useState<{ key: string; image: PreparedAyahCard } | null>(null);
-  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<{ message: string; retry: boolean } | null>(null);
   const [exportRevision, setExportRevision] = useState(0);
   const [sharing, setSharing] = useState(false);
   const [message, setMessage] = useState('');
@@ -90,7 +91,14 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
           .then((result) => {
             if (!active) { result.dispose(); return; }
             image = result; setPrepared({ key: exportKey, image: result });
-          }).catch(() => { if (active) setExportError('تعذر إنشاء الصورة. أعد المحاولة.'); });
+          }).catch(async () => {
+            // Native export refuses to capture when the system cannot share files.
+            // Retrying cannot change that, so say so instead of offering a retry.
+            const unavailable = Platform.OS !== 'web' && !(await Sharing.isAvailableAsync().catch(() => true));
+            if (!active) return;
+            setExportError(unavailable ? { message: 'المشاركة غير متاحة على هذا الجهاز، لذا لا يمكن إنشاء صورة البطاقة.', retry: false }
+              : { message: 'تعذر إنشاء الصورة. أعد المحاولة.', retry: true });
+          });
       });
     }, 200);
     return () => { active = false; clearTimeout(timer); image?.dispose(); };
@@ -116,7 +124,7 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
             <Text style={{ color: palette.muted, fontSize: 10 }}>{height ? `1080 × ${Math.round(1080 * height / width)}` : ''}</Text></View>
           <View style={styles.cardShadow}>
             <AyahShareCard cardRef={card} ayah={ayah} surahName={surahName} theme={theme} format={format}
-              brandRevision={exportRevision} onBrandReady={() => setBrandReady(true)} onBrandError={() => { setBrandReady(false); setExportError('تعذر تحميل شعار التطبيق. أعد المحاولة.'); }}
+              brandRevision={exportRevision} onBrandReady={() => setBrandReady(true)} onBrandError={() => { setBrandReady(false); setExportError({ message: 'تعذر تحميل شعار التطبيق. أعد المحاولة.', retry: true }); }}
               showBrand={showBrand} translation={displayedTranslation} width={width} onLayout={(event) => setHeight(event.nativeEvent.layout.height)} />
             {ready && <View pointerEvents="none" style={StyleSheet.absoluteFill}><Image testID="exported-ayah-card" source={{ uri: prepared.image.uri }} resizeMode="contain" accessible={false} style={StyleSheet.absoluteFill} /></View>}
           </View>
@@ -147,7 +155,7 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
     </ScrollView>
     <View style={[styles.footer, { backgroundColor: palette.paper, borderColor: palette.border }]}>
       {!!message && <Text accessibilityLiveRegion="polite" style={{ color: palette.text, fontSize: 12, textAlign: 'center' }}>{message}</Text>}
-      {exportError ? <><Text accessibilityRole="alert" style={{ color: palette.warning, fontSize: 12 }}>{exportError}</Text><ReaderButton palette={palette} onPress={() => setExportRevision((value) => value + 1)}>إعادة تجهيز الصورة</ReaderButton></>
+      {exportError ? <><Text accessibilityRole="alert" style={{ color: palette.warning, fontSize: 12 }}>{exportError.message}</Text>{exportError.retry && <ReaderButton palette={palette} onPress={() => setExportRevision((value) => value + 1)}>إعادة تجهيز الصورة</ReaderButton>}</>
         : <Pressable accessibilityRole="button" accessibilityLabel={prepared?.image.action === 'download' ? 'تنزيل الصورة' : 'مشاركة الصورة'} accessibilityState={{ disabled: !ready || sharing }} disabled={!ready || sharing} onPress={() => void share()}
           style={({ pressed }) => [styles.share, { backgroundColor: palette.accent, opacity: !ready || sharing ? 0.5 : pressed ? 0.75 : 1 }]}>
           {(!ready && !translationError) || sharing ? <ActivityIndicator color={palette.paper} /> : <ReaderIcon name="share" color={palette.paper} size={20} />}
