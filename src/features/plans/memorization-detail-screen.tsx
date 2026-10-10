@@ -1,13 +1,14 @@
 import { useRef, useState } from 'react';
-import { View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { ReaderIcon } from '../quran-reader/components/ui/reader-chrome';
+import { readerShape } from '../quran-reader/design';
 import { ReaderButton } from '../quran-reader/components/reading/reader-button';
 import { usePlans } from './provider';
 import { usePlanIndex } from './use-plan-index';
-import { isMemorizationPlan, type MemorizationPlan, type AyahSpan } from './types';
+import { isMemorizationPlan, type MemorizationPlan, type MemorizationSession, type AyahSpan } from './types';
 import { assertPlanIndex, ayahRangeLabel, nextPortion, setPlanPaused } from './engine';
 import { memorizationSchedule, memoryFor, quarterLabel, recordMemorizationProgress, reviseMemorization, spanCount, undoMemorizationProgress } from './memorization';
 import { weekdaysLabel } from './recurring';
@@ -36,7 +37,7 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(initialReminderIssue ? savedReminderNotice(initialReminderIssue) : '');
   const saving = useRef(false);
   const [name, setName] = useState(plan.name), [days, setDays] = useState(plan.weekdays), [amount, setAmount] = useState(String(plan.goal.weeklyQuarters));
-  const [reminder, setReminder] = useState(plan.reminder.enabled), [time, setTime] = useState('18:00'), [limit, setLimit] = useState(7);
+  const [reminder, setReminder] = useState(plan.reminder.enabled), [time, setTime] = useState('18:00');
   const next = nextPortion(plan, today), schedule = memorizationSchedule(plan, today);
   const other = currentMemorizationGoal(plans, plan.id);
   let mismatch = '', ranges = plan.memorized;
@@ -113,14 +114,7 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
     {index && !mismatch && <>
       {plan.status !== 'archived' && !other && <PlanCard><View style={d.row}><ReaderIcon name="check" color={p.accent} size={22} /><View style={d.grow}><Copy title>سجل محفوظك</Copy><Copy muted>أضف ما حفظته خارج الهدف أو صحح اختيارًا سابقًا.</Copy></View></View><DetailAction label="عرض المحفوظ وتعديله" disabled={busy} onPress={() => { setMessage(''); setChoosing(true); }} /></PlanCard>}
       {plan.undoable && plan.status !== 'archived' && !other && <DetailAction label="التراجع عن آخر تسجيل حفظ" disabled={busy} onPress={() => void mutate(current => undoMemorizationProgress(current, index, localDate()))} />}
-      {!!schedule.length && plan.status !== 'archived' && <PlanCard><Copy title>خطواتك القادمة</Copy><Copy muted>{quarterLabel(plan.goal.weeklyQuarters)} أسبوعيًا · {weekdaysLabel(plan.weekdays)}</Copy>
-        {schedule.slice(0, limit).map((session, i) => <View key={session.date} style={{ gap: 4, paddingTop: 12, borderTopWidth: 1, borderColor: p.border }}>
-          <View style={[d.row, { justifyContent: 'space-between' }]}><Text style={{ color: i ? p.text : p.accent, fontSize: 16, fontWeight: '600' }}>{weekdayDateLabel(session.date)}</Text><Text style={{ color: p.muted, fontSize: 12 }}>{arabicNumber(spanCount(session.ranges))} آية</Text></View>
-          {session.ranges.map(range => <Text key={range.start} style={{ color: p.muted, fontSize: 12 }}>{ayahRangeLabel(index, range.start, range.end)}</Text>)}
-        </View>)}
-        {schedule.length > limit && <DetailAction label="عرض مواعيد أكثر" onPress={() => setLimit(n => n + 14)} />}
-        <Text style={{ color: p.muted, fontSize: 12 }}>الإتمام المتوقع: {dateLabel(schedule.at(-1)!.date)} · يتغير بحسب تقدمك.</Text>
-      </PlanCard>}
+      {!!schedule.length && plan.status !== 'archived' && <MemorizationSchedule index={index} sessions={schedule} today={today} weeklyLabel={`${quarterLabel(plan.goal.weeklyQuarters)} أسبوعيًا · ${weekdaysLabel(plan.weekdays)}`} expected={dateLabel(schedule.at(-1)!.date)} />}
       {!!plan.progress.length && <PlanCard><Copy title>آخر ما أضفته إلى محفوظك</Copy>{plan.progress.slice(-5).reverse().map((log, i) => <View key={`${log.date}-${i}`} style={{ gap: 2 }}><Text style={{ color: p.text, fontSize: 14 }}>{ayahRangeLabel(index, log.from, log.to)}</Text><Text style={{ color: p.muted, fontSize: 11 }}>{shortDate(log.date)}</Text></View>)}</PlanCard>}
     </>}
     {editing && <PlanSettingsSheet onClose={() => { if (!busy) setEditing(false); }}><PlanNotice message={message} /><PlanField label="اسم الهدف" value={name} onChange={setName} />
@@ -137,3 +131,78 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
     {deleting && <DeleteArchivedGoalDialog plan={plan} onClose={() => setDeleting(false)} onDeleted={() => router.replace('/plans')} />}
   </DetailScreen>;
 }
+
+function MemorizationSchedule({ index, sessions, today, weeklyLabel, expected }: { index: NonNullable<ReturnType<typeof usePlanIndex>['index']>; sessions: MemorizationSession[]; today: string; weeklyLabel: string; expected: string }) {
+  const { palette: p } = useReadingPreferences();
+  const [week, setWeek] = useState(0);
+  const weeks = groupSessionsByWeek(sessions);
+  const currentWeek = weeks[Math.min(week, weeks.length - 1)] ?? [];
+  return <PlanCard>
+    <View style={[scheduleStyles.heading, { borderColor: p.border }]}>
+      <Pressable hitSlop={6} accessibilityRole="button" accessibilityLabel="الأسبوع السابق" accessibilityState={{ disabled: week === 0 }} disabled={week === 0} onPress={() => setWeek(value => Math.max(0, value - 1))} style={({ pressed }) => [scheduleStyles.navButton, scheduleStyles.previousNav, { backgroundColor: pressed ? p.accentSoft : 'transparent', opacity: week === 0 ? 0.28 : pressed ? 0.7 : 1 }]}><ReaderIcon name="back" color={week === 0 ? p.muted : p.accent} size={22} strokeWidth={2.05} /></Pressable>
+      <View style={scheduleStyles.headingCenter}><Text accessibilityRole="header" style={{ color: p.text, fontSize: 19, fontWeight: '600' }}>الأسبوع {arabicNumber(week + 1)} من {arabicNumber(weeks.length)}</Text><Text style={{ color: p.muted, fontSize: 12 }}>{weeklyLabel}</Text></View>
+      <Pressable hitSlop={6} accessibilityRole="button" accessibilityLabel="الأسبوع التالي" accessibilityState={{ disabled: week >= weeks.length - 1 }} disabled={week >= weeks.length - 1} onPress={() => setWeek(value => Math.min(weeks.length - 1, value + 1))} style={({ pressed }) => [scheduleStyles.navButton, scheduleStyles.nextNav, { backgroundColor: pressed ? p.accentSoft : 'transparent', opacity: week >= weeks.length - 1 ? 0.28 : pressed ? 0.7 : 1 }]}><View style={{ transform: [{ rotate: '180deg' }] }}><ReaderIcon name="back" color={week >= weeks.length - 1 ? p.muted : p.accent} size={22} strokeWidth={2.05} /></View></Pressable>
+    </View>
+    <View style={scheduleStyles.list}>
+      {currentWeek.map((session, i) => {
+        const current = week === 0 && i === 0;
+        const status = current ? (session.date === today ? 'ورد اليوم' : 'الورد القادم') : i === 1 ? 'الورد التالي' : 'ورد لاحق';
+        return <View key={session.date} style={scheduleStyles.timelineRow}>
+        <View style={scheduleStyles.markerColumn}>
+          <View style={[scheduleStyles.marker, { backgroundColor: current ? p.accent : p.accentSoft, borderColor: current ? p.accent : p.border }]}><Text style={{ color: current ? p.paper : p.accent, fontSize: 12, fontWeight: '700' }}>{arabicNumber(i + 1)}</Text></View>
+          {i < currentWeek.length - 1 && <View style={[scheduleStyles.connector, { backgroundColor: p.border }]} />}
+        </View>
+        <View style={[scheduleStyles.sessionContent, { borderColor: p.border, backgroundColor: current ? p.accentSoft : 'transparent', borderRadius: current ? readerShape.control : 0, borderBottomWidth: current ? 0 : StyleSheet.hairlineWidth }]}>
+          <View style={[d.row, { justifyContent: 'space-between', alignItems: 'flex-start' }]}>
+            <View style={{ gap: 2, flex: 1 }}><Text style={{ color: current ? p.accent : p.text, fontSize: 16, fontWeight: '700' }}>{weekdayDateLabel(session.date)}</Text><Text style={{ color: p.muted, fontSize: 11 }}>{status}</Text></View>
+            <Text style={{ color: current ? p.accent : p.muted, fontSize: 12, fontWeight: '600' }}>{ayahCountLabel(spanCount(session.ranges))}</Text>
+          </View>
+          <View style={scheduleStyles.ranges}>
+            {session.ranges.map(range => <View key={range.start} style={scheduleStyles.range}><View style={[scheduleStyles.rangeDot, { backgroundColor: current ? p.accent : p.muted }]} /><Text style={{ color: p.muted, fontSize: 12, flex: 1 }}>{ayahRangeLabel(index, range.start, range.end)}</Text></View>)}
+          </View>
+        </View>
+      </View>;
+      })}
+    </View>
+    <View style={[scheduleStyles.footer, { borderColor: p.border }]}><ReaderIcon name="calendar" color={p.muted} size={16} /><Text style={{ color: p.muted, fontSize: 12, flex: 1 }}>الموعد المتوقع لإتمام الحفظ: {expected} · يتحدّث مع تقدّمك.</Text></View>
+  </PlanCard>;
+}
+
+function ayahCountLabel(count: number) {
+  if (count === 1) return 'آية واحدة';
+  if (count === 2) return 'آيتان';
+  if (count >= 3 && count <= 10) return `${arabicNumber(count)} آيات`;
+  return `${arabicNumber(count)} آية`;
+}
+
+function groupSessionsByWeek(sessions: MemorizationSession[]) {
+  const groups = new Map<string, MemorizationSession[]>();
+  for (const session of sessions) {
+    const date = new Date(`${session.date}T12:00:00Z`);
+    const mondayOffset = (date.getUTCDay() + 6) % 7;
+    date.setUTCDate(date.getUTCDate() - mondayOffset);
+    const key = date.toISOString().slice(0, 10);
+    const group = groups.get(key) ?? [];
+    group.push(session);
+    groups.set(key, group);
+  }
+  return [...groups.entries()].sort(([first], [second]) => first.localeCompare(second)).map(([, group]) => group.sort((first, second) => first.date.localeCompare(second.date)));
+}
+
+const scheduleStyles = StyleSheet.create({
+  heading: { position: 'relative', minHeight: 49, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 42, paddingBottom: 13, borderBottomWidth: StyleSheet.hairlineWidth, ...Platform.select({ native: { direction: 'ltr' as const }, web: { direction: 'ltr' as const } }) },
+  headingCenter: { flex: 1, alignItems: 'center', gap: 2 },
+  navButton: { position: 'absolute', top: 0, width: 44, height: 44, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
+  previousNav: { right: 0 },
+  nextNav: { left: 0 },
+  list: { gap: 0 },
+  timelineRow: { flexDirection: 'row', alignItems: 'stretch', minHeight: 78 },
+  markerColumn: { width: 38, alignItems: 'center' },
+  marker: { width: 31, height: 31, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  connector: { width: 1, flex: 1, marginVertical: 4 },
+  sessionContent: { flex: 1, minWidth: 0, gap: 8, paddingHorizontal: 12, paddingVertical: 11, marginStart: 9, borderBottomWidth: StyleSheet.hairlineWidth },
+  ranges: { gap: 5, paddingTop: 4 },
+  range: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  rangeDot: { width: 6, height: 6, borderRadius: 3 },
+  footer: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingTop: 5, borderTopWidth: StyleSheet.hairlineWidth },
+});
