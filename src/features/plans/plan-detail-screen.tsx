@@ -15,9 +15,10 @@ import { dateLabel } from './dates';
 import { usePlanIndex } from './use-plan-index';
 import { PlanDateField } from './plan-date-field';
 import { remindersSupported, requestPlanReminders } from './notifications';
-import { isMemorizationPlan, isSequentialPlan, isRecurringPlan, type SequentialPlan } from './types';
+import { isMemorizationPlan, isSequentialPlan, isRecurringPlan, isRevisionPlan, type SequentialPlan } from './types';
 import { MemorizationDetail } from './memorization-detail-screen';
 import { RecurringDetail } from './recurring-detail-screen';
+import { RevisionDetail } from './revision-detail-screen';
 import { saveWithReminder } from './save-with-reminder';
 import { savedReminderNotice, type ReminderIssue } from './reminder-errors';
 import { DuplicateGoalError } from './goal-limit';
@@ -34,6 +35,7 @@ export function PlanDetailScreen() {
   </PlanScreen>;
   if (isMemorizationPlan(plan)) return <MemorizationDetail key={plan.id} plan={plan} initialReminderIssue={reminderIssue === 'permission' || reminderIssue === 'unavailable' ? reminderIssue : undefined} />;
   if (isRecurringPlan(plan)) return <RecurringDetail key={plan.id} plan={plan} initialReminderIssue={reminderIssue === 'permission' || reminderIssue === 'unavailable' ? reminderIssue : undefined} />;
+  if (isRevisionPlan(plan)) return <RevisionDetail key={plan.id} plan={plan} initialReminderIssue={reminderIssue === 'permission' || reminderIssue === 'unavailable' ? reminderIssue : undefined} />;
   return <PlanDetail key={plan.id} plan={plan} initialReminderIssue={reminderIssue === 'permission' || reminderIssue === 'unavailable' ? reminderIssue : undefined} />;
 }
 function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; initialReminderIssue?: ReminderIssue }) {

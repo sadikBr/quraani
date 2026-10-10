@@ -4,8 +4,9 @@ import { RIWAYAT } from '../quran-reader/riwayat';
 import { pageFingerprint } from '../quran-reader/utils/page-fingerprint';
 import { addDays, daysBetween, validDate } from './dates';
 import { nextMemorizationPortion, recordMemorizationProgress } from './memorization';
-import { isMemorizationPlan, isRecurringPlan, type PlanCycle, type PlanDraft, type PlanSession, type PlanUnit, type ReadingPlan, type SequentialPlan, type RecurringPlan } from './types';
+import { isMemorizationPlan, isRecurringPlan, isRevisionPlan, isSequentialPlan, type PlanCycle, type PlanDraft, type PlanSession, type PlanUnit, type ReadingPlan, type SequentialPlan, type RecurringPlan } from './types';
 import { nextRecurringPortion, recordRecurringProgress } from './recurring';
+import { nextRevisionPortion, recordRevisionProgress } from './revision';
 import { resolvePlanStart } from './start-point';
 
 export interface PlanIndex {
@@ -95,6 +96,7 @@ export function createPlan(draft: PlanDraft, index: PlanIndex, id: string): Sequ
 export function nextPortion(plan: ReadingPlan, today: string) {
   if (isMemorizationPlan(plan)) return nextMemorizationPortion(plan, today);
   if (isRecurringPlan(plan)) return nextRecurringPortion(plan, today);
+  if (isRevisionPlan(plan)) return nextRevisionPortion(plan, today);
   if (plan.status !== 'active') return null;
   const slot = plan.cycle.sessions.findIndex(s => s.end > plan.cycle.cursor);
   if (slot < 0) return null;
@@ -109,6 +111,7 @@ export function recordProgress(plan: ReadingPlan, receipt: { cycle: number; slot
 export function recordProgress(plan: ReadingPlan, receipt: { cycle: number; slot: number; to: number }, today: string): ReadingPlan {
   if (isMemorizationPlan(plan)) return recordMemorizationProgress(plan, receipt, today);
   if (isRecurringPlan(plan)) return recordRecurringProgress(plan, receipt, today);
+  if (isRevisionPlan(plan)) return recordRevisionProgress(plan, receipt, today);
   const next = nextPortion(plan, today);
   if (!next || !next.due || receipt.cycle !== next.cycle || receipt.slot !== next.slot || !Number.isInteger(receipt.to) || receipt.to <= next.start || receipt.to > next.end) return plan;
   const completed = receipt.to === plan.totalAyahs;
@@ -135,7 +138,7 @@ export function rollCompletedCycle(plan: SequentialPlan, index: PlanIndex, today
 export function setPlanPaused<T extends ReadingPlan>(plan: T, paused: boolean, today: string): T {
   if (paused && plan.status === 'active') return { ...plan, status: 'paused', pausedOn: today };
   if (!paused && plan.status === 'paused') {
-    if (isRecurringPlan(plan) || isMemorizationPlan(plan)) return { ...plan, status: 'active', pausedOn: undefined };
+    if (!isSequentialPlan(plan)) return { ...plan, status: 'active', pausedOn: undefined };
     const shift = Math.max(0, daysBetween(plan.pausedOn ?? today, today));
     return { ...plan, status: 'active', pausedOn: undefined, cycle: { ...plan.cycle,
       availableDate: addDays(plan.cycle.availableDate, shift),

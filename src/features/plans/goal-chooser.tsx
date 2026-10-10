@@ -8,16 +8,17 @@ import { ReaderIcon } from '../quran-reader/components/ui/reader-chrome';
 import { calligraphyStyle, surahNameGlyph } from '../quran-reader/utils/reader-typography';
 import { PlanScreen, Copy } from './components';
 import { usePlans } from './provider';
-import { currentGoal, currentMemorizationGoal } from './goal-limit';
+import { currentGoal, currentMemorizationGoal, currentRevisionGoal } from './goal-limit';
 import { RECURRING_PRESETS } from './recurring';
 import { SURAH_NAME_FONT_FAMILY } from '../quran-reader/config';
 
 export function GoalChooser() {
-  const { palette: p } = useReadingPreferences();
+  const { palette: p, preferences } = useReadingPreferences();
   const { plans } = usePlans();
   const [calligraphyReady] = useFonts({ [SURAH_NAME_FONT_FAMILY]: require('@/assets/fonts/surah_name.ttf') });
   const existing = currentGoal(plans);
   const memorization = currentMemorizationGoal(plans);
+  const revision = currentRevisionGoal(plans, preferences.riwayah);
   return <PlanScreen title="هدف جديد" subtitle="اختر ما تحب أن تواظب عليه." onBack={() => router.dismissTo('/plans')}>
     <View style={[{ backgroundColor: p.hero, borderRadius: readerShape.hero, padding: 22, gap: 6 }, readerElevation(2, p)]}>
       <ReaderIcon name="calendar" color={p.heroMuted} size={24} />
@@ -45,6 +46,12 @@ export function GoalChooser() {
         style={({ pressed }) => [s.listRow, { backgroundColor: pressed ? p.accentSoft : 'transparent' }]}>
         <View style={[s.listIcon, { backgroundColor: p.accentSoft }]}><ReaderIcon name="book" color={p.accent} size={20} /></View>
         <View style={{ flex: 1, minWidth: 0 }}><Text style={{ color: p.text, fontSize: 16, fontWeight: '600' }}>القرآن في صدرك</Text><Text style={{ color: p.muted, fontSize: 13 }}>{memorization ? `تابع ${memorization.name}` : 'حفظ متدرّج، يبدأ من ربع حزب أسبوعيًا'}</Text></View><ReaderIcon name="chevron" color={p.muted} size={18} />
+      </Pressable>
+      <View style={[s.separator, { backgroundColor: p.border }]} />
+      <Pressable accessibilityRole="button" accessibilityLabel={revision ? 'متابعة هدف المراجعة' : 'إنشاء هدف مراجعة المحفوظ'} onPress={() => revision ? router.push({ pathname: '/plans/[id]', params: { id: revision.id } }) : router.push({ pathname: '/plans/new', params: { type: 'revision' } })}
+        style={({ pressed }) => [s.listRow, { backgroundColor: pressed ? p.accentSoft : 'transparent' }]}>
+        <View style={[s.listIcon, { backgroundColor: p.accentSoft }]}><ReaderIcon name="loop" color={p.accent} size={20} /></View>
+        <View style={{ flex: 1, minWidth: 0 }}><Text style={{ color: p.text, fontSize: 16, fontWeight: '600' }}>ثبّت محفوظك</Text><Text style={{ color: p.muted, fontSize: 13 }}>{revision ? `تابع ${revision.name}` : 'مراجعة دورية تمر على كل ما تحفظه'}</Text></View><ReaderIcon name="chevron" color={p.muted} size={18} />
       </Pressable>
     </View>
     <View style={{ gap: 12, marginTop: 4 }}><Copy title>رحلتك عبر المصحف</Copy>

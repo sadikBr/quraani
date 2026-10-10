@@ -20,6 +20,7 @@ import { isSequentialPlan, type SequentialGoal, type PlanStart, type PlanUnit } 
 import { MemorizationCreationScreen } from './memorization-creation-screen';
 import { GoalChooser } from './goal-chooser';
 import { RecurringCreationScreen } from './recurring-creation-screen';
+import { RevisionCreationScreen } from './revision-creation-screen';
 import { saveWithReminder } from './save-with-reminder';
 import { currentGoal, DuplicateGoalError } from './goal-limit';
 import { AmountPicker, CreationSection, CreationSteps, ExistingGoalCard, GoalTypeChoices, c } from './goal-creation-components';
@@ -34,6 +35,7 @@ export function NewPlanScreen() {
   const { type, preset } = useLocalSearchParams<{ type?: string; preset?: string }>();
   if (!ready) return <PlanScreen title="هدف جديد" onBack={() => router.back()}><PlanNotice message={error} retry={retry} />{!error && <PlanLoading />}</PlanScreen>;
   if (type === 'memorization') return <MemorizationCreationScreen />;
+  if (type === 'revision') return <RevisionCreationScreen />;
   if (type === 'recurring') return <RecurringCreationScreen preset={preset === 'kahf' || preset === 'mulk' ? preset : undefined} />;
   if (type === 'khatma' || type === 'wird') return <GoalCreationForm key={type} initialKind={type} />;
   return <GoalChooser />;

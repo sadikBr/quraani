@@ -29,7 +29,7 @@ export function DetailScreen({ plan, onBack, onSettings, children }: PropsWithCh
       <View style={{ gap: 8 }}>
         <View style={[d.row, d.statusChip, { backgroundColor: plan.status === 'active' ? palette.accentSoft : withAlpha(palette.text, 0.06) }]}>
           <View style={{ width: 6, height: 6, borderRadius: readerShape.detail, backgroundColor: plan.status === 'active' ? palette.accent : palette.muted }} />
-          <Text style={{ color: plan.status === 'active' ? palette.accent : palette.muted, fontSize: 12, fontWeight: '600' }}>{plan.status === 'active' && plan.goal.type === 'memorization' ? 'قيد الحفظ' : statusLabels[plan.status]} · رواية {RIWAYAT[plan.riwayah].label}</Text>
+          <Text style={{ color: plan.status === 'active' ? palette.accent : palette.muted, fontSize: 12, fontWeight: '600' }}>{plan.status === 'active' && plan.goal.type === 'memorization' ? 'قيد الحفظ' : plan.status === 'active' && plan.goal.type === 'revision' ? 'قيد المراجعة' : statusLabels[plan.status]} · رواية {RIWAYAT[plan.riwayah].label}</Text>
         </View>
         <Text accessibilityRole="header" style={{ color: palette.text, fontSize: 28, fontWeight: '700', lineHeight: 40 }}>{plan.name}</Text>
       </View>

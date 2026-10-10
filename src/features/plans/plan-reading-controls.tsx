@@ -13,6 +13,14 @@ import { arabicNumber } from './presentation';
 import { localDate } from './dates';
 import { saveReadingSession, sessionPageEnd, type PlanReadingSession } from './reading-session';
 
+/** Wording for each kind of goal, so the reader speaks the goal's language. */
+function sessionCopy(session: PlanReadingSession) {
+  if (session.memorization) return { portion: 'مقطع الحفظ', complete: 'حفظت هذا المقطع', page: 'حفظت حتى نهاية الصفحة', pageLabel: 'حفظت حتى نهاية هذه الصفحة', end: 'بلغت نهاية مقطع الحفظ', note: 'أكد إتمام الحفظ لإضافة هذه الآيات إلى محفوظك.', next: 'المقطع التالي' };
+  if (session.revision) return { portion: 'مراجعتك', complete: 'أتممت المراجعة', page: 'راجعت حتى نهاية الصفحة', pageLabel: 'راجعت حتى نهاية هذه الصفحة', end: 'بلغت نهاية مراجعتك', note: 'ثبّت الله حفظك. أكد الإتمام عندما تنتهي.', next: 'المقطع التالي من محفوظك' };
+  return { portion: 'وردك', complete: session.recurring ? 'أكملت السورة' : 'أكملت الورد', page: 'حفظ حتى نهاية الصفحة', pageLabel: 'حفظ حتى نهاية هذه الصفحة والعودة إلى الهدف',
+    end: session.recurring ? 'بلغت نهاية السورة' : 'بلغت نهاية وردك', note: 'تقبّل الله قراءتك. احفظ إتمامك عندما تنتهي.', next: 'السورة التالية' };
+}
+
 export function usePlanReadingActions(session: PlanReadingSession | undefined) {
   const { commit } = usePlans();
   const saving = useRef(false);
@@ -41,18 +49,18 @@ type Actions = ReturnType<typeof usePlanReadingActions>;
 export function PlanReadingControls({ session, pageNumber, actions }: { session: PlanReadingSession; pageNumber: number; actions: Actions }) {
   const { palette } = useReadingPreferences();
   const last = pageNumber === session.lastPage;
-  const completion = session.memorization ? 'حفظت هذا المقطع' : session.recurring ? 'أكملت السورة' : 'أكملت الورد';
+  const copy = sessionCopy(session), completion = copy.complete;
   return <View style={styles.toolbar}>
     <Pressable accessibilityRole="button" accessibilityLabel="العودة إلى الهدف" onPress={actions.back} disabled={actions.busy}
       style={({ pressed }) => [styles.back, { opacity: pressed ? 0.6 : 1 }]}>
       <ReaderIcon name="chevron" size={18} color={palette.muted} />
       <Text numberOfLines={1} style={{ color: palette.muted, fontSize: 12, flexShrink: 1 }}>{session.name}</Text>
     </Pressable>
-    <Pressable accessibilityRole="button" accessibilityLabel={last ? completion : session.memorization ? 'حفظت حتى نهاية هذه الصفحة' : 'حفظ حتى نهاية هذه الصفحة والعودة إلى الهدف'} disabled={actions.busy}
+    <Pressable accessibilityRole="button" accessibilityLabel={last ? completion : copy.pageLabel} disabled={actions.busy}
       onPress={() => void actions.save(sessionPageEnd(session, pageNumber))}
       style={({ pressed }) => [styles.save, { backgroundColor: palette.accentSoft, opacity: actions.busy ? 0.5 : pressed ? 0.7 : 1 }]}>
       <ReaderIcon name={last ? 'check' : 'bookmark'} color={palette.accent} size={18} />
-      <Text style={{ color: palette.accent, fontSize: 13, fontWeight: '600' }}>{actions.busy ? 'جارٍ الحفظ…' : last ? completion : session.memorization ? 'حفظت حتى نهاية الصفحة' : 'حفظ حتى نهاية الصفحة'}</Text>
+      <Text style={{ color: palette.accent, fontSize: 13, fontWeight: '600' }}>{actions.busy ? 'جارٍ الحفظ…' : last ? completion : copy.page}</Text>
     </Pressable>
     {!!actions.error && <Text accessibilityRole="alert" style={{ color: palette.warning, width: '100%' }}>{actions.error}</Text>}
   </View>;
@@ -61,10 +69,10 @@ export function PlanReadingControls({ session, pageNumber, actions }: { session:
 /** These markers scroll with the page, so neither one hides Quran text. */
 export function PlanReadingOpening({ session }: { session: PlanReadingSession }) {
   const { palette } = useReadingPreferences();
-  const first = session.index.ayahs[session.portion.start];
+  const first = session.index.ayahs[session.portion.start], copy = sessionCopy(session);
   return <View style={[styles.opening, { borderColor: palette.border }]}>
     <View style={styles.heading}>
-      <Text style={{ color: palette.accent, fontSize: 13, fontWeight: '600' }}>{session.memorization ? 'مقطع الحفظ' : 'وردك'} · {rangeLabel(session.index, session.portion.start, session.portion.end)}</Text>
+      <Text style={{ color: palette.accent, fontSize: 13, fontWeight: '600' }}>{copy.portion} · {rangeLabel(session.index, session.portion.start, session.portion.end)}</Text>
       <View style={{ flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: palette.border }} />
       <ReaderIcon name="book" color={palette.accent} size={20} />
     </View>
@@ -74,16 +82,16 @@ export function PlanReadingOpening({ session }: { session: PlanReadingSession })
 
 export function PlanReadingEnd({ session, actions }: { session: PlanReadingSession; actions: Actions }) {
   const { palette } = useReadingPreferences();
-  const last = session.index.ayahs[session.portion.end - 1];
+  const last = session.index.ayahs[session.portion.end - 1], copy = sessionCopy(session);
   return <View onTouchStart={event => event.stopPropagation()} {...(Platform.OS === 'web' ? { onClick: (event: { stopPropagation: () => void }) => event.stopPropagation() } : {})}
     style={[styles.end, { backgroundColor: palette.background, borderColor: palette.border }]}>
     <View style={[styles.seal, { backgroundColor: palette.accentSoft }]}><ReaderIcon name="check" color={palette.accent} size={26} /></View>
-    <Text accessibilityRole="header" style={{ color: palette.text, fontSize: 19, fontWeight: '600', textAlign: 'center' }}>{session.memorization ? 'بلغت نهاية مقطع الحفظ' : session.recurring ? 'بلغت نهاية السورة' : 'بلغت نهاية وردك'}</Text>
-    <Text style={{ color: palette.muted, fontSize: 13, lineHeight: 22, textAlign: 'center' }}>حتى {session.index.surahNames[last.surahNumber]}، الآية {arabicNumber(last.ayahNumber)}{'\n'}{session.memorization ? 'أكد إتمام الحفظ لإضافة هذه الآيات إلى محفوظك.' : 'تقبّل الله قراءتك. احفظ إتمامك عندما تنتهي.'}</Text>
-    {session.remainingSurahs > 0 && <Text style={{ color: palette.accent, fontSize: 13, textAlign: 'center' }}>بعد الحفظ نعود إلى هدفك لمتابعة السورة التالية.</Text>}
+    <Text accessibilityRole="header" style={{ color: palette.text, fontSize: 19, fontWeight: '600', textAlign: 'center' }}>{copy.end}</Text>
+    <Text style={{ color: palette.muted, fontSize: 13, lineHeight: 22, textAlign: 'center' }}>حتى {session.index.surahNames[last.surahNumber]}، الآية {arabicNumber(last.ayahNumber)}{'\n'}{copy.note}</Text>
+    {session.remainingSurahs > 0 && <Text style={{ color: palette.accent, fontSize: 13, textAlign: 'center' }}>بعد الحفظ نعود إلى هدفك لمتابعة {copy.next}.</Text>}
     {!!actions.error && <Text accessibilityRole="alert" style={{ color: palette.warning, textAlign: 'center' }}>{actions.error}</Text>}
     <View style={{ alignSelf: 'stretch' }}><ReaderButton palette={palette} selected disabled={actions.busy}
-      onPress={() => void actions.save(session.portion.end)}>{actions.busy ? 'جارٍ حفظ التقدم…' : session.memorization ? 'حفظت هذا المقطع' : session.recurring ? 'أكملت السورة' : 'أكملت الورد'}</ReaderButton></View>
+      onPress={() => void actions.save(session.portion.end)}>{actions.busy ? 'جارٍ حفظ التقدم…' : copy.complete}</ReaderButton></View>
   </View>;
 }
 

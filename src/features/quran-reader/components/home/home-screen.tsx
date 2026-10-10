@@ -15,7 +15,7 @@ import { usePlans } from '@/features/plans/provider';
 import { usePlanIndex } from '@/features/plans/use-plan-index';
 import { ayahRangeLabel, nextPortion, rangeLabel, type PlanIndex } from '@/features/plans/engine';
 import { goalsOverview } from '@/features/plans/overview';
-import { isMemorizationPlan, isRecurringPlan, type ReadingPlan } from '@/features/plans/types';
+import { isMemorizationPlan, isRecurringPlan, isRevisionPlan, isSequentialPlan, type ReadingPlan } from '@/features/plans/types';
 import { arabicNumber, shortDate } from '@/features/plans/presentation';
 
 interface Area { href: Href; icon: ReaderIconName; label: string; detail: string }
@@ -108,7 +108,7 @@ function DuePortion({ plan, today, first }: { plan: ReadingPlan; today: string; 
   const { index } = usePlanIndex(plan.riwayah);
   const next = nextPortion(plan, today);
   if (!next) return null;
-  const kind = isMemorizationPlan(plan) ? 'حفظ' : isRecurringPlan(plan) ? 'قراءة متكررة' : plan.goal.type === 'khatma' ? 'ختمة' : 'ورد يومي';
+  const kind = isMemorizationPlan(plan) ? 'حفظ' : isRevisionPlan(plan) ? 'مراجعة' : isRecurringPlan(plan) ? 'قراءة متكررة' : plan.goal.type === 'khatma' ? 'ختمة' : 'ورد يومي';
   const start = () => {
     if (!index) return;
     const ayah = index.ayahs[next.start];
@@ -129,7 +129,7 @@ function DuePortion({ plan, today, first }: { plan: ReadingPlan; today: string; 
 }
 
 function describePortion(plan: ReadingPlan, index: PlanIndex, start: number, end: number) {
-  if (isRecurringPlan(plan) || isMemorizationPlan(plan)) return ayahRangeLabel(index, start, end);
+  if (!isSequentialPlan(plan)) return ayahRangeLabel(index, start, end);
   return `${rangeLabel(index, start, end)} · ${ayahRangeLabel(index, start, end)}`;
 }
 

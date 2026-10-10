@@ -12,7 +12,7 @@ import { DuplicateGoalError } from './goal-limit';
 import { arabicNumber, shortDate } from './presentation';
 import { buildPlanIndex, unitLabels } from './engine';
 import { PlanNotice } from './components';
-import { isMemorizationPlan, isRecurringPlan, type ReadingPlan } from './types';
+import { isMemorizationPlan, isRecurringPlan, isRevisionPlan, type ReadingPlan } from './types';
 import { memorizationReplanDate, memoryFor, quarterLabel, reviseMemorization } from './memorization';
 import { loadReaderContent } from '../quran-reader/services/reader-service';
 import { completedOccurrences, weekdaysLabel } from './recurring';
@@ -39,7 +39,7 @@ function ArchivedGoalCard({ plan, onOpen }: { plan: ReadingPlan; onOpen: (id: st
   const [error, setError] = useState('');
   const [conflictId, setConflictId] = useState<string>();
   const deletionDate = archiveDeletionDate(plan);
-  const completed = isMemorizationPlan(plan) ? plan.progress.filter(log => log.finished).length : isRecurringPlan(plan) ? completedOccurrences(plan) : plan.cycle.sessions.filter(s => s.end <= plan.cycle.cursor).length;
+  const completed = isMemorizationPlan(plan) ? plan.progress.filter(log => log.finished).length : isRecurringPlan(plan) ? completedOccurrences(plan) : isRevisionPlan(plan) ? plan.log.length : plan.cycle.sessions.filter(s => s.end <= plan.cycle.cursor).length;
   const restore = async () => {
     if (busy) return;
     setBusy(true); setError(''); setConflictId(undefined);
@@ -53,12 +53,12 @@ function ArchivedGoalCard({ plan, onOpen }: { plan: ReadingPlan; onOpen: (id: st
   return <View>
     <Pressable accessibilityRole="button" accessibilityLabel={`تفاصيل الهدف المؤرشف ${plan.name}`} onPress={() => onOpen(plan.id)} style={({ pressed }) => [s.cardBody, { backgroundColor: pressed ? p.accentSoft : 'transparent' }]}>
       <View style={s.row}>
-        <View style={[s.icon, { backgroundColor: withAlpha(p.text, 0.05) }]}><ReaderIcon name={plan.goal.type === 'khatma' ? 'calendar' : 'book'} color={p.muted} size={20} /></View>
+        <View style={[s.icon, { backgroundColor: withAlpha(p.text, 0.05) }]}><ReaderIcon name={plan.goal.type === 'khatma' ? 'calendar' : plan.goal.type === 'revision' ? 'loop' : 'book'} color={p.muted} size={20} /></View>
         <View style={s.grow}><Text style={{ color: p.text, fontSize: 17, fontWeight: '600' }}>{plan.name}</Text>
-          <Text style={{ color: p.muted, fontSize: 13 }}>{isMemorizationPlan(plan) ? `حفظ القرآن · ${quarterLabel(plan.goal.weeklyQuarters)} أسبوعيًا` : isRecurringPlan(plan) ? `قراءة متكررة · ${weekdaysLabel(plan.weekdays)}` : plan.goal.type === 'khatma' ? `ختمة · ${arabicNumber(plan.goal.weeks)} أسابيع` : `ورد يومي · ${arabicNumber(plan.goal.amount)} ${unitLabels[plan.unit]}`} · {RIWAYAT[plan.riwayah].label}</Text></View>
+          <Text style={{ color: p.muted, fontSize: 13 }}>{isMemorizationPlan(plan) ? `حفظ القرآن · ${quarterLabel(plan.goal.weeklyQuarters)} أسبوعيًا` : isRecurringPlan(plan) ? `قراءة متكررة · ${weekdaysLabel(plan.weekdays)}` : isRevisionPlan(plan) ? `مراجعة · ${quarterLabel(plan.goal.dailyQuarters)} في الجلسة` : plan.goal.type === 'khatma' ? `ختمة · ${arabicNumber(plan.goal.weeks)} أسابيع` : `ورد يومي · ${arabicNumber(plan.goal.amount)} ${unitLabels[plan.unit]}`} · {RIWAYAT[plan.riwayah].label}</Text></View>
         <ReaderIcon name="chevron" color={p.muted} size={18} />
       </View>
-      <Text style={{ color: p.muted, fontSize: 13 }}>{isMemorizationPlan(plan) ? `${arabicNumber(completed)} جلسة حفظ مكتملة · محفوظك باقٍ` : isRecurringPlan(plan) ? `${arabicNumber(completed)} قراءة مكتملة` : `${arabicNumber(completed)} من ${arabicNumber(plan.cycle.sessions.length)} وردًا مكتملًا`}</Text>
+      <Text style={{ color: p.muted, fontSize: 13 }}>{isMemorizationPlan(plan) ? `${arabicNumber(completed)} جلسة حفظ مكتملة · محفوظك باقٍ` : isRecurringPlan(plan) ? `${arabicNumber(completed)} قراءة مكتملة` : isRevisionPlan(plan) ? `أيام المراجعة المكتملة: ${arabicNumber(completed)} · محفوظك باقٍ` : `${arabicNumber(completed)} من ${arabicNumber(plan.cycle.sessions.length)} وردًا مكتملًا`}</Text>
       {deletionDate && <View style={[s.row, { gap: 7 }]}><ReaderIcon name="archive" color={p.muted} size={16} />
         <Text style={{ color: p.muted, fontSize: 13, flexShrink: 1 }}>الحذف التلقائي: {shortDate(deletionDate)}</Text></View>}
     </Pressable>

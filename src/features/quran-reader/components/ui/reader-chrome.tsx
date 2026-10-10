@@ -4,7 +4,7 @@ import { ArabicText as Text } from '@/components/arabic-text';
 import type { ReaderPalette } from '../../theme';
 import { readerShape, withAlpha } from '../../design';
 
-export type ReaderIconName = 'back' | 'search' | 'book' | 'settings' | 'menu' | 'index' | 'calendar' | 'jump' | 'close' | 'sun' | 'moon' | 'system' | 'lines' | 'check' | 'chevron' | 'bookmark' | 'eye' | 'eye-off' | 'word' | 'copy' | 'share' | 'translate' | 'trash' | 'restore' | 'archive' | 'clock' | 'plus' | 'sparkle' | 'flame';
+export type ReaderIconName = 'back' | 'search' | 'book' | 'settings' | 'menu' | 'index' | 'calendar' | 'jump' | 'close' | 'sun' | 'moon' | 'system' | 'lines' | 'check' | 'chevron' | 'bookmark' | 'eye' | 'eye-off' | 'word' | 'copy' | 'share' | 'translate' | 'trash' | 'restore' | 'archive' | 'clock' | 'plus' | 'sparkle' | 'flame' | 'loop';
 export function ReaderIcon({ name, color, size = 22, strokeWidth = 1.65 }: { name: ReaderIconName; color: string; size?: number; strokeWidth?: number }) {
   return <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden><Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
     {name === 'back' && <Path d="m9 5 7 7-7 7M16 12H4" />}
@@ -35,6 +35,7 @@ export function ReaderIcon({ name, color, size = 22, strokeWidth = 1.65 }: { nam
     {name === 'plus' && <Path d="M12 5v14M5 12h14" />}
     {name === 'sparkle' && <Path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" />}
     {name === 'flame' && <Path d="M12 21c-3.9 0-7-2.9-7-6.6 0-3.2 2.3-5.6 4-7.4.2 2.1 1.2 3.4 2.6 4 0-3 1.5-5.6 3.9-8 .6 3.1 3.5 5.5 3.5 10.1 0 4.4-3.1 7.9-7 7.9Z" />}
+    {name === 'loop' && <Path d="M17 3l3 3-3 3M4 12v-1a5 5 0 0 1 5-5h11M7 21l-3-3 3-3M20 12v1a5 5 0 0 1-5 5H4" />}
     {name === 'system' && <><Rect x="3" y="4" width="18" height="13" rx="3" /><Path d="M8 21h8m-4-4v4" /></>}
   </Svg></View>;
 }

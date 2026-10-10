@@ -1,8 +1,9 @@
 import type { CacheStorage } from '@/lib/quranpedia/cache';
 import { localDate, validDate } from './dates';
-import { isMemorizationPlan, type MemorizationRecord, type ReadingPlan } from './types';
+import { isMemorizationPlan, isRevisionPlan, type MemorizationRecord, type ReadingPlan } from './types';
 import { mergeSpans, sameSpans, subtractSpans, validateMemorizationPlan, validateSpans } from './memorization';
-import { enforceGoalLimit } from './goal-limit';
+import { currentMemorizationGoal, enforceGoalLimit } from './goal-limit';
+import { validateRevisionPlan } from './revision';
 import { maintainArchives, stampArchiveTransitions } from './archive';
 import { validateRecurringPlan } from './recurring';
 import type { PlanIndex } from './engine';
@@ -27,6 +28,7 @@ export function decodePlans(raw: string | null): ReadingPlan[] {
     ids.add(p.id);
     if (p.goal?.type === 'memorization') { validateMemorizationPlan(p); continue; }
     if (p.goal?.type === 'recurring') { validateRecurringPlan(p); continue; }
+    if (p.goal?.type === 'revision') { validateRevisionPlan(p); continue; }
     if (!['pages', 'hizbs', 'juzs'].includes(p.unit) || typeof p.repeat !== 'boolean') throw new Error('إعدادات هدف غير صالحة');
     if (!p.goal || !['khatma', 'wird'].includes(p.goal.type) ||
       (p.goal.type === 'khatma' && (!Number.isInteger(p.goal.weeks) || p.goal.weeks < 1 || p.goal.weeks > 52)) ||
@@ -85,7 +87,35 @@ function syncMemorization(previous: ReadingPlan[], next: ReadingPlan[], records:
     if ((plan.status === 'active' || plan.status === 'paused') && !sameSpans(ranges, plan.memorized)) throw new Error('تغيّر سجل محفوظك. أعد فتح الهدف لتحديثه.');
     result = [...result.filter(r => r.riwayah !== plan.riwayah), { riwayah: plan.riwayah, corpus: plan.corpus, totalAyahs: plan.totalAyahs, ranges }];
   }
+  // A revision goal can set what is memorized (when it is created, or from its
+  // settings) only while no memorization goal owns the record for that edition.
+  for (const plan of next) {
+    if (!isRevisionPlan(plan) || plan.status === 'archived') continue;
+    const before = previous.find(p => p.id === plan.id);
+    const saved = result.find(r => r.riwayah === plan.riwayah);
+    const old = before && isRevisionPlan(before) ? before.memorized : saved?.ranges ?? [];
+    if (sameSpans(old, plan.memorized) || (saved && sameSpans(saved.ranges, plan.memorized))) continue;
+    if (currentMemorizationGoal(next.filter(p => p.riwayah === plan.riwayah))) throw new Error('محفوظك يتابعه هدف الحفظ. عدّله من هدف الحفظ.');
+    if (saved && (saved.corpus !== plan.corpus || saved.totalAyahs !== plan.totalAyahs)) throw new Error('نسخة سجل الحفظ لا تطابق الهدف.');
+    const added = subtractSpans(plan.memorized, old), removed = subtractSpans(old, plan.memorized);
+    const ranges = mergeSpans([...subtractSpans(saved?.ranges ?? [], removed), ...added]);
+    result = [...result.filter(r => r.riwayah !== plan.riwayah), { riwayah: plan.riwayah, corpus: plan.corpus, totalAyahs: plan.totalAyahs, ranges }];
+  }
   return result;
+}
+
+/** Revision goals follow the memorization record: newly memorized ayahs join
+ * the cycle in mushaf order and removed ones leave it. */
+export function mirrorRevision(plans: ReadingPlan[], records: MemorizationRecord[]): ReadingPlan[] {
+  let changed = false;
+  const next = plans.map(plan => {
+    if (!isRevisionPlan(plan)) return plan;
+    const record = records.find(r => r.riwayah === plan.riwayah);
+    if (!record || record.corpus !== plan.corpus || record.totalAyahs !== plan.totalAyahs || sameSpans(record.ranges, plan.memorized)) return plan;
+    changed = true;
+    return { ...plan, memorized: mergeSpans(record.ranges), revision: plan.revision + 1 };
+  });
+  return changed ? next : plans;
 }
 
 /** Persist before publishing. A failed disk write never reports successful completion. */
@@ -133,10 +163,11 @@ export function createPlansRepository(storage: CacheStorage, today: () => string
         const date = today();
         const limited = maintainArchives(stampArchiveTransitions(current, enforceGoalLimit(current, updated), date), date);
         const memory = syncMemorization(current, updated, memorization);
-        const raw = JSON.stringify({ version: 1, plans: limited, memorization: memory });
-        decodeMemorization(raw);
+        const mirrored = mirrorRevision(limited, memory);
+        const raw = JSON.stringify({ version: 1, plans: mirrored, memorization: memory });
+        decodePlans(raw); decodeMemorization(raw);
         await storage.setItem(PLANS_KEY, raw);
-        current = limited;
+        current = mirrored;
         memorization = memory;
         return current;
       });

@@ -1,7 +1,8 @@
 import type { AyahReference } from '@/lib/quranpedia/types';
 import type { ReaderContent, QuranPage } from '../quran-reader/types/reader';
 import { assertPlanIndex, buildPlanIndex, nextPortion, recordProgress, type PlanIndex } from './engine';
-import { isMemorizationPlan, isRecurringPlan, type ReadingPlan } from './types';
+import { isMemorizationPlan, isRecurringPlan, isRevisionPlan, type ReadingPlan } from './types';
+import { revisionDay } from './revision';
 
 export interface PlanReadingSession {
   id: string;
@@ -9,6 +10,8 @@ export interface PlanReadingSession {
   /** Recurring goals read one selected surah at a time, even when they are far apart. */
   recurring: boolean;
   memorization: boolean;
+  revision: boolean;
+  /** Surahs (recurring) or separate memorized passages (revision) still to come after this one. */
   remainingSurahs: number;
   index: PlanIndex;
   portion: NonNullable<ReturnType<typeof nextPortion>>;
@@ -34,7 +37,8 @@ export function createReadingSession(plan: ReadingPlan, content: ReaderContent, 
   const contains = (ayah: AyahReference) => ayah.mushafId === index.mushafId && keys.has(`${ayah.surahNumber}:${ayah.ayahNumber}`);
   const pages = content.pages.filter(p => p.number >= firstPage && p.number <= lastPage);
   return {
-    id: plan.id, name: plan.name, memorization: isMemorizationPlan(plan), recurring: isRecurringPlan(plan), remainingSurahs: isRecurringPlan(plan) ? plan.ranges.length - portion.slot - 1 : 0, index, portion, firstPage, lastPage, pages, contains,
+    id: plan.id, name: plan.name, memorization: isMemorizationPlan(plan), revision: isRevisionPlan(plan), recurring: isRecurringPlan(plan),
+    remainingSurahs: isRecurringPlan(plan) ? plan.ranges.length - portion.slot - 1 : isRevisionPlan(plan) ? (revisionDay(plan, today)?.remaining.length ?? 1) - 1 : 0, index, portion, firstPage, lastPage, pages, contains,
     content: {
       ...content,
       pages: pages.map(p => ({ ...p, ayahs: p.ayahs.filter(contains), previousAyah: p.previousAyah && contains(p.previousAyah) ? p.previousAyah : undefined })),

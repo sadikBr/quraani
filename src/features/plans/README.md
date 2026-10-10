@@ -1,7 +1,7 @@
 # Reading goals
 
-Supports a dated khatma, a continuous daily wird, memorization, and recurring
-surah reading.
+Supports a dated khatma, a continuous daily wird, memorization, revision of the
+memorized Quran, and recurring surah reading.
 Each goal owns its riwayah, schedule, progress and optional reminder. No
 account or server is needed. Routes live in `src/app/plans`; the reader menu opens
 the goals overview.
@@ -110,6 +110,33 @@ reminders; resuming uses the original weekdays without shifting the calendar.
 Editing weekdays changes availability while preserving earlier progress logs.
 Names and reminders are editable; the selected surahs and riwayah stay fixed.
 
+## Revision goals
+
+A revision goal (`revision.ts`) cycles through everything memorized for one
+riwayah, one portion per selected weekday. The daily amount is a whole number of
+quarter-hizbs (presets: quarter, half, hizb, juz). Each ayah weighs its share of
+the edition quarter it belongs to (`plan.quarters`, refreshed on relink), so a day
+ends on the whole ayah closest to the amount. A remaining tail under a quarter of
+the amount joins the last day of the pass; a portion never runs past the last
+memorized ayah, and the next portion starts a new pass from the first one. Gaps in
+the memorized record make a day of several parts, opened in the reader one part at
+a time; "أتممت مراجعة اليوم" records all remaining parts at once.
+
+- Portions are computed from `portionStart`/`cursor`, never stored as a schedule,
+  so newly memorized ayahs join in mushaf order and removed ones leave the cycle.
+  Ayahs added before the current place wait for the next pass.
+- A missed day does not pile up: the same portion waits for the next revision day.
+  A finished portion opens the next one from the following day.
+- Receipts carry `revision`, bumped on every change, so a stale tap cannot record
+  another portion. Undo works on the same day only and restores the whole day.
+- Changing only the weekdays keeps today's portion; changing the amount re-cuts it
+  from where it began, and a smaller amount than already read closes the day.
+- One current revision goal per riwayah, beside the memorization goal. The
+  repository mirrors the memorization record into every revision goal of that
+  edition (`mirrorRevision`). A revision goal may edit the record only while no
+  current memorization goal owns it; beside a running memorization goal it may
+  start empty and fills as memorization progresses.
+
 ## Archive retention and deletion
 
 Archived goals have an `archivedOn` local calendar date. Their deletion date is
@@ -170,10 +197,10 @@ reminder; partial reading keeps it scheduled.
 
 ## Adding other plan types
 
-`ReadingPlan` separates `SequentialPlan`, `MemorizationPlan` and
-`RecurringPlan`; use `isSequentialPlan`, `isMemorizationPlan` and
-`isRecurringPlan` to narrow it before accessing strategy-specific progress.
-Future goals such as memorization revision should define their own range and
+`ReadingPlan` separates `SequentialPlan`, `MemorizationPlan`, `RecurringPlan`
+and `RevisionPlan`; use `isSequentialPlan`, `isMemorizationPlan`,
+`isRecurringPlan` and `isRevisionPlan` to narrow it before accessing
+strategy-specific progress. Future goals (for example near/far revision) should define their own range and
 completion rules while reusing calendar, storage, reminders, reader actions and
 lifecycle UI. Avoid representing disjoint ranges as contiguous khatma reading.
 
@@ -191,6 +218,9 @@ undo, schedule edits, pause/archive, persistence coexistence and reminder filter
 quarter-hizb quotas, weekdays and carry-forward, disjoint ranges, exact bounded
 reader sessions, confirmation/undo/correction, stale writes, archive/delete,
 reloading, reminders, and completion of the full Quran.
+`tests/revision-goals.test.js` covers quarter-weighted portions, the tail and cap,
+new passes, multi-part days and stale receipts, missed days, same-day undo,
+record mirroring and ownership, settings changes, validation and relink.
 
 ## Edition corrections
 

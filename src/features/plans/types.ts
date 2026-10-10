@@ -2,7 +2,7 @@ import type { Riwayah } from '../quran-reader/riwayat';
 
 export type PlanUnit = 'pages' | 'hizbs' | 'juzs';
 export type SequentialGoal = { type: 'khatma'; weeks: number } | { type: 'wird'; amount: number };
-export type PlanGoal = SequentialGoal | { type: 'recurring'; surahs: number[] } | { type: 'memorization'; weeklyQuarters: number };
+export type PlanGoal = SequentialGoal | { type: 'recurring'; surahs: number[] } | { type: 'memorization'; weeklyQuarters: number } | { type: 'revision'; dailyQuarters: number };
 export type PlanStart = { kind: 'page' | 'surah' | 'hizb'; number: number };
 export type PlanStatus = 'active' | 'paused' | 'completed' | 'archived';
 export interface PlanSession { date: string; start: number; end: number }
@@ -79,9 +79,47 @@ export interface MemorizationDraft {
   initialRecord?: AyahSpan[];
   reminder: ReadingPlan['reminder'];
 }
-export type ReadingPlan = SequentialPlan | RecurringPlan | MemorizationPlan;
+/** One finished day of revision: the memorized ayahs between from and to. */
+export interface RevisionLog { date: string; from: number; to: number; pass: number }
+/** State before the last recorded progress, for a same-day undo. */
+export interface RevisionUndo { date: string; portionStart: number; cursor: number; pass: number; availableDate: string; logLength: number }
+/**
+ * Revision walks through everything memorized in mushaf order, one portion per
+ * selected day, and starts again from the beginning after the last memorized
+ * ayah. `memorized` mirrors the edition's memorization record (the repository
+ * keeps it in sync); `quarters` are the edition's quarter boundaries, so the
+ * daily amount is measured without loading the mushaf.
+ */
+export interface RevisionPlan extends PlanBase {
+  goal: { type: 'revision'; dailyQuarters: number };
+  memorized: AyahSpan[];
+  quarters: number[];
+  /** 1-based pass through the memorized material. */
+  pass: number;
+  /** Ordinal where the current portion begins. */
+  portionStart: number;
+  /** First ordinal of the current portion not yet revised. */
+  cursor: number;
+  /** A finished portion makes the next one available from the following day. */
+  availableDate: string;
+  /** Bumps on every change so a stale tap cannot record a different portion. */
+  revision: number;
+  log: RevisionLog[];
+  undo?: RevisionUndo;
+}
+export interface RevisionDraft {
+  name: string;
+  riwayah: Riwayah;
+  dailyQuarters: number;
+  weekdays: number[];
+  startDate: string;
+  memorized: AyahSpan[];
+  reminder: ReadingPlan['reminder'];
+}
+export type ReadingPlan = SequentialPlan | RecurringPlan | MemorizationPlan | RevisionPlan;
 export function isRecurringPlan(plan: ReadingPlan): plan is RecurringPlan { return plan.goal.type === 'recurring'; }
 export function isMemorizationPlan(plan: ReadingPlan): plan is MemorizationPlan { return plan.goal.type === 'memorization'; }
+export function isRevisionPlan(plan: ReadingPlan): plan is RevisionPlan { return plan.goal.type === 'revision'; }
 export function isSequentialPlan(plan: ReadingPlan): plan is SequentialPlan { return plan.goal.type === 'khatma' || plan.goal.type === 'wird'; }
 export interface PlanDraft {
   name: string;

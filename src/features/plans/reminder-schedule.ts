@@ -1,6 +1,7 @@
 import { memorizationSchedule } from './memorization';
 import { addDays, localDate } from './dates';
-import { isMemorizationPlan, isRecurringPlan, type ReadingPlan } from './types';
+import { isMemorizationPlan, isRecurringPlan, isRevisionPlan, type ReadingPlan } from './types';
+import { revisionReminderDays } from './revision';
 import { occurrenceProgress, scheduledOn } from './recurring';
 
 export const REMINDER_PREFIX = 'quranni-plan:';
@@ -14,6 +15,10 @@ export function planReminderQueue(plans: ReadingPlan[], now: Date) {
         return date.getTime() > now.getTime() ? [{ id: `${REMINDER_PREFIX}${plan.id}:${s.date}:${date.getTime()}`, planId: plan.id, date, title: plan.name, body: 'حان موعد الحفظ. خطوة جديدة نحو القرآن في صدرك.' }] : [];
       });
     }
+    if (isRevisionPlan(plan)) return revisionReminderDays(plan, today, 30).flatMap(day => {
+      const date = new Date(`${day}T${String(plan.reminder.hour).padStart(2, '0')}:${String(plan.reminder.minute).padStart(2, '0')}:00`);
+      return date.getTime() > now.getTime() ? [{ id: `${REMINDER_PREFIX}${plan.id}:${day}:${date.getTime()}`, planId: plan.id, date, title: plan.name, body: 'حان موعد المراجعة. ثبّت محفوظك بوردك اليوم.' }] : [];
+    });
     if (!plan.reminder.enabled || plan.status === 'paused' || plan.status === 'archived' || (!isRecurringPlan(plan) && plan.status === 'completed' && !plan.repeat)) return [];
     const first = isRecurringPlan(plan) ? plan.startDate : plan.status === 'completed' && plan.cycle.completedOn ? addDays(plan.cycle.completedOn, 1)
       : plan.goal.type === 'khatma' ? plan.cycle.sessions.find(s => s.end > plan.cycle.cursor)?.date ?? plan.startDate : plan.startDate;

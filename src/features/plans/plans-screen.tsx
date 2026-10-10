@@ -15,7 +15,8 @@ import { dateLabel } from './dates';
 import { arabicNumber, shortDate } from './presentation';
 import { goalsOverview, type GoalsView } from './overview';
 import { MemorizationGoalCard } from './memorization-components';
-import { isMemorizationPlan, isRecurringPlan, type ReadingPlan } from './types';
+import { isMemorizationPlan, isRecurringPlan, isRevisionPlan, type ReadingPlan } from './types';
+import { RevisionGoalCard } from './revision-components';
 import { RecurringGoalCard } from './recurring-components';
 import { GoalCardFrame, GoalCardHeading, GoalProgress } from './goal-card';
 import { PlanLoading, PlanNotice } from './components';
@@ -98,6 +99,7 @@ function GoalCard({ plan, today }: { plan: ReadingPlan; today: string }) {
   const next = nextPortion(plan, today);
   if (isMemorizationPlan(plan)) return <MemorizationGoalCard plan={plan} today={today} />;
   if (isRecurringPlan(plan)) return <RecurringGoalCard plan={plan} today={today} />;
+  if (isRevisionPlan(plan)) return <RevisionGoalCard plan={plan} today={today} />;
   const completed = plan.cycle.sessions.filter(s => s.end <= plan.cycle.cursor).length;
   const progress = Math.max(0, Math.min(1, (plan.cycle.cursor - plan.cycle.start) / Math.max(1, plan.totalAyahs - plan.cycle.start)));
   const percent = progress === 1 ? 100 : Math.floor(progress * 100);
@@ -114,7 +116,7 @@ function EmptyGoals({ view, hasGoals, completed, onCreate, onShowAll }: { view: 
   const { palette: p } = useReadingPreferences();
   const waiting = view === 'today' && hasGoals;
   const title = view === 'archived' ? 'أرشيفك فارغ' : waiting ? completed ? 'أتممت وردك، تقبّل الله منك' : 'لا أوراد مطلوبة الآن' : 'لكل رحلة بداية';
-  const description = view === 'archived' ? 'تُحفظ الأهداف هنا لمدة أسبوعين بعد أرشفتها، ثم تُحذف نهائيًا.' : waiting ? 'تجد أهدافك القادمة والموقوفة في «أهدافي».' : 'ختمة، أو حفظ متدرّج، أو سور تختار لها مواعيد تتجدد.';
+  const description = view === 'archived' ? 'تُحفظ الأهداف هنا لمدة أسبوعين بعد أرشفتها، ثم تُحذف نهائيًا.' : waiting ? 'تجد أهدافك القادمة والموقوفة في «أهدافي».' : 'ختمة، أو حفظ متدرّج ومراجعته، أو سور تختار لها مواعيد تتجدد.';
   return <View style={[s.empty, { borderColor: p.border }]}>
     <View style={[s.emptyIcon, { backgroundColor: p.accentSoft }]}><ReaderIcon name={view === 'archived' ? 'bookmark' : waiting && completed ? 'check' : 'book'} color={p.accent} size={28} /></View>
     <Text accessibilityRole="header" style={{ color: p.text, fontSize: 19, fontWeight: '600', textAlign: 'center' }}>{title}</Text>

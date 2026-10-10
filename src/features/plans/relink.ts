@@ -1,6 +1,6 @@
 import { RIWAYAT, type Riwayah } from '../quran-reader/riwayat';
 import type { PlanIndex } from './engine';
-import { isRecurringPlan, type MemorizationRecord, type ReadingPlan } from './types';
+import { isRecurringPlan, isRevisionPlan, type MemorizationRecord, type ReadingPlan } from './types';
 
 /**
  * The edition fingerprint covers page/hizb/juz metadata as well as the ayah
@@ -13,6 +13,8 @@ export function canRelink(plan: Pick<ReadingPlan, 'riwayah' | 'corpus' | 'totalA
 }
 
 function relinkRecurring(plan: ReadingPlan, index: PlanIndex): ReadingPlan | null {
+  // Corrected quarter boundaries re-weigh future revision portions only.
+  if (isRevisionPlan(plan)) return { ...plan, corpus: index.corpus, quarters: [...index.quarters], revision: plan.revision + 1, undo: undefined };
   if (!isRecurringPlan(plan)) return { ...plan, corpus: index.corpus };
   const ranges = plan.ranges.map(range => ({ surah: range.surah,
     start: index.ayahs.findIndex(a => a.surahNumber === range.surah), end: index.ayahs.findLastIndex(a => a.surahNumber === range.surah) + 1 }));

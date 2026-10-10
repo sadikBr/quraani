@@ -1,4 +1,4 @@
-import { isMemorizationPlan, isSequentialPlan, type SequentialGoal, type SequentialPlan, type ReadingPlan } from './types';
+import { isMemorizationPlan, isRevisionPlan, isSequentialPlan, type SequentialGoal, type SequentialPlan, type ReadingPlan } from './types';
 
 export const isCurrentGoal = (goal: ReadingPlan) => goal.status === 'active' || goal.status === 'paused';
 export function currentGoal(plans: ReadingPlan[], exceptId?: string) {
@@ -7,6 +7,11 @@ export function currentGoal(plans: ReadingPlan[], exceptId?: string) {
 
 export function currentMemorizationGoal(plans: ReadingPlan[], exceptId?: string) {
   return plans.find(p => isMemorizationPlan(p) && p.id !== exceptId && isCurrentGoal(p));
+}
+
+/** One revision cycle per edition: two would split the same memorized ayahs. */
+export function currentRevisionGoal(plans: ReadingPlan[], riwayah: ReadingPlan['riwayah'], exceptId?: string) {
+  return plans.find(p => isRevisionPlan(p) && p.riwayah === riwayah && p.id !== exceptId && isCurrentGoal(p));
 }
 
 export class DuplicateGoalError extends Error {
@@ -25,6 +30,10 @@ export function enforceGoalLimit(previous: ReadingPlan[], next: ReadingPlan[]): 
         const conflict = currentMemorizationGoal(next, goal.id);
         if (conflict) throw new Error('لديك هدف حفظ جارٍ بالفعل. تابعه أو أرشفه قبل إنشاء هدف حفظ جديد.');
       }
+    }
+    if (isRevisionPlan(goal)) {
+      const before = previous.find(p => p.id === goal.id);
+      if (isCurrentGoal(goal) && (!before || !isCurrentGoal(before)) && currentRevisionGoal(next, goal.riwayah, goal.id)) throw new Error('لديك هدف مراجعة جارٍ لهذه الرواية. عدّله أو أرشفه قبل إنشاء هدف مراجعة جديد.');
     }
     if (!isSequentialPlan(goal)) continue;
     const before = previous.find(p => p.id === goal.id);
