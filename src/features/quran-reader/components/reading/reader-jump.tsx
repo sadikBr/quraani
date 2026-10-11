@@ -1,18 +1,25 @@
-import { useState } from 'react';
-import { Keyboard, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState, type Ref } from 'react';
+import { AccessibilityInfo, Keyboard, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { Button, IconTile } from '@/components/ui';
-import type { AyahReference } from '@/lib/quranpedia/types';
+import type { AyahReference, Surah } from '@/lib/quranpedia/types';
 import { readerElevation, readerShape, withAlpha } from '../../design';
 import type { ReaderContent } from '../../types/reader';
 import type { ReaderPalette } from '../../theme';
 import { ayahDestination, parseReaderNumber } from '../../utils/navigation';
 import { pageDivisions } from '../../utils/page-divisions';
+import { normalizeArabicSearch } from '../../utils/search';
 import { ReaderIcon } from '../ui/reader-chrome';
-import { formatList, t } from '@/i18n';
+import { LibrarySearch } from '../ui/library-chrome';
+import { formatList, formatNumber, t } from '@/i18n';
 
-export function ReaderJump({ content, currentPage, palette: p, onJump, limited = false }: {
+/**
+ * Quick navigation, to a page or to an ayah. The surah is chosen from a list of the available
+ * surahs (`picking`), shown in place of the form; `onReveal` scrolls the chosen one into view.
+ */
+export function ReaderJump({ content, currentPage, palette: p, onJump, limited = false, picking, onPickingChange, onReveal }: {
   content: ReaderContent; currentPage: number; palette: ReaderPalette; onJump: (page: number, ayah?: AyahReference) => void; limited?: boolean;
+  picking: boolean; onPickingChange: (picking: boolean) => void; onReveal: (y: number) => void;
 }) {
   const initialAyah = (content.pages.find(value => value.number === currentPage) ?? content.pages[0]).ayahs[0] ?? content.quran.surahs[0].ayahs[0];
   const [kind, setKind] = useState<'page' | 'ayah'>('page');
@@ -33,6 +40,23 @@ export function ReaderJump({ content, currentPage, palette: p, onJump, limited =
   const pageHint = t(limited ? 'reader.jump.sessionPages' : 'reader.jump.range', { first: firstPage, last: lastPage });
   const ayahHint = selectedSurah ? t('reader.jump.range', { first: selectedSurah.ayahs[0].ayahNumber, last: selectedSurah.ayahs.at(-1)!.ayahNumber }) : t('reader.jump.chooseSurahFirst');
   const change = (setter: (value: string) => void) => (value: string) => { setter(value); setError(''); };
+  // Back from the list, a screen reader lands on the surah field again.
+  const surahField = useRef<View>(null);
+  const wasPicking = useRef(picking);
+  useEffect(() => {
+    if (wasPicking.current && !picking) focusView(surahField.current);
+    wasPicking.current = picking;
+  }, [picking]);
+  const chooseSurah = (number: number) => {
+    const chosen = content.quran.surahs.find(value => value.number === number);
+    if (!chosen) return;
+    Keyboard.dismiss();
+    setSurah(String(chosen.number));
+    // The ayah number of another surah may not exist here: start from its first ayah.
+    setAyah(String(chosen.ayahs[0].ayahNumber));
+    setError('');
+    onPickingChange(false);
+  };
   const submit = () => {
     if (kind === 'page') {
       if (!destinationPage) { setError(t('reader.jump.pageError', { first: firstPage, last: lastPage })); return; }
@@ -46,6 +70,8 @@ export function ReaderJump({ content, currentPage, palette: p, onJump, limited =
     const next = pageIndex >= 0 ? content.pages[pageIndex + delta] : undefined;
     if (next) change(setPage)(String(next.number));
   };
+  if (picking) return <SurahPicker surahs={content.quran.surahs} selected={selectedSurah?.number} limited={limited} palette={p}
+    onChoose={chooseSurah} onBack={() => { Keyboard.dismiss(); onPickingChange(false); }} onReveal={onReveal} />;
   const actionLabel = destinationPage ? kind === 'page' ? t('reader.jump.toPage', { page: destinationPage.number }) : t('reader.jump.toAyah', { ayah: targetAyah!.ayahNumber }) : t('reader.jump.toDestination');
   return <View style={s.form}>
     <View accessibilityRole="tablist" accessibilityLabel={t('reader.jump.method')} style={[s.tabs, { borderColor: p.border }]}>
@@ -64,7 +90,8 @@ export function ReaderJump({ content, currentPage, palette: p, onJump, limited =
       <NumberField label={t('reader.jump.pageNumber')} value={page} onChange={change(setPage)} hint={pageHint} palette={p} onSubmit={submit} large />
       <PageStep label={t('reader.jump.decreasePage')} disabled={pageIndex <= 0} palette={p} onPress={() => stepPage(-1)} />
     </View> : <View style={s.ayahFields}>
-      <NumberField label={t('reader.jump.surahNumber')} value={surah} onChange={change(setSurah)} hint={limited ? t('reader.jump.withinSession') : t('reader.jump.range', { first: 1, last: 114 })} palette={p} onSubmit={submit} />
+      <SurahField ref={surahField} surah={selectedSurah} hint={limited ? t('reader.jump.withinSession') : selectedSurah ? t('reader.jump.surahHint', { number: selectedSurah.number }) : ''}
+        palette={p} onPress={() => { Keyboard.dismiss(); onPickingChange(true); }} />
       <NumberField label={t('reader.jump.ayahNumber')} value={ayah} onChange={change(setAyah)} hint={ayahHint} palette={p} onSubmit={submit} />
     </View>}
     <View accessibilityLiveRegion="polite" style={[s.preview, { backgroundColor: p.card, borderColor: p.border }]}>
@@ -93,6 +120,73 @@ function NumberField({ label, value, onChange, hint, palette: p, onSubmit, large
     <Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center' }}>{hint}</Text>
   </View>;
 }
+function focusView(view: View | null) {
+  if (!view) return;
+  if (Platform.OS === 'web') (view as unknown as HTMLElement).focus?.();
+  else AccessibilityInfo.sendAccessibilityEvent(view, 'focus');
+}
+
+/** Shows the chosen surah by name; pressing it opens the list of surahs. */
+function SurahField({ surah, hint, palette: p, onPress, ref }: { surah?: Surah; hint: string; palette: ReaderPalette; onPress: () => void; ref: Ref<View> }) {
+  return <View style={[s.field, s.surahField]}>
+    <Text style={{ color: p.foreground, fontSize: 14, fontWeight: '500', textAlign: 'center' }}>{t('reader.jump.surah')}</Text>
+    <Pressable ref={ref} accessibilityRole="button" accessibilityLabel={surah?.name ?? t('reader.jump.chooseSurah')} accessibilityHint={t('reader.jump.changeSurah')} onPress={onPress}
+      style={({ pressed }) => [s.select, { borderColor: p.input, backgroundColor: pressed ? p.accent : p.background }, readerElevation(1, p)]}>
+      <View style={s.selectSide} />
+      <Text numberOfLines={1} style={{ flex: 1, color: surah ? p.foreground : p.mutedForeground, fontSize: 18, fontWeight: '600', textAlign: 'center' }}>{surah?.name ?? t('reader.jump.chooseSurah')}</Text>
+      <View style={s.selectSide}><ReaderIcon name="chevron-down" size={18} color={p.mutedForeground} /></View>
+    </Pressable>
+    <Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center' }}>{hint}</Text>
+  </View>;
+}
+
+/** The available surahs (all, or those of the goal session), searchable by name or number. */
+function SurahPicker({ surahs, selected, limited, palette: p, onChoose, onBack, onReveal }: {
+  surahs: Surah[]; selected?: number; limited: boolean; palette: ReaderPalette; onChoose: (number: number) => void; onBack: () => void; onReveal: (y: number) => void;
+}) {
+  const [query, setQuery] = useState('');
+  const back = useRef<View>(null);
+  useEffect(() => { focusView(back.current); }, []);
+  // Once both are laid out, the chosen surah is scrolled into view (only when the list first opens).
+  const layout = useRef({ list: -1, row: -1, done: false });
+  const reveal = () => {
+    const l = layout.current;
+    if (l.done || l.list < 0 || l.row < 0) return;
+    l.done = true;
+    onReveal(l.list + l.row);
+  };
+  const q = normalizeArabicSearch(query);
+  const shown = q ? surahs.filter(value => normalizeArabicSearch(value.name).includes(q) || String(value.number) === q || formatNumber(value.number) === query.trim()) : surahs;
+  return <View style={s.picker}>
+    <View style={s.pickerHeading}>
+      <Button ref={back} palette={p} variant="outline" icon="back" label={t('reader.jump.backToForm')} onPress={onBack} />
+      <View style={s.grow}>
+        <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{limited ? t('reader.jump.sessionSurahs') : t('reader.jump.chooseSurah')}</Text>
+        <Text style={{ color: p.mutedForeground, fontSize: 12 }}>{t('reader.jump.surahCount', { count: surahs.length })}</Text>
+      </View>
+    </View>
+    <LibrarySearch palette={p} value={query} onChange={setQuery} label={t('reader.jump.searchSurah')} placeholder={t('reader.jump.searchPlaceholder')} />
+    <View onLayout={(event) => { layout.current.list = event.nativeEvent.layout.y; reveal(); }}
+      style={[s.list, { borderColor: p.border, backgroundColor: p.card }, readerElevation(1, p)]}>
+      {shown.length ? shown.map((value, index) => {
+        const current = value.number === selected;
+        return <Pressable key={value.number} accessibilityRole="button" accessibilityLabel={value.name} accessibilityState={{ selected: current }} aria-selected={current}
+          onLayout={current ? (event) => { layout.current.row = event.nativeEvent.layout.y; reveal(); } : undefined} onPress={() => onChoose(value.number)}
+          style={({ pressed }) => [s.row, index > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }, { backgroundColor: current || pressed ? p.accent : 'transparent' }]}>
+          <View style={[s.number, { borderColor: current ? p.primary : p.border, backgroundColor: current ? p.primary : 'transparent' }]}>
+            <Text style={{ color: current ? p.primaryForeground : p.mutedForeground, fontSize: 13, fontWeight: '600' }}>{formatNumber(value.number)}</Text>
+          </View>
+          <View style={s.grow}>
+            <Text style={{ color: p.foreground, fontSize: 16, fontWeight: current ? '600' : '400' }}>{value.name}</Text>
+            <Text style={{ color: p.mutedForeground, fontSize: 12 }}>{t('reader.jump.ayahs', { count: value.ayahs.length })} · {t('reader.jump.startPage', { page: value.ayahs[0].pageNumber })}</Text>
+          </View>
+          {current && <ReaderIcon name="done" size={18} color={p.primary} />}
+        </Pressable>;
+      }) : <Text style={{ color: p.mutedForeground, fontSize: 14, textAlign: 'center', padding: 20 }}>{t('reader.jump.noSurah')}</Text>}
+    </View>
+  </View>;
+}
+
 function PageStep({ label, onPress, disabled, plus = false, palette: p }: { label: string; onPress: () => void; disabled: boolean; plus?: boolean; palette: ReaderPalette }) {
   return <Button palette={p} variant="outline" size="lg" icon={plus ? 'plus' : 'minus'} label={label} disabled={disabled} onPress={onPress} />;
 }
@@ -101,7 +195,13 @@ const s = StyleSheet.create({
   tabs: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, gap: 20 },
   tab: { flex: 1, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', minHeight: 44, paddingBottom: 6, borderBottomWidth: 2, marginBottom: -1 },
   pagePicker: { flexDirection: 'row', gap: 18, alignItems: 'center', paddingVertical: 2 },
-  ayahFields: { flexDirection: 'row', gap: 16 }, field: { flex: 1, minWidth: 0, gap: 6 },
+  ayahFields: { flexDirection: 'row', gap: 16 }, field: { flex: 1, minWidth: 0, gap: 6 }, surahField: { flex: 2 },
+  select: { minHeight: 64, borderWidth: 1, borderRadius: readerShape.control, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  selectSide: { width: 22, alignItems: 'center' },
+  picker: { gap: 14 }, pickerHeading: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  list: { borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.lg, overflow: 'hidden' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, paddingVertical: 8, paddingHorizontal: 14 },
+  number: { minWidth: 34, height: 34, paddingHorizontal: 4, borderRadius: readerShape.pill, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   input: { minHeight: 64, borderWidth: 1, borderRadius: readerShape.control, paddingHorizontal: 8, paddingVertical: 4, fontFamily: 'UiNumericSemiBold', fontSize: 30, textAlign: 'center', writingDirection: 'ltr', includeFontPadding: false },
   largeInput: { minHeight: 80, fontSize: 42 },
   step: { width: 44, height: 44, borderWidth: StyleSheet.hairlineWidth * 2, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
