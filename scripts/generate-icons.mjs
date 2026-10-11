@@ -1,7 +1,7 @@
 // Regenerates the Lucide icon geometry the app draws (ReaderIcon). Run: node scripts/generate-icons.mjs
 import { readFileSync, writeFileSync } from 'node:fs';
 const icons = {
-  back: 'arrow-right', chevron: 'chevron-left', check: 'check', bookmark: 'bookmark', copy: 'copy', share: 'share',
+  back: 'arrow-right', chevron: 'chevron-left', 'chevron-right': 'chevron-right', check: 'check', bookmark: 'bookmark', copy: 'copy', share: 'share',
   translate: 'languages', close: 'x', trash: 'trash', restore: 'rotate-ccw', archive: 'archive', search: 'search',
   book: 'book-open', lines: 'text-align-end', word: 'whole-word', eye: 'eye', 'eye-off': 'eye-off', settings: 'settings',
   menu: 'menu', calendar: 'calendar-check', index: 'list', jump: 'locate-fixed', sun: 'sun', moon: 'moon',

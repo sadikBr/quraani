@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { RIWAYAT } from '../../riwayat';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -14,19 +14,24 @@ import { WarshTajweedLegend } from './warsh-tajweed-legend';
 import { ReadingLayoutPreview, SettingsCard, SettingsCardHeading, SettingsSelection, SettingsToggle } from './settings-ui';
 import { readerLayout, readerShape } from '../../design';
 import { RecitationSettings } from '@/features/recitation/recitation-settings';
+import { PrayerSettings } from '@/features/prayers/prayer-settings';
 import { t } from '@/i18n';
 
-type SettingsTab = 'reading' | 'recitation' | 'appearance';
+type SettingsTab = 'reading' | 'recitation' | 'appearance' | 'prayers';
 const tabs: { value: SettingsTab; label: string; icon: ReaderIconName }[] = [
   { value: 'reading', get label() { return t('settings.tabs.reading'); }, icon: 'book' },
   { value: 'recitation', get label() { return t('settings.tabs.recitation'); }, icon: 'headphones' },
   { value: 'appearance', get label() { return t('settings.tabs.appearance'); }, icon: 'sun' },
+  { value: 'prayers', get label() { return t('settings.tabs.prayers'); }, icon: 'mosque' },
 ];
+const isTab = (value: unknown): value is SettingsTab => tabs.some(tab => tab.value === value);
 
 export function SettingsScreen() {
   const { preferences, update, palette, dark } = useReadingPreferences();
   const { appearance, mode, textLayout, fontSize, spacious, riwayah, tajweed } = preferences;
-  const [tab, setTab] = useState<SettingsTab>('reading');
+  // `/settings?tab=prayers` opens a tab (the prayer times page links to its settings).
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const [tab, setTab] = useState<SettingsTab>(() => isTab(params.tab) ? params.tab : 'reading');
   const scroll = useRef<ScrollView>(null);
   return <SafeAreaView style={[styles.root, { backgroundColor: palette.background }]}>
     <StatusBar style={dark ? 'light' : 'dark'} />
@@ -95,7 +100,8 @@ export function SettingsScreen() {
         </SettingsCard>
       </>}
       {tab === 'recitation' && <RecitationSettings palette={palette} />}
-      {tab !== 'recitation' && <ReaderSettings section={tab} palette={palette} fixedPage={mode === 'page'} textLayout={textLayout} appearance={appearance} setAppearance={value => update({ appearance: value })}
+      {tab === 'prayers' && <PrayerSettings />}
+      {(tab === 'reading' || tab === 'appearance') && <ReaderSettings section={tab} palette={palette} fixedPage={mode === 'page'} textLayout={textLayout} appearance={appearance} setAppearance={value => update({ appearance: value })}
         fontSize={fontSize} setFontSize={value => update({ fontSize: value })} spacious={spacious} setSpacious={value => update({ spacious: value })} />}
       <View style={styles.footer}>
         <View style={styles.saved}><ReaderIcon name="done" color={palette.mutedForeground} size={14} /><Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('settings.footer.autoSaved')}</Text></View>

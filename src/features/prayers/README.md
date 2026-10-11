@@ -3,6 +3,17 @@
 The five prayers and sunrise at the user's place, the next one with a countdown, and alerts at
 each time: a notification, the takbir, or the whole athan. Route: `/prayers`.
 
+The screen (`prayers-screen.tsx`) keeps to the times: the place (with «تغيير»), the next prayer in
+the theme's colour (Hijri and Gregorian dates, its name and time, a ticking countdown, and a bar
+from the time we are in to the next), then any day's times, a week at a time: a strip of seven days
+(Monday to Sunday, as Morocco's calendars; today dotted, the chosen day filled) with arrows to the
+previous and next week, up to 52 weeks either way. The chosen day's six times follow, each with its
+alert bell; on today those past are dimmed and the present one is marked «الوقت الحالي».
+«اليوم» comes back to today. Its last row, «إعدادات الصلاة», opens `/settings?tab=prayers`.
+
+Everything else is in the settings' «الصلاة» tab (`prayer-settings.tsx`): the alerts and the athan
+(with its test and Android's conditions), the prayer times notification, and the calculation.
+
 The home screen's «اليوم» tab opens with the day's card (`home-card.tsx`): the next prayer and the time left,
 the day drawn as the sun's path (each time at its hour, Fajr and Isha under the horizon, the part
 already passed in the theme's colour, the sun marking now), and the six times in a row; after Isha
@@ -70,7 +81,7 @@ and each return to the app:
   10 seconds by the same path as at prayer time (an expo notification on the takbir's channel; the
   module's alarm, `AthanModule.test`), so the user can lock the phone and see the athan's screen.
   The test athan plays even when the phone is silenced, and never touches the scheduled ones.
-- **Reliability** (Android app, alerts on): the screen asks for exact alarms («المنبّهات
+- **Reliability** (Android app, alerts on): the settings ask for exact alarms («المنبّهات
   والتذكيرات», not granted at install on Android 14+; without them every alert can be late), for
   full-screen notifications when a whole athan is chosen, and to be exempt from battery
   optimisation.
@@ -78,14 +89,14 @@ and each return to the app:
 
 ## The prayer times notification (`times-notification.ts`, `AthanTimes.kt`)
 
-«المواقيت في الإشعارات» (under today's times; Android app only, setting `timesNotification`) keeps
+«المواقيت في الإشعارات» (in the settings' «الصلاة» tab; Android app only, setting `timesNotification`) keeps
 a quiet notification (channel `prayer-times`, low importance) that is always there:
 
 - **Collapsed:** the next prayer in colour, its time, the time left, then the next two times of
   that day (or the date when none are left).
 - **Expanded:** the same line, the Hijri and Gregorian date, a hairline, and the six times as a
   list: the next one in colour and bold, those past dimmed. After Isha it shows the next day,
-  marked «غدًا». Tapping it opens this screen (`quranmobile://prayers`).
+  marked «غدًا». Tapping it opens the prayer times (`quranmobile://prayers`).
 
 It is drawn natively with `DecoratedCustomViewStyle` and two layouts
 (`modules/athan/android/src/main/res/layout/athan_times_*.xml`). Each row has its normal, next and
@@ -112,7 +123,7 @@ text, rings pulsing out around the prayer and its time (or a breathing glow), «
 prayer's name, its time, the Hijri date and the place, and a frosted «إيقاف الأذان» button. It is
 drawn natively, edge to edge, and closes when the athan ends.
 
-«شاشة الأذان» (`/athan-screen`, from the alerts card) designs it: background (seven photos, see
+«شاشة الأذان» (`/athan-screen`, from the alerts card in the settings) designs it: background (seven photos, see
 `modules/athan/PHOTOS.md`, or green or navy), darkening, movement (pulse, glow, none) and the date,
 with a live miniature drawn in React Native to the same proportions (keep the two in step), and a
 button that opens the real screen silently (`previewScreen`; it closes when left). The look is
@@ -122,8 +133,8 @@ by an earlier version show their notification's text instead.
 
 ## Credits
 
-The recordings, how they were cut and their licences are in `assets/athan/README.md`. The screen
-ends with a link to the app's credits page (`/credits`, `features/credits`), which lists every
+The recordings, how they were cut and their licences are in `assets/athan/README.md`. The
+settings end with a link to the app's credits page (`/credits`, `features/credits`), which lists every
 recording, Adhan and GeoNames with the rest of what the app uses: title, author, source and
 licence links, and the changes.
 

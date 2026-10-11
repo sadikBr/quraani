@@ -39,9 +39,28 @@ export default {
     in: 'بعد',
     /** Spoken: «العصر الساعة 15:33، بعد 2:14:05». */
     spoken: '{{prayer}} الساعة {{time}}، بعد {{countdown}}',
+    /** At the start of the bar from the time we are in to the next: «العصر 15:33». */
+    since: '{{prayer}} {{time}}',
   },
+  /** Browsing the times of other days, a week at a time. */
+  week: {
+    /** «5 – 11 أكتوبر». */
+    range: '{{from}} – {{to}}',
+    label: 'أسبوع {{range}}',
+    previous: 'الأسبوع السابق',
+    next: 'الأسبوع التالي',
+    /** Short weekday names over the day numbers, from Sunday (d0) to Saturday (d6). */
+    days: { d0: 'أحد', d1: 'اثنين', d2: 'ثلاثاء', d3: 'أربعاء', d4: 'خميس', d5: 'جمعة', d6: 'سبت' },
+    /** Spoken label of today's day: «اليوم، الأحد 11 أكتوبر». */
+    todayLabel: 'اليوم، {{date}}',
+    /** Above the times of the chosen day; other days show their date. */
+    titles: { today: 'مواقيت اليوم', tomorrow: 'مواقيت الغد', yesterday: 'مواقيت الأمس' },
+    today: 'اليوم',
+    backToToday: 'العودة إلى اليوم',
+  },
+  /** The last row of the prayer times, to their settings. */
+  settingsLink: { title: 'إعدادات الصلاة', detail: 'التنبيهات والأذان وطريقة الحساب' },
   today: {
-    title: 'مواقيت اليوم',
     /** Spoken label of a row: «العصر 15:33، أذان قصير». */
     row: '{{prayer}} {{time}}، {{alert}}',
     current: 'الوقت الحالي',
@@ -238,6 +257,7 @@ export default {
   },
   /** The prayer times notification, always shown (Android app). */
   timesNotification: {
+    title: 'إشعار المواقيت',
     label: 'المواقيت في الإشعارات',
     detail: 'إشعار ثابت فيه مواقيت اليوم والصلاة القادمة والوقت الباقي عليها.',
     /** Without exact alarms, Android may refresh it up to ten minutes late, so it hides the countdown. */
@@ -249,8 +269,6 @@ export default {
     /** The live countdown to the next prayer; %s is the time left, «1:23:45». */
     countdown: 'بعد %s',
   },
-  /** Link at the bottom of the screen to the app's credits page. */
-  creditsLink: 'المصادر والتراخيص',
   /** The first card of the home screen. */
   home: {
     /** Spoken: the whole card, which opens the prayer times. */

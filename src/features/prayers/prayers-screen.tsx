@@ -1,29 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { router } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { Alert, Button, Chip, Tabs } from '@/components/ui';
+import { Alert, Button, IconTile } from '@/components/ui';
+import { useEmbedded } from '@/components/embedded';
+import { withAlpha } from '@/features/quran-reader/colors';
 import { readerElevation, readerLayout, readerShape } from '@/features/quran-reader/design';
 import { ReaderIcon } from '@/features/quran-reader/components/ui/reader-chrome';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
-import { SettingsCard, SettingsCardHeading } from '@/features/quran-reader/components/reading/settings-ui';
-import { PlanSwitch } from '@/features/plans/components';
-import { useEmbedded } from '@/components/embedded';
-import { formatDate, formatList, t } from '@/i18n';
-import { athanModule, athanPlaying, canScheduleExactAlarms, canUseFullScreenIntent, ignoresBatteryOptimizations, openBatteryOptimizationSettings, openExactAlarmSettings, openFullScreenIntentSettings, stopAthan } from './athan-native';
-import { alertsSupported, athanSoundsSupported, fullAthanSupported, TEST_SECONDS, testPrayerAlert } from './notifications';
+import { formatDate, t } from '@/i18n';
+import { alertIcons, effectiveAlert, hijriLabel } from './format';
+import { alertsSupported } from './notifications';
 import { placeName } from './place';
+import { AlertSheet, LocationSheet, useLocate } from './prayer-sheets';
 import { usePrayers, useNow } from './provider';
-import { BEFORE_OPTIONS, HIJRI_OFFSET_LIMIT } from './settings';
-import { clock, countdown, dayOf, dayTimes, PRAYERS, prayerWindow, type PrayerId } from './times';
-import { AdjustmentsSheet, AlertSheet, LocationSheet, MethodSheet, TakbirSheet, useLocate, VoiceSheet } from './prayer-sheets';
-import { alertIcons, effectiveAlert, hijriLabel, signedMinutes } from './format';
-import { timesNotificationSupported } from './times-notification';
-import { upcomingAthan } from './athan-screen';
+import { clock, countdown, dayOf, dayTimes, PRAYERS, prayerWindow, shiftDay, type PrayerId } from './times';
 
-type Sheet = 'location' | 'method' | 'adjust' | 'voice' | 'takbir' | { alert: PrayerId };
-/** Prayer times at the chosen place, the next prayer, and the alerts and athan. */
+type Sheet = 'location' | { alert: PrayerId };
+
+/**
+ * The prayer times at the chosen place: the next prayer with the time left, and the times of any
+ * day, week by week. The alerts, the athan and the calculation are in the settings' «الصلاة» tab.
+ */
 export function PrayersScreen() {
   const { palette: p } = useReadingPreferences();
   const { state, ready, error } = usePrayers();
@@ -40,19 +40,11 @@ export function PrayersScreen() {
       {!ready ? null : state.location ? <>
         <LocationRow onPress={() => setSheet('location')} />
         <NextPrayer />
-        <TodayTimes onAlert={(prayer) => setSheet({ alert: prayer })} />
+        <WeekTimes onAlert={(prayer) => setSheet({ alert: prayer })} />
       </> : <LocationSetup onChoose={() => setSheet('location')} />}
-      {ready && <Alerts onVoice={() => setSheet('voice')} onTakbir={() => setSheet('takbir')} />}
-      {ready && <Calculation onMethod={() => setSheet('method')} onAdjust={() => setSheet('adjust')} />}
-      <Pressable accessibilityRole="link" onPress={() => router.push('/credits')} style={({ pressed }) => [s.creditsLink, { opacity: pressed ? 0.6 : 1 }]}>
-        <Text style={{ color: p.mutedForeground, fontSize: 13, textDecorationLine: 'underline' }}>{t('prayers.creditsLink')}</Text>
-      </Pressable>
+      {ready && <SettingsLink />}
     </ScrollView>
     {sheet === 'location' && <LocationSheet onClose={() => setSheet(null)} />}
-    {sheet === 'method' && <MethodSheet onClose={() => setSheet(null)} />}
-    {sheet === 'adjust' && <AdjustmentsSheet onClose={() => setSheet(null)} />}
-    {sheet === 'voice' && <VoiceSheet onClose={() => setSheet(null)} />}
-    {sheet === 'takbir' && <TakbirSheet onClose={() => setSheet(null)} />}
     {typeof sheet === 'object' && sheet && <AlertSheet prayer={sheet.alert} onClose={() => setSheet(null)} />}
   </Frame>;
 }
@@ -79,58 +71,163 @@ function LocationRow({ onPress }: { onPress: () => void }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={t('prayers.location.changeLabel', { place })} onPress={onPress}
     style={({ pressed }) => [s.locationRow, { opacity: pressed ? 0.7 : 1 }]}>
     <ReaderIcon name="map-pin" color={p.primary} size={18} />
-    <Text numberOfLines={1} style={{ flexShrink: 1, color: p.foreground, fontSize: 16, fontWeight: '500' }}>{place}</Text>
-    <Text style={{ color: p.primary, fontSize: 14, fontWeight: '500' }}>{t('prayers.location.change')}</Text>
+    <Text numberOfLines={1} style={{ flexShrink: 1, color: p.foreground, fontSize: 16, fontWeight: '600' }}>{place}</Text>
+    <View style={[s.changePill, { backgroundColor: p.secondary }]}>
+      <Text style={{ color: p.secondaryForeground, fontSize: 13, fontWeight: '500' }}>{t('prayers.location.change')}</Text>
+    </View>
   </Pressable>;
 }
 
-/** The next time and a live countdown, with today's Hijri and Gregorian dates. */
+/** An eight-pointed star in faint lines at the hero's far side, cut by its edge. */
+function HeroOrnament({ color }: { color: string }) {
+  const star = (cx: number, cy: number, r: number) => {
+    const points = Array.from({ length: 16 }, (_, i) => {
+      const angle = Math.PI / 8 * i - Math.PI / 2, radius = i % 2 ? r * 0.76 : r;
+      return `${(cx + radius * Math.cos(angle)).toFixed(1)} ${(cy + radius * Math.sin(angle)).toFixed(1)}`;
+    });
+    return `M${points.join(' L')} Z`;
+  };
+  // SVG coordinates are not mirrored by the right-to-left layout: it stays at the left, the lines' end.
+  return <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
+    <Path d={star(18, 118, 118)} stroke={color} strokeOpacity={0.1} strokeWidth={1.5} fill="none" />
+    <Path d={star(18, 118, 82)} stroke={color} strokeOpacity={0.1} strokeWidth={1.5} fill="none" />
+    <Circle cx={18} cy={118} r={46} stroke={color} strokeOpacity={0.1} strokeWidth={1.5} fill="none" />
+  </Svg>;
+}
+
+/** The next prayer in the theme's colour: its name and time, the time left, and how far the present time has gone. */
 function NextPrayer() {
   const { palette: p } = useReadingPreferences();
   const { state } = usePrayers();
   const now = useNow(1000);
   if (!state.location) return null;
-  const { next } = prayerWindow(state.location, now, state);
+  const { current, next } = prayerWindow(state.location, now, state);
   if (!next) return null;
   const today = dayOf(now);
   const name = t(`prayers.names.${next.prayer}`), time = clock(next.at), left = countdown(now, next.at);
-  return <View style={[s.hero, { backgroundColor: p.card, borderColor: p.border }, readerElevation(2, p)]}>
-    <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{hijriLabel(today, state.hijriOffset)} · {formatDate(today, { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
-    <View accessible accessibilityLabel={t('prayers.next.spoken', { prayer: name, time, countdown: left })} style={{ gap: 4 }}>
-      <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{next.prayer === 'sunrise' ? t('prayers.next.sunriseLabel') : t('prayers.next.label')}</Text>
+  const fg = p.primaryForeground, soft = withAlpha(fg, 0.75);
+  const span = current ? next.at.getTime() - current.at.getTime() : 0;
+  const progress = current && span > 0 ? Math.min(1, Math.max(0, (now.getTime() - current.at.getTime()) / span)) : 0;
+  return <View style={[s.hero, { backgroundColor: p.primary }, readerElevation(3, p)]}>
+    <HeroOrnament color={fg} />
+    <View style={s.heroDates}>
+      <Text numberOfLines={1} style={{ flexShrink: 1, color: soft, fontSize: 13 }}>{hijriLabel(today, state.hijriOffset)}</Text>
+      <Text numberOfLines={1} style={{ flexShrink: 1, color: soft, fontSize: 13 }}>{formatDate(today, { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
+    </View>
+    <View accessible accessibilityLabel={t('prayers.next.spoken', { prayer: name, time, countdown: left })}>
+      <Text style={{ color: soft, fontSize: 14 }}>{next.prayer === 'sunrise' ? t('prayers.next.sunriseLabel') : t('prayers.next.label')}</Text>
       <View style={s.heroRow}>
-        <Text style={{ color: p.foreground, fontSize: 30, fontWeight: '700' }}>{name}</Text>
-        <Text style={{ color: p.foreground, fontSize: 30, fontWeight: '600' }}>{time}</Text>
+        <Text numberOfLines={1} style={{ flexShrink: 1, color: fg, fontSize: 34, lineHeight: 52, fontWeight: '700' }}>{name}</Text>
+        <Text style={{ color: fg, fontSize: 34, lineHeight: 52, fontWeight: '600' }}>{time}</Text>
+      </View>
+    </View>
+    <View style={{ gap: 10 }}>
+      <View style={[s.track, { backgroundColor: withAlpha(fg, 0.22) }]}>
+        <View style={[s.fill, { width: `${progress * 100}%`, backgroundColor: fg }]} />
       </View>
       <View style={s.heroRow}>
-        <Text style={{ color: p.mutedForeground, fontSize: 15 }}>{t('prayers.next.in')}</Text>
-        <Text style={{ color: p.primary, fontSize: 20, fontWeight: '600' }}>{left}</Text>
+        <Text numberOfLines={1} style={{ flexShrink: 1, color: soft, fontSize: 13 }}>
+          {current ? t('prayers.next.since', { prayer: t(`prayers.names.${current.prayer}`), time: clock(current.at) }) : ''}
+        </Text>
+        <View style={s.countdown}>
+          <Text style={{ color: soft, fontSize: 14 }}>{t('prayers.next.in')}</Text>
+          <Text style={{ color: fg, fontSize: 20, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{left}</Text>
+        </View>
       </View>
     </View>
   </View>;
 }
 
-function TodayTimes({ onAlert }: { onAlert: (prayer: PrayerId) => void }) {
+/**
+ * Weeks start on Monday, as Morocco's calendars do (the app's dates are formatted for ar-MA).
+ * Days are 'YYYY-MM-DD'; their weekday does not depend on the time zone.
+ */
+const FIRST_WEEKDAY = 1;
+/** How many weeks back and ahead the times can be browsed. */
+const WEEK_LIMIT = 52;
+const weekday = (day: string) => new Date(`${day}T12:00:00Z`).getUTCDay();
+const WEEKDAYS = ['d0', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6'] as const;
+const weekStart = (day: string) => shiftDay(day, -((weekday(day) - FIRST_WEEKDAY + 7) % 7));
+const weeksBetween = (from: string, to: string) => Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / (7 * 86_400_000));
+const yearOf = (day: string) => day.slice(0, 4);
+
+/** «5 – 11 أكتوبر», «28 سبتمبر – 4 أكتوبر», with the year when it is not this one. */
+function weekRange(first: string, last: string, today: string) {
+  const withYear = yearOf(first) !== yearOf(today) || yearOf(last) !== yearOf(today);
+  const to = formatDate(last, withYear ? { day: 'numeric', month: 'long', year: 'numeric' } : { day: 'numeric', month: 'long' });
+  const from = first.slice(0, 7) === last.slice(0, 7) ? formatDate(first, { day: 'numeric' })
+    : formatDate(first, yearOf(first) !== yearOf(last) ? { day: 'numeric', month: 'long', year: 'numeric' } : { day: 'numeric', month: 'long' });
+  return t('prayers.week.range', { from, to });
+}
+
+/** The times of any day: a week of days to choose from, and the chosen day's six times with their alerts. */
+function WeekTimes({ onAlert }: { onAlert: (prayer: PrayerId) => void }) {
   const { palette: p } = useReadingPreferences();
   const { state } = usePrayers();
   const now = useNow(30_000);
+  // Without a choice, the day shown is today, also past midnight.
+  const [chosen, setChosen] = useState<string | null>(null);
   if (!state.location) return null;
   const today = dayOf(now);
-  const times = dayTimes(state.location, today, state);
+  const day = chosen ?? today;
+  const start = weekStart(day);
+  const days = Array.from({ length: 7 }, (_, i) => shiftDay(start, i));
+  const offset = weeksBetween(weekStart(today), start);
+  const isToday = day === today;
+  const choose = (next: string) => setChosen(next === today ? null : next);
+  const times = dayTimes(state.location, day, state);
   const { current } = prayerWindow(state.location, now, state);
-  return <View style={{ gap: 10 }}>
-    <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('prayers.today.title')}</Text>
+  const relative = isToday ? 'today' : day === shiftDay(today, 1) ? 'tomorrow' : day === shiftDay(today, -1) ? 'yesterday' : null;
+  const longDate = formatDate(day, yearOf(day) === yearOf(today) ? { weekday: 'long', day: 'numeric', month: 'long' } : { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const title = relative ? t(`prayers.week.titles.${relative}`) : longDate;
+  const hijri = hijriLabel(day, state.hijriOffset);
+  const range = weekRange(days[0], days[6], today);
+  return <View style={{ gap: 14 }}>
+    <View style={[s.week, { backgroundColor: p.card, borderColor: p.border }, readerElevation(2, p)]}>
+      <View style={s.weekNavigation}>
+        <WeekArrow icon="chevron-right" label={t('prayers.week.previous')} disabled={offset <= -WEEK_LIMIT} onPress={() => choose(shiftDay(day, -7))} />
+        <Text accessibilityLiveRegion="polite" accessibilityLabel={t('prayers.week.label', { range })} numberOfLines={1}
+          style={{ flex: 1, textAlign: 'center', color: p.foreground, fontSize: 15, fontWeight: '600' }}>{range}</Text>
+        <WeekArrow icon="chevron" label={t('prayers.week.next')} disabled={offset >= WEEK_LIMIT} onPress={() => choose(shiftDay(day, 7))} />
+      </View>
+      <View accessibilityRole="tablist" style={s.days}>
+        {days.map((d) => {
+          const selected = d === day, isTodayPill = d === today;
+          const label = formatDate(d, { weekday: 'long', day: 'numeric', month: 'long' });
+          return <Pressable key={d} accessibilityRole="tab" accessibilityState={{ selected }} aria-selected={selected}
+            accessibilityLabel={isTodayPill ? t('prayers.week.todayLabel', { date: label }) : label} onPress={() => choose(d)}
+            style={({ pressed }) => [s.day, { backgroundColor: selected ? p.primary : pressed ? p.accent : 'transparent' }]}>
+            <Text numberOfLines={1} style={{ color: selected ? withAlpha(p.primaryForeground, 0.8) : isTodayPill ? p.primary : p.mutedForeground, fontSize: 11, fontWeight: '500' }}>{t(`prayers.week.days.${WEEKDAYS[weekday(d)]}`)}</Text>
+            <Text style={{ color: selected ? p.primaryForeground : isTodayPill ? p.primary : p.foreground, fontSize: 17, lineHeight: 24, fontWeight: selected || isTodayPill ? '700' : '500' }}>{String(Number(d.slice(8)))}</Text>
+            <View style={[s.todayDot, { backgroundColor: isTodayPill ? (selected ? p.primaryForeground : p.primary) : 'transparent' }]} />
+          </Pressable>;
+        })}
+      </View>
+    </View>
+    <View style={s.dayHeading}>
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{title}</Text>
+        <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{relative ? `${longDate} · ${hijri}` : hijri}</Text>
+      </View>
+      {!isToday && <Button size="sm" variant="outline" palette={p} icon="undo" label={t('prayers.week.backToToday')} onPress={() => setChosen(null)}>{t('prayers.week.today')}</Button>}
+    </View>
     <View style={[s.list, { borderColor: p.border, backgroundColor: p.card }, readerElevation(2, p)]}>
       {PRAYERS.map((prayer, i) => {
-        const isCurrent = current?.day === today && current.prayer === prayer;
+        const at = times[prayer], valid = Number.isFinite(at.getTime());
+        const isCurrent = isToday && current?.day === today && current.prayer === prayer;
+        const past = isToday && !isCurrent && valid && at.getTime() <= now.getTime();
         // With alerts off, each bell still shows its setting, dimmed.
         const kind = effectiveAlert(state.alerts[prayer]), on = state.enabled && kind !== 'off';
         const alert = state.enabled ? t(`prayers.alerts.kinds.${kind}`) : t('prayers.today.alertsOff'), name = t(`prayers.names.${prayer}`);
-        return <View key={prayer} style={[s.row, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }, isCurrent && { backgroundColor: p.accent }]}>
-          <View accessible accessibilityLabel={t('prayers.today.row', { prayer: name, time: clock(times[prayer]), alert })} style={s.rowText}>
-            <Text style={{ flex: 1, color: prayer === 'sunrise' ? p.mutedForeground : p.foreground, fontSize: 16, fontWeight: isCurrent ? '700' : '500' }}>{name}</Text>
-            {isCurrent && <Text style={{ color: p.primary, fontSize: 12, fontWeight: '500' }}>{t('prayers.today.current')}</Text>}
-            <Text style={{ color: p.foreground, fontSize: 17, fontWeight: isCurrent ? '700' : '500' }}>{clock(times[prayer])}</Text>
+        const time = valid ? clock(at) : '—';
+        return <View key={prayer} style={[s.row, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }, isCurrent && { backgroundColor: withAlpha(p.primary, 0.08) }]}>
+          <View style={[s.currentBar, { backgroundColor: isCurrent ? p.primary : 'transparent' }]} />
+          <View accessible accessibilityLabel={t('prayers.today.row', { prayer: name, time, alert })} style={s.rowText}>
+            <Text style={{ flex: 1, color: past || prayer === 'sunrise' ? p.mutedForeground : p.foreground, fontSize: 16, fontWeight: isCurrent ? '700' : '500' }}>{name}</Text>
+            {isCurrent && <View style={[s.currentBadge, { backgroundColor: withAlpha(p.primary, 0.14) }]}>
+              <Text style={{ color: p.primary, fontSize: 11, fontWeight: '600' }}>{t('prayers.today.current')}</Text>
+            </View>}
+            <Text style={{ color: isCurrent ? p.primary : past ? p.mutedForeground : p.foreground, fontSize: 17, fontWeight: isCurrent ? '700' : '500', fontVariant: ['tabular-nums'] }}>{time}</Text>
           </View>
           {alertsSupported && <Pressable accessibilityRole="button" accessibilityLabel={t('prayers.today.alertLabel', { prayer: name, alert })} hitSlop={4} onPress={() => onAlert(prayer)}
             style={({ pressed }) => [s.alertButton, { backgroundColor: pressed ? p.accent : 'transparent' }]}>
@@ -139,187 +236,58 @@ function TodayTimes({ onAlert }: { onAlert: (prayer: PrayerId) => void }) {
         </View>;
       })}
     </View>
-    {timesNotificationSupported && <TimesNotificationSwitch />}
   </View>;
 }
 
-/** The prayer times kept in the phone's notifications (Android app). */
-function TimesNotificationSwitch() {
+function WeekArrow({ icon, label, disabled, onPress }: { icon: 'chevron' | 'chevron-right'; label: string; disabled: boolean; onPress: () => void }) {
   const { palette: p } = useReadingPreferences();
-  // `revision` changes on each return to the app, as from the exact alarms setting.
-  const { state, revision, setTimesNotification } = usePrayers();
-  const [refused, setRefused] = useState(false);
-  const exact = revision >= 0 && canScheduleExactAlarms();
-  const note = refused || (state.timesNotification && !exact);
-  return <View style={[s.timesNotification, { borderColor: p.border, backgroundColor: p.card }, note && { paddingBottom: 12 }]}>
-    <PlanSwitch label={t('prayers.timesNotification.label')} detail={t('prayers.timesNotification.detail')} checked={state.timesNotification}
-      onChange={(on) => { setRefused(false); void setTimesNotification(on).then((done) => setRefused(!done)); }} />
-    {refused && <Alert variant="destructive" palette={p}>{t('prayers.alerts.permissionDenied')}</Alert>}
-    {!refused && state.timesNotification && !exact && <Alert palette={p} icon="alarm"
-      action={<Button size="sm" variant="outline" palette={p} onPress={() => { openExactAlarmSettings(); }}>{t('prayers.reliability.exactAction')}</Button>}>{t('prayers.timesNotification.exact')}</Alert>}
-  </View>;
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }} disabled={disabled} hitSlop={4} onPress={onPress}
+    style={({ pressed }) => [s.arrow, { borderColor: p.border, backgroundColor: pressed ? p.accent : p.background, opacity: disabled ? 0.35 : 1 }]}>
+    <ReaderIcon name={icon} color={p.foreground} size={18} />
+  </Pressable>;
 }
 
-function Alerts({ onVoice, onTakbir }: { onVoice: () => void; onTakbir: () => void }) {
+/** The way to the alerts, the athan and the calculation, in the settings. */
+function SettingsLink() {
   const { palette: p } = useReadingPreferences();
-  const { state, alertIssue, setEnabled, update } = usePrayers();
-  const kinds = PRAYERS.map((prayer) => effectiveAlert(state.alerts[prayer]));
-  const before = state.before;
-  return <SettingsCard palette={p}>
-    <SettingsCardHeading title={t('prayers.alerts.title')} detail={t('prayers.alerts.description')} icon="bell" palette={p} />
-    {!alertsSupported ? <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('prayers.alerts.phoneOnly')}</Text> : <View style={{ gap: 16 }}>
-      <PlanSwitch label={t('prayers.alerts.enable')} checked={state.enabled} onChange={(on) => void setEnabled(on)} />
-      {state.enabled && !state.location && <Alert palette={p}>{t('prayers.alerts.noLocation')}</Alert>}
-      {alertIssue && <Alert variant="destructive" palette={p}>{alertIssue === 'permission' ? t('prayers.alerts.permissionDenied') : alertIssue === 'sync' ? t('prayers.alerts.syncFailed') : t('prayers.alerts.unavailable')}</Alert>}
-      {state.enabled && <>
-        {athanSoundsSupported && <SettingRow label={t('prayers.alerts.takbirSound')} value={t(`prayers.takbirs.${state.takbir}.name`)} onPress={onTakbir} />}
-        {fullAthanSupported && <SettingRow label={t('prayers.alerts.voice')} value={t(`prayers.voices.${state.voice}.name`)} onPress={onVoice} />}
-        {fullAthanSupported && <SettingRow label={t('prayers.screen.title')} value={t(`prayers.screen.backgrounds.${state.screen.background}`)} onPress={() => router.push('/athan-screen')} />}
-        <View style={{ gap: 8 }}>
-          <Text style={{ color: p.foreground, fontSize: 15, fontWeight: '500' }}>{t('prayers.alerts.before')}</Text>
-          <View accessibilityRole="radiogroup" accessibilityLabel={t('prayers.alerts.before')} style={s.chips}>
-            {BEFORE_OPTIONS.map((minutes) => <Chip key={minutes} accessibilityRole="radio" palette={p} selected={before === minutes}
-              label={minutes ? t('prayers.alerts.beforeChip', { count: minutes }) : t('prayers.alerts.beforeNone')} onPress={() => update({ before: minutes })} />)}
-          </View>
-        </View>
-        <AlertTest usesFull={kinds.includes('full')} />
-        {athanModule && <Reliability usesFull={kinds.includes('full')} />}
-      </>}
-    </View>}
-  </SettingsCard>;
-}
-
-/**
- * Sends an alert in a few seconds, the way it comes at prayer time (for the next prayer), so the
- * takbir, the whole athan and its screen over the lock screen can be checked without waiting.
- */
-function AlertTest({ usesFull }: { usesFull: boolean }) {
-  const { palette: p } = useReadingPreferences();
-  const { state } = usePrayers();
-  const [status, setStatus] = useState<'sent' | 'failed' | null>(null);
-  const [playing, setPlaying] = useState(false);
-  useEffect(() => {
-    if (!fullAthanSupported) return;
-    const timer = setInterval(() => setPlaying(athanPlaying()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-  const send = async (kind: 'notify' | 'takbir' | 'full') => {
-    setStatus(null);
-    const { prayer, time } = upcomingAthan(state);
-    try {
-      await testPrayerAlert(state, kind, prayer, time);
-      setStatus('sent');
-    } catch {
-      setStatus('failed');
-    }
-  };
-  return <View style={[s.section, { borderColor: p.border }]}>
-    <Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{t('prayers.test.heading')}</Text>
-    <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 20 }}>{t(fullAthanSupported ? 'prayers.test.detailScreen' : 'prayers.test.detail', { seconds: TEST_SECONDS })}</Text>
-    <View style={s.testButtons}>
-      {athanSoundsSupported
-        ? <Button variant="outline" palette={p} icon="bell-ring" onPress={() => void send('takbir')}>{t('prayers.test.takbir')}</Button>
-        : <Button variant="outline" palette={p} icon="bell" onPress={() => void send('notify')}>{t('prayers.test.notify')}</Button>}
-      {fullAthanSupported && (playing
-        ? <Button variant="outline" palette={p} icon="stop" onPress={() => { stopAthan(); setPlaying(false); }}>{t('prayers.test.stop')}</Button>
-        : <Button variant="outline" palette={p} icon="volume" onPress={() => void send('full')}>{t('prayers.test.full')}</Button>)}
-    </View>
-    {status === 'sent' && <Text accessibilityLiveRegion="polite" style={{ color: p.primary, fontSize: 13 }}>{t('prayers.test.sent', { seconds: TEST_SECONDS })}</Text>}
-    {status === 'failed' && <Alert variant="destructive" palette={p}>{t('prayers.test.failed')}</Alert>}
-    {usesFull && <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 20 }}>{t('prayers.reliability.silent')}</Text>}
-  </View>;
-}
-
-const readChecks = () => ({ exact: canScheduleExactAlarms(), battery: ignoresBatteryOptimizations(), screen: canUseFullScreenIntent() });
-
-/** Android's conditions for alerts on time: exact alarms, the athan's screen, no battery restriction. */
-function Reliability({ usesFull }: { usesFull: boolean }) {
-  const { palette: p } = useReadingPreferences();
-  const [checks, setChecks] = useState(readChecks);
-  // The permissions change in the system settings.
-  useEffect(() => {
-    const timer = setInterval(() => setChecks((c) => {
-      const n = readChecks();
-      return n.exact === c.exact && n.battery === c.battery && n.screen === c.screen ? c : n;
-    }), 1500);
-    return () => clearInterval(timer);
-  }, []);
-  const screen = checks.screen || !usesFull;
-  return <View style={[s.section, { borderColor: p.border }]}>
-    <Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{t('prayers.reliability.title')}</Text>
-    {!checks.exact && <Alert palette={p} icon="alarm" action={<Button size="sm" variant="outline" palette={p} onPress={() => { openExactAlarmSettings(); }}>{t('prayers.reliability.exactAction')}</Button>}>{t('prayers.reliability.exact')}</Alert>}
-    {!screen && <Alert palette={p} icon="volume" action={<Button size="sm" variant="outline" palette={p} onPress={() => { openFullScreenIntentSettings(); }}>{t('prayers.reliability.screenAction')}</Button>}>{t('prayers.reliability.screen')}</Alert>}
-    {!checks.battery && <Alert palette={p} icon="battery" action={<Button size="sm" variant="outline" palette={p} onPress={() => { openBatteryOptimizationSettings(); }}>{t('prayers.reliability.batteryAction')}</Button>}>{t('prayers.reliability.battery')}</Alert>}
-    {checks.exact && checks.battery && screen && <View style={s.ok}><ReaderIcon name="done" color={p.primary} size={16} /><Text style={{ flex: 1, color: p.foreground, fontSize: 14 }}>{t('prayers.reliability.ok')}</Text></View>}
-  </View>;
-}
-
-function Calculation({ onMethod, onAdjust }: { onMethod: () => void; onAdjust: () => void }) {
-  const { palette: p } = useReadingPreferences();
-  const { state, update } = usePrayers();
-  const adjusted = PRAYERS.filter((prayer) => state.adjustments[prayer]);
-  const today = dayOf(new Date());
-  return <SettingsCard palette={p}>
-    <SettingsCardHeading title={t('prayers.calculation.title')} detail={t('prayers.calculation.description')} icon="clock" palette={p} />
-    <View style={{ gap: 16 }}>
-      <SettingRow label={t('prayers.calculation.method')} value={t(`prayers.methods.${state.method}.name`)} onPress={onMethod} />
-      <View style={{ gap: 8 }}>
-        <Text style={{ color: p.foreground, fontSize: 15, fontWeight: '500' }}>{t('prayers.calculation.madhab')}</Text>
-        <Tabs palette={p} role="radio" label={t('prayers.calculation.madhab')} value={state.madhab} onChange={(madhab) => update({ madhab })}
-          options={(['shafi', 'hanafi'] as const).map((value) => ({ value, label: t(`prayers.calculation.madhabs.${value}`) }))} />
-        <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t(`prayers.calculation.madhabDetail.${state.madhab}`)}</Text>
-      </View>
-      <SettingRow label={t('prayers.calculation.adjustments')} onPress={onAdjust}
-        value={adjusted.length ? formatList(adjusted.map((prayer) => t('prayers.calculation.adjustmentItem', { prayer: t(`prayers.names.${prayer}`), minutes: signedMinutes(state.adjustments[prayer]) }))) : t('prayers.calculation.adjustmentsNone')} />
-      <View style={{ gap: 8 }}>
-        <View style={s.stepperRow}>
-          <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-            <Text style={{ color: p.foreground, fontSize: 15, fontWeight: '500' }}>{t('prayers.calculation.hijri')}</Text>
-            <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{hijriLabel(today, state.hijriOffset)}</Text>
-          </View>
-          <Button size="sm" variant="outline" palette={p} icon="minus" label={t('prayers.calculation.hijriEarlier')} disabled={state.hijriOffset <= -HIJRI_OFFSET_LIMIT}
-            onPress={() => update({ hijriOffset: state.hijriOffset - 1 })} />
-          <Button size="sm" variant="outline" palette={p} icon="plus" label={t('prayers.calculation.hijriLater')} disabled={state.hijriOffset >= HIJRI_OFFSET_LIMIT}
-            onPress={() => update({ hijriOffset: state.hijriOffset + 1 })} />
-        </View>
-        <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 20 }}>{t('prayers.calculation.hijriDetail')}</Text>
-      </View>
-    </View>
-  </SettingsCard>;
-}
-
-/** A setting that opens a sheet: its name, the current choice, and a chevron. */
-function SettingRow({ label, value, onPress }: { label: string; value: string; onPress: () => void }) {
-  const { palette: p } = useReadingPreferences();
-  return <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${value}`} onPress={onPress}
-    style={({ pressed }) => [s.settingRow, { borderColor: p.input, backgroundColor: pressed ? p.accent : p.background }, readerElevation(1, p)]}>
+  return <Pressable accessibilityRole="link" accessibilityLabel={`${t('prayers.settingsLink.title')}: ${t('prayers.settingsLink.detail')}`}
+    onPress={() => router.push({ pathname: '/settings', params: { tab: 'prayers' } })}
+    style={({ pressed }) => [s.settingsLink, { borderColor: p.border, backgroundColor: pressed ? p.accent : p.card }]}>
+    <IconTile name="settings" palette={p} />
     <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{label}</Text>
-      <Text style={{ color: p.foreground, fontSize: 15, fontWeight: '500' }}>{value}</Text>
+      <Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{t('prayers.settingsLink.title')}</Text>
+      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('prayers.settingsLink.detail')}</Text>
     </View>
-    <ReaderIcon name="chevron" color={p.mutedForeground} size={16} />
+    <ReaderIcon name="chevron" color={p.mutedForeground} size={18} />
   </Pressable>;
 }
 
 const s = StyleSheet.create({
   navigation: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 16, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  content: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', padding: 16, paddingTop: 8, paddingBottom: 40, gap: 20 },
+  content: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', padding: 16, paddingTop: 8, paddingBottom: 40, gap: 18 },
   setup: { alignItems: 'center', gap: 10, padding: 20, borderWidth: 1, borderStyle: 'dashed', borderRadius: readerShape.lg },
   setupIcon: { width: 48, height: 48, borderRadius: readerShape.lg, alignItems: 'center', justifyContent: 'center' },
   setupActions: { alignSelf: 'stretch', gap: 8, marginTop: 6 },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, alignSelf: 'flex-start', marginTop: -8 },
-  hero: { borderRadius: readerShape.card, borderWidth: StyleSheet.hairlineWidth, padding: 20, gap: 12 },
-  heroRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, alignSelf: 'flex-start', marginVertical: -6 },
+  changePill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: readerShape.pill },
+  hero: { borderRadius: readerShape.card, padding: 20, paddingTop: 16, gap: 14, overflow: 'hidden' },
+  heroDates: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  heroRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  track: { height: 6, borderRadius: 3, overflow: 'hidden', flexDirection: 'row' },
+  fill: { height: 6, borderRadius: 3 },
+  countdown: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+  week: { borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card, padding: 10, gap: 8 },
+  weekNavigation: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  arrow: { width: 36, height: 36, borderRadius: readerShape.pill, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
+  days: { flexDirection: 'row', gap: 2 },
+  day: { flex: 1, minWidth: 0, alignItems: 'center', paddingTop: 8, paddingBottom: 6, borderRadius: readerShape.lg, gap: 1 },
+  todayDot: { width: 4, height: 4, borderRadius: 2 },
+  dayHeading: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4 },
   list: { borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card, overflow: 'hidden' },
-  timesNotification: { borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card, paddingHorizontal: 16, paddingVertical: 4, gap: 8 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingStart: 16, paddingEnd: 6, minHeight: 56 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingEnd: 6, minHeight: 56 },
+  currentBar: { width: 3, alignSelf: 'stretch', marginVertical: 12, borderRadius: 2, marginEnd: 9 },
   rowText: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
+  currentBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: readerShape.pill },
   alertButton: { width: 44, height: 44, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  section: { gap: 10, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth },
-  testButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  ok: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  creditsLink: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 },
-  settingRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderRadius: readerShape.control },
+  settingsLink: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card },
 });

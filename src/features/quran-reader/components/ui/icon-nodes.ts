@@ -3,6 +3,7 @@ export type IconNode = [string, Record<string, string | number>][];
 export const iconNodes = {
   "back": [["path",{"d":"M5 12h14"}],["path",{"d":"m12 5 7 7-7 7"}]],
   "chevron": [["path",{"d":"m15 18-6-6 6-6"}]],
+  "chevron-right": [["path",{"d":"m9 18 6-6-6-6"}]],
   "check": [["path",{"d":"M20 6 9 17l-5-5"}]],
   "bookmark": [["path",{"d":"M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"}]],
   "copy": [["rect",{"width":"14","height":"14","x":"8","y":"8","rx":"2","ry":"2"}],["path",{"d":"M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"}]],
