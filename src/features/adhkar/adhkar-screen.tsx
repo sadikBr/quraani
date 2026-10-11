@@ -9,6 +9,7 @@ import { ReaderIcon } from '@/features/quran-reader/components/ui/reader-chrome'
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
 import { SettingsCard, SettingsCardHeading } from '@/features/quran-reader/components/reading/settings-ui';
 import { PlanSwitch } from '@/features/plans/components';
+import { useEmbedded } from '@/components/embedded';
 import { PlanDateField } from '@/features/plans/plan-date-field';
 import { formatSize } from '@/features/recitation/recitation-settings';
 import { t } from '@/i18n';
@@ -22,13 +23,15 @@ import { cancelAudioDownload, deleteAudio, downloadAudio, downloadsSupported, us
 export function AdhkarScreen() {
   const { palette: p } = useReadingPreferences();
   const { error } = useAdhkar();
-  return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
-    <View style={s.navigation}>
+  const embedded = useEmbedded();
+  const Frame = embedded ? View : SafeAreaView;
+  return <Frame style={{ flex: 1, backgroundColor: p.background }}>
+    {!embedded && <View style={s.navigation}>
       <Button variant="outline" icon="back" label={t('common.backToReading')} onPress={() => router.dismissTo('/')}>{t('plans.list.mushaf')}</Button>
-    </View>
-    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
+    </View>}
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[s.content, embedded && { paddingTop: 16 }]}>
       <View style={{ gap: 4 }}>
-        <Text accessibilityRole="header" style={{ fontSize: 24, fontWeight: '600', color: p.foreground }}>{t('adhkar.title')}</Text>
+        {!embedded && <Text accessibilityRole="header" style={{ fontSize: 24, fontWeight: '600', color: p.foreground }}>{t('adhkar.title')}</Text>}
         <Text style={{ fontSize: 15, color: p.mutedForeground }}>{t('adhkar.subtitle')}</Text>
       </View>
       {error && <Alert variant="destructive">{t('adhkar.storageError')}</Alert>}
@@ -42,7 +45,7 @@ export function AdhkarScreen() {
       <OfflineAudio />
       <Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center', paddingHorizontal: 12 }}>{t('adhkar.source')}</Text>
     </ScrollView>
-  </SafeAreaView>;
+  </Frame>;
 }
 
 /** A collection in a list: today's progress, opening its counter. Also used on the home screen. */

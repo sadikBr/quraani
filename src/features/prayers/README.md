@@ -1,8 +1,13 @@
 # Prayer times (مواقيت الصلاة)
 
 The five prayers and sunrise at the user's place, the next one with a countdown, and alerts at
-each time: a notification, the takbir, or the whole athan. Route: `/prayers`; the
-home screen shows the next prayer under the hero.
+each time: a notification, the takbir, or the whole athan. Route: `/prayers`.
+
+The home screen's «اليوم» tab opens with the day's card (`home-card.tsx`): the next prayer and the time left,
+the day drawn as the sun's path (each time at its hour, Fajr and Isha under the horizon, the part
+already passed in the theme's colour, the sun marking now), and the six times in a row; after Isha
+it shows the next day. It opens the home screen's «الصلاة» tab (which shows this screen in place,
+without its own header) or `/prayers`, or asks for the place when there is none.
 
 ## Times (`times.ts`, pure)
 

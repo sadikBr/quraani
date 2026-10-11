@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
+import { useEmbedded } from '@/components/embedded';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { Button, Card, Empty, IconTile, Separator, Tabs } from '@/components/ui';
 import { ReaderButton } from '../quran-reader/components/reading/reader-button';
@@ -30,16 +31,23 @@ export function PlansScreen() {
   const shown = view === 'today' ? overview.due : overview[view];
   const create = () => router.push('/plans/new');
   const canCreate = ready;
-  return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
-    <View style={s.navigation}>
+  const embedded = useEmbedded();
+  const Frame = embedded ? View : SafeAreaView;
+  return <Frame style={{ flex: 1, backgroundColor: p.background }}>
+    {!embedded && <View style={s.navigation}>
       <Button variant="outline" icon="back" label={t('common.backToReading')} onPress={() => router.dismissTo('/')}>{t('plans.list.mushaf')}</Button>
       <Button icon="plus" label={t('plans.list.createLabel')} disabled={!canCreate} onPress={create}>{t('goals.newGoal')}</Button>
-    </View>
-    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
-      <View style={{ gap: 4 }}>
-        <Text accessibilityRole="header" style={{ fontSize: 24, fontWeight: '600', color: p.foreground }}>{t('plans.list.title')}</Text>
-        <Text style={{ fontSize: 15, color: p.mutedForeground }}>{t('plans.list.subtitle')}</Text>
-      </View>
+    </View>}
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[s.content, embedded && { paddingTop: 16 }]}>
+      {embedded
+        ? <View style={s.embeddedHead}>
+          <Text style={{ flex: 1, fontSize: 15, color: p.mutedForeground }}>{t('plans.list.subtitle')}</Text>
+          <Button icon="plus" size="sm" label={t('plans.list.createLabel')} disabled={!canCreate} onPress={create}>{t('goals.newGoal')}</Button>
+        </View>
+        : <View style={{ gap: 4 }}>
+          <Text accessibilityRole="header" style={{ fontSize: 24, fontWeight: '600', color: p.foreground }}>{t('plans.list.title')}</Text>
+          <Text style={{ fontSize: 15, color: p.mutedForeground }}>{t('plans.list.subtitle')}</Text>
+        </View>}
       <PlanNotice message={error} retry={retry} /><PlanNotice message={reminderError} />
       {!ready ? !error && <PlanLoading /> : <>
         {view !== 'archived' && <DailyOverview today={today} due={overview.due.length} completed={overview.completedToday} hasGoals={!!overview.all.length} />}
@@ -55,7 +63,7 @@ export function PlansScreen() {
         </View>
       </>}
     </ScrollView>
-  </SafeAreaView>;
+  </Frame>;
 }
 
 function DailyOverview({ today, due, completed, hasGoals }: { today: string; due: number; completed: number; hasGoals: boolean }) {
@@ -108,6 +116,7 @@ function EmptyGoals({ view, hasGoals, completed, onCreate, onShowAll }: { view: 
 const s = StyleSheet.create({
   navigation: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 16, paddingVertical: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   content: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', padding: 16, paddingTop: 8, paddingBottom: 40, gap: 24 },
+  embeddedHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   grow: { flex: 1, minWidth: 0 },
   hero: { padding: 16, gap: 16 },

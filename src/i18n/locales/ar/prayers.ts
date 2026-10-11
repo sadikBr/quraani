@@ -251,13 +251,16 @@ export default {
   },
   /** Link at the bottom of the screen to the app's credits page. */
   creditsLink: 'المصادر والتراخيص',
+  /** The first card of the home screen. */
   home: {
-    title: 'الصلاة',
-    all: 'المواقيت',
-    setup: 'حدّد موقعك لتظهر مواقيت الصلاة',
-    /** «العصر 15:33». */
-    next: '{{prayer}} {{time}}',
-    openLabel: 'مواقيت الصلاة: {{prayer}} الساعة {{time}}',
+    /** Spoken: the whole card, which opens the prayer times. */
+    label: 'مواقيت الصلاة في {{place}}. الصلاة القادمة {{prayer}} الساعة {{time}}، بعد {{countdown}}. افتح المواقيت.',
+    /** After Isha the card shows the next day: «غدًا، 29 ربيع الآخر 1448 هـ». */
+    tomorrow: 'غدًا، {{date}}',
+    setupTitle: 'مواقيت الصلاة',
+    setup: 'حدّد مدينتك لترى مواقيت اليوم هنا، والصلاة القادمة والوقت الباقي عليها.',
+    setupAction: 'تحديد الموقع',
+    setupLabel: 'مواقيت الصلاة: حدّد مدينتك',
   },
   countries: {
     MA: 'المغرب', SA: 'السعودية', EG: 'مصر', DZ: 'الجزائر', TN: 'تونس', LY: 'ليبيا', MR: 'موريتانيا', SN: 'السنغال',

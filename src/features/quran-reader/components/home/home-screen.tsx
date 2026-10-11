@@ -1,34 +1,39 @@
-import { IconTile, Progress } from '@/components/ui';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, type Href } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
+import { Embedded } from '@/components/embedded';
+import { IconTile, Progress } from '@/components/ui';
 import { readerElevation, readerLayout, readerShape } from '../../design';
-import { useReaderContent } from '../../hooks/use-reader-content';
-import { useReadingPosition } from '../../hooks/use-reading-position';
 import { useReadingPreferences } from '../../state/reading-preferences-provider';
 import { RIWAYAT } from '../../riwayat';
-import { pageDivisions } from '../../utils/page-divisions';
-import { IconButton, ReaderIcon, type ReaderIconName } from '../ui/reader-chrome';
+import { IconButton, type ReaderIconName } from '../ui/reader-chrome';
 import { QuranniLogo } from '../ui/quranni-logo';
-import { SurahName } from '../ui/surah-name';
 import { usePlans } from '@/features/plans/provider';
 import { usePlanIndex } from '@/features/plans/use-plan-index';
 import { ayahRangeLabel, nextPortion, rangeLabel, type PlanIndex } from '@/features/plans/engine';
 import { goalsOverview } from '@/features/plans/overview';
 import { isMemorizationPlan, isRecurringPlan, isRevisionPlan, isSequentialPlan, type ReadingPlan } from '@/features/plans/types';
 import { shortDate } from '@/features/plans/presentation';
-import { CollectionRow, MisbahaRow } from '@/features/adhkar/adhkar-screen';
-import { PrayerHomeSection } from '@/features/prayers/home-card';
+import { PlansScreen } from '@/features/plans/plans-screen';
+import { AdhkarScreen } from '@/features/adhkar/adhkar-screen';
+import { collectionIcons, collections, type CollectionId } from '@/features/adhkar/content';
+import { collectionProgress } from '@/features/adhkar/progress';
+import { useAdhkar } from '@/features/adhkar/provider';
+import { PrayerHomeCard } from '@/features/prayers/home-card';
+import { PrayersScreen } from '@/features/prayers/prayers-screen';
+import { usePrayers, useNow } from '@/features/prayers/provider';
+import { prayerWindow } from '@/features/prayers/times';
+import { PracticeScreen } from '@/features/practice/practice-screen';
 import { t } from '@/i18n';
 
-interface Area { href: Href; icon: ReaderIconName; text: 'plans' | 'prayers' | 'adhkar' | 'practice' | 'index' | 'bookmarks' | 'search' | 'settings' }
-/** Everything beyond the reader. A new area (dashboard, halaqat, groups…) is one more entry. */
-const areas: Area[] = [
-  { href: '/plans', icon: 'calendar', text: 'plans' },
-  { href: '/prayers', icon: 'mosque', text: 'prayers' },
-  { href: '/adhkar', icon: 'moon-star', text: 'adhkar' },
-  { href: '/practice', icon: 'practice', text: 'practice' },
+/** The home screen's sections, each a whole page; a new major feature is one more tab. */
+const TABS = ['today', 'prayers', 'goals', 'adhkar', 'practice'] as const;
+type Tab = typeof TABS[number];
+
+/** The reader's own tools, a row on the «اليوم» tab; a new small tool is one more entry. */
+const TOOLS: { href: Href; icon: ReaderIconName; text: 'index' | 'bookmarks' | 'search' | 'settings' }[] = [
   { href: '/quran-index', icon: 'index', text: 'index' },
   { href: '/bookmarks', icon: 'bookmark', text: 'bookmarks' },
   { href: '/search', icon: 'search', text: 'search' },
@@ -36,97 +41,145 @@ const areas: Area[] = [
 ];
 
 /**
- * The app's front door, opened from the reader's menu button. It leads with
- * the one thing most people came for (continuing where they stopped), then
- * what is due today, then every other area as a grid that grows with the app.
+ * The app's front door, opened from the reader's menu button (going back returns to the reader).
+ * Tabs keep it tidy as the app grows: «اليوم» gathers what matters now (the prayer times, what is
+ * due today, the reader's tools), and each other tab is a whole section, shown in place.
  */
 export function HomeScreen() {
   const { palette: p, preferences: { riwayah } } = useReadingPreferences();
-  const { content } = useReaderContent();
-  const { position, ready } = useReadingPosition(content?.data);
-  const { plans, ready: plansReady, today } = usePlans();
-  const overview = goalsOverview(plans, today);
-  const page = ready ? content?.data.pages.find((value) => value.number === position.pageNumber) : undefined;
-  const surahNumber = position.ayah?.surahNumber ?? page?.ayahs[0]?.surahNumber;
-  const surahName = content?.data.quran.surahs.find((s) => s.number === surahNumber)?.name ?? '';
-  const divisions = page ? pageDivisions(page) : { juz: [], quarters: [] };
-  const hizb = [...new Set(divisions.quarters.map((q) => q.hizb))][0];
-  const totalPages = content?.data.pages.length ?? 604;
-  const progress = page ? page.number / totalPages : 0;
-  const upcoming = overview.all.map((plan) => ({ plan, next: nextPortion(plan, today) })).filter((x) => x.next && !x.next.due)
-    .sort((a, b) => a.next!.date.localeCompare(b.next!.date))[0];
+  const { today } = usePlans();
+  const [tab, setTab] = useState<Tab>('today');
+  // A tab stays mounted once opened, so it keeps its scroll and its choices.
+  const [opened, setOpened] = useState<Tab[]>(['today']);
+  const open = (next: Tab) => {
+    setTab(next);
+    setOpened((list) => list.includes(next) ? list : [...list, next]);
+  };
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <View style={s.header}>
       <QuranniLogo color={p.ornament} size={30} />
       <View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 20, fontWeight: '600' }}>{t('common.appName')}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{shortDate(today)} · {t('common.riwayahOf', { riwayah: RIWAYAT[riwayah].label })}</Text></View>
       <IconButton name="close" label={t('common.backToReading')} palette={p} onPress={() => router.dismissTo('/')} />
     </View>
-    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
-      {/* Continue reading: the hero. */}
-      <Pressable accessibilityRole="button" accessibilityLabel={surahName ? t('home.hero.continueIn', { surah: surahName, page: page?.number ?? '' }) : t('home.hero.openMushaf')} onPress={() => router.dismissTo('/')}
-        style={({ pressed }) => [s.hero, { backgroundColor: pressed ? p.accent : p.card, borderColor: p.border }, readerElevation(2, p)]}>
-        <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{ready && page ? t('home.hero.resume') : t('home.hero.open')}</Text>
-        {surahNumber ? <SurahName number={surahNumber} name={surahName} size={56} color={p.ornament} /> : <View style={{ height: 76 }} />}
-        <View style={s.heroRow}>
-          <Text style={{ color: p.foreground, fontSize: 15 }}>{page ? t('home.hero.page', { page: page.number }) : ''}{divisions.juz.length ? ` · ${t('home.hero.juz', { juz: divisions.juz[0] })}` : ''}{hizb ? ` · ${t('home.hero.hizb', { hizb })}` : ''}</Text>
-          <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('home.hero.progress', { percent: Math.round(progress * 100) })}</Text>
-        </View>
-        <View style={{ marginTop: 6 }}><Progress value={Math.max(0.01, progress)} /></View>
-        <View style={[s.heroButton, { backgroundColor: p.primary }]}><ReaderIcon name="book" color={p.primaryForeground} size={16} /><Text style={{ color: p.primaryForeground, fontSize: 14, fontWeight: '500' }}>{t('home.hero.continue')}</Text></View>
-      </Pressable>
-
-      {/* The next prayer. */}
-      <PrayerHomeSection />
-
-      {/* Today. */}
-      <View style={s.section}>
-        <View style={s.sectionHead}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600', flex: 1 }}>{t('home.today.title')}</Text>
-          <Pressable accessibilityRole="link" accessibilityLabel={t('home.today.allGoals')} onPress={() => router.push('/plans')} style={({ pressed }) => [s.link, { opacity: pressed ? 0.6 : 1 }]}>
-            <Text style={{ color: p.primary, fontSize: 14, fontWeight: '500' }}>{t('home.today.allGoals')}</Text><ReaderIcon name="chevron" color={p.primary} size={16} /></Pressable></View>
-        {!plansReady ? null : !overview.all.length
-          ? <Pressable accessibilityRole="button" accessibilityLabel={t('home.today.createGoal')} onPress={() => router.push('/plans/new')} style={({ pressed }) => [s.empty, { borderColor: p.border, opacity: pressed ? 0.7 : 1 }]}>
-            <Text style={{ color: p.foreground, fontSize: 15 }}>{t('home.today.emptyTitle')}</Text>
-            <Text style={{ color: p.primary, fontSize: 14, fontWeight: '500' }}>{t('home.today.emptyAction')}</Text>
-          </Pressable>
-          : overview.due.length
-            ? <View style={[s.list, { borderColor: p.border, backgroundColor: p.card }, readerElevation(2, p)]}>{overview.due.map((plan, i) => <DuePortion key={plan.id} plan={plan} today={today} first={!i} />)}</View>
-            : <View style={[s.empty, { borderColor: p.border }]}>
-              <Text style={{ color: p.foreground, fontSize: 15 }}>{overview.completedToday ? t('home.today.completed') : t('home.today.nothingDue')}</Text>
-              {upcoming && <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('home.today.upcoming', { name: upcoming.plan.name, date: shortDate(upcoming.next!.date) })}</Text>}
-            </View>}
-      </View>
-
-      {/* Morning and evening adhkar. */}
-      <View style={s.section}>
-        <View style={s.sectionHead}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600', flex: 1 }}>{t('adhkar.home.title')}</Text>
-          <Pressable accessibilityRole="link" accessibilityLabel={t('adhkar.home.all')} onPress={() => router.push('/adhkar')} style={({ pressed }) => [s.link, { opacity: pressed ? 0.6 : 1 }]}>
-            <Text style={{ color: p.primary, fontSize: 14, fontWeight: '500' }}>{t('adhkar.home.all')}</Text><ReaderIcon name="chevron" color={p.primary} size={16} /></Pressable></View>
-        <View style={[s.list, { borderColor: p.border, backgroundColor: p.card }, readerElevation(2, p)]}>
-          <CollectionRow id="morning" first />
-          <CollectionRow id="evening" first={false} />
-          <MisbahaRow first={false} />
-        </View>
-      </View>
-
-      {/* Everything else. */}
-      <View style={s.section}>
-        <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('home.explore')}</Text>
-        <View style={[s.list, { borderColor: p.border, backgroundColor: p.card }, readerElevation(2, p)]}>{areas.map((area, i) => <Pressable key={area.text} accessibilityRole="link" accessibilityLabel={t(`home.areas.${area.text}.label`)} onPress={() => router.push(area.href)}
-          style={({ pressed }) => [s.row, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }, { backgroundColor: pressed ? p.accent : 'transparent' }]}>
-          <IconTile name={area.icon} palette={p} />
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{t(`home.areas.${area.text}.label`)}</Text>
-            <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t(`home.areas.${area.text}.detail`)}</Text>
-          </View>
-          <ReaderIcon name="chevron" color={p.mutedForeground} size={16} />
-        </Pressable>)}</View>
-      </View>
-    </ScrollView>
+    <View style={[s.tabBar, { borderColor: p.border }]}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} accessibilityRole="tablist" contentContainerStyle={s.tabs}>
+        {TABS.map((id) => {
+          const active = id === tab;
+          return <Pressable key={id} accessibilityRole="tab" accessibilityState={{ selected: active }} aria-selected={active} onPress={() => open(id)} style={s.tab}>
+            <Text style={{ color: active ? p.foreground : p.mutedForeground, fontSize: 15, fontWeight: active ? '600' : '500' }}>{t(`home.tabs.${id}`)}</Text>
+            <View style={[s.underline, { backgroundColor: active ? p.primary : 'transparent' }]} />
+          </Pressable>;
+        })}
+      </ScrollView>
+    </View>
+    <View style={{ flex: 1 }}>
+      {opened.map((id) => <View key={id} style={[{ flex: 1 }, id !== tab && s.hidden]}>
+        {id === 'today' ? <TodayTab onTab={open} /> : <Embedded>
+          {id === 'prayers' ? <PrayersScreen /> : id === 'goals' ? <PlansScreen /> : id === 'adhkar' ? <AdhkarScreen /> : <PracticeScreen />}
+        </Embedded>}
+      </View>)}
+    </View>
   </SafeAreaView>;
 }
 
-function DuePortion({ plan, today, first }: { plan: ReadingPlan; today: string; first: boolean }) {
-  const { palette: p, update } = useReadingPreferences();
+/** What matters now: the prayer times, then what is due today as cards to swipe, then the reader's tools. */
+function TodayTab({ onTab }: { onTab: (tab: Tab) => void }) {
+  const { palette: p } = useReadingPreferences();
+  return <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
+    <PrayerHomeCard onOpen={() => onTab('prayers')} />
+    <View style={s.section}>
+      <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('home.now.title')}</Text>
+      <NowCards onTab={onTab} />
+    </View>
+    <View style={s.section}>
+      <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('home.tools')}</Text>
+      <View style={s.tools}>
+        {TOOLS.map((tool) => <Pressable key={tool.text} accessibilityRole="link" accessibilityLabel={t(`home.areas.${tool.text}.label`)} onPress={() => router.push(tool.href)}
+          style={({ pressed }) => [s.tool, { backgroundColor: pressed ? p.accent : p.card, borderColor: p.border }, readerElevation(1, p)]}>
+          <IconTile name={tool.icon} palette={p} />
+          <Text numberOfLines={1} style={{ color: p.foreground, fontSize: 13, fontWeight: '500' }}>{t(`home.areas.${tool.text}.label`)}</Text>
+        </Pressable>)}
+      </View>
+    </View>
+  </ScrollView>;
+}
+
+/** The adhkar of this part of the day: the morning's until Dhuhr, after the prayer until Asr, the evening's until Isha, then sleep. */
+function adhkarNow(prayer: string | undefined, hour: number): CollectionId {
+  if (prayer) {
+    if (prayer === 'fajr' || prayer === 'sunrise') return 'morning';
+    if (prayer === 'dhuhr') return 'afterPrayer';
+    if (prayer === 'asr' || prayer === 'maghrib') return 'evening';
+    return 'sleep';
+  }
+  if (hour >= 4 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 15) return 'afterPrayer';
+  if (hour >= 15 && hour < 20) return 'evening';
+  return 'sleep';
+}
+
+/** A swipeable row: the adhkar for now, each goal due today (or an invitation), and the misbaha. */
+function NowCards({ onTab }: { onTab: (tab: Tab) => void }) {
+  const { width } = useWindowDimensions();
+  const { plans, ready, today } = usePlans();
+  const { state: prayers } = usePrayers();
+  const now = useNow(60_000);
+  const overview = goalsOverview(plans, today);
+  const card = Math.round(Math.min(280, Math.min(width, readerLayout.maxWidth) * 0.72));
+  const current = prayers.location ? prayerWindow(prayers.location, now, prayers).current?.prayer : undefined;
+  // With nothing due today, the goal that comes next.
+  const upcoming = overview.all.map((plan) => ({ plan, next: nextPortion(plan, today) })).filter((x) => x.next && !x.next.due)
+    .sort((a, b) => a.next!.date.localeCompare(b.next!.date))[0];
+  const later = upcoming ? t('home.today.upcoming', { name: upcoming.plan.name, date: shortDate(upcoming.next!.date) }) : t('home.now.goalsLater');
+  return <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={card + 12} decelerationRate="fast"
+    style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
+    <AdhkarCard id={adhkarNow(current, now.getHours())} width={card} />
+    {ready && overview.due.map((plan) => <GoalCard key={plan.id} plan={plan} today={today} width={card} />)}
+    {ready && !overview.due.length && <NoGoalCard width={card} hasGoals={!!overview.all.length} completed={overview.completedToday > 0} later={later} onTab={onTab} />}
+    <MisbahaCard width={card} />
+  </ScrollView>;
+}
+
+/** The common frame of a card in the row: an icon and its kind, a title and a line, then what to do. */
+function NowCard({ width, icon, kind, title, detail, onPress, label, done, children }: {
+  width: number; icon: ReaderIconName; kind: string; title: string; detail: string; onPress: () => void; label: string; done?: boolean; children?: ReactNode;
+}) {
+  const { palette: p } = useReadingPreferences();
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
+    style={({ pressed }) => [s.card, { width, backgroundColor: pressed ? p.accent : p.card, borderColor: p.border }, readerElevation(2, p)]}>
+    <View style={s.cardHead}>
+      <IconTile name={icon} palette={p} tone={done ? p.primary : undefined} />
+      <Text numberOfLines={1} style={{ flex: 1, color: done ? p.primary : p.mutedForeground, fontSize: 13 }}>{kind}</Text>
+    </View>
+    <View style={{ gap: 2, flex: 1 }}>
+      <Text numberOfLines={2} style={{ color: p.foreground, fontSize: 16, lineHeight: 24, fontWeight: '600' }}>{title}</Text>
+      <Text numberOfLines={2} style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 20 }}>{detail}</Text>
+    </View>
+    {children}
+  </Pressable>;
+}
+
+function Action({ text }: { text: string }) {
+  const { palette: p } = useReadingPreferences();
+  return <View style={[s.action, { backgroundColor: p.primary }]}><Text style={{ color: p.primaryForeground, fontSize: 14, fontWeight: '500' }}>{text}</Text></View>;
+}
+
+function AdhkarCard({ id, width }: { id: CollectionId; width: number }) {
+  const { palette: p } = useReadingPreferences();
+  const { state, today } = useAdhkar();
+  const progress = collectionProgress(state, id, today);
+  const title = t(`adhkar.collections.${id}.title`);
+  const status = progress.complete ? t('adhkar.completed') : progress.started ? t('adhkar.progress', { done: progress.done, total: progress.total }) : t('adhkar.size', { count: collections[id].length });
+  return <NowCard width={width} icon={collectionIcons[id]} kind={t('home.now.adhkar')} title={title} detail={progress.started || progress.complete ? status : `${t(`adhkar.collections.${id}.detail`)} · ${status}`}
+    done={progress.complete} label={t('adhkar.openLabel', { title, state: progress.complete ? t('adhkar.completed') : progress.started ? status : t('adhkar.notStarted') })}
+    onPress={() => router.push({ pathname: '/adhkar/[id]', params: { id } })}>
+    {progress.started && !progress.complete ? <Progress value={progress.done / progress.total} palette={p} height={4} />
+      : !progress.complete && <Action text={t('home.now.begin')} />}
+  </NowCard>;
+}
+
+function GoalCard({ plan, today, width }: { plan: ReadingPlan; today: string; width: number }) {
+  const { update } = useReadingPreferences();
   const { index } = usePlanIndex(plan.riwayah);
   const next = nextPortion(plan, today);
   if (!next) return null;
@@ -137,17 +190,28 @@ function DuePortion({ plan, today, first }: { plan: ReadingPlan; today: string; 
     update({ riwayah: plan.riwayah });
     router.push({ pathname: '/', params: { surah: String(ayah.surahNumber), ayah: String(ayah.ayahNumber), plan: plan.id, planCycle: String(next.cycle), planSlot: String(next.slot) } });
   };
-  return <View style={[s.row, !first && { borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }]}>
-    <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{kind}{next.date < today ? ` · ${t('home.today.overdue')}` : ''}</Text>
-      <Text numberOfLines={1} style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{plan.name}</Text>
-      <Text numberOfLines={1} style={{ color: p.mutedForeground, fontSize: 13 }}>{index ? describePortion(plan, index, next.start, next.end) : ''}</Text>
-    </View>
-    <Pressable accessibilityRole="button" hitSlop={6} accessibilityLabel={t('home.today.startGoal', { name: plan.name })} disabled={!index} onPress={start}
-      style={({ pressed }) => [s.start, { backgroundColor: p.primary, opacity: !index ? 0.4 : pressed ? 0.8 : 1 }]}>
-      <Text style={{ color: p.primaryForeground, fontSize: 14, fontWeight: '500' }}>{t('home.today.start')}</Text>
-    </Pressable>
-  </View>;
+  return <NowCard width={width} icon="calendar" kind={next.date < today ? `${kind} · ${t('home.today.overdue')}` : kind} title={plan.name}
+    detail={index ? describePortion(plan, index, next.start, next.end) : ''} label={t('home.today.startGoal', { name: plan.name })} onPress={start}>
+    <Action text={t('home.today.start')} />
+  </NowCard>;
+}
+
+function NoGoalCard({ width, hasGoals, completed, later, onTab }: { width: number; hasGoals: boolean; completed: boolean; later: string; onTab: (tab: Tab) => void }) {
+  if (!hasGoals) {
+    return <NowCard width={width} icon="calendar" kind={t('home.tabs.goals')} title={t('home.now.noGoals')} detail={t('home.today.emptyTitle')}
+      label={t('home.today.createGoal')} onPress={() => router.push('/plans/new')}>
+      <Action text={t('home.today.emptyAction')} />
+    </NowCard>;
+  }
+  return <NowCard width={width} icon="calendar" kind={t('home.tabs.goals')} title={completed ? t('home.now.goalsDone') : t('home.today.nothingDue')}
+    detail={completed ? t('home.today.completed') : later} done={completed} label={t('home.today.allGoals')} onPress={() => onTab('goals')} />;
+}
+
+function MisbahaCard({ width }: { width: number }) {
+  const { state } = useAdhkar();
+  const title = t('adhkar.misbaha.title');
+  const detail = state.misbaha ? t('adhkar.misbaha.count', { count: state.misbaha }) : t('adhkar.misbaha.empty');
+  return <NowCard width={width} icon="beads" kind={t('home.now.dhikr')} title={title} detail={detail} label={t('adhkar.openLabel', { title, state: detail })} onPress={() => router.push('/misbaha')} />;
 }
 
 function describePortion(plan: ReadingPlan, index: PlanIndex, start: number, end: number) {
@@ -156,18 +220,17 @@ function describePortion(plan: ReadingPlan, index: PlanIndex, start: number, end
 }
 
 const s = StyleSheet.create({
-  header: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 6 },
-  content: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', padding: 16, paddingTop: 10, paddingBottom: 40, gap: 24 },
-  hero: { borderRadius: readerShape.card, borderWidth: StyleSheet.hairlineWidth, padding: 20, gap: 6 },
-  heroRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 },
-  track: { height: 3, borderRadius: 2, overflow: 'hidden', marginTop: 4, flexDirection: 'row' },
-  heroButton: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44, paddingHorizontal: 16, borderRadius: readerShape.control, marginTop: 14 },
+  header: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4 },
+  tabBar: { borderBottomWidth: StyleSheet.hairlineWidth },
+  tabs: { paddingHorizontal: 16, gap: 22 },
+  tab: { paddingTop: 12, alignItems: 'center', gap: 9, minHeight: 44 },
+  underline: { height: 3, borderRadius: 2, alignSelf: 'stretch', minWidth: 24 },
+  hidden: { display: 'none' },
+  content: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', padding: 16, paddingBottom: 40, gap: 24 },
   section: { gap: 12 },
-  sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  link: { flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 44 },
-  list: { borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, minHeight: 64 },
-  start: { minHeight: 36, paddingHorizontal: 14, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
-  empty: { padding: 16, gap: 6, borderWidth: 1, borderStyle: 'dashed', borderRadius: readerShape.lg },
-  rowIcon: { width: 40, height: 40, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
+  card: { borderRadius: readerShape.card, borderWidth: StyleSheet.hairlineWidth, padding: 16, gap: 12, minHeight: 184 },
+  cardHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  action: { alignSelf: 'flex-start', minHeight: 36, paddingHorizontal: 16, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
+  tools: { flexDirection: 'row', gap: 10 },
+  tool: { flex: 1, alignItems: 'center', gap: 8, paddingVertical: 14, paddingHorizontal: 4, borderRadius: readerShape.card, borderWidth: StyleSheet.hairlineWidth },
 });

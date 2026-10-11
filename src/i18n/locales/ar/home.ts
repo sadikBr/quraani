@@ -1,28 +1,26 @@
 export default {
+  /** The home screen's tabs: what matters now, then each section in place. */
+  tabs: { today: 'اليوم', prayers: 'الصلاة', goals: 'الأهداف', adhkar: 'الأذكار', practice: 'التسميع' },
+  /** The cards to swipe on «اليوم». */
+  now: {
+    title: 'لهذا اليوم',
+    /** Above the adhkar of this part of the day. */
+    adhkar: 'أذكار هذا الوقت',
+    begin: 'ابدأ',
+    dhikr: 'الذكر',
+    noGoals: 'ضع لنفسك هدفًا',
+    goalsDone: 'أتممت ورد اليوم',
+    goalsLater: 'تجد أهدافك ومواعيدها في «الأهداف».',
+  },
+  /** The reader's tools on «اليوم». */
+  tools: 'المصحف',
   areas: {
-    plans: { label: 'الأهداف', detail: 'ختمة، وورد، وحفظ، ومراجعة' },
-    prayers: { label: 'مواقيت الصلاة', detail: 'المواقيت والتنبيهات والأذان' },
-    adhkar: { label: 'الأذكار', detail: 'أذكار الصباح والمساء والنوم وبعد الصلاة' },
-    practice: { label: 'التسميع', detail: 'اختبر حفظك موضعًا بعد موضع' },
     index: { label: 'الفهرس', detail: 'السور والأجزاء والأحزاب' },
     bookmarks: { label: 'العلامات', detail: 'آيات علّمت عليها لتعود إليها' },
     search: { label: 'البحث', detail: 'بكلمة، أو برقم السورة والآية' },
     settings: { label: 'الإعدادات', detail: 'الرواية والمظهر والخط' },
   },
-  hero: {
-    /** {{surah}} already includes the word سورة. */
-    continueIn: 'متابعة القراءة من {{surah}}، الصفحة {{page}}',
-    openMushaf: 'فتح المصحف',
-    resume: 'تابع من حيث توقفت',
-    open: 'افتح المصحف',
-    page: 'الصفحة {{page, number}}',
-    juz: 'الجزء {{juz, number}}',
-    hizb: 'الحزب {{hizb, number}}',
-    progress: '{{percent, number}}٪ من المصحف',
-    continue: 'تابع القراءة',
-  },
   today: {
-    title: 'وردك اليوم',
     allGoals: 'كل الأهداف',
     createGoal: 'إنشاء هدف',
     emptyTitle: 'لم تضع لنفسك هدفًا بعد: ختمة، أو حفظ، أو سورة تعود إليها كل أسبوع.',
@@ -35,5 +33,4 @@ export default {
     /** Spoken label of the start button; {{name}} is the goal's name (may be «سورة الكهف يوم الجمعة», «حفظ القرآن»). */
     startGoal: 'بدء ورد اليوم: {{name}}',
   },
-  explore: 'أقسام التطبيق',
 } as const;

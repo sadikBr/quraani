@@ -9,6 +9,7 @@ import { ReaderIcon } from '@/features/quran-reader/components/ui/reader-chrome'
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
 import { SettingsCard, SettingsCardHeading } from '@/features/quran-reader/components/reading/settings-ui';
 import { PlanSwitch } from '@/features/plans/components';
+import { useEmbedded } from '@/components/embedded';
 import { formatDate, formatList, t } from '@/i18n';
 import { athanModule, athanPlaying, canScheduleExactAlarms, canUseFullScreenIntent, ignoresBatteryOptimizations, openBatteryOptimizationSettings, openExactAlarmSettings, openFullScreenIntentSettings, stopAthan } from './athan-native';
 import { alertsSupported, athanSoundsSupported, fullAthanSupported, TEST_SECONDS, testPrayerAlert } from './notifications';
@@ -27,12 +28,14 @@ export function PrayersScreen() {
   const { palette: p } = useReadingPreferences();
   const { state, ready, error } = usePrayers();
   const [sheet, setSheet] = useState<Sheet | null>(null);
-  return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
-    <View style={s.navigation}>
+  const embedded = useEmbedded();
+  const Frame = embedded ? View : SafeAreaView;
+  return <Frame style={{ flex: 1, backgroundColor: p.background }}>
+    {!embedded && <View style={s.navigation}>
       <Button variant="outline" icon="back" label={t('common.backToReading')} onPress={() => router.dismissTo('/')}>{t('plans.list.mushaf')}</Button>
-    </View>
-    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
-      <Text accessibilityRole="header" style={{ fontSize: 24, fontWeight: '600', color: p.foreground }}>{t('prayers.title')}</Text>
+    </View>}
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[s.content, embedded && { paddingTop: 16 }]}>
+      {!embedded && <Text accessibilityRole="header" style={{ fontSize: 24, fontWeight: '600', color: p.foreground }}>{t('prayers.title')}</Text>}
       {error && <Alert variant="destructive" palette={p}>{t('prayers.storageError')}</Alert>}
       {!ready ? null : state.location ? <>
         <LocationRow onPress={() => setSheet('location')} />
@@ -51,7 +54,7 @@ export function PrayersScreen() {
     {sheet === 'voice' && <VoiceSheet onClose={() => setSheet(null)} />}
     {sheet === 'takbir' && <TakbirSheet onClose={() => setSheet(null)} />}
     {typeof sheet === 'object' && sheet && <AlertSheet prayer={sheet.alert} onClose={() => setSheet(null)} />}
-  </SafeAreaView>;
+  </Frame>;
 }
 
 function LocationSetup({ onChoose }: { onChoose: () => void }) {

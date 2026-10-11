@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
+import { useEmbedded } from '@/components/embedded';
 import { Alert, Button, CheckMark, Tabs } from '@/components/ui';
 import type { ReaderPalette } from '@/features/quran-reader/theme';
 import { readerLayout, readerShape } from '@/features/quran-reader/design';
@@ -34,6 +35,7 @@ const REVIEW_LIMIT = 20;
 export function PracticeScreen() {
   const params = useLocalSearchParams<{ riwayah?: string; scope?: string }>();
   const { palette: p, preferences } = useReadingPreferences();
+  const embedded = useEmbedded();
   const riwayah = isRiwayah(params.riwayah) ? params.riwayah : preferences.riwayah;
   const { state, ready, error: storageError, setSettings, setCustom, begin } = usePractice();
   const record = useRiwayahPractice(riwayah);
@@ -76,13 +78,14 @@ export function PracticeScreen() {
     (ayah) => placeWeight(record.places[`${i.ayahs[ayah].surahNumber}:${i.ayahs[ayah].ayahNumber}`], record.sessions)));
   const startReview = () => start((i) => placesAt(i, review.slice(0, REVIEW_LIMIT).map(({ key }) => ayahOf(i, key)), options));
 
-  return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
-    <View style={s.navigation}>
+  const Frame = embedded ? View : SafeAreaView;
+  return <Frame style={{ flex: 1, backgroundColor: p.background }}>
+    {!embedded && <View style={s.navigation}>
       <Button variant="outline" icon="back" label={t('common.backToReading')} onPress={() => router.dismissTo('/')}>{t('plans.list.mushaf')}</Button>
-    </View>
-    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
+    </View>}
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[s.content, embedded && { paddingTop: 16 }]}>
       <View style={{ gap: 4 }}>
-        <Text accessibilityRole="header" style={{ fontSize: 24, fontWeight: '600', color: p.foreground }}>{t('practice.title')}</Text>
+        {!embedded && <Text accessibilityRole="header" style={{ fontSize: 24, fontWeight: '600', color: p.foreground }}>{t('practice.title')}</Text>}
         <Text style={{ fontSize: 15, color: p.mutedForeground }}>{t('practice.subtitle')}</Text>
         <Text style={{ fontSize: 13, color: p.mutedForeground }}>{t('practice.riwayah', { riwayah: RIWAYAT[riwayah].label })}</Text>
       </View>
@@ -123,7 +126,7 @@ export function PracticeScreen() {
     {choosing && index && <MemorizedSelectionSheet purpose="practice" index={index} selected={custom}
       onClose={() => setChoosing(false)}
       onSave={(value) => { setCustom(riwayah, value, index.ayahs.length); change({ scope: value.length ? 'custom' : settings.scope }); setChoosing(false); }} />}
-  </SafeAreaView>;
+  </Frame>;
 }
 
 function ScopeRow({ selected, disabled = false, title, detail, palette: p, onPress, first = false }: {
