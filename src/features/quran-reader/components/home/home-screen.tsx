@@ -1,9 +1,11 @@
-import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useEffect, useState, type ReactNode } from 'react';
+import { AccessibilityInfo, Animated, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Gesture, GestureDetector, GestureHandlerRootView, type PanGesture } from 'react-native-gesture-handler';
 import { router, type Href } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { Embedded } from '@/components/embedded';
+import { createPager, useRecentre } from '@/components/pager';
 import { IconTile, Progress } from '@/components/ui';
 import { readerElevation, readerLayout, readerShape } from '../../design';
 import { useReadingPreferences } from '../../state/reading-preferences-provider';
@@ -31,6 +33,8 @@ import { t } from '@/i18n';
 /** The home screen's sections, each a whole page; a new major feature is one more tab. */
 const TABS = ['today', 'prayers', 'goals', 'adhkar', 'practice'] as const;
 type Tab = typeof TABS[number];
+/** A tab and the ones beside it, which a swipe can bring in. */
+const withNeighbours = (tab: Tab) => { const i = TABS.indexOf(tab); return TABS.filter((_, j) => Math.abs(j - i) <= 1); };
 
 /** The reader's own tools, a row on the «اليوم» tab; a new small tool is one more entry. */
 const TOOLS: { href: Href; icon: ReaderIconName; text: 'index' | 'bookmarks' | 'search' | 'settings' }[] = [
@@ -43,19 +47,37 @@ const TOOLS: { href: Href; icon: ReaderIconName; text: 'index' | 'bookmarks' | '
 /**
  * The app's front door, opened from the reader's menu button (going back returns to the reader).
  * Tabs keep it tidy as the app grows: «اليوم» gathers what matters now (the prayer times, what is
- * due today, the reader's tools), and each other tab is a whole section, shown in place.
+ * due today, the reader's tools), and each other tab is a whole section, shown in place. A swipe
+ * moves between tabs like the mushaf's pages: the next tab lies to the left, as in the tab bar.
  */
 export function HomeScreen() {
   const { palette: p, preferences: { riwayah } } = useReadingPreferences();
   const { today } = usePlans();
   const [tab, setTab] = useState<Tab>('today');
-  // A tab stays mounted once opened, so it keeps its scroll and its choices.
-  const [opened, setOpened] = useState<Tab[]>(['today']);
-  const open = (next: Tab) => {
+  // A tab stays mounted once opened, so it keeps its scroll and its choices; the tabs beside the
+  // one shown are mounted too, so a swipe brings them in whole.
+  const [mounted, setMounted] = useState<Tab[]>(() => withNeighbours('today'));
+  const [translation] = useState(() => new Animated.Value(0));
+  const [pager] = useState(() => createPager(translation));
+  const [width, setWidth] = useState(0);
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const show = (next: Tab) => {
     setTab(next);
-    setOpened((list) => list.includes(next) ? list : [...list, next]);
+    setMounted((list) => { const add = withNeighbours(next).filter((id) => !list.includes(id)); return add.length ? [...list, ...add] : list; });
   };
-  return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
+  Object.assign(pager.state, { index: TABS.indexOf(tab), last: TABS.length - 1, width: width || 360, reduceMotion, onChange: (i: number) => show(TABS[i]) });
+  useEffect(() => {
+    void AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+    return () => subscription.remove();
+  }, []);
+  // The tab coming in is centred before it paints.
+  useRecentre(translation, tab);
+  // A tapped tab beside this one slides in like a swipe; one further away opens at once.
+  const open = (next: Tab) => pager.go(TABS.indexOf(next));
+  const index = TABS.indexOf(tab);
+  // The pager's gesture needs a gesture root; the app's stack screens have none of their own.
+  return <GestureHandlerRootView style={{ flex: 1 }}><SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <View style={s.header}>
       <QuranniLogo color={p.ornament} size={30} />
       <View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 20, fontWeight: '600' }}>{t('common.appName')}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{shortDate(today)} · {t('common.riwayahOf', { riwayah: RIWAYAT[riwayah].label })}</Text></View>
@@ -72,24 +94,32 @@ export function HomeScreen() {
         })}
       </ScrollView>
     </View>
-    <View style={{ flex: 1 }}>
-      {opened.map((id) => <View key={id} style={[{ flex: 1 }, id !== tab && s.hidden]}>
-        {id === 'today' ? <TodayTab onTab={open} /> : <Embedded>
-          {id === 'prayers' ? <PrayersScreen /> : id === 'goals' ? <PlansScreen /> : id === 'adhkar' ? <AdhkarScreen /> : <PracticeScreen />}
-        </Embedded>}
-      </View>)}
-    </View>
-  </SafeAreaView>;
+    <GestureDetector gesture={pager.pan}>
+      <View style={s.pages} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+        {mounted.map((id) => {
+          const offset = TABS.indexOf(id) - index;
+          // Only the tab shown and those beside it are laid out, beside it; the rest wait hidden.
+          return <Animated.View key={id} pointerEvents={offset ? 'none' : 'auto'} accessibilityElementsHidden={!!offset} importantForAccessibility={offset ? 'no-hide-descendants' : 'auto'}
+            {...(Platform.OS === 'web' && offset ? { 'aria-hidden': true, inert: true } : {})}
+            style={[StyleSheet.absoluteFill, Math.abs(offset) > 1 ? s.hidden : { transform: [{ translateX: Animated.add(translation, -offset * (width || 360)) }] }]}>
+            {id === 'today' ? <TodayTab onTab={open} pager={pager.pan} /> : <Embedded>
+              {id === 'prayers' ? <PrayersScreen /> : id === 'goals' ? <PlansScreen /> : id === 'adhkar' ? <AdhkarScreen /> : <PracticeScreen />}
+            </Embedded>}
+          </Animated.View>;
+        })}
+      </View>
+    </GestureDetector>
+  </SafeAreaView></GestureHandlerRootView>;
 }
 
 /** What matters now: the prayer times, then what is due today as cards to swipe, then the reader's tools. */
-function TodayTab({ onTab }: { onTab: (tab: Tab) => void }) {
+function TodayTab({ onTab, pager }: { onTab: (tab: Tab) => void; pager: PanGesture }) {
   const { palette: p } = useReadingPreferences();
   return <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
     <PrayerHomeCard onOpen={() => onTab('prayers')} />
     <View style={s.section}>
       <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('home.now.title')}</Text>
-      <NowCards onTab={onTab} />
+      <NowCards onTab={onTab} pager={pager} />
     </View>
     <View style={s.section}>
       <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('home.tools')}</Text>
@@ -118,9 +148,13 @@ function adhkarNow(prayer: string | undefined, hour: number): CollectionId {
   return 'sleep';
 }
 
-/** A swipeable row: the adhkar for now, each goal due today (or an invitation), and the misbaha. */
-function NowCards({ onTab }: { onTab: (tab: Tab) => void }) {
+/**
+ * A swipeable row: the adhkar for now, each goal due today (or an invitation), and the misbaha.
+ * A swipe that starts on the row scrolls the row, not the tabs.
+ */
+function NowCards({ onTab, pager }: { onTab: (tab: Tab) => void; pager: PanGesture }) {
   const { width } = useWindowDimensions();
+  const [row] = useState(() => Gesture.Native().blocksExternalGesture(pager));
   const { plans, ready, today } = usePlans();
   const { state: prayers } = usePrayers();
   const now = useNow(60_000);
@@ -131,13 +165,13 @@ function NowCards({ onTab }: { onTab: (tab: Tab) => void }) {
   const upcoming = overview.all.map((plan) => ({ plan, next: nextPortion(plan, today) })).filter((x) => x.next && !x.next.due)
     .sort((a, b) => a.next!.date.localeCompare(b.next!.date))[0];
   const later = upcoming ? t('home.today.upcoming', { name: upcoming.plan.name, date: shortDate(upcoming.next!.date) }) : t('home.now.goalsLater');
-  return <ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={card + 12} decelerationRate="fast"
+  return <GestureDetector gesture={row}><ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={card + 12} decelerationRate="fast"
     style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
     <AdhkarCard id={adhkarNow(current, now.getHours())} width={card} />
     {ready && overview.due.map((plan) => <GoalCard key={plan.id} plan={plan} today={today} width={card} />)}
     {ready && !overview.due.length && <NoGoalCard width={card} hasGoals={!!overview.all.length} completed={overview.completedToday > 0} later={later} onTab={onTab} />}
     <MisbahaCard width={card} />
-  </ScrollView>;
+  </ScrollView></GestureDetector>;
 }
 
 /** The common frame of a card in the row: an icon and its kind, a title and a line, then what to do. */
@@ -225,6 +259,7 @@ const s = StyleSheet.create({
   tabs: { paddingHorizontal: 16, gap: 22 },
   tab: { paddingTop: 12, alignItems: 'center', gap: 9, minHeight: 44 },
   underline: { height: 3, borderRadius: 2, alignSelf: 'stretch', minWidth: 24 },
+  pages: { flex: 1, overflow: 'hidden' },
   hidden: { display: 'none' },
   content: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', padding: 16, paddingBottom: 40, gap: 24 },
   section: { gap: 12 },
