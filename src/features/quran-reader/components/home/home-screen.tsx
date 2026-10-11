@@ -19,12 +19,14 @@ import { goalsOverview } from '@/features/plans/overview';
 import { isMemorizationPlan, isRecurringPlan, isRevisionPlan, isSequentialPlan, type ReadingPlan } from '@/features/plans/types';
 import { shortDate } from '@/features/plans/presentation';
 import { CollectionRow, MisbahaRow } from '@/features/adhkar/adhkar-screen';
+import { PrayerHomeSection } from '@/features/prayers/home-card';
 import { t } from '@/i18n';
 
-interface Area { href: Href; icon: ReaderIconName; text: 'plans' | 'adhkar' | 'practice' | 'index' | 'bookmarks' | 'search' | 'settings' }
+interface Area { href: Href; icon: ReaderIconName; text: 'plans' | 'prayers' | 'adhkar' | 'practice' | 'index' | 'bookmarks' | 'search' | 'settings' }
 /** Everything beyond the reader. A new area (dashboard, halaqat, groups…) is one more entry. */
 const areas: Area[] = [
   { href: '/plans', icon: 'calendar', text: 'plans' },
+  { href: '/prayers', icon: 'mosque', text: 'prayers' },
   { href: '/adhkar', icon: 'moon-star', text: 'adhkar' },
   { href: '/practice', icon: 'practice', text: 'practice' },
   { href: '/quran-index', icon: 'index', text: 'index' },
@@ -72,6 +74,9 @@ export function HomeScreen() {
         <View style={{ marginTop: 6 }}><Progress value={Math.max(0.01, progress)} /></View>
         <View style={[s.heroButton, { backgroundColor: p.primary }]}><ReaderIcon name="book" color={p.primaryForeground} size={16} /><Text style={{ color: p.primaryForeground, fontSize: 14, fontWeight: '500' }}>{t('home.hero.continue')}</Text></View>
       </Pressable>
+
+      {/* The next prayer. */}
+      <PrayerHomeSection />
 
       {/* Today. */}
       <View style={s.section}>

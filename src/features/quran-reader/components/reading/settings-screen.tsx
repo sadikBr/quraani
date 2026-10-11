@@ -104,6 +104,9 @@ export function SettingsScreen() {
         <Pressable accessibilityRole="link" accessibilityLabel={t('settings.footer.sourceLabel')} onPress={() => void Linking.openURL('https://quranpedia.net')} style={styles.source}>
           <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('settings.footer.source')}</Text>
         </Pressable>
+        <Pressable accessibilityRole="link" onPress={() => router.push('/credits')} style={styles.source}>
+          <Text style={{ color: palette.mutedForeground, fontSize: 12, textDecorationLine: 'underline' }}>{t('settings.footer.credits')}</Text>
+        </Pressable>
       </View>
     </ScrollView>
   </SafeAreaView>;

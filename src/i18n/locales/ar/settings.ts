@@ -45,6 +45,8 @@ export default {
     sourceLabel: 'المحتوى القرآني من الموسوعة القرآنية',
     /** Link text; the arrow marks an external link. */
     source: 'المحتوى من الموسوعة القرآنية ↗',
+    /** Link to the credits page. */
+    credits: 'المصادر والتراخيص',
   },
   textComfort: {
     title: 'راحة القراءة',

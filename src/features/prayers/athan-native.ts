@@ -1,0 +1,47 @@
+import { Platform } from 'react-native';
+import { requireOptionalNativeModule } from 'expo';
+
+/** The app's own Android module (`modules/athan`): whole athans played at their time. */
+interface AthanNativeModule {
+  schedule(json: string): void;
+  play(json: string): void;
+  test(json: string, seconds: number): void;
+  canUseFullScreenIntent(): boolean;
+  openFullScreenIntentSettings(): boolean;
+  stop(): boolean;
+  isPlaying(): boolean;
+  canScheduleExactAlarms(): boolean;
+  openExactAlarmSettings(): boolean;
+  isIgnoringBatteryOptimizations(): boolean;
+  openBatteryOptimizationSettings(): boolean;
+}
+
+/** Missing in Expo Go, on iOS and on the web: whole athans fall back to their opening. */
+export const athanModule = Platform.OS === 'android' ? requireOptionalNativeModule<AthanNativeModule>('Athan') : null;
+
+export interface AthanLabels { stop: string; channel: string; fallbackChannel: string }
+export interface AthanEntry { id: string; at: number; voice: string; title: string; body: string; notifyAfter?: boolean }
+
+/** Every call is guarded: a module problem must not break the screen or the other alerts. */
+function attempt<T>(run: (module: AthanNativeModule) => T, fallback: T): T {
+  if (!athanModule) return fallback;
+  try { return run(athanModule); } catch { return fallback; }
+}
+
+export const scheduleAthans = (labels: AthanLabels, athans: AthanEntry[]) => {
+  if (!athanModule) return;
+  // Errors go to the caller, which reports that scheduling failed.
+  athanModule.schedule(JSON.stringify({ labels, athans }));
+};
+/** The whole athan by its alarm path in `seconds`. Errors go to the caller. */
+export const testAthan = (labels: AthanLabels, athan: AthanEntry, seconds: number) => {
+  athanModule?.test(JSON.stringify({ labels, athan }), Math.round(seconds));
+};
+export const canUseFullScreenIntent = () => attempt((m) => m.canUseFullScreenIntent(), true);
+export const openFullScreenIntentSettings = () => attempt((m) => m.openFullScreenIntentSettings(), false);
+export const stopAthan = () => attempt((m) => m.stop(), false);
+export const athanPlaying = () => attempt((m) => m.isPlaying(), false);
+export const canScheduleExactAlarms = () => attempt((m) => m.canScheduleExactAlarms(), true);
+export const openExactAlarmSettings = () => attempt((m) => m.openExactAlarmSettings(), false);
+export const ignoresBatteryOptimizations = () => attempt((m) => m.isIgnoringBatteryOptimizations(), true);
+export const openBatteryOptimizationSettings = () => attempt((m) => m.openBatteryOptimizationSettings(), false);

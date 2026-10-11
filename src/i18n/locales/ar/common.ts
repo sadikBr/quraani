@@ -10,6 +10,7 @@ export default {
   today: 'اليوم',
   settings: 'الإعدادات',
   backToReading: 'العودة إلى المصحف',
+  back: 'رجوع',
   clearSearch: 'مسح البحث',
   checkConnection: 'تحقّق من اتصالك بالإنترنت ثم أعد المحاولة.',
   /** "رواية حفص عن عاصم" */

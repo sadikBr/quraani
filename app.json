@@ -51,7 +51,27 @@
         "expo-notifications",
         {
           "icon": "./assets/brand/adaptive-monochrome.png",
-          "color": "#103E35"
+          "color": "#103E35",
+          "sounds": [
+            "./assets/athan/takbir_makkah.ogg",
+            "./assets/athan/takbir_medina.ogg",
+            "./assets/athan/takbir_original.ogg",
+            "./assets/athan/takbir_azeez.ogg",
+            "./assets/athan/takbir_azemi.ogg",
+            "./assets/athan/takbir_shalqar.ogg",
+            "./assets/athan/takbir_ghana.ogg",
+            "./assets/athan/takbir_nigeria.ogg",
+            "./assets/athan/takbir_aishatu.ogg",
+            "./assets/athan/athan_original.ogg",
+            "./assets/athan/athan_azeez.ogg",
+            "./assets/athan/athan_azemi.ogg"
+          ]
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "يستخدم «قرآني» موقعك لحساب مواقيت الصلاة، ولا يرسله إلى أي جهة."
         }
       ],
       [

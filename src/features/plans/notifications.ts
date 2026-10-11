@@ -5,9 +5,12 @@ import type { ReadingPlan } from './types';
 import { planReminderQueue, REMINDER_PREFIX } from './reminder-schedule';
 import { ReminderSetupError } from './reminder-errors';
 import { t } from '@/i18n';
+import { isPrayerAlertData } from '@/features/prayers/settings';
 
 export const remindersSupported = true;
-Notifications.setNotificationHandler({ handleNotification: async () => ({ shouldPlaySound: false, shouldSetBadge: false, shouldShowBanner: true, shouldShowList: true }) });
+// One handler for the app's notifications while it is open: silent, except a prayer's (its athan).
+Notifications.setNotificationHandler({ handleNotification: async (notification) => ({
+  shouldPlaySound: isPrayerAlertData(notification.request.content.data), shouldSetBadge: false, shouldShowBanner: true, shouldShowList: true }) });
 let channelResult: Promise<string | undefined> | undefined;
 async function channel(): Promise<string | undefined> {
   // Expo Go's SDK 57 channel manager can lack its scoped provider. Omitting

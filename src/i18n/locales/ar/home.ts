@@ -1,6 +1,7 @@
 export default {
   areas: {
     plans: { label: 'الأهداف', detail: 'ختمة، وورد، وحفظ، ومراجعة' },
+    prayers: { label: 'مواقيت الصلاة', detail: 'المواقيت والتنبيهات والأذان' },
     adhkar: { label: 'الأذكار', detail: 'أذكار الصباح والمساء والنوم وبعد الصلاة' },
     practice: { label: 'التسميع', detail: 'اختبر حفظك موضعًا بعد موضع' },
     index: { label: 'الفهرس', detail: 'السور والأجزاء والأحزاب' },
