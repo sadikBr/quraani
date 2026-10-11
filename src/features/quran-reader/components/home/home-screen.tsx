@@ -18,12 +18,14 @@ import { ayahRangeLabel, nextPortion, rangeLabel, type PlanIndex } from '@/featu
 import { goalsOverview } from '@/features/plans/overview';
 import { isMemorizationPlan, isRecurringPlan, isRevisionPlan, isSequentialPlan, type ReadingPlan } from '@/features/plans/types';
 import { shortDate } from '@/features/plans/presentation';
+import { CollectionRow, MisbahaRow } from '@/features/adhkar/adhkar-screen';
 import { t } from '@/i18n';
 
-interface Area { href: Href; icon: ReaderIconName; text: 'plans' | 'index' | 'bookmarks' | 'search' | 'settings' }
+interface Area { href: Href; icon: ReaderIconName; text: 'plans' | 'adhkar' | 'index' | 'bookmarks' | 'search' | 'settings' }
 /** Everything beyond the reader. A new area (dashboard, halaqat, groups…) is one more entry. */
 const areas: Area[] = [
   { href: '/plans', icon: 'calendar', text: 'plans' },
+  { href: '/adhkar', icon: 'moon-star', text: 'adhkar' },
   { href: '/quran-index', icon: 'index', text: 'index' },
   { href: '/bookmarks', icon: 'bookmark', text: 'bookmarks' },
   { href: '/search', icon: 'search', text: 'search' },
@@ -86,6 +88,18 @@ export function HomeScreen() {
               <Text style={{ color: p.foreground, fontSize: 15 }}>{overview.completedToday ? t('home.today.completed') : t('home.today.nothingDue')}</Text>
               {upcoming && <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('home.today.upcoming', { name: upcoming.plan.name, date: shortDate(upcoming.next!.date) })}</Text>}
             </View>}
+      </View>
+
+      {/* Morning and evening adhkar. */}
+      <View style={s.section}>
+        <View style={s.sectionHead}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600', flex: 1 }}>{t('adhkar.home.title')}</Text>
+          <Pressable accessibilityRole="link" accessibilityLabel={t('adhkar.home.all')} onPress={() => router.push('/adhkar')} style={({ pressed }) => [s.link, { opacity: pressed ? 0.6 : 1 }]}>
+            <Text style={{ color: p.primary, fontSize: 14, fontWeight: '500' }}>{t('adhkar.home.all')}</Text><ReaderIcon name="chevron" color={p.primary} size={16} /></Pressable></View>
+        <View style={[s.list, { borderColor: p.border, backgroundColor: p.card }, readerElevation(2, p)]}>
+          <CollectionRow id="morning" first />
+          <CollectionRow id="evening" first={false} />
+          <MisbahaRow first={false} />
+        </View>
       </View>
 
       {/* Everything else. */}

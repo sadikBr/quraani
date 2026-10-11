@@ -1,6 +1,7 @@
 export default {
   areas: {
     plans: { label: 'الأهداف', detail: 'ختمة، وورد، وحفظ، ومراجعة' },
+    adhkar: { label: 'الأذكار', detail: 'أذكار الصباح والمساء والنوم وبعد الصلاة' },
     index: { label: 'الفهرس', detail: 'السور والأجزاء والأحزاب' },
     bookmarks: { label: 'العلامات', detail: 'آيات علّمت عليها لتعود إليها' },
     search: { label: 'البحث', detail: 'بكلمة، أو برقم السورة والآية' },

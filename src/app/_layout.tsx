@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { I18nManager, Platform, Pressable, ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native';
 import type { ErrorBoundaryProps } from 'expo-router';
 import { PlansProvider, PlanNotificationObserver } from '@/features/plans/provider';
+import { AdhkarNotificationObserver, AdhkarProvider } from '@/features/adhkar/provider';
 import { readerThemes } from '@/features/quran-reader/theme';
 import { readerShape } from '@/features/quran-reader/design';
 import { localeInfo, t } from '@/i18n';
@@ -25,7 +26,7 @@ if (Platform.OS !== 'web') {
 export default function RootLayout() {
   return <>
     {Platform.OS === 'web' && <Head><title>{t('common.appName')}</title></Head>}
-    <ReadingPreferencesProvider><BookmarksProvider><PlansProvider><RootNavigator /></PlansProvider></BookmarksProvider></ReadingPreferencesProvider>
+    <ReadingPreferencesProvider><BookmarksProvider><PlansProvider><AdhkarProvider><RootNavigator /></AdhkarProvider></PlansProvider></BookmarksProvider></ReadingPreferencesProvider>
   </>;
 }
 
@@ -55,6 +56,7 @@ function RootNavigator() {
         <ThemeProvider value={{ ...baseTheme, colors: { ...baseTheme.colors, background: palette.background, card: palette.card, text: palette.foreground, border: palette.border, primary: palette.primary } }}>
           <Stack screenOptions={{ headerShown: false }} />
           <PlanNotificationObserver />
+          <AdhkarNotificationObserver />
         </ThemeProvider>
       </View>
     </LocaleProvider>

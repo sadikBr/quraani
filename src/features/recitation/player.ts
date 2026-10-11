@@ -9,6 +9,7 @@ import { needsBasmala, segmentFor, type Segment, type SurahTimings } from './sou
 import { isMissing, localUri } from './downloads';
 import { loadTimings } from './timings';
 import { fatihaCountsBasmala } from './catalog';
+import { claimAudio, releaseAudio } from '@/features/audio/focus';
 
 export interface RecitationAyah { surahNumber: number; ayahNumber: number; pageNumber: number }
 
@@ -256,6 +257,7 @@ export async function playFrom({ quran, reciter: choose, from, to, repeat }: Pla
   const plan: QueuePlan = { end: endIndex, repeat, basmalaBefore: (surah) => needsBasmala(surah, counts) };
   const own = ++token;
   stopAudio();
+  claimAudio('recitation', stop);
   const end = to ? { ...ayahs[endIndex] } : null;
   publish({ ...idle, status: 'loading', mushafId: quran.id, current: { ...ayahs[start] }, repeat, end });
   let reciter: Reciter | null;
@@ -320,6 +322,7 @@ export function dismissError() { if (state.status === 'idle') publish({ error: n
 export function stop() {
   token++;
   stopAudio();
+  releaseAudio('recitation');
   try { player?.setActiveForLockScreen(false); } catch { /* Not available on every platform. */ }
   publish({ ...idle, repeat: state.repeat });
 }
