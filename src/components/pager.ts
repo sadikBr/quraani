@@ -1,3 +1,4 @@
+import { useLayoutEffect } from 'react';
 import { Animated, Easing, Platform } from 'react-native';
 import { Gesture } from 'react-native-gesture-handler';
 import { swipePageDelta } from '@/features/quran-reader/utils/navigation';
@@ -35,4 +36,21 @@ export function createPager(translation: Animated.Value) {
     })
     .onFinalize((_, success) => { if (!success && !state.animating) settle(); });
   return { state, pan, go };
+}
+
+/**
+ * Puts the pages back in place around the one now shown. Setting a natively driven value moves
+ * the native views but not React Native's own record of where they are, and a Pressable checks
+ * each tap against that record: the buttons of a page that was swiped in would treat every tap
+ * as landing beside them, and ignore it, until something re-rendered the page. A native
+ * animation updates that record when it ends, so a zero-length one follows the reset.
+ */
+export function recentre(translation: Animated.Value) {
+  translation.setValue(0);
+  if (nativeDriver) Animated.timing(translation, { toValue: 0, duration: 0, useNativeDriver: true }).start();
+}
+
+/** Recentres the pages whenever the page shown (`position`) changes, before the frame paints. */
+export function useRecentre(translation: Animated.Value, position: unknown) {
+  useLayoutEffect(() => { recentre(translation); }, [position, translation]);
 }

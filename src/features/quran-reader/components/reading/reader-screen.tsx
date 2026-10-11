@@ -1,6 +1,7 @@
 import { loadTajweedFont } from '../../services/tajweed-service';
 import { TajweedQuranPage } from './tajweed-quran-page';
 import { ArabicText as Text } from '@/components/arabic-text';
+import { recentre } from '@/components/pager';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Animated, Easing, PanResponder, Platform, ScrollView, StatusBar as NativeStatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaView, initialWindowMetrics, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -111,7 +112,9 @@ function RiwayahReaderScreen() {
   }, [actionsVisible, controlsProgress, reduceMotion]);
   // Recenter the already mounted neighboring page before the next frame paints.
   useLayoutEffect(() => {
-    pageTranslation.setValue(0);
+    // Also brings React Native's record of the pages in line, so the toolbar of a page that was
+    // swiped in answers taps at once (it used to need the tools hidden and shown again).
+    recentre(pageTranslation);
     swipeOrigin.current = pageNumber;
     swipeDestination.current = null;
     if (!gestureActive.current) setPrintedPageInteraction(false);

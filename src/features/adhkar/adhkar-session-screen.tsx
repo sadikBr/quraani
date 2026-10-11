@@ -1,10 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Vibration, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import Svg, { Circle } from 'react-native-svg';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import { createPager } from '@/components/pager';
+import { createPager, useRecentre } from '@/components/pager';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { Alert, Button } from '@/components/ui';
 import type { ReaderPalette } from '@/features/quran-reader/theme';
@@ -61,7 +61,7 @@ function Session({ id }: { id: CollectionId }) {
     return () => subscription.remove();
   }, []);
   // The incoming page is centred before it paints; a recording of another dhikr stops.
-  useLayoutEffect(() => { translation.setValue(0); }, [index, translation]);
+  useRecentre(translation, index);
   useEffect(() => { clearTimeout(advance.current); stopClip(); }, [index]);
   useEffect(() => () => { clearTimeout(advance.current); stopClip(); }, []);
 

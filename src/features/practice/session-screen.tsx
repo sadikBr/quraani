@@ -1,11 +1,11 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { Alert, Button } from '@/components/ui';
-import { createPager } from '@/components/pager';
+import { createPager, useRecentre } from '@/components/pager';
 import type { ReaderPalette } from '@/features/quran-reader/theme';
 import { readerElevation, readerLayout, readerShape, withAlpha } from '@/features/quran-reader/design';
 import { ReaderIcon, type ReaderIconName } from '@/features/quran-reader/components/ui/reader-chrome';
@@ -97,7 +97,8 @@ function SessionPages({ session }: { session: PracticeSession }) {
     const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
     return () => subscription.remove();
   }, []);
-  useLayoutEffect(() => { translation.setValue(0); }, [position, translation]);
+  // The incoming page is centred before it paints, and its buttons answer at once.
+  useRecentre(translation, position);
   // A pending move after grading belongs to the place it was given on.
   useEffect(() => () => { clearTimeout(advance.current); }, [position]);
   // Listening belongs to one place: moving on, or leaving the session, stops it.
