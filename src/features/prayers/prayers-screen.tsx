@@ -19,6 +19,7 @@ import { clock, countdown, dayOf, dayTimes, PRAYERS, prayerWindow, type PrayerId
 import { AdjustmentsSheet, AlertSheet, LocationSheet, MethodSheet, TakbirSheet, useLocate, VoiceSheet } from './prayer-sheets';
 import { alertIcons, effectiveAlert, hijriLabel, signedMinutes } from './format';
 import { timesNotificationSupported } from './times-notification';
+import { upcomingAthan } from './athan-screen';
 
 type Sheet = 'location' | 'method' | 'adjust' | 'voice' | 'takbir' | { alert: PrayerId };
 /** Prayer times at the chosen place, the next prayer, and the alerts and athan. */
@@ -170,6 +171,7 @@ function Alerts({ onVoice, onTakbir }: { onVoice: () => void; onTakbir: () => vo
       {state.enabled && <>
         {athanSoundsSupported && <SettingRow label={t('prayers.alerts.takbirSound')} value={t(`prayers.takbirs.${state.takbir}.name`)} onPress={onTakbir} />}
         {fullAthanSupported && <SettingRow label={t('prayers.alerts.voice')} value={t(`prayers.voices.${state.voice}.name`)} onPress={onVoice} />}
+        {fullAthanSupported && <SettingRow label={t('prayers.screen.title')} value={t(`prayers.screen.backgrounds.${state.screen.background}`)} onPress={() => router.push('/athan-screen')} />}
         <View style={{ gap: 8 }}>
           <Text style={{ color: p.foreground, fontSize: 15, fontWeight: '500' }}>{t('prayers.alerts.before')}</Text>
           <View accessibilityRole="radiogroup" accessibilityLabel={t('prayers.alerts.before')} style={s.chips}>
@@ -200,10 +202,7 @@ function AlertTest({ usesFull }: { usesFull: boolean }) {
   }, []);
   const send = async (kind: 'notify' | 'takbir' | 'full') => {
     setStatus(null);
-    // The next prayer; after Fajr, that day's Dhuhr (no takbir nor athan at sunrise).
-    const next = state.location ? prayerWindow(state.location, new Date(), state).next : undefined;
-    const prayer = !next || next.prayer === 'sunrise' ? 'dhuhr' : next.prayer;
-    const time = !next ? new Date() : next.prayer === 'sunrise' && state.location ? dayTimes(state.location, next.day, state).dhuhr : next.at;
+    const { prayer, time } = upcomingAthan(state);
     try {
       await testPrayerAlert(state, kind, prayer, time);
       setStatus('sent');

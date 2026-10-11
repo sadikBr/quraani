@@ -10,6 +10,25 @@ export type VoiceId = typeof VOICES[number];
 /** Takbir sounds of the notification: each voice's opening «الله أكبر، الله أكبر», and two takbirs alone. */
 export const TAKBIRS = ['makkah', 'medina', 'original', 'azeez', 'azemi', 'shalqar', 'ghana', 'nigeria', 'aishatu'] as const;
 export type TakbirId = typeof TAKBIRS[number];
+/** The athan's screen: photos of mosques (in the Android module's resources), then plain colours. */
+export const SCREEN_PHOTOS = ['makkah_night', 'makkah_day', 'madinah', 'madinah_night', 'aqsa', 'hassan2', 'koutoubia'] as const;
+export const SCREEN_BACKGROUNDS = [...SCREEN_PHOTOS, 'green', 'night'] as const;
+export type ScreenBackground = typeof SCREEN_BACKGROUNDS[number];
+export type ScreenPhoto = typeof SCREEN_PHOTOS[number];
+export const isScreenPhoto = (id: ScreenBackground): id is ScreenPhoto => (SCREEN_PHOTOS as readonly string[]).includes(id);
+export const SCREEN_DIMS = ['light', 'medium', 'strong'] as const;
+export const SCREEN_MOTIONS = ['pulse', 'glow', 'none'] as const;
+export interface AthanScreenStyle {
+  background: ScreenBackground;
+  /** How much the photo is darkened under the text. */
+  dim: typeof SCREEN_DIMS[number];
+  /** Rings pulsing out from the time, a breathing glow, or nothing (the photo then stays still too). */
+  motion: typeof SCREEN_MOTIONS[number];
+  /** The Hijri date under the time. */
+  date: boolean;
+}
+export const defaultScreen: AthanScreenStyle = { background: 'makkah_night', dim: 'medium', motion: 'pulse', date: true };
+
 /** A reminder this many minutes before each prayer that has an alert (0: none). */
 export const BEFORE_OPTIONS = [0, 5, 10, 15, 20, 30] as const;
 export const ADJUSTMENT_LIMIT = 30;
@@ -43,6 +62,8 @@ export interface PrayerState extends TimesSettings {
   hijriOffset: number;
   /** The prayer times notification, always shown (Android app). */
   timesNotification: boolean;
+  /** How the whole athan's screen looks. */
+  screen: AthanScreenStyle;
 }
 
 export const PRAYERS_KEY = 'prayers:v1';
@@ -51,6 +72,7 @@ export const defaultAlerts: Record<PrayerId, AlertKind> = { fajr: 'takbir', sunr
 export const defaultPrayerState: PrayerState = {
   version: 1, location: null, method: 'habous', madhab: 'shafi', adjustments: noAdjustments,
   enabled: false, alerts: defaultAlerts, before: 0, voice: 'original', takbir: 'makkah', hijriOffset: 0, timesNotification: false,
+  screen: defaultScreen,
 };
 
 const within = (value: unknown, limit: number) => Number.isInteger(value) && Math.abs(value as number) <= limit;
@@ -83,6 +105,17 @@ function decodeAlerts(value: unknown): Record<PrayerId, AlertKind> {
   return alerts.sunrise === 'takbir' || alerts.sunrise === 'full' ? { ...alerts, sunrise: 'notify' } : alerts;
 }
 
+function decodeScreen(value: unknown): AthanScreenStyle {
+  const s = (value && typeof value === 'object' ? value : {}) as Partial<AthanScreenStyle>;
+  const d = defaultScreen;
+  return {
+    background: SCREEN_BACKGROUNDS.includes(s.background as ScreenBackground) ? s.background! : d.background,
+    dim: SCREEN_DIMS.includes(s.dim as AthanScreenStyle['dim']) ? s.dim! : d.dim,
+    motion: SCREEN_MOTIONS.includes(s.motion as AthanScreenStyle['motion']) ? s.motion! : d.motion,
+    date: typeof s.date === 'boolean' ? s.date : d.date,
+  };
+}
+
 /** Keeps what is valid of a saved or changed state; anything else takes its default. */
 export function normalizePrayers(value: unknown): PrayerState {
   const s = (value && typeof value === 'object' ? value : {}) as Partial<PrayerState>;
@@ -100,6 +133,7 @@ export function normalizePrayers(value: unknown): PrayerState {
     takbir: TAKBIRS.includes(s.takbir as TakbirId) ? s.takbir! : d.takbir,
     hijriOffset: within(s.hijriOffset, HIJRI_OFFSET_LIMIT) ? s.hijriOffset! : d.hijriOffset,
     timesNotification: typeof s.timesNotification === 'boolean' ? s.timesNotification : d.timesNotification,
+    screen: decodeScreen(s.screen),
   };
 }
 

@@ -75,17 +75,18 @@ internal object AthanNotifications {
    * phone the athan's screen opens over the lock screen (when Android allows full-screen
    * notifications); tapping the notification opens it too.
    */
-  fun playing(context: Context, title: String, body: String, labels: AthanLabels): Notification {
+  fun playing(context: Context, title: String, body: String, labels: AthanLabels, screen: AthanScreenText): Notification {
     val stop = stopIntent(context)
     val action = Notification.Action.Builder(Icon.createWithResource(context, smallIcon(context)), labels.stop, stop).build()
-    val screen = PendingIntent.getActivity(context, REQUEST_SCREEN, AthanActivity.intent(context, title, body, labels.stop),
+    val open = PendingIntent.getActivity(context, REQUEST_SCREEN,
+      AthanActivity.intent(context, screen.withFallback(labels.heading, title, body), labels.stop, preview = false),
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     return builder(context, channel(context, labels), title, body, Notification.CATEGORY_ALARM)
       .setOngoing(true)
       .setDeleteIntent(stop)
       .addAction(action)
-      .setContentIntent(screen)
-      .setFullScreenIntent(screen, true)
+      .setContentIntent(open)
+      .setFullScreenIntent(open, true)
       .build()
   }
 

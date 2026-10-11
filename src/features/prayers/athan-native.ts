@@ -7,6 +7,8 @@ interface AthanNativeModule {
   play(json: string): void;
   test(json: string, seconds: number): void;
   showTimes(json: string): void;
+  setScreenStyle(json: string): void;
+  previewScreen(json: string): boolean;
   hideTimes(): void;
   canUseFullScreenIntent(): boolean;
   openFullScreenIntentSettings(): boolean;
@@ -21,8 +23,11 @@ interface AthanNativeModule {
 /** Missing in Expo Go, on iOS and on the web: whole athans fall back to their opening. */
 export const athanModule = Platform.OS === 'android' ? requireOptionalNativeModule<AthanNativeModule>('Athan') : null;
 
-export interface AthanLabels { stop: string; channel: string; fallbackChannel: string }
-export interface AthanEntry { id: string; at: number; voice: string; title: string; body: string; notifyAfter?: boolean }
+/** `heading` tops the athan's screen: «حان وقت صلاة». */
+export interface AthanLabels { stop: string; channel: string; fallbackChannel: string; heading: string }
+/** What the athan's screen shows, besides the heading. */
+export interface AthanScreenText { name: string; time: string; date: string; place: string }
+export interface AthanEntry extends Partial<AthanScreenText> { id: string; at: number; voice: string; title: string; body: string; notifyAfter?: boolean }
 
 /** Every call is guarded: a module problem must not break the screen or the other alerts. */
 function attempt<T>(run: (module: AthanNativeModule) => T, fallback: T): T {
@@ -51,6 +56,10 @@ export interface TimesNotification {
 /** Shows or updates the prayer times notification. Errors go to the caller. */
 export const showTimesNotification = (content: TimesNotification) => { athanModule?.showTimes(JSON.stringify(content)); };
 export const hideTimesNotification = () => attempt((m) => { m.hideTimes(); return true; }, false);
+/** How the athan's screen looks (see `AthanScreenStyle` in the module). */
+export const setAthanScreenStyle = (style: object) => attempt((m) => { m.setScreenStyle(JSON.stringify(style)); return true; }, false);
+/** Opens the athan's screen now, silent. Resolves whether it opened. */
+export const previewAthanScreen = (text: AthanScreenText & { heading: string; close: string }) => attempt((m) => m.previewScreen(JSON.stringify(text)), false);
 export const canUseFullScreenIntent = () => attempt((m) => m.canUseFullScreenIntent(), true);
 export const openFullScreenIntentSettings = () => attempt((m) => m.openFullScreenIntentSettings(), false);
 export const stopAthan = () => attempt((m) => m.stop(), false);

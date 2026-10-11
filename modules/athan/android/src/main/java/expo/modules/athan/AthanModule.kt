@@ -55,6 +55,29 @@ class AthanModule : Module() {
       AthanTimes.hide(context)
     }
 
+    /** How the athan's screen looks: `{ "background", "dim", "motion", "date" }`. */
+    Function("setScreenStyle") { json: String ->
+      AthanScheduler.saveScreenStyle(context, json)
+    }
+
+    /** Opens the athan's screen now, silent, as it will look: `{ "heading", "name", "time", "date", "place", "close" }`. */
+    Function("previewScreen") { json: String ->
+      val item = JSONObject(json)
+      val text = AthanScreenText(
+        heading = item.optString("heading", ""),
+        name = item.optString("name", ""),
+        time = item.optString("time", ""),
+        date = item.optString("date", ""),
+        place = item.optString("place", ""),
+      )
+      try {
+        context.startActivity(AthanActivity.intent(context, text, item.optString("close", ""), preview = true))
+        true
+      } catch (e: ActivityNotFoundException) {
+        false
+      }
+    }
+
     Function("canUseFullScreenIntent") {
       AthanNotifications.canUseFullScreen(context)
     }

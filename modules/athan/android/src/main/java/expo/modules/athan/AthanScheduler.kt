@@ -11,12 +11,21 @@ import org.json.JSONObject
 
 /**
  * A whole athan to play: when (epoch milliseconds), in which voice, and its notification's text.
- * `notifyAfter`: when it ends on its own, a plain notification stays (not for a test).
+ * `notifyAfter`: when it ends on its own, a plain notification stays (not for a test). The athan's
+ * screen shows `screen` (empty in lists saved by an earlier version: it then shows the title).
  */
-internal data class Athan(val id: String, val at: Long, val voice: String, val title: String, val body: String, val notifyAfter: Boolean = true)
+internal data class Athan(
+  val id: String,
+  val at: Long,
+  val voice: String,
+  val title: String,
+  val body: String,
+  val notifyAfter: Boolean = true,
+  val screen: AthanScreenText = AthanScreenText(),
+)
 
-/** Text the app passes in its language. `fallbackChannel` plays the opening of the athan. */
-internal data class AthanLabels(val stop: String, val channel: String, val fallbackChannel: String?)
+/** Text the app passes in its language. `fallbackChannel` plays the takbir; `heading` tops the athan's screen. */
+internal data class AthanLabels(val stop: String, val channel: String, val fallbackChannel: String?, val heading: String = "")
 
 /**
  * Keeps the list of athans the app scheduled (the app sends about a month) and arms one alarm, for
@@ -32,6 +41,7 @@ internal object AthanScheduler {
   private const val KEY_LABELS = "labels"
   private const val KEY_FIRED = "fired"
   private const val KEY_TEST = "test"
+  private const val KEY_SCREEN = "screen"
   private const val REQUEST_ALARM = 7301
   private const val REQUEST_TEST = 7307
   /** An athan this late still plays (a delayed alarm, a phone restarted at that moment); later, it only notifies. */
@@ -66,8 +76,17 @@ internal object AthanScheduler {
       stop = saved.optString("stop", "Stop").ifEmpty { "Stop" },
       channel = saved.optString("channel", "Athan").ifEmpty { "Athan" },
       fallbackChannel = fallback.ifEmpty { null },
+      heading = saved.optString("heading", ""),
     )
   }
+
+  /** How the athan's screen looks, as chosen in the app. */
+  fun saveScreenStyle(context: Context, json: String) {
+    AthanScreenStyle.parse(json)
+    prefs(context).edit().putString(KEY_SCREEN, json).apply()
+  }
+
+  fun screenStyle(context: Context): AthanScreenStyle = AthanScreenStyle.parse(prefs(context).getString(KEY_SCREEN, null))
 
   fun parseAthan(item: JSONObject): Athan = Athan(
     id = item.getString("id"),
@@ -76,6 +95,12 @@ internal object AthanScheduler {
     title = item.optString("title", ""),
     body = item.optString("body", ""),
     notifyAfter = item.optBoolean("notifyAfter", true),
+    screen = AthanScreenText(
+      name = item.optString("name", ""),
+      time = item.optString("time", ""),
+      date = item.optString("date", ""),
+      place = item.optString("place", ""),
+    ),
   )
 
   private fun athans(context: Context): List<Athan> {

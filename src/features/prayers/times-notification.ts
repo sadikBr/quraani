@@ -1,7 +1,7 @@
 import * as Linking from 'expo-linking';
 import { formatDate, t } from '@/i18n';
 import { athanModule, hideTimesNotification, showTimesNotification } from './athan-native';
-import { hijriLabel } from './format';
+import { hijriLabel } from './labels';
 import { placeName } from './place';
 import { upcomingTimes, type PrayerState } from './settings';
 import { PRAYERS } from './times';

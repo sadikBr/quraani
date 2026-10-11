@@ -3,9 +3,10 @@ import { isRunningInExpoGo } from 'expo';
 import * as Notifications from '@/features/plans/local-notifications';
 import { t } from '@/i18n';
 import { athanModule, canScheduleExactAlarms, scheduleAthans, testAthan, type AthanLabels } from './athan-native';
+import { hijriLabel } from './labels';
 import { placeName } from './place';
 import { ALERT_PREFIX, isPrayerAlertData, prayerAlerts, type PrayerAlert, type PrayerState, type TakbirId } from './settings';
-import { clock, type PrayerId } from './times';
+import { clock, dayOf, type PrayerId } from './times';
 
 export const alertsSupported = true;
 /** Whole athans need the app's Android module (not in Expo Go). */
@@ -94,7 +95,12 @@ function content(alert: PrayerAlert, state: PrayerState, place: string, exact: b
 
 /** The module's text, and the takbir channel it falls back to when it cannot play the athan. */
 export const athanLabels = (takbir: TakbirId): AthanLabels => ({
-  stop: t('prayers.notification.stop'), channel: t('prayers.alerts.channels.full'), fallbackChannel: takbirChannelId(takbir),
+  stop: t('prayers.notification.stop'), channel: t('prayers.alerts.channels.full'), fallbackChannel: takbirChannelId(takbir), heading: t('prayers.screen.heading'),
+});
+
+/** What the athan's screen shows for a prayer: its name, time, Hijri date and the place. */
+export const athanScreenText = (state: PrayerState, prayer: PrayerId, time: Date) => ({
+  name: t(`prayers.names.${prayer}`), time: clock(time), date: hijriLabel(dayOf(time), state.hijriOffset), place: state.location ? placeName(state.location) : '',
 });
 
 let queue: Promise<unknown> = Promise.resolve();
@@ -116,6 +122,7 @@ export function syncPrayerAlerts(state: PrayerState) {
         if (athans.length) await takbirChannel(state.takbir);
         scheduleAthans(athanLabels(state.takbir), athans.map((a) => ({
           id: a.id, at: a.time.getTime(), voice: state.voice, title: notificationTitle(a.prayer), body: notificationBody(a.prayer, a.time, place),
+          ...athanScreenText(state, a.prayer, a.time),
         })));
       } catch {
         // The notifications below are scheduled all the same.
@@ -161,7 +168,7 @@ export async function testPrayerAlert(state: PrayerState, kind: 'notify' | 'takb
   const title = t('prayers.test.title', { title: notificationTitle(prayer) });
   const body = notificationBody(prayer, time, state.location ? placeName(state.location) : '');
   if (kind === 'full' && athanModule) {
-    testAthan(athanLabels(state.takbir), { id: 'test', at: Date.now() + TEST_SECONDS * 1000, voice: state.voice, title, body, notifyAfter: false }, TEST_SECONDS);
+    testAthan(athanLabels(state.takbir), { id: 'test', at: Date.now() + TEST_SECONDS * 1000, voice: state.voice, title, body, notifyAfter: false, ...athanScreenText(state, prayer, time) }, TEST_SECONDS);
     return;
   }
   const takbir = kind !== 'notify';

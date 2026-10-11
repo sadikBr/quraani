@@ -32,6 +32,10 @@ internal object AthanPlayer {
       .putExtra(AthanService.EXTRA_TITLE, athan.title)
       .putExtra(AthanService.EXTRA_BODY, athan.body)
       .putExtra(AthanService.EXTRA_NOTIFY_AFTER, athan.notifyAfter)
+      .putExtra(AthanService.EXTRA_SCREEN_NAME, athan.screen.name)
+      .putExtra(AthanService.EXTRA_SCREEN_TIME, athan.screen.time)
+      .putExtra(AthanService.EXTRA_SCREEN_DATE, athan.screen.date)
+      .putExtra(AthanService.EXTRA_SCREEN_PLACE, athan.screen.place)
     // Keeps the phone awake from the alarm until the player holds its own wake lock.
     (context.getSystemService(Context.POWER_SERVICE) as PowerManager)
       .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "quraani:athan")

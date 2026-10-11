@@ -26,6 +26,7 @@ class AthanService : Service() {
   private var title = ""
   private var body = ""
   private var notifyAfter = true
+  private var screen = AthanScreenText()
   /** Between startForeground and finish: finish runs once per athan. */
   private var active = false
   private val handler = Handler(Looper.getMainLooper())
@@ -38,11 +39,17 @@ class AthanService : Service() {
     title = intent?.getStringExtra(EXTRA_TITLE) ?: ""
     body = intent?.getStringExtra(EXTRA_BODY) ?: ""
     notifyAfter = intent?.getBooleanExtra(EXTRA_NOTIFY_AFTER, true) ?: true
+    screen = AthanScreenText(
+      name = intent?.getStringExtra(EXTRA_SCREEN_NAME) ?: "",
+      time = intent?.getStringExtra(EXTRA_SCREEN_TIME) ?: "",
+      date = intent?.getStringExtra(EXTRA_SCREEN_DATE) ?: "",
+      place = intent?.getStringExtra(EXTRA_SCREEN_PLACE) ?: "",
+    )
     // A new athan replaces one still playing.
     release()
     // startForeground must come first: a service started for the foreground that stops without it
     // crashes the app.
-    val notification = AthanNotifications.playing(this, title, body, labels)
+    val notification = AthanNotifications.playing(this, title, body, labels, screen)
     try {
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         startForeground(AthanNotifications.PLAYING_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
@@ -145,6 +152,10 @@ class AthanService : Service() {
     const val EXTRA_TITLE = "expo.modules.athan.TITLE"
     const val EXTRA_BODY = "expo.modules.athan.BODY"
     const val EXTRA_NOTIFY_AFTER = "expo.modules.athan.NOTIFY_AFTER"
+    const val EXTRA_SCREEN_NAME = "expo.modules.athan.SCREEN_NAME"
+    const val EXTRA_SCREEN_TIME = "expo.modules.athan.SCREEN_TIME"
+    const val EXTRA_SCREEN_DATE = "expo.modules.athan.SCREEN_DATE"
+    const val EXTRA_SCREEN_PLACE = "expo.modules.athan.SCREEN_PLACE"
     /** The longest recording is three and a half minutes. */
     private const val MAX_PLAY_MS = 5 * 60 * 1000L
 

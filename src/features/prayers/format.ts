@@ -1,8 +1,6 @@
 import type { ReaderIconName } from '@/features/quran-reader/components/ui/reader-chrome';
-import { formatNumber, t } from '@/i18n';
 import { athanSoundsSupported, fullAthanSupported } from './notifications';
 import type { AlertKind } from './settings';
-import { hijriDate } from './times';
 
 export const alertIcons: Record<AlertKind, ReaderIconName> = { off: 'bell-off', notify: 'bell', takbir: 'bell-ring', full: 'volume' };
 /**
@@ -18,7 +16,4 @@ export function effectiveAlert(kind: AlertKind): AlertKind {
 /** «+2», «−1», isolated left to right so the sign stays before the number in Arabic text. */
 export const signedMinutes = (n: number) => `\u2066${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n)}\u2069`;
 
-export function hijriLabel(day: string, offset: number) {
-  const h = hijriDate(day, offset);
-  return t('prayers.hijri', { day: h.day, month: t(`prayers.hijriMonths.m${h.month}` as 'prayers.hijriMonths.m1'), year: formatNumber(h.year, { useGrouping: false }) });
-}
+export { hijriLabel } from './labels';

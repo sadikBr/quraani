@@ -203,6 +203,39 @@ export default {
     moonsighting: { name: 'لجنة رؤية الهلال', detail: 'الفجر ١٨°، العشاء ١٨°، مع تعديلات فصلية' },
     tehran: { name: 'معهد الجيوفيزياء، جامعة طهران', detail: 'الفجر ١٧٫٧°، العشاء ١٤°، المغرب ٤٫٥°' },
   },
+  /** The whole athan's screen over the lock screen, and the page that designs it. */
+  screen: {
+    /** The row in the alerts card, and the page's title. */
+    title: 'شاشة الأذان',
+    subtitle: 'تظهر مع الأذان كاملًا والهاتف مقفل. اختر خلفيتها وحركتها.',
+    /** Above the prayer's name on the screen: «حان وقت صلاة / العصر». */
+    heading: 'حان وقت صلاة',
+    previewLabel: 'معاينة شاشة الأذان',
+    preview: 'معاينة على الشاشة كاملة',
+    previewHint: 'تظهر الشاشة كما تظهر مع الأذان، دون صوت.',
+    previewFailed: 'تعذّر فتح الشاشة. أعد المحاولة.',
+    /** The button of the preview, which plays nothing. */
+    close: 'إغلاق',
+    background: 'الخلفية',
+    backgrounds: {
+      makkah_night: 'المسجد الحرام ليلًا',
+      makkah_day: 'الكعبة المشرفة',
+      madinah: 'المسجد النبوي',
+      madinah_night: 'المسجد النبوي ليلًا',
+      aqsa: 'قبة الصخرة',
+      hassan2: 'مسجد الحسن الثاني',
+      koutoubia: 'جامع الكتبية',
+      green: 'أخضر',
+      night: 'كحلي',
+    },
+    dim: 'تعتيم الخلفية',
+    dims: { light: 'خفيف', medium: 'متوسط', strong: 'قوي' },
+    motion: 'الحركة',
+    motions: { pulse: 'نبض', glow: 'توهّج', none: 'بلا حركة' },
+    date: 'التاريخ الهجري',
+    dateDetail: 'تحت وقت الصلاة.',
+    unavailable: 'تتوفر شاشة الأذان في تطبيق أندرويد المثبّت.',
+  },
   /** The prayer times notification, always shown (Android app). */
   timesNotification: {
     label: 'المواقيت في الإشعارات',

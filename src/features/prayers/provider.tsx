@@ -7,6 +7,7 @@ import { usePlans } from '@/features/plans/provider';
 import { applyPrayers, decodePrayers, defaultPrayerState, PRAYERS_KEY, type AlertKind, type PrayerChange, type PrayerState } from './settings';
 import { observePrayerNotifications, PrayerAlertError, requestNotifications, requestPrayerAlerts, syncPrayerAlerts } from './notifications';
 import { syncTimesNotification } from './times-notification';
+import { syncScreenStyle } from './athan-screen';
 import type { PrayerId } from './times';
 
 export type AlertIssue = 'permission' | 'unavailable' | 'sync';
@@ -53,11 +54,12 @@ export function PrayersProvider({ children }: PropsWithChildren) {
       (e) => { if (active) setAlertIssue(e instanceof PrayerAlertError && e.issue === 'permission' ? 'permission' : 'sync'); });
     return () => { active = false; };
   }, [ready, state, today, revision]);
-  // The times notification gets the coming days again on the same occasions, once changes settle
+  // The times notification gets the coming days again on the same occasions, and the athan's screen
+  // its look, once changes settle
   // (Android drops a burst of updates, such as a few taps on a minute adjustment).
   useEffect(() => {
     if (!ready) return;
-    const timer = setTimeout(() => syncTimesNotification(state), 400);
+    const timer = setTimeout(() => { syncTimesNotification(state); syncScreenStyle(state.screen); }, 400);
     return () => clearTimeout(timer);
   }, [ready, state, today, revision]);
 

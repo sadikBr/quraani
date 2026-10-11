@@ -87,7 +87,9 @@ It is drawn natively with `DecoratedCustomViewStyle` and two layouts
 past versions in the layout, switched with `setViewVisibility`, so every colour comes from resources
 (`values` and `values-night`) and follows the system's light or dark shade; the rest of the text
 uses the system's notification text styles. The countdown is a `Chronometer` running in the
-notification.
+notification. Unlike the app, the layouts are not forced right to left: they follow the phone's
+direction like the system's header around them (icon and arrow), so on a phone in English the next
+prayer sits by the icon and the times run left to right; each line still reads as Arabic.
 
 The app sends 30 days of times (and their date labels) after every change, each day and each return
 to the app, debounced; the module keeps them, writes the clock times in the phone's zone, and
@@ -96,6 +98,22 @@ allowed; it never uses the athan's "while idle" quota), on the athan's own alarm
 restart, an update or a change of the clock. Without exact alarms the refresh can be up to ten
 minutes late, so the countdown is hidden and the switch offers the permission. Android 14+ lets
 the user swipe it away; it comes back at the next refresh. Turning it off removes it and its alarm.
+
+## The athan's screen (`AthanActivity.kt`, `athan-screen-designer.tsx`)
+
+When a whole athan plays on a locked phone, its notification's full-screen intent opens a screen
+over the lock screen: a photo of a mosque drifting slowly (or a plain colour), darkened for the
+text, rings pulsing out around the prayer and its time (or a breathing glow), «حان وقت صلاة», the
+prayer's name, its time, the Hijri date and the place, and a frosted «إيقاف الأذان» button. It is
+drawn natively, edge to edge, and closes when the athan ends.
+
+«شاشة الأذان» (`/athan-screen`, from the alerts card) designs it: background (seven photos, see
+`modules/athan/PHOTOS.md`, or green or navy), darkening, movement (pulse, glow, none) and the date,
+with a live miniature drawn in React Native to the same proportions (keep the two in step), and a
+button that opens the real screen silently (`previewScreen`; it closes when left). The look is
+saved in `prayers:v1` (`screen`) and sent to the module (`setScreenStyle`), which reads it when the
+screen opens. Each athan carries its screen text (`name`, `time`, `date`, `place`); athans saved
+by an earlier version show their notification's text instead.
 
 ## Credits
 

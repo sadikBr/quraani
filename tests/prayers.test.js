@@ -128,6 +128,14 @@ describe('prayer settings', () => {
     expect(all.every((at, i) => i === 0 || at > all[i - 1])).toBe(true);
   });
 
+  test('the athan screen keeps a valid look', () => {
+    expect(defaultPrayerState.screen).toEqual({ background: 'makkah_night', dim: 'medium', motion: 'pulse', date: true });
+    expect(normalizePrayers({ screen: { background: 'koutoubia', dim: 'strong', motion: 'glow', date: false } }).screen)
+      .toEqual({ background: 'koutoubia', dim: 'strong', motion: 'glow', date: false });
+    expect(normalizePrayers({ screen: { background: 'paris', dim: 'max', motion: 'spin', date: 'no' } }).screen).toEqual(defaultPrayerState.screen);
+    expect(normalizePrayers({ screen: 'x' }).screen).toEqual(defaultPrayerState.screen);
+  });
+
   test('the opening of the athan («أذان قصير») became the takbir', () => {
     const migrated = normalizePrayers({ alerts: { fajr: 'short', dhuhr: 'short', asr: 'full', maghrib: 'notify', isha: 'off', sunrise: 'takbir' } }).alerts;
     expect(migrated).toEqual({ fajr: 'takbir', sunrise: 'notify', dhuhr: 'takbir', asr: 'full', maghrib: 'notify', isha: 'off' });

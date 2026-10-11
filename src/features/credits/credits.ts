@@ -19,6 +19,7 @@ const CC = {
   zero: { licence: 'CC0 1.0', licenceUrl: 'https://creativecommons.org/publicdomain/zero/1.0/' },
   by3: { licence: 'CC BY 3.0', licenceUrl: 'https://creativecommons.org/licenses/by/3.0/' },
   by4: { licence: 'CC BY 4.0', licenceUrl: 'https://creativecommons.org/licenses/by/4.0/' },
+  bySa3: { licence: 'CC BY-SA 3.0', licenceUrl: 'https://creativecommons.org/licenses/by-sa/3.0/' },
   bySa4: { licence: 'CC BY-SA 4.0', licenceUrl: 'https://creativecommons.org/licenses/by-sa/4.0/' },
 };
 const OFL = { licence: 'SIL OFL 1.1', licenceUrl: 'https://openfontlicense.org' };
@@ -45,6 +46,15 @@ export const CREDIT_SECTIONS = [
     { id: 'aishatu', work: '"Iqamah" by Aishatu98', source: commons('Iqamah.ogg'), ...CC.zero },
     { id: 'makkah', work: '"AZAAN in makkah" by Seyfula Islam', source: commons('Adhan,_Great_Mosque_of_Mecca_-_Jan_21,_2013.webm'), ...CC.by3 },
     { id: 'medina', work: '"Oración Al-Azzan" by B9.', source: commons('Oraci%C3%B3n_Al-Azzan.ogg'), terms: 'publicDomain' },
+  ] },
+  { id: 'photos', items: [
+    { id: 'photoMakkahNight', work: '"Al Haram, Mecca 24231, Saudi Arabia" by TaLha Hussain (BAIG)', source: commons('Al_Haram,_Mecca_24231,_Saudi_Arabia_-_panoramio_(6).jpg'), ...CC.by3 },
+    { id: 'photoMakkahDay', work: '"The historic and most phenomenonal view of The Holy kabah and the clock tower" by FAREHA HASAN', source: commons('The_historic_and_most_phenomenonal_view_of_The_Holy_kabah_and_the_clock_tower.jpg'), ...CC.by4 },
+    { id: 'photoMadinah', work: '"Close-up shot of the Green Dome at The Prophet\'s Mosque" by TheHadiRahim', source: commons('Close-up_shot_of_the_Green_Dome_at_The_Prophet%27s_Mosque_(Al_Masjid-e-Nabawi).jpg'), ...CC.zero },
+    { id: 'photoMadinahNight', work: '"Al-Masjid al-Nabawi in Medina" by Mardetanha', source: commons('Outsideofmasjedonnabi11.JPG'), ...CC.bySa3 },
+    { id: 'photoAqsa', work: '"Dome of the Rock (Dome)" by Andrew Shiva / Wikipedia', source: commons('Jerusalem-2013-Temple_Mount-_Dome_of_the_Rock_(Dome).jpg'), ...CC.bySa4 },
+    { id: 'photoHassan2', work: '"Corridor at the Hassan II Mosque, Casablanca, Morocco" by Tinuzzo', source: commons('Corridor_at_the_Hassan_II_Mosque,_Casablanca,_Morocco.jpg'), ...CC.by4 },
+    { id: 'photoKoutoubia', work: '"The Koutoubia Mosque" by Holger Uwe Schmitt', source: commons('1158_wurde_die_Koutoubia-Moschee_in_Marrakesch_er%C3%B6fnet._04.jpg'), ...CC.bySa4 },
   ] },
   { id: 'prayers', items: [
     { id: 'adhan', work: 'Adhan JavaScript by Batoul Apps', source: 'https://github.com/batoulapps/adhan-js', ...MIT },
