@@ -3,6 +3,7 @@ import { useTajweed } from '../../hooks/use-tajweed';
 import { ReaderButton } from './reader-button';
 import { readerShape } from '../../design';
 import { ArabicText } from '@/components/arabic-text';
+import { JustifiedText } from '@/components/justified-text';
 import { memo, useMemo, useRef } from 'react';
 import { Platform, StyleSheet, Text, type AccessibilityActionEvent, type TextStyle, View, type ViewProps } from "react-native";
 import type { Ayah, AyahReference, Quran } from "@/lib/quranpedia/types";
@@ -89,7 +90,6 @@ export const QuranPage = memo(function QuranPage({
         color: palette.foreground,
         fontWeight: "400",
         writingDirection: "rtl",
-        textAlign: 'justify',
         includeFontPadding: true,
     };
     const spokenLabel = (ayah: Ayah) => {
@@ -184,7 +184,8 @@ export const QuranPage = memo(function QuranPage({
                             if (section.surah.number === selectedAyah?.surahNumber) { offsets.current.ayahs = event.nativeEvent.layout.y; reportTarget(); }
                             if (onAyahOffset) { practiceOffsets.current.groups.set(section.surah.number, event.nativeEvent.layout.y); reportPracticeOffsets(); }
                         }}>
-                        <Text style={[arabicStyle, styles.paragraph]}
+                        {/* Justified, with what is left over after the last full line centred. */}
+                        <JustifiedText style={arabicStyle} containerStyle={styles.paragraph} hiddenColor={palette.card}
                             onTextLayout={Platform.OS !== 'web' && (onAyahOffset || onTargetOffset) ? (event) => {
                                 for (const ayah of section.ayahs) {
                                     const y = flowingAyahOffset(section.ayahs, ayah, event.nativeEvent.lines);
@@ -195,7 +196,7 @@ export const QuranPage = memo(function QuranPage({
                                 reportPracticeOffsets();
                             } : undefined}>
                             {section.ayahs.map(renderAyah)}
-                        </Text>
+                        </JustifiedText>
                         </View>
                     ) : (
                         <View style={styles.ayahs} onLayout={(event) => {
@@ -223,11 +224,9 @@ export const QuranPage = memo(function QuranPage({
                                     >
                                         {String(ayah.surahNumber)}:{String(ayah.ayahNumber)}
                                     </ArabicText>
-                                    <Text
-                                        style={[arabicStyle, styles.paragraph]}
-                                    >
+                                    <JustifiedText style={arabicStyle} containerStyle={styles.paragraph} hiddenColor={palette.card}>
                                         {renderAyah(ayah)}
-                                    </Text>
+                                    </JustifiedText>
                                 </View>
                             ))}
                         </View>

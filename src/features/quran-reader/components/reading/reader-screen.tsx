@@ -30,7 +30,7 @@ import { usePlans } from '@/features/plans/provider';
 import { createReadingSession } from '@/features/plans/reading-session';
 import { RecitationBar } from '@/features/recitation/recitation-bar';
 import { stop as stopRecitation, useRecitation } from '@/features/recitation/player';
-import { useListen } from '@/features/recitation/use-listen';
+import { useListen, useWholeSurahs } from '@/features/recitation/use-listen';
 import { t } from '@/i18n';
 
 export function ReaderScreen() {
@@ -161,6 +161,8 @@ function RiwayahReaderScreen() {
   useEffect(() => { if (otherRecitation) stopRecitation(); }, [otherRecitation]);
   // A goal's reading stops at the end of its portion.
   const sessionEnd = session ? session.index.ayahs[session.portion.end - 1] : null;
+  // Listening onward plays whole surahs when chosen, except over a goal's portion.
+  const wholeSurahs = useWholeSurahs(!!sessionEnd);
 
   const navigate = useCallback((number: number, ayah?: AyahReference) => {
     if (!ready || !readerPages?.some((value) => value.number === number) || (ayah && session && !session.contains(ayah))) return;
@@ -463,7 +465,7 @@ function RiwayahReaderScreen() {
       </Animated.View>;
       })}
       </View>
-      {actionAyah && content && <AyahActionSheet key={ayahKey(actionAyah)} ayah={actionAyah} quran={content.data.quran} palette={palette} onClose={() => setActionAyah(null)} onListen={listenFrom} />}
+      {actionAyah && content && <AyahActionSheet key={ayahKey(actionAyah)} ayah={actionAyah} quran={content.data.quran} palette={palette} onClose={() => setActionAyah(null)} onListen={listenFrom} wholeSurah={wholeSurahs} />}
       {drawerOpen && <ReaderDrawer content={session?.content ?? content?.data} limited={!!session} currentPage={pageNumber} onJump={navigate} onClose={() => setDrawerOpen(false)} palette={palette} />}
     </SafeAreaView>
   );

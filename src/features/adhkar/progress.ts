@@ -13,13 +13,21 @@ export interface AdhkarState {
   reminders: Record<ReminderKind, ReminderSetting>;
   /** The misbaha's count: it keeps counting across days until restarted. */
   misbaha: number;
+  /** Size of the dhikr text: a step of `TEXT_SCALES`. */
+  textSize: number;
 }
+
+/** Sizes offered for the dhikr text, as a share of its usual size (which depends on its length). */
+export const TEXT_SCALES = [0.8, 0.9, 1, 1.12, 1.25, 1.4, 1.6] as const;
+export const DEFAULT_TEXT_SIZE = 2;
+const validTextSize = (value: unknown) => Number.isInteger(value) && (value as number) >= 0 && (value as number) < TEXT_SCALES.length ? value as number : DEFAULT_TEXT_SIZE;
 
 export const ADHKAR_KEY = 'adhkar:v1';
 export const defaultAdhkarState: AdhkarState = {
   version: 1, day: '', counts: {},
   reminders: { morning: { enabled: false, hour: 7, minute: 0 }, evening: { enabled: false, hour: 17, minute: 0 } },
   misbaha: 0,
+  textSize: DEFAULT_TEXT_SIZE,
 };
 
 const validReminder = (value: unknown, fallback: ReminderSetting): ReminderSetting => {
@@ -51,6 +59,7 @@ export function decodeAdhkar(raw: string | null): AdhkarState {
       evening: validReminder(saved.reminders?.evening, defaultAdhkarState.reminders.evening),
     },
     misbaha: Number.isSafeInteger(saved.misbaha) && saved.misbaha! > 0 ? saved.misbaha! : 0,
+    textSize: validTextSize(saved.textSize),
   };
 }
 
@@ -61,13 +70,16 @@ export type AdhkarChange =
   /** One more bead on the misbaha. */
   | { type: 'tasbih' }
   /** Restarting the misbaha (0), or taking a restart back. */
-  | { type: 'misbaha'; count: number };
+  | { type: 'misbaha'; count: number }
+  /** A smaller or larger dhikr text (a step of `TEXT_SCALES`). */
+  | { type: 'textSize'; step: number };
 
 /** Counts move within 0 and the dhikr's count; a new day starts from nothing. */
 export function applyAdhkar(state: AdhkarState, change: AdhkarChange): AdhkarState {
   if (change.type === 'reminder') return { ...state, reminders: { ...state.reminders, [change.kind]: change.value } };
   if (change.type === 'tasbih') return { ...state, misbaha: state.misbaha + 1 };
   if (change.type === 'misbaha') return { ...state, misbaha: Math.max(0, Math.floor(change.count)) };
+  if (change.type === 'textSize') return { ...state, textSize: Math.max(0, Math.min(TEXT_SCALES.length - 1, Math.round(change.step))) };
   const counts = state.day === change.day ? state.counts : {};
   if (change.type === 'reset') {
     const rest = { ...counts };

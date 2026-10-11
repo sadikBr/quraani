@@ -90,6 +90,10 @@ Sources: [Hafs Unicode corpus](https://api.quranpedia.net/v1/mushafs/2),
   text size and line spacing. Continuous text wraps to the available width, with
   inline ayah markers and no fixed line count. Original `text` and `marker` remain
   separate and unchanged. Old `mode: ayah` preferences migrate to separate rows.
+  Text is justified with what is left after the last full line centred, as in a
+  mushaf (`JustifiedText`; the tajweed document uses `text-align-last: center`).
+  Native text views only justify with the last line at the start, so the last line
+  is drawn again, centred, over a hidden copy of itself found from `onTextLayout`.
 - Bismillah is supplied by the mushaf metadata. Warsh Al-Fatiha's first numbered
   ayah is “الحمد…”, not Bismillah. The renderer should show Bismillah as an
   unnumbered opening at surah starts except surah 9; do not insert it into the

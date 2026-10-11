@@ -20,14 +20,20 @@ import { ReaderButton } from './reader-button';
 import { ReaderIcon, type ReaderIconName, Segments } from '../ui/reader-chrome';
 import { calligraphyStyle, surahNameGlyph } from '../../utils/reader-typography';
 import { formatList, t } from '@/i18n';
+import { useSurahFollows } from '@/features/recitation/use-listen';
 
-export function AyahActionSheet({ ayah, quran, palette, onClose, onListen }: {
+export function AyahActionSheet({ ayah, quran, palette, onClose, onListen, wholeSurah = false }: {
   ayah: Ayah; quran: Quran; palette: ReaderPalette; onClose: () => void;
   /** Listen from this ayah onward, or repeat this ayah alone (`single`). */
   onListen?: (ayah: Ayah, single: boolean) => void;
+  /** Listening onward plays the surah's whole recording (repeating the ayah stays ayah by ayah). */
+  wholeSurah?: boolean;
 }) {
   const close = useRef<View>(null);
   const { preferences: { repeat } } = useReadingPreferences();
+  // Without the reciter's timings, a whole surah's recording can only start from its top.
+  const follows = useSurahFollows(quran, wholeSurah && !!onListen);
+  const fromTop = wholeSurah && follows === false;
   const { bookmarks, toggle, ready, error: bookmarkError } = useBookmarks();
   const [message, setMessage] = useState('');
   const [kind, setKind] = useState<'tafsir' | 'translation' | null>(null);
@@ -79,7 +85,9 @@ export function AyahActionSheet({ ayah, quran, palette, onClose, onListen }: {
           {bookmarkError && <Text accessibilityRole="alert" style={[styles.feedback, { color: palette.destructive }]}>{t('reader.actions.bookmarkStorageError')}</Text>}
           <View style={styles.relatedActions}>
             {onListen && <>
-              <ListenAction palette={palette} icon="headphones" label={t('recitation.ayahSheet.fromHere')} detail={t('recitation.ayahSheet.fromHereDetail')} onPress={() => onListen(ayah, false)} />
+              <ListenAction palette={palette} icon="headphones" label={fromTop ? t('recitation.ayahSheet.wholeSurah') : t('recitation.ayahSheet.fromHere')}
+                detail={!wholeSurah ? t('recitation.ayahSheet.fromHereDetail') : fromTop ? t('recitation.ayahSheet.wholeSurahDetail') : t('recitation.ayahSheet.fromHereSurahDetail')}
+                onPress={() => onListen(ayah, false)} />
               <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: palette.border }} />
               <ListenAction palette={palette} icon="loop" label={t('recitation.ayahSheet.repeatAyah')}
                 detail={repeat > 1 ? t('recitation.ayahSheet.repeatAyahDetail', { count: repeat }) : t('recitation.ayahSheet.repeatAyahEndless')} onPress={() => onListen(ayah, true)} />

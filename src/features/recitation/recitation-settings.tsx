@@ -8,10 +8,10 @@ import type { ReaderPalette } from '@/features/quran-reader/theme';
 import { readerShape } from '@/features/quran-reader/design';
 import { RIWAYAT } from '@/features/quran-reader/riwayat';
 import { ReaderIcon } from '@/features/quran-reader/components/ui/reader-chrome';
-import { SettingsCard, SettingsCardHeading } from '@/features/quran-reader/components/reading/settings-ui';
+import { SettingsCard, SettingsCardHeading, SettingsSelection } from '@/features/quran-reader/components/reading/settings-ui';
 import { useReaderContent } from '@/features/quran-reader/hooks/use-reader-content';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
-import { REPEAT_CHOICES } from '@/features/quran-reader/state/reading-preferences';
+import { REPEAT_CHOICES, type ListeningMode } from '@/features/quran-reader/state/reading-preferences';
 import { formatList, t } from '@/i18n';
 import { chooseReciter, fatihaCountsBasmala } from './catalog';
 import { useReciters } from './reciter-source';
@@ -31,33 +31,44 @@ export function formatSize(bytes: number) {
   return t('recitation.settings.offline.megabytes', { value: mb < 10 ? Math.max(0.1, Math.round(mb * 10) / 10) : Math.round(mb) });
 }
 
-/** The «التلاوة» settings tab: reciter, repetition, and downloads for listening offline. */
+/**
+ * The «التلاوة» settings tab: how to listen (ayah by ayah, or whole surahs), then that way's
+ * reciter and repetition, and downloads for listening offline.
+ */
 export function RecitationSettings({ palette: p }: { palette: ReaderPalette }) {
   const { preferences, update } = useReadingPreferences();
   const { content, error, refresh } = useReaderContent();
   const quran = content?.data.quran;
-  const catalog = useReciters(quran?.riwayah.id);
-  const chosen = preferences.reciters[preferences.riwayah];
-  const reciter = quran ? chooseReciter(catalog.reciters, quran.riwayah.id, chosen) : null;
+  const listening = preferences.listening;
+  const whole = listening === 'surah';
+  const catalog = useReciters(quran?.riwayah.id, listening);
+  const chosen = (whole ? preferences.surahReciters : preferences.reciters)[preferences.riwayah];
+  const reciter = quran ? chooseReciter(catalog.reciters, quran.riwayah.id, chosen, listening) : null;
   const riwayah = RIWAYAT[preferences.riwayah].label;
+  const repeat = whole ? preferences.surahRepeat : preferences.repeat;
   const [picking, setPicking] = useState(false);
-  const chooseRepeat = (repeat: number) => {
-    update({ repeat });
-    // A recitation under way follows the new choice from its next ayah.
-    if (recitationState().status !== 'idle') setRepeat(repeat);
+  const chooseRepeat = (next: number) => {
+    update(whole ? { surahRepeat: next } : { repeat: next });
+    // A recitation under way of this kind follows the new choice from its next ayah (or surah).
+    if (recitationState().status !== 'idle') setRepeat(next, listening);
+  };
+  const chooseReciterFor = (next: Reciter) => {
+    update(whole ? { surahReciters: { ...preferences.surahReciters, [preferences.riwayah]: next.id } } : { reciters: { ...preferences.reciters, [preferences.riwayah]: next.id } });
+    setPicking(false);
   };
   return <>
+    <ListeningCard value={listening} palette={p} onChange={(next) => update({ listening: next })} />
     <SettingsCard palette={p}>
-      <SettingsCardHeading title={t('recitation.settings.reciter.title')} detail={t('recitation.settings.reciter.description', { riwayah })} icon="headphones" palette={p} />
+      <SettingsCardHeading title={t('recitation.settings.reciter.title')} detail={t(whole ? 'recitation.settings.reciter.surahDescription' : 'recitation.settings.reciter.description', { riwayah })} icon="headphones" palette={p} />
       {!quran && error ? <Alert variant="destructive" palette={p} action={<Button variant="outline" palette={p} onPress={refresh}>{t('common.retry')}</Button>}>{t('recitation.errors.reciters')}</Alert>
         : !quran || catalog.loading ? <View style={styles.loading}><ActivityIndicator color={p.primary} /><Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('recitation.settings.reciter.loading')}</Text></View>
         : catalog.failed ? <Alert variant="destructive" palette={p} action={<Button variant="outline" palette={p} onPress={catalog.retry}>{t('common.retry')}</Button>}>{t('recitation.errors.reciters')}</Alert>
-        : !reciter ? <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('recitation.errors.noReciter')}</Text>
-        : <Pressable accessibilityRole="button" accessibilityLabel={t('recitation.settings.reciter.change')} accessibilityHint={formatList([reciter.name, reciterDetail(reciter)])} onPress={() => setPicking(true)}
+        : !reciter ? <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t(whole ? 'recitation.errors.noSurahReciter' : 'recitation.errors.noReciter')}</Text>
+        : <Pressable accessibilityRole="button" accessibilityLabel={t('recitation.settings.reciter.change')} accessibilityHint={formatList([reciter.name, reciterDetail(reciter, listening)])} onPress={() => setPicking(true)}
           style={({ pressed }) => [styles.current, { borderColor: p.input, backgroundColor: pressed ? p.accent : p.background }]}>
           <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
             <Text style={{ color: p.foreground, fontSize: 18, lineHeight: 30, fontWeight: '600' }}>{reciter.name}</Text>
-            <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{reciterDetail(reciter)}</Text>
+            <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{reciterDetail(reciter, listening)}</Text>
           </View>
           <View style={styles.change}>
             <Text style={{ color: p.primary, fontSize: 14, fontWeight: '500' }}>{t('recitation.settings.reciter.changeShort')}</Text>
@@ -66,16 +77,41 @@ export function RecitationSettings({ palette: p }: { palette: ReaderPalette }) {
         </Pressable>}
     </SettingsCard>
     <SettingsCard palette={p}>
-      <SettingsCardHeading title={t('recitation.settings.repeat.title')} detail={t('recitation.settings.repeat.description')} icon="loop" palette={p} />
-      <View accessibilityRole="radiogroup" accessibilityLabel={t('recitation.settings.repeat.title')} style={styles.chips}>
+      <SettingsCardHeading title={t(whole ? 'recitation.settings.repeat.surahTitle' : 'recitation.settings.repeat.title')}
+        detail={t(whole ? 'recitation.settings.repeat.surahDescription' : 'recitation.settings.repeat.description')} icon="loop" palette={p} />
+      <View accessibilityRole="radiogroup" accessibilityLabel={t(whole ? 'recitation.settings.repeat.surahTitle' : 'recitation.settings.repeat.title')} style={styles.chips}>
         {REPEAT_CHOICES.map((choice) => <Chip key={choice} palette={p} accessibilityRole="radio" label={repeatTimes(choice)}
-          selected={preferences.repeat === choice} onPress={() => chooseRepeat(choice)} />)}
+          selected={repeat === choice} onPress={() => chooseRepeat(choice)} />)}
       </View>
     </SettingsCard>
-    {quran && reciter && <OfflineCard reciter={reciter} quran={quran} palette={p} />}
-    {picking && quran && <ReciterSheet reciters={catalog.reciters} selected={reciter?.id} riwayah={riwayah} palette={p} onClose={() => setPicking(false)}
-      onSelect={(next) => { update({ reciters: { ...preferences.reciters, [preferences.riwayah]: next.id } }); setPicking(false); }} />}
+    {quran && reciter && <OfflineCard key={reciter.id} reciter={reciter} quran={quran} palette={p} />}
+    {picking && quran && <ReciterSheet reciters={catalog.reciters} selected={reciter?.id} quran={quran} listening={listening}
+      subtitle={t(whole ? 'recitation.reciterSheet.surahSubtitle' : 'recitation.reciterSheet.subtitle', { riwayah })} palette={p} onClose={() => setPicking(false)}
+      onSelect={chooseReciterFor} />}
   </>;
+}
+
+/** Ayah by ayah, or whole surahs: two choices side by side, each saying what it gives. */
+function ListeningCard({ value, palette: p, onChange }: { value: ListeningMode; palette: ReaderPalette; onChange: (value: ListeningMode) => void }) {
+  return <SettingsCard palette={p}>
+    <SettingsCardHeading title={t('recitation.settings.listening.title')} detail={t('recitation.settings.listening.description')} icon="volume" palette={p} />
+    <View accessibilityRole="radiogroup" accessibilityLabel={t('recitation.settings.listening.title')} style={styles.listening}>
+      {(['ayah', 'surah'] as const).map((mode) => {
+        const selected = value === mode;
+        return <Pressable key={mode} accessibilityRole="radio" accessibilityLabel={t(`recitation.settings.listening.${mode}.label`)} accessibilityHint={t(`recitation.settings.listening.${mode}.detail`)}
+          accessibilityState={{ checked: selected }} aria-checked={selected} onPress={() => onChange(mode)}
+          style={({ pressed }) => [styles.choice, { backgroundColor: pressed ? p.accent : p.background, borderColor: selected ? p.primary : p.input }]}>
+          <View style={styles.choiceTop}>
+            <SettingsSelection palette={p} selected={selected} />
+            <ReaderIcon name={mode === 'ayah' ? 'lines' : 'book'} color={selected ? p.primary : p.mutedForeground} size={18} />
+          </View>
+          <Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{t(`recitation.settings.listening.${mode}.label`)}</Text>
+          <Text style={{ color: p.mutedForeground, fontSize: 12, lineHeight: 19 }}>{t(`recitation.settings.listening.${mode}.detail`)}</Text>
+        </Pressable>;
+      })}
+    </View>
+    {value === 'surah' && <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 20 }}>{t('recitation.settings.listening.surahNote')}</Text>}
+  </SettingsCard>;
 }
 
 function savedSummary(state: DownloadState, reciter: Reciter) {
@@ -161,6 +197,9 @@ const styles = StyleSheet.create({
   current: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderWidth: 1, borderRadius: readerShape.lg },
   change: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  listening: { flexDirection: 'row', gap: 10 },
+  choice: { flex: 1, minWidth: 0, gap: 4, borderWidth: 1.5, borderRadius: readerShape.lg, paddingHorizontal: 12, paddingVertical: 12 },
+  choiceTop: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
   progress: { gap: 10 },
   status: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   actions: { gap: 10 },

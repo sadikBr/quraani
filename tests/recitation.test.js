@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
 import { strToU8, zipSync } from 'fflate';
 import { decodeReciters, playsSingleAyahs, reciterNameParts } from '../src/lib/quranpedia/reciters';
-import { ayahFileName, needsBasmala, parseTimings, segmentFor, surahFileName, timingsFromZip } from '../src/features/recitation/sources';
+import { ayahAtTime, ayahFileName, needsBasmala, parseTimings, segmentFor, surahFileName, surahStartFor, timingsFromZip } from '../src/features/recitation/sources';
 import { afterFinished, skipTo, startAt } from '../src/features/recitation/queue';
 
 // The player and catalog reach native modules and the network; replace them before loading.
@@ -32,16 +32,19 @@ class FakePlayer {
   updateLockScreenMetadata() {}
 }
 const player = new FakePlayer();
+// The recitation's player is the first one made; the reciter samples get their own.
+let made = 0;
+const samplePlayers = [];
 mock.module('expo-audio', () => ({
-  createAudioPlayer: () => player,
+  createAudioPlayer: () => { if (made++ === 0) return player; const own = new FakePlayer(); samplePlayers.push(own); return own; },
   preload: async () => {},
   clearPreloadedSource: async () => {},
   setAudioModeAsync: async () => {},
   requestNotificationPermissionsAsync: async () => ({ granted: true }),
 }));
 
-const { recitersFor, chooseReciter, pickReciter, fatihaCountsBasmala } = await import('../src/features/recitation/catalog');
-const resolveReciter = (riwayahId, chosen) => pickReciter(async () => { if (listFails) throw new Error('offline'); return reciterList; }, () => downloaded, riwayahId, chosen);
+const { recitersFor, surahRecitersFor, chooseReciter, pickReciter, fatihaCountsBasmala } = await import('../src/features/recitation/catalog');
+const resolveReciter = (riwayahId, chosen, listening) => pickReciter(async () => { if (listFails) throw new Error('offline'); return reciterList; }, () => downloaded, riwayahId, chosen, listening);
 const recitation = await import('../src/features/recitation/player');
 
 const edition = (overrides) => ({
@@ -86,6 +89,29 @@ describe('reciters from Quranpedia', () => {
     expect(list.map((r) => r.id)).toEqual([4, 5, 2]);
   });
 
+  test('whole surahs: surah editions only, preferring timings unless an untimed one covers more', () => {
+    const list = surahRecitersFor([
+      reciter({ id: 1, name: 'ياسين الجزائري', mode: 'surah', timingUrl: null, surahs: [1, 2, 3] }),
+      reciter({ id: 2, name: 'ياسين الجزائري', mode: 'surah', timingUrl: 'https://t', surahs: [1] }),
+      reciter({ id: 3, name: 'ياسين الجزائري', mode: 'ayah' }),
+      reciter({ id: 4, name: 'العيون الكوشي', mode: 'surah', surahs: [1] }),
+      reciter({ id: 5, name: 'العيون الكوشي', mode: 'surah', surahs: [1, 2] }),
+      reciter({ id: 6, name: 'عبد الباسط', mode: 'surah', riwayahId: 10 }),
+      reciter({ id: 7, name: 'الحصري', mode: 'surah', timingUrl: 'https://t', surahs: [1, 2] }),
+      reciter({ id: 8, name: 'الحصري', mode: 'surah', surahs: [1, 2] }),
+    ], 2);
+    expect(list.map((r) => r.id)).toEqual([7, 5, 2, 1]);
+  });
+
+  test('whole surahs default to Al-Husary, in an edition the page can follow', () => {
+    const list = [reciter({ id: 1, name: 'أحمد', mode: 'surah' }), reciter({ id: 2, name: 'محمود خليل الحصري', mode: 'surah' }),
+      reciter({ id: 3, name: 'محمود خليل الحصري', style: 'mujawwad', mode: 'surah', timingUrl: 'https://t' })];
+    expect(chooseReciter(list, 2, undefined, 'surah').id).toBe(3);
+    expect(chooseReciter(list, 2, 1, 'surah').id).toBe(1);
+    expect(chooseReciter([list[0], list[1]], 2, undefined, 'surah').id).toBe(2);
+    expect(chooseReciter([reciter({ id: 7, mode: 'surah' }), reciter({ id: 8, mode: 'surah', timingUrl: 'https://t' })], 2, undefined, 'surah').id).toBe(8);
+  });
+
   test('the chosen reciter, else the riwayah default, else the first one', () => {
     const list = [reciter({ id: 5 }), reciter({ id: 261 }), reciter({ id: 9 })];
     expect(chooseReciter(list, 2, 9).id).toBe(9);
@@ -104,6 +130,10 @@ describe('reciters from Quranpedia', () => {
     reciterList = [reciter({ id: 261 }), reciter({ id: 3, name: 'آخر' })];
     expect((await resolveReciter(2, 3)).id).toBe(3);
     expect(await resolveReciter(99)).toBeNull();
+    // Whole surahs are chosen from the surah editions only.
+    reciterList = [reciter({ id: 261 }), reciter({ id: 40, name: 'آخر', mode: 'surah' })];
+    expect((await resolveReciter(2, 261, 'surah')).id).toBe(40);
+    downloaded = [];
   });
 });
 
@@ -133,6 +163,20 @@ describe('audio sources', () => {
     expect(segmentFor(bySurah, 9, 1, timing)).toEqual({ file: '009.mp3', start: 0, end: 4000 });
     expect(segmentFor(bySurah, 2, 7, timing)).toBeNull();
     expect(segmentFor(bySurah, 1, 1, timing)).toBeNull();
+  });
+
+  test('in a whole surah: where an ayah starts, and the ayah heard at a moment', () => {
+    const list = [{ ayah: 1, start: 6000, end: 9000 }, { ayah: 2, start: 9000, end: 15000 }, { ayah: 3, start: 15000, end: 20000 }];
+    expect(surahStartFor(list, 1)).toBe(0);
+    expect(surahStartFor(list, 3)).toBe(15000);
+    expect(surahStartFor(list, 9)).toBe(0);
+    expect(surahStartFor(undefined, 3)).toBe(0);
+    expect(ayahAtTime(list, 2000)).toBe(0);
+    expect(ayahAtTime(list, 5950)).toBe(1);
+    expect(ayahAtTime(list, 14000)).toBe(2);
+    expect(ayahAtTime(list, 25000)).toBe(3);
+    expect(ayahAtTime([{ ayah: 1, start: 100, end: 900 }], 0)).toBe(1);
+    expect(ayahAtTime(undefined, 1000)).toBeNull();
   });
 
   test('timing archives are read and invalid entries dropped', () => {
@@ -256,6 +300,66 @@ describe('player', () => {
     expect(recitation.recitationState().status).toBe('idle');
   });
 
+  test('whole surahs without timings: from the top, then the next surah; the bar moves by surah', async () => {
+    timings = {};
+    const bySurah = reciter({ id: 50, mode: 'surah', surahs: [1, 2] });
+    await recitation.playSurah({ quran, reciter: async () => bySurah, from: { surahNumber: 1, ayahNumber: 2 }, repeat: 1 });
+    expect(calls()).toEqual(['replace 001.mp3', 'play']);
+    expect(recitation.recitationState()).toMatchObject({ kind: 'surah', status: 'loading', surah: 1, current: null, reciter: { id: 50 } });
+    status({ isLoaded: false });
+    status({ currentTime: 3, duration: 60 });
+    expect(recitation.recitationState().status).toBe('playing');
+    status({ didJustFinish: true, playing: false, currentTime: 60, duration: 60 });
+    expect(recitation.recitationState()).toMatchObject({ surah: 2, heard: 0 });
+    expect(calls().slice(2)).toEqual(['replace 002.mp3', 'play']);
+    recitation.step(-1);
+    expect(recitation.recitationState().surah).toBe(1);
+    recitation.step(-1);
+    expect(recitation.recitationState().surah).toBe(1);
+    recitation.step(1);
+    status({ isLoaded: false });
+    status({ didJustFinish: true, playing: false, currentTime: 60, duration: 60 });
+    // No surah after the last one this reciter recorded.
+    expect(recitation.recitationState().status).toBe('idle');
+  });
+
+  test('whole surahs with timings: start at the ayah, follow the ayahs, repeat the surah, seek', async () => {
+    timings = { 2: [{ ayah: 1, start: 6000, end: 9000 }, { ayah: 2, start: 9000, end: 15000 }, { ayah: 3, start: 15000, end: 20000 }] };
+    const bySurah = reciter({ id: 51, mode: 'surah', timingUrl: 'https://audio.test/t.zip', surahs: [2] });
+    await recitation.playSurah({ quran, reciter: bySurah, from: { surahNumber: 2, ayahNumber: 2 }, repeat: 2 });
+    expect(calls()).toEqual(['replace 002.mp3', 'play']);
+    expect(where()).toBe('2:2#0');
+    status({ isLoaded: false });
+    status({ currentTime: 0 });
+    expect(player.calls.at(-1)).toBe('seek 9000');
+    status({ currentTime: 0.2 }); // before the seek lands
+    expect(where()).toBe('2:2#0');
+    status({ currentTime: 9.1, duration: 21 });
+    status({ currentTime: 15.2, duration: 21 });
+    expect(where()).toBe('2:3#0');
+    // The ayah-by-ayah repetition is not this recitation's.
+    recitation.setRepeat(5, 'ayah');
+    expect(recitation.recitationState().repeat).toBe(2);
+    status({ didJustFinish: true, playing: false, currentTime: 21, duration: 21 });
+    expect(recitation.recitationState()).toMatchObject({ surah: 2, heard: 1 });
+    expect(where()).toBe('2:1b#1');
+    expect(player.calls.slice(-2)).toEqual(['seek 0', 'play']);
+    status({ currentTime: 0.3, duration: 21 });
+    recitation.seekTo(16000);
+    expect(where()).toBe('2:3#1');
+    expect(player.calls.at(-1)).toBe('seek 16000');
+    status({ currentTime: 16.1, duration: 21 });
+    status({ didJustFinish: true, playing: false, currentTime: 21, duration: 21 });
+    expect(recitation.recitationState().status).toBe('idle');
+  });
+
+  test('whole surahs: no surah recording for the riwayah is reported', async () => {
+    await recitation.playSurah({ quran, reciter: async () => null, from: { surahNumber: 1, ayahNumber: 1 }, repeat: 1 });
+    expect(recitation.recitationState()).toMatchObject({ status: 'idle', error: expect.any(String) });
+    await recitation.playSurah({ quran, reciter: reciter({ mode: 'surah', surahs: [9] }), from: { surahNumber: 1, ayahNumber: 1 }, repeat: 1 });
+    expect(recitation.recitationState()).toMatchObject({ status: 'idle', error: expect.any(String) });
+  });
+
   test('a missing reciter or a failed lookup is reported in the player', async () => {
     await recitation.playFrom({ quran, reciter: async () => null, from: { surahNumber: 1, ayahNumber: 1 }, repeat: 1 });
     expect(recitation.recitationState()).toMatchObject({ status: 'idle', error: expect.any(String) });
@@ -274,5 +378,41 @@ describe('player', () => {
     await pending;
     expect(recitation.recitationState().status).toBe('idle');
     expect(player.calls).not.toContain('replace 001000.mp3');
+  });
+});
+
+describe('reciter samples', () => {
+  test('the opening of Al-Fatiha, or of the first surah recorded', async () => {
+    const { sampleFiles } = await import('../src/features/recitation/sample');
+    const count = (surah) => ({ 1: 7, 85: 22, 108: 3 })[surah] ?? 0;
+    expect(sampleFiles(reciter({ surahs: [1, 2] }), count)).toEqual(['001001.mp3', '001002.mp3', '001003.mp3', '001004.mp3']);
+    expect(sampleFiles(reciter({ surahs: [108, 109] }), count)).toEqual(['108001.mp3', '108002.mp3', '108003.mp3']);
+    expect(sampleFiles(reciter({ mode: 'surah', surahs: [85, 86] }), count)).toEqual(['085.mp3']);
+    expect(sampleFiles(reciter({ surahs: [] }), count)).toEqual([]);
+  });
+
+  test('a sample stops the recitation, plays its files in turn, and reports a failure', async () => {
+    const sample = await import('../src/features/recitation/sample');
+    const quran = { id: 4, surahs: [{ number: 1, name: 'سورة الفاتحة', ayahs: [{ surahNumber: 1, ayahNumber: 1, pageNumber: 1, hafsAyahNumbers: [1] }] }] };
+    await recitation.playFrom({ quran, reciter: reciter({ id: 261 }), from: { surahNumber: 1, ayahNumber: 1 }, repeat: 1 });
+    expect(recitation.recitationState().status).not.toBe('idle');
+    const voice = reciter({ id: 70, server: 'https://audio.test/r70' });
+    await sample.playSample(voice, ['001001.mp3', '001002.mp3']);
+    expect(recitation.recitationState().status).toBe('idle');
+    expect(sample.sampleState()).toEqual({ reciter: 70, loading: true, failed: null });
+    const own = samplePlayers.at(-1);
+    const status = (overrides = {}) => own.listener({ isLoaded: true, playing: true, currentTime: 0, didJustFinish: false, error: null, ...overrides });
+    expect(own.calls).toEqual(['replace 001001.mp3', 'play']);
+    status({ isLoaded: false });
+    status({ currentTime: 0.2 });
+    expect(sample.sampleState().loading).toBe(false);
+    status({ didJustFinish: true, playing: false });
+    expect(own.calls.slice(-2)).toEqual(['replace 001002.mp3', 'play']);
+    status({ isLoaded: false });
+    status({ error: 'gone' });
+    expect(sample.sampleState()).toEqual({ reciter: null, loading: false, failed: 70 });
+    sample.stopSample();
+    await sample.playSample(voice, []);
+    expect(own.calls.at(-1)).toBe('pause');
   });
 });

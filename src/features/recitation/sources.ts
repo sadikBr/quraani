@@ -67,3 +67,27 @@ export function segmentFor(reciter: Reciter, surah: number, ayah: number, timing
   const timing = list.find((entry) => entry.ayah === ayah);
   return timing ? { file: surahFileName(surah), start: ayah === 1 && list[0].start <= 300 ? 0 : timing.start, end: timing.end } : null;
 }
+
+/** Where a surah file is started for an ayah: at its timing, or from the top (with the basmala) for ayah 1 or without timings. */
+export function surahStartFor(list: readonly AyahTiming[] | undefined, ayah: number): number {
+  if (!list?.length || ayah <= 1) return 0;
+  return list.find((entry) => entry.ayah === ayah)?.start ?? 0;
+}
+
+/** The highlight moves a little before an ayah starts, so it never lags behind the voice. */
+const LEAD_MS = 120;
+
+/**
+ * The ayah heard at a moment of a surah file (milliseconds): 0 during its opening (the basmala
+ * before ayah 1), the last ayah after its end, and null without timings.
+ */
+export function ayahAtTime(list: readonly AyahTiming[] | undefined, ms: number): number | null {
+  if (!list?.length) return null;
+  if (ms + LEAD_MS < list[0].start && list[0].start > 300) return 0;
+  let ayah = list[0].ayah;
+  for (const entry of list) {
+    if (entry.start > ms + LEAD_MS) break;
+    ayah = entry.ayah;
+  }
+  return ayah;
+}

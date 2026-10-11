@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Vibration, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -12,13 +12,20 @@ import { readerElevation, readerLayout, readerShape, withAlpha } from '@/feature
 import { ReaderIcon, type ReaderIconName } from '@/features/quran-reader/components/ui/reader-chrome';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
 import { useReaderContent } from '@/features/quran-reader/hooks/use-reader-content';
+import { useQuranFont } from '@/features/quran-reader/hooks/use-quran-font';
+import type { Quran } from '@/lib/quranpedia/types';
 import { formatNumber, t } from '@/i18n';
 import { collectionIcons, collections, isCollectionId, type CollectionId, type Dhikr } from './content';
-import { collectionProgress, countsOn, nextUnfinished } from './progress';
+import { collectionProgress, countsOn, nextUnfinished, TEXT_SCALES } from './progress';
 import { useAdhkar } from './provider';
 import { dismissClipError, stopClip, toggleClip, useClip } from './audio';
 import { AdhkarIndexSheet } from './adhkar-index-sheet';
 import { DhikrText } from './dhikr-text';
+import { QuranDhikr } from './dhikr-quran';
+import { quranReadings, readingLength, resolveReading } from './quran';
+
+/** The mushaf in the chosen riwayah, and its font, for the Quran adhkar. */
+interface Mushaf { quran: Quran; fontFamily: string }
 
 const nativeDriver = Platform.OS !== 'web';
 /** A short tick for each count and a firmer one when a dhikr is done (Android; iOS ignores lengths). */
@@ -39,8 +46,15 @@ function MissingCollection() {
 
 function Session({ id }: { id: CollectionId }) {
   const { palette: p } = useReadingPreferences();
-  const { state, today, step, reset } = useAdhkar();
+  const { state, today, step, reset, setTextSize } = useAdhkar();
   const clip = useClip();
+  // The Quran adhkar are read from the mushaf once it and its font are loaded; until then, as in the book.
+  const { content } = useReaderContent();
+  const font = useQuranFont();
+  const quran = content?.data.quran;
+  const mushaf = useMemo(() => quran && font.loaded ? { quran, fontFamily: font.fontFamily } : null, [quran, font.loaded, font.fontFamily]);
+  const scale = TEXT_SCALES[state.textSize] ?? 1;
+  const [sizing, setSizing] = useState(false);
   const items = collections[id];
   const counts = countsOn(state, id, today);
   const progress = collectionProgress(state, id, today);
@@ -98,8 +112,10 @@ function Session({ id }: { id: CollectionId }) {
             {progress.complete ? t('adhkar.completed') : t('adhkar.progress', { done: progress.done, total: progress.total })}
           </Text>
         </View>
+        <TextSizeButton open={sizing} palette={p} onPress={() => setSizing((open) => !open)} />
         <Button variant="outline" icon="index" label={t('adhkar.session.index')} onPress={() => setIndexOpen(true)} />
       </View>
+      {sizing && <TextSizeBar step={state.textSize} palette={p} onChange={setTextSize} />}
       <Segments items={items} counts={counts} current={index} palette={p} onSelect={jump} />
     </View>
     {clip.error && <View style={s.notice}><Alert variant="destructive" palette={p} action={<Button variant="outline" size="sm" palette={p} onPress={dismissClipError}>{t('common.close')}</Button>}>{t('adhkar.audio.error')}</Alert></View>}
@@ -111,7 +127,7 @@ function Session({ id }: { id: CollectionId }) {
             {...(Platform.OS === 'web' && offset ? { 'aria-hidden': true, inert: true } : {})}
             style={[StyleSheet.absoluteFill, { transform: [{ translateX: Animated.add(translation, -offset * (width || 360)) }] }]}>
             {page < last
-              ? <DhikrPage dhikr={items[page]} position={page + 1} total={items.length} said={counts[items[page].key] ?? 0} palette={p}
+              ? <DhikrPage dhikr={items[page]} position={page + 1} total={items.length} said={counts[items[page].key] ?? 0} palette={p} scale={scale} mushaf={mushaf}
                 onPrevious={page > 0 ? () => pager.go(page - 1) : undefined} onNext={() => pager.go(page + 1)} />
               : <ClosingPage id={id} title={title} left={items.length - progress.done} palette={p}
                 onRemaining={() => { const first = nextUnfinished(id, counts); if (first >= 0) jump(first); }} onPrevious={() => pager.go(last - 1)} />}
@@ -144,12 +160,20 @@ function Segments({ items, counts, current, palette: p, onSelect }: { items: Dhi
 
 /** Short adhkar are set large; long Quran passages smaller, and they scroll. */
 const fontSize = (text: string) => text.length < 40 ? 32 : text.length < 110 ? 27 : text.length < 260 ? 24 : text.length < 600 ? 22 : 20;
+/** The same for Quran passages in the mushaf's font, which looks smaller at a given size. */
+const quranFontSize = (length: number) => length < 110 ? 30 : length < 260 ? 27 : length < 600 ? 25 : 22;
 
-function DhikrPage({ dhikr, position, total, said, palette: p, onPrevious, onNext }: {
-  dhikr: Dhikr; position: number; total: number; said: number; palette: ReaderPalette; onPrevious?: () => void; onNext: () => void;
+function DhikrPage({ dhikr, position, total, said, palette: p, scale, mushaf, onPrevious, onNext }: {
+  dhikr: Dhikr; position: number; total: number; said: number; palette: ReaderPalette;
+  /** The chosen text size, as a share of the usual one. */
+  scale: number;
+  mushaf: Mushaf | null;
+  onPrevious?: () => void; onNext: () => void;
 }) {
   const done = said >= dhikr.count;
-  const size = fontSize(dhikr.text);
+  const size = Math.round(fontSize(dhikr.text) * scale);
+  const reading = quranReadings[dhikr.key];
+  const passages = useMemo(() => reading && mushaf ? resolveReading(mushaf.quran, reading) : null, [reading, mushaf]);
   return <View style={s.page}>
     <View style={[s.card, { backgroundColor: p.card, borderColor: done ? withAlpha(p.primary, 0.35) : p.border }, readerElevation(2, p)]}>
       <View style={s.cardHead}>
@@ -165,10 +189,36 @@ function DhikrPage({ dhikr, position, total, said, palette: p, onPrevious, onNex
         <Text style={{ flex: 1, color: p.mutedForeground, fontSize: 13 }}>{dhikr.note}</Text>
       </View>}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={s.textArea} showsVerticalScrollIndicator={false}>
-        <DhikrText text={dhikr.text} size={size} color={p.foreground} ornament={p.ornament} style={{ textAlign: 'center' }} />
+        {reading && passages && mushaf
+          ? <QuranDhikr reading={reading} passages={passages} quran={mushaf.quran} fontFamily={mushaf.fontFamily} size={Math.round(quranFontSize(readingLength(passages)) * scale)} palette={p} />
+          : <DhikrText text={dhikr.text} size={size} color={p.foreground} ornament={p.ornament} justified={{ hiddenColor: p.card }} />}
         {!!dhikr.surahs?.length && <View style={s.surahs}>{dhikr.surahs.map((surah) => <SurahButton key={surah} surah={surah} palette={p} />)}</View>}
       </ScrollView>
     </View>
+  </View>;
+}
+
+/** Opens the text size bar: a small and a large letter. */
+function TextSizeButton({ open, palette: p, onPress }: { open: boolean; palette: ReaderPalette; onPress: () => void }) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={t('adhkar.session.textSize')} accessibilityState={{ expanded: open }} aria-expanded={open} onPress={onPress} hitSlop={4}
+    style={({ pressed }) => [s.sizeButton, { borderColor: open ? p.primary : p.input, backgroundColor: pressed ? p.accent : open ? p.secondary : p.background }, readerElevation(1, p)]}>
+    <Text style={{ color: p.foreground, fontSize: 13, lineHeight: 20 }}>{t('adhkar.session.textSizeGlyph')}</Text>
+    <Text style={{ color: p.foreground, fontSize: 19, lineHeight: 26, fontWeight: '600' }}>{t('adhkar.session.textSizeGlyph')}</Text>
+  </Pressable>;
+}
+
+/** Smaller and larger, with the steps between them; the card behind changes at once. */
+function TextSizeBar({ step, palette: p, onChange }: { step: number; palette: ReaderPalette; onChange: (step: number) => void }) {
+  const last = TEXT_SCALES.length - 1;
+  return <View style={[s.sizeBar, { backgroundColor: p.muted }]}>
+    <Button size="sm" variant="outline" palette={p} icon="minus" label={t('adhkar.session.smaller')} disabled={step <= 0} onPress={() => onChange(step - 1)} />
+    <View accessible accessibilityLabel={t('adhkar.session.textSizeValue', { step: step + 1, total: last + 1 })} style={s.sizeMiddle}>
+      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('adhkar.session.textSize')}</Text>
+      <View style={s.sizeSteps}>
+        {TEXT_SCALES.map((_, i) => <View key={i} style={[s.sizeStep, { height: 6 + i * 2, backgroundColor: i <= step ? p.primary : p.border }]} />)}
+      </View>
+    </View>
+    <Button size="sm" variant="outline" palette={p} icon="plus" label={t('adhkar.session.larger')} disabled={step >= last} onPress={() => onChange(step + 1)} />
   </View>;
 }
 
@@ -271,6 +321,11 @@ function SurahButton({ surah, palette: p }: { surah: number; palette: ReaderPale
 const s = StyleSheet.create({
   header: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 8, gap: 12 },
   navigation: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  sizeButton: { height: 40, minWidth: 40, paddingHorizontal: 6, borderRadius: readerShape.control, borderWidth: 1, flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 1 },
+  sizeBar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 10, paddingVertical: 8, borderRadius: readerShape.lg },
+  sizeMiddle: { flex: 1, alignItems: 'center', gap: 4 },
+  sizeSteps: { flexDirection: 'row', alignItems: 'flex-end', gap: 5, height: 18 },
+  sizeStep: { width: 6, borderRadius: 3 },
   segments: { flexDirection: 'row', alignItems: 'center', gap: 3, height: 10 },
   segmentHit: { flex: 1, height: 10, justifyContent: 'center' },
   segment: { height: 4, borderRadius: readerShape.pill },

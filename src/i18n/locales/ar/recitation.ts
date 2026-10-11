@@ -10,6 +10,9 @@ export default {
   pause: 'إيقاف مؤقت',
   next: 'الآية التالية',
   previous: 'الآية السابقة',
+  /** While whole surahs play, the same buttons move by surah. */
+  nextSurah: 'السورة التالية',
+  previousSurah: 'السورة السابقة',
   bar: {
     label: 'التحكم في التلاوة',
     /** {{surah}} already includes the word سورة. */
@@ -20,10 +23,16 @@ export default {
     repeatProgress: 'المرة {{heard, number}} من {{repeat, number}}',
     /** The same, when the ayah repeats until stopped. */
     repeatProgressEndless: 'المرة {{heard, number}}',
+    /** The seek bar of a whole surah's recording. */
+    seek: 'موضع التلاوة في السورة',
+    /** Its spoken value: «3:12 من 24:05». */
+    time: '{{position}} من {{duration}}',
   },
   repeat: {
     /** How many times each ayah is recited, in a sentence: "تكرار كل آية: ٣ مرات". */
     spoken: 'تكرار كل آية: {{times}}',
+    /** The same while whole surahs play: "تكرار السورة: مرتان". */
+    surahSpoken: 'تكرار السورة: {{times}}',
     times_zero: 'دون تكرار',
     times_one: 'مرة واحدة',
     times_two: 'مرتان',
@@ -39,6 +48,11 @@ export default {
   ayahSheet: {
     fromHere: 'الاستماع من هذه الآية',
     fromHereDetail: 'تمضي التلاوة آيةً بعد آية',
+    /** Whole surahs chosen, and the reciter's timings place the ayah in the recording. */
+    fromHereSurahDetail: 'من تسجيل السورة كاملة',
+    /** Whole surahs chosen, without timings: the recording can only start from the top. */
+    wholeSurah: 'الاستماع إلى السورة كاملة',
+    wholeSurahDetail: 'يبدأ التسجيل من أول السورة',
     repeatAyah: 'تكرار هذه الآية',
     /** How many times the ayah is recited (the chosen repetition, always 2 or more). */
     repeatAyahDetail_zero: 'تُتلى مكررةً حتى تُوقفها',
@@ -51,6 +65,8 @@ export default {
     repeatAyahEndless: 'تُتلى مكررةً حتى تُوقفها',
   },
   styles: { murattal: 'مرتّل', mujawwad: 'مجوّد', muallim: 'معلّم' },
+  /** A whole-surah recording with ayah timings: the page follows the ayah being recited. */
+  follows: 'تتبع الآيات',
   /** A reciter who recorded only part of the Quran. */
   partial_zero: 'لا سور مسجلة',
   partial_one: 'سورة واحدة مسجلة',
@@ -59,10 +75,21 @@ export default {
   partial_many: '{{count, number}} سورة مسجلة',
   partial_other: '{{count, number}} سورة مسجلة',
   settings: {
+    /** Ayah by ayah, or whole surahs; each keeps its own reciter and repetition. */
+    listening: {
+      title: 'طريقة الاستماع',
+      description: 'لكل طريقة قارئها وتكرارها.',
+      ayah: { label: 'آية بعد آية', detail: 'لكل آية تسجيلها: تكرّر الآية وتنتقل بين الآيات، والصفحة تتبع التلاوة.' },
+      surah: { label: 'السورة كاملة', detail: 'تسجيل السورة متصلًا كما تلاها القارئ، ثم السورة التي تليها.' },
+      /** Repeating one ayah and a goal's portion need each ayah on its own. */
+      surahNote: 'تكرار آية واحدة والاستماع إلى ورد الأهداف يبقيان آيةً بعد آية، بقارئها.',
+    },
     reciter: {
       title: 'القارئ',
       /** {{riwayah}} is e.g. «ورش عن نافع». */
       description: 'تلاوات برواية {{riwayah}} من الموسوعة القرآنية.',
+      /** The same, for whole-surah recordings. */
+      surahDescription: 'تسجيلات السور كاملة برواية {{riwayah}} من الموسوعة القرآنية.',
       change: 'تغيير القارئ',
       /** Visible text of the change button beside the reciter's name. */
       changeShort: 'تغيير',
@@ -71,6 +98,8 @@ export default {
     repeat: {
       title: 'تكرار الآيات',
       description: 'عدد مرات تلاوة كل آية قبل الانتقال إلى التي تليها. يعين على الحفظ والمراجعة.',
+      surahTitle: 'تكرار السورة',
+      surahDescription: 'عدد مرات تلاوة السورة قبل الانتقال إلى التي تليها.',
     },
     offline: {
       title: 'الاستماع دون اتصال',
@@ -111,11 +140,16 @@ export default {
     title: 'اختيار القارئ',
     /** {{riwayah}} is e.g. «ورش عن نافع». */
     subtitle: 'القرّاء برواية {{riwayah}}',
+    surahSubtitle: 'تسجيلات السور كاملة برواية {{riwayah}}',
     close: 'إغلاق اختيار القارئ',
     searchLabel: 'البحث عن قارئ',
     searchPlaceholder: 'اسم القارئ',
     empty: 'لا يوجد قارئ بهذا الاسم.',
     onDevice: 'على جهازك',
+    /** The listen button of each reciter: a short sample from the opening of Al-Fatiha. */
+    sample: 'الاستماع إلى عيّنة من تلاوة {{name}}',
+    sampleStop: 'إيقاف عيّنة {{name}}',
+    sampleFailed: 'تعذّر تشغيل العيّنة. تحقّق من اتصالك بالإنترنت.',
   },
   surahSheet: {
     title: 'تنزيل سور مختارة',
@@ -136,5 +170,8 @@ export default {
     playback: 'تعذّر تشغيل التلاوة. تحقّق من اتصالك بالإنترنت، أو نزّل التلاوة لتستمع دون اتصال.',
     reciters: 'تعذّر تحميل قائمة القرّاء. تحقّق من اتصالك بالإنترنت ثم أعد المحاولة.',
     noReciter: 'لا تتوفر تلاوة لهذه الرواية بعد.',
+    noSurahReciter: 'لا تتوفر تسجيلات للسور كاملة بهذه الرواية بعد.',
+    /** The chosen whole-surah reciter recorded neither this surah nor any after it. */
+    noSurahLeft: 'لم يسجّل هذا القارئ هذه السورة ولا ما بعدها. اختر قارئًا آخر من الإعدادات.',
   },
 } as const;

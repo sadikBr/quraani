@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { audioIds, collections, COLLECTION_IDS, isCollectionId } from '../src/features/adhkar/content';
-import { adhkarReminderQueue, applyAdhkar, collectionProgress, countsOn, decodeAdhkar, defaultAdhkarState, nextUnfinished } from '../src/features/adhkar/progress';
+import { adhkarReminderQueue, applyAdhkar, collectionProgress, countsOn, decodeAdhkar, defaultAdhkarState, nextUnfinished, TEXT_SCALES } from '../src/features/adhkar/progress';
+import { quranReadings, readingLength, resolveReading } from '../src/features/adhkar/quran';
 
 const find = (id, key) => collections[id].find((d) => d.key === key);
 const finish = (state, id, day) => collections[id].reduce((s, d) => Array.from({ length: d.count }).reduce((x) => applyAdhkar(x, { type: 'step', day, collection: id, key: d.key, delta: 1 }), s), state);
@@ -127,5 +128,41 @@ describe('adhkar reminders', () => {
     state = finish(state, 'evening', '2026-10-10');
     const queue = adhkarReminderQueue(state, new Date(2026, 9, 10, 12, 0), 2);
     expect(queue.map((r) => r.id)).toEqual(['quranni-adhkar:evening:2026-10-11:1700']);
+  });
+});
+
+describe('Quran adhkar', () => {
+  test('every Quran dhikr of the book is read from the mushaf, and only those', () => {
+    const quranKeys = new Set(COLLECTION_IDS.flatMap((id) => collections[id].filter((d) => d.quran).map((d) => d.key)));
+    expect([...quranKeys].sort()).toEqual(Object.keys(quranReadings).sort());
+  });
+
+  // A mushaf of another count (Warsh): Al-Baqarah's ayahs are numbered one lower than Hafs's.
+  const ayah = (surahNumber, ayahNumber, hafs) => ({ surahNumber, ayahNumber, hafsAyahNumbers: hafs, text: `${surahNumber}:${ayahNumber}`, marker: 'ﰀ' });
+  const quran = { bismillah: 'بسم', surahs: [
+    { number: 2, name: 'سورة البقرة', ayahs: [ayah(2, 253, [254]), ayah(2, 254, [255]), ayah(2, 284, [285]), ayah(2, 285, [286])] },
+    ...[112, 113, 114].map((n) => ({ number: n, name: `${n}`, ayahs: [ayah(n, 1, [1]), ayah(n, 2, [2])] })),
+  ] };
+
+  test('passages are found by their Hafs numbers, whole surahs marked', () => {
+    const kursi = resolveReading(quran, quranReadings[75]);
+    expect(kursi.map((p) => [p.surah.number, p.ayahs.map((a) => a.ayahNumber), p.whole])).toEqual([[2, [254], false]]);
+    expect(quranReadings[75].before).toBeTruthy();
+    expect(resolveReading(quran, quranReadings[101])[0].ayahs.map((a) => a.ayahNumber)).toEqual([284, 285]);
+    expect(resolveReading(quran, quranReadings[76]).map((p) => [p.surah.number, p.whole])).toEqual([[112, true], [113, true], [114, true]]);
+    expect(readingLength(kursi)).toBe('2:254'.length + 2);
+    // A mushaf without the passage keeps the book's text.
+    expect(resolveReading(quran, quranReadings[4])).toBeNull();
+  });
+});
+
+describe('text size', () => {
+  test('a saved step of the offered sizes, kept within them', () => {
+    expect(defaultAdhkarState.textSize).toBe(TEXT_SCALES.indexOf(1));
+    expect(decodeAdhkar(JSON.stringify({ version: 1, textSize: 5 })).textSize).toBe(5);
+    expect(decodeAdhkar(JSON.stringify({ version: 1, textSize: 99 })).textSize).toBe(defaultAdhkarState.textSize);
+    expect(decodeAdhkar(JSON.stringify({ version: 1, textSize: 1.5 })).textSize).toBe(defaultAdhkarState.textSize);
+    expect(applyAdhkar(defaultAdhkarState, { type: 'textSize', step: 9 }).textSize).toBe(TEXT_SCALES.length - 1);
+    expect(applyAdhkar(defaultAdhkarState, { type: 'textSize', step: -3 }).textSize).toBe(0);
   });
 });

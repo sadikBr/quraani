@@ -1,11 +1,13 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { RIWAYAT } from '../../riwayat';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { Tabs } from '@/components/ui';
+import { SwipePages, useSwipeTabs } from '@/components/swipe-tabs';
 import { useReadingPreferences } from '../../state/reading-preferences-provider';
 import { ReaderSettings } from './reader-settings';
 import { IconButton, ReaderIcon, type ReaderIconName } from '../ui/reader-chrome';
@@ -24,16 +26,21 @@ const tabs: { value: SettingsTab; label: string; icon: ReaderIconName }[] = [
   { value: 'appearance', get label() { return t('settings.tabs.appearance'); }, icon: 'sun' },
   { value: 'prayers', get label() { return t('settings.tabs.prayers'); }, icon: 'mosque' },
 ];
+const TAB_IDS = tabs.map(tab => tab.value);
 const isTab = (value: unknown): value is SettingsTab => tabs.some(tab => tab.value === value);
 
+/**
+ * The settings, a tab per subject. A swipe moves between the tabs like the home screen's (the next
+ * tab lies to the left); each tab keeps its own scroll.
+ */
 export function SettingsScreen() {
-  const { preferences, update, palette, dark } = useReadingPreferences();
-  const { appearance, mode, textLayout, fontSize, spacious, riwayah, tajweed } = preferences;
+  const { palette, dark } = useReadingPreferences();
   // `/settings?tab=prayers` opens a tab (the prayer times page links to its settings).
   const params = useLocalSearchParams<{ tab?: string }>();
-  const [tab, setTab] = useState<SettingsTab>(() => isTab(params.tab) ? params.tab : 'reading');
-  const scroll = useRef<ScrollView>(null);
-  return <SafeAreaView style={[styles.root, { backgroundColor: palette.background }]}>
+  const [initial] = useState<SettingsTab>(() => isTab(params.tab) ? params.tab : 'reading');
+  const { tab, open, pages } = useSwipeTabs(TAB_IDS, initial);
+  // The swipe's gesture needs a gesture root; the app's stack screens have none of their own.
+  return <GestureHandlerRootView style={{ flex: 1 }}><SafeAreaView style={[styles.root, { backgroundColor: palette.background }]}>
     <StatusBar style={dark ? 'light' : 'dark'} />
     <View style={[styles.header, { borderColor: palette.border }]}>
       <View style={styles.navigation}>
@@ -41,81 +48,87 @@ export function SettingsScreen() {
         <Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 20, fontWeight: '600', flex: 1 }}>{t('common.settings')}</Text>
         <QuranniLogo size={30} color={palette.ornament} />
       </View>
-      <Tabs palette={palette} label={t('settings.tabs.label')} value={tab} options={tabs}
-        onChange={value => { if (tab !== value) { setTab(value); scroll.current?.scrollTo({ y: 0, animated: false }); } }} />
+      <Tabs palette={palette} label={t('settings.tabs.label')} value={tab} options={tabs} onChange={open} />
     </View>
-    <ScrollView ref={scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-      <View style={styles.intro}>
-        <Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 24, fontWeight: '600' }}>{t(`settings.intro.${tab}.title`)}</Text>
-        <Text style={{ color: palette.mutedForeground, fontSize: 15 }}>{t(`settings.intro.${tab}.detail`)}</Text>
-      </View>
-      {tab === 'reading' && <>
-        <SettingsCard palette={palette}>
-          <SettingsCardHeading title={t('settings.riwayah.title')} icon="book" palette={palette} />
-          <View accessibilityRole="radiogroup" accessibilityLabel={t('settings.riwayah.title')} style={styles.row}>
-            {([{ value: 'warsh', name: t('common.riwayah.warsh.name'), from: t('settings.riwayah.from.warsh') }, { value: 'hafs', name: t('common.riwayah.hafs.name'), from: t('settings.riwayah.from.hafs') }] as const).map(item => {
-              const selected = riwayah === item.value;
-              return <Pressable key={item.value} accessibilityRole="radio" accessibilityLabel={t(`common.riwayah.${item.value}.label`)} accessibilityState={{ checked: selected }} aria-checked={selected}
-                onPress={() => update({ riwayah: item.value })} style={({ pressed }) => [styles.riwayah, { backgroundColor: pressed ? palette.accent : palette.background, borderColor: selected ? palette.primary : palette.input }]}>
-                <View style={styles.riwayahTop}><SettingsSelection palette={palette} selected={selected} /></View>
-                <Text style={{ color: palette.foreground, fontSize: 22, lineHeight: 36, fontWeight: '600' }}>{item.name}</Text>
-                <Text style={{ color: palette.mutedForeground, fontSize: 14, marginTop: -4 }}>{item.from}</Text>
-              </Pressable>;
-            })}
-          </View>
-          <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('settings.riwayah.savedSeparately')}</Text>
-        </SettingsCard>
-        <SettingsCard palette={palette}>
-          <SettingsCardHeading title={t('settings.mode.title')} detail={t('settings.mode.detail')} icon="lines" palette={palette} />
-          <View accessibilityRole="radiogroup" accessibilityLabel={t('settings.mode.title')} style={styles.row}>
-            {([{ value: 'page', label: t('settings.mode.page.label'), detail: t('settings.mode.page.detail') }, { value: 'text', label: t('settings.mode.text.label'), detail: t('settings.mode.text.detail') }] as const).map(item => {
-              const selected = mode === item.value;
-              return <Pressable key={item.value} accessibilityRole="radio" accessibilityLabel={item.label} accessibilityState={{ checked: selected }} aria-checked={selected}
-                onPress={() => update({ mode: item.value })} style={({ pressed }) => [styles.layoutChoice, { backgroundColor: pressed ? palette.accent : palette.background, borderColor: selected ? palette.primary : palette.input }]}>
-                <ReadingLayoutPreview kind={item.value === 'page' ? 'page' : textLayout} palette={palette} selected={selected} />
-                <View style={styles.layoutLabel}><Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600', flex: 1 }}>{item.label}</Text><SettingsSelection palette={palette} selected={selected} /></View>
-                <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{item.detail}</Text>
-              </Pressable>;
-            })}
-          </View>
-          {mode === 'text' ? <View style={[styles.textLayout, { borderColor: palette.border }]}>
-            <Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600' }}>{t('settings.textLayout.title')}</Text>
-            <Tabs palette={palette} role="radio" label={t('settings.textLayout.label')} value={textLayout} onChange={value => update({ textLayout: value })} options={[{ value: 'ayah', label: t('settings.textLayout.ayah') }, { value: 'flowing', label: t('settings.textLayout.flowing') }] as const} />
-            <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{textLayout === 'ayah' ? t('settings.textLayout.ayahDetail') : t('settings.textLayout.flowingDetail')}</Text>
-          </View> : <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('settings.mode.pageNote')}</Text>}
-        </SettingsCard>
-        <SettingsCard palette={palette}>
-          <Pressable accessibilityRole="switch" accessibilityState={{ checked: tajweed }} aria-checked={tajweed} accessibilityLabel={t('settings.tajweed.title')}
-            onPress={() => update({ tajweed: !tajweed })} style={({ pressed }) => [styles.tajweed, { opacity: pressed ? 0.65 : 1 }]}>
-            <View style={[styles.colors, { backgroundColor: palette.muted }]}>{['#537fff', '#dd5359', '#50a86b'].map((color, i) => <View key={color} style={{ width: 4, height: 12 + i * 4, backgroundColor: color, borderRadius: 2 }} />)}</View>
-            <View style={{ flex: 1, minWidth: 0 }}><Text style={{ color: palette.foreground, fontSize: 16, fontWeight: '600' }}>{t('settings.tajweed.title')}</Text><Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{tajweed ? t('settings.tajweed.on') : t('settings.tajweed.off')} · {t('settings.tajweed.detail')}</Text></View>
-            <SettingsToggle checked={tajweed} palette={palette} />
-          </Pressable>
-          {riwayah === 'warsh' ? <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('settings.tajweed.warshNote')}</Text>
-            : <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('settings.tajweed.hafsNote')}</Text>}
-          {riwayah === 'warsh' && tajweed && <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderColor: palette.border, paddingTop: 6 }}>
-            <WarshTajweedLegend palette={palette} dark={dark} />
-            <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('settings.tajweed.stopNote')}</Text>
-          </View>}
-        </SettingsCard>
-      </>}
-      {tab === 'recitation' && <RecitationSettings palette={palette} />}
-      {tab === 'prayers' && <PrayerSettings />}
-      {(tab === 'reading' || tab === 'appearance') && <ReaderSettings section={tab} palette={palette} fixedPage={mode === 'page'} textLayout={textLayout} appearance={appearance} setAppearance={value => update({ appearance: value })}
-        fontSize={fontSize} setFontSize={value => update({ fontSize: value })} spacious={spacious} setSpacious={value => update({ spacious: value })} />}
-      <View style={styles.footer}>
-        <View style={styles.saved}><ReaderIcon name="done" color={palette.mutedForeground} size={14} /><Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('settings.footer.autoSaved')}</Text></View>
-        <View style={[styles.footerRule, { backgroundColor: palette.border }]} />
-        <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('common.appName')} · {t('common.riwayahOf', { riwayah: RIWAYAT[riwayah].label })}</Text>
-        <Pressable accessibilityRole="link" accessibilityLabel={t('settings.footer.sourceLabel')} onPress={() => void Linking.openURL('https://quranpedia.net')} style={styles.source}>
-          <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('settings.footer.source')}</Text>
+    <SwipePages pages={pages} render={(id) => <SettingsPage tab={id} />} />
+  </SafeAreaView></GestureHandlerRootView>;
+}
+
+/** One tab's settings, with the tab's introduction above and the app's footer below. */
+function SettingsPage({ tab }: { tab: SettingsTab }) {
+  const { preferences, update, palette, dark } = useReadingPreferences();
+  const { appearance, mode, textLayout, fontSize, spacious, riwayah, tajweed } = preferences;
+  return <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+    <View style={styles.intro}>
+      <Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 24, fontWeight: '600' }}>{t(`settings.intro.${tab}.title`)}</Text>
+      <Text style={{ color: palette.mutedForeground, fontSize: 15 }}>{t(`settings.intro.${tab}.detail`)}</Text>
+    </View>
+    {tab === 'reading' && <>
+      <SettingsCard palette={palette}>
+        <SettingsCardHeading title={t('settings.riwayah.title')} icon="book" palette={palette} />
+        <View accessibilityRole="radiogroup" accessibilityLabel={t('settings.riwayah.title')} style={styles.row}>
+          {([{ value: 'warsh', name: t('common.riwayah.warsh.name'), from: t('settings.riwayah.from.warsh') }, { value: 'hafs', name: t('common.riwayah.hafs.name'), from: t('settings.riwayah.from.hafs') }] as const).map(item => {
+            const selected = riwayah === item.value;
+            return <Pressable key={item.value} accessibilityRole="radio" accessibilityLabel={t(`common.riwayah.${item.value}.label`)} accessibilityState={{ checked: selected }} aria-checked={selected}
+              onPress={() => update({ riwayah: item.value })} style={({ pressed }) => [styles.riwayah, { backgroundColor: pressed ? palette.accent : palette.background, borderColor: selected ? palette.primary : palette.input }]}>
+              <View style={styles.riwayahTop}><SettingsSelection palette={palette} selected={selected} /></View>
+              <Text style={{ color: palette.foreground, fontSize: 22, lineHeight: 36, fontWeight: '600' }}>{item.name}</Text>
+              <Text style={{ color: palette.mutedForeground, fontSize: 14, marginTop: -4 }}>{item.from}</Text>
+            </Pressable>;
+          })}
+        </View>
+        <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('settings.riwayah.savedSeparately')}</Text>
+      </SettingsCard>
+      <SettingsCard palette={palette}>
+        <SettingsCardHeading title={t('settings.mode.title')} detail={t('settings.mode.detail')} icon="lines" palette={palette} />
+        <View accessibilityRole="radiogroup" accessibilityLabel={t('settings.mode.title')} style={styles.row}>
+          {([{ value: 'page', label: t('settings.mode.page.label'), detail: t('settings.mode.page.detail') }, { value: 'text', label: t('settings.mode.text.label'), detail: t('settings.mode.text.detail') }] as const).map(item => {
+            const selected = mode === item.value;
+            return <Pressable key={item.value} accessibilityRole="radio" accessibilityLabel={item.label} accessibilityState={{ checked: selected }} aria-checked={selected}
+              onPress={() => update({ mode: item.value })} style={({ pressed }) => [styles.layoutChoice, { backgroundColor: pressed ? palette.accent : palette.background, borderColor: selected ? palette.primary : palette.input }]}>
+              <ReadingLayoutPreview kind={item.value === 'page' ? 'page' : textLayout} palette={palette} selected={selected} />
+              <View style={styles.layoutLabel}><Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600', flex: 1 }}>{item.label}</Text><SettingsSelection palette={palette} selected={selected} /></View>
+              <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{item.detail}</Text>
+            </Pressable>;
+          })}
+        </View>
+        {mode === 'text' ? <View style={[styles.textLayout, { borderColor: palette.border }]}>
+          <Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600' }}>{t('settings.textLayout.title')}</Text>
+          <Tabs palette={palette} role="radio" label={t('settings.textLayout.label')} value={textLayout} onChange={value => update({ textLayout: value })} options={[{ value: 'ayah', label: t('settings.textLayout.ayah') }, { value: 'flowing', label: t('settings.textLayout.flowing') }] as const} />
+          <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{textLayout === 'ayah' ? t('settings.textLayout.ayahDetail') : t('settings.textLayout.flowingDetail')}</Text>
+        </View> : <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('settings.mode.pageNote')}</Text>}
+      </SettingsCard>
+      <SettingsCard palette={palette}>
+        <Pressable accessibilityRole="switch" accessibilityState={{ checked: tajweed }} aria-checked={tajweed} accessibilityLabel={t('settings.tajweed.title')}
+          onPress={() => update({ tajweed: !tajweed })} style={({ pressed }) => [styles.tajweed, { opacity: pressed ? 0.65 : 1 }]}>
+          <View style={[styles.colors, { backgroundColor: palette.muted }]}>{['#537fff', '#dd5359', '#50a86b'].map((color, i) => <View key={color} style={{ width: 4, height: 12 + i * 4, backgroundColor: color, borderRadius: 2 }} />)}</View>
+          <View style={{ flex: 1, minWidth: 0 }}><Text style={{ color: palette.foreground, fontSize: 16, fontWeight: '600' }}>{t('settings.tajweed.title')}</Text><Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{tajweed ? t('settings.tajweed.on') : t('settings.tajweed.off')} · {t('settings.tajweed.detail')}</Text></View>
+          <SettingsToggle checked={tajweed} palette={palette} />
         </Pressable>
-        <Pressable accessibilityRole="link" onPress={() => router.push('/credits')} style={styles.source}>
-          <Text style={{ color: palette.mutedForeground, fontSize: 12, textDecorationLine: 'underline' }}>{t('settings.footer.credits')}</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
-  </SafeAreaView>;
+        {riwayah === 'warsh' ? <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('settings.tajweed.warshNote')}</Text>
+          : <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('settings.tajweed.hafsNote')}</Text>}
+        {riwayah === 'warsh' && tajweed && <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderColor: palette.border, paddingTop: 6 }}>
+          <WarshTajweedLegend palette={palette} dark={dark} />
+          <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('settings.tajweed.stopNote')}</Text>
+        </View>}
+      </SettingsCard>
+    </>}
+    {tab === 'recitation' && <RecitationSettings palette={palette} />}
+    {tab === 'prayers' && <PrayerSettings />}
+    {(tab === 'reading' || tab === 'appearance') && <ReaderSettings section={tab} palette={palette} fixedPage={mode === 'page'} textLayout={textLayout} appearance={appearance} setAppearance={value => update({ appearance: value })}
+      fontSize={fontSize} setFontSize={value => update({ fontSize: value })} spacious={spacious} setSpacious={value => update({ spacious: value })} />}
+    <View style={styles.footer}>
+      <View style={styles.saved}><ReaderIcon name="done" color={palette.mutedForeground} size={14} /><Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('settings.footer.autoSaved')}</Text></View>
+      <View style={[styles.footerRule, { backgroundColor: palette.border }]} />
+      <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('common.appName')} · {t('common.riwayahOf', { riwayah: RIWAYAT[riwayah].label })}</Text>
+      <Pressable accessibilityRole="link" accessibilityLabel={t('settings.footer.sourceLabel')} onPress={() => void Linking.openURL('https://quranpedia.net')} style={styles.source}>
+        <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('settings.footer.source')}</Text>
+      </Pressable>
+      <Pressable accessibilityRole="link" onPress={() => router.push('/credits')} style={styles.source}>
+        <Text style={{ color: palette.mutedForeground, fontSize: 12, textDecorationLine: 'underline' }}>{t('settings.footer.credits')}</Text>
+      </Pressable>
+    </View>
+  </ScrollView>;
 }
 const styles = StyleSheet.create({
   root: { flex: 1, ...Platform.select({ native: { direction: 'rtl' as const } }) },

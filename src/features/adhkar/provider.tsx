@@ -22,6 +22,8 @@ interface AdhkarContext {
   tasbih: () => void;
   /** Sets the misbaha's count: 0 restarts it. */
   setMisbaha: (count: number) => void;
+  /** Sets the dhikr text's size (a step of `TEXT_SCALES`). */
+  setTextSize: (step: number) => void;
 }
 
 const Context = createContext<AdhkarContext | null>(null);
@@ -51,8 +53,9 @@ export function AdhkarProvider({ children }: PropsWithChildren) {
   const setReminder = useCallback((kind: ReminderKind, value: ReminderSetting) => store.update({ type: 'reminder', kind, value }), [store]);
   const tasbih = useCallback(() => store.update({ type: 'tasbih' }), [store]);
   const setMisbaha = useCallback((count: number) => store.update({ type: 'misbaha', count }), [store]);
-  const value = useMemo(() => ({ state, today, ready, error, reminderError, step, reset, setReminder, tasbih, setMisbaha }),
-    [state, today, ready, error, reminderError, step, reset, setReminder, tasbih, setMisbaha]);
+  const setTextSize = useCallback((step: number) => store.update({ type: 'textSize', step }), [store]);
+  const value = useMemo(() => ({ state, today, ready, error, reminderError, step, reset, setReminder, tasbih, setMisbaha, setTextSize }),
+    [state, today, ready, error, reminderError, step, reset, setReminder, tasbih, setMisbaha, setTextSize]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 

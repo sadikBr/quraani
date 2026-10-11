@@ -1,10 +1,19 @@
-import type { CSSProperties } from 'react';
+import { useEffect, useRef, type CSSProperties } from 'react';
 import type { ReaderFontSliderProps } from './reader-font-slider';
 import { readerFontLabel } from '../../utils/reader-typography';
 import { t } from '@/i18n';
 
 export function ReaderFontSlider({ previewValue, onPreview, onCommit, palette }: ReaderFontSliderProps) {
   const commit = (input: HTMLInputElement) => onCommit(Number(input.value));
+  // In the settings, whose tabs swipe: the drag stays with the slider. The swipe listens on an
+  // ancestor, so the press is kept from reaching it (React's own handlers would be too late).
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const element = input.current;
+    const keep = (event: Event) => event.stopPropagation();
+    element?.addEventListener('pointerdown', keep);
+    return () => element?.removeEventListener('pointerdown', keep);
+  }, []);
   return <>
     <style>{`
       .qarani-font-slider { appearance: none; width: 100%; height: 48px; margin: 0; padding: 0; background: transparent; cursor: pointer; touch-action: pan-y; }
@@ -14,7 +23,7 @@ export function ReaderFontSlider({ previewValue, onPreview, onCommit, palette }:
       .qarani-font-slider::-moz-range-thumb { width: 18px; height: 18px; border: 1px solid var(--font-accent); border-radius: 50%; background: var(--font-paper); box-shadow: 0 1px 3px 0 #0000001a; }
       .qarani-font-slider:focus-visible { outline: 2px solid var(--font-accent); outline-offset: 3px; border-radius: 4px; }
     `}</style>
-    <input className="qarani-font-slider" data-testid="reader-font-slider" type="range" min={0} max={6} step={1} value={previewValue} dir="rtl"
+    <input ref={input} className="qarani-font-slider" data-testid="reader-font-slider" type="range" min={0} max={6} step={1} value={previewValue} dir="rtl"
       aria-label={t('settings.fontSize.label')} aria-valuetext={t('settings.fontSize.value', { label: readerFontLabel(previewValue), step: previewValue + 1, total: 7 })}
       style={{ '--font-accent': palette.primary, '--font-paper': palette.background,
         '--font-track': `linear-gradient(to left, ${palette.primary} ${previewValue / 6 * 100}%, ${palette.muted} ${previewValue / 6 * 100}%)` } as CSSProperties}

@@ -70,6 +70,14 @@ export default {
     goToRemaining: 'الذهاب إلى ما بقي',
     /** Opens a surah a dhikr asks to read; {{surah}} already includes the word سورة. */
     readSurah: 'قراءة {{surah}}',
+    /** The header button that shows the text size bar, and the bar's label. */
+    textSize: 'حجم النص',
+    /** Drawn small then large on that button. */
+    textSizeGlyph: 'ع',
+    smaller: 'تصغير النص',
+    larger: 'تكبير النص',
+    /** Spoken: "حجم النص ٣ من ٧". */
+    textSizeValue: 'حجم النص {{step, number}} من {{total, number}}',
   },
   audio: {
     listen: 'الاستماع إلى الذكر',
