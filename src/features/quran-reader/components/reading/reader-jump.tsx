@@ -3,7 +3,7 @@ import { AccessibilityInfo, Keyboard, Platform, Pressable, StyleSheet, TextInput
 import { ArabicText as Text } from '@/components/arabic-text';
 import { Button, IconTile } from '@/components/ui';
 import type { AyahReference, Surah } from '@/lib/quranpedia/types';
-import { readerElevation, readerShape, withAlpha } from '../../design';
+import { fieldElevation, readerElevation, readerShape } from '../../design';
 import type { ReaderContent } from '../../types/reader';
 import type { ReaderPalette } from '../../theme';
 import { ayahDestination, parseReaderNumber } from '../../utils/navigation';
@@ -116,7 +116,7 @@ function NumberField({ label, value, onChange, hint, palette: p, onSubmit, large
     <Text style={{ color: p.foreground, fontSize: 14, fontWeight: '500', textAlign: 'center' }}>{label}</Text>
     <TextInput accessibilityLabel={label} value={value} onChangeText={onChange} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
       keyboardType="number-pad" inputMode="numeric" maxLength={3} selectTextOnFocus selectionColor={p.primary} onSubmitEditing={onSubmit} returnKeyType="go"
-      style={[s.input, large && s.largeInput, { color: p.foreground, borderColor: focused ? p.ring : p.input, backgroundColor: p.background }, focused ? { boxShadow: `0 0 0 3px ${withAlpha(p.ring, 0.5)}` } as object : readerElevation(1, p)]} />
+      style={[s.input, large && s.largeInput, { color: p.foreground, borderColor: focused ? p.ring : p.input, backgroundColor: p.background }, fieldElevation(focused, p)]} />
     <Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center' }}>{hint}</Text>
   </View>;
 }

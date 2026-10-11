@@ -1,5 +1,5 @@
-import { Platform, type ViewStyle } from 'react-native';
-import { isDarkColor } from './colors';
+import { Platform, type TextStyle, type ViewStyle } from 'react-native';
+import { isDarkColor, withAlpha } from './colors';
 
 /**
  * Universal UI (shadcn/ui) tokens. Radii derive from `radius` 10: `detail` 4
@@ -31,6 +31,16 @@ export function readerElevation(level: 1 | 2 | 3 | 4, palette?: { background: st
     android: { elevation: [0, 1, 1, 3, 8][level], shadowColor: '#000000' },
     default: { boxShadow: web } as ViewStyle,
   })!;
+}
+
+/**
+ * A text field's depth, with a focus ring while focused. The shadow stays on in both states: a
+ * shadow gives the field its own native layer, so dropping it on focus moved the text input
+ * under another native parent, which blurred it and closed the keyboard as soon as it opened.
+ */
+export function fieldElevation(focused: boolean, palette: { background: string; ring: string }) {
+  // Also used directly on a TextInput, hence a style both views and text accept.
+  return { ...readerElevation(1, palette), ...(focused ? { boxShadow: `0 0 0 3px ${withAlpha(palette.ring, 0.5)}` } : {}) } as ViewStyle & TextStyle;
 }
 
 export { isDarkColor, mixColor, withAlpha } from './colors';

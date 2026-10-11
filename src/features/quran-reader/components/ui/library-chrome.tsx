@@ -2,7 +2,7 @@ import { useState, type PropsWithChildren } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, View, type ViewStyle } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
 import type { ReaderPalette } from '../../theme';
-import { readerElevation, readerLayout, readerShape, withAlpha } from '../../design';
+import { fieldElevation, readerLayout, readerShape } from '../../design';
 import { Button, Empty, IconTile, Tabs } from '@/components/ui';
 import { ReaderIcon, type ReaderIconName } from './reader-chrome';
 import { t } from '@/i18n';
@@ -18,7 +18,8 @@ export function LibraryHeader({ title, subtitle, icon, palette: p, onBack }: { t
 /** Input with a leading search icon: `input` border, `radius-md`, shadow-xs; focus turns the border `ring`. */
 export function LibrarySearch({ value, onChange, label, placeholder, palette: p }: { value: string; onChange: (query: string) => void; label: string; placeholder: string; palette: ReaderPalette }) {
   const [focused, setFocused] = useState(false);
-  return <View style={[l.search, { backgroundColor: p.background, borderColor: focused ? p.ring : p.input }, focused ? { boxShadow: `0 0 0 3px ${withAlpha(p.ring, 0.5)}` } as ViewStyle : readerElevation(1, p)]}>
+  // Its own native view whatever the style, so focusing never moves the input to another parent.
+  return <View collapsable={false} style={[l.search, { backgroundColor: p.background, borderColor: focused ? p.ring : p.input }, fieldElevation(focused, p)]}>
     <ReaderIcon name="search" color={p.mutedForeground} size={18} />
     <TextInput accessibilityLabel={label} placeholder={placeholder} placeholderTextColor={p.mutedForeground} value={value} onChangeText={onChange}
       onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} autoCorrect={false} returnKeyType="search" selectionColor={p.primary} style={[l.input, { color: p.foreground }]} />

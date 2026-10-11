@@ -4,7 +4,7 @@ import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, TextInp
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
-import { readerElevation, readerLayout, readerShape, withAlpha } from '../quran-reader/design';
+import { fieldElevation, readerLayout, readerShape } from '../quran-reader/design';
 import { IconButton } from '../quran-reader/components/ui/reader-chrome';
 import { t } from '@/i18n';
 
@@ -38,7 +38,7 @@ export function PlanField({ label, value, onChange, numeric = false, placeholder
   const [focused, setFocused] = useState(false);
   return <View style={{ gap: 8 }}><Text style={{ color: palette.foreground, fontSize: 14, fontWeight: '500' }}>{label}</Text><TextInput accessibilityLabel={label} value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={palette.mutedForeground}
     keyboardType={numeric ? 'decimal-pad' : 'default'} maxLength={numeric ? 10 : 80} autoCorrect={false} selectionColor={palette.primary} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-    style={[styles.input, { color: palette.foreground, backgroundColor: palette.background, borderColor: focused ? palette.ring : palette.input }, focused ? { boxShadow: `0 0 0 3px ${withAlpha(palette.ring, 0.5)}` } as object : readerElevation(1, palette), numeric && { writingDirection: 'ltr', textAlign: 'center' }]} /></View>;
+    style={[styles.input, { color: palette.foreground, backgroundColor: palette.background, borderColor: focused ? palette.ring : palette.input }, fieldElevation(focused, palette), numeric && { writingDirection: 'ltr', textAlign: 'center' }]} /></View>;
 }
 /** A settings row with a Switch: the thumb sits at the reading start (right) when off. */
 export function PlanSwitch({ label, detail, checked, onChange, disabled = false }: { label: string; detail?: string; checked: boolean; onChange: (value: boolean) => void; disabled?: boolean }) {
