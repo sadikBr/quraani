@@ -18,6 +18,7 @@ import { AmountPicker } from './goal-creation-components';
 import { currentRevisionGoal, isCurrentGoal } from './goal-limit';
 import { quarterLabel, spanCount } from './memorization';
 import { MemorizedSelectionSheet } from './memorized-selection-sheet';
+import { PracticeGoalCard } from '../practice/goal-card';
 import { remindersSupported, requestPlanReminders } from './notifications';
 import { PlanDateField } from './plan-date-field';
 import { DetailAction, DetailScreen, d, PlanSettingsSheet } from './plan-detail-components';
@@ -169,6 +170,7 @@ export function RevisionDetail({ plan, initialReminderIssue }: { plan: RevisionP
       {owner ? <DetailAction label={t('revision.detail.actions.openGoal', { name: owner.name })} onPress={() => router.push({ pathname: '/plans/[id]', params: { id: owner.id } })} />
         : <DetailAction label={t('revision.detail.actions.editMemorized')} disabled={busy} onPress={() => { setMessage(''); setChoosing(true); }} />}
     </PlanCard>}
+    {index && !mismatch && plan.status !== 'archived' && !!plan.memorized.length && <PracticeGoalCard riwayah={plan.riwayah} />}
     {index && !mismatch && !!plan.log.length && <PlanCard><Copy title>{t('revision.detail.logTitle')}</Copy><View>{plan.log.slice(-5).reverse().map((log, i) => <View key={`${log.date}-${i}`} style={{ gap: 2, paddingVertical: 10, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: p.border }}>
       <Text style={{ color: p.foreground, fontSize: 15 }}>{ayahRangeLabel(index, log.from, log.to)}</Text>
       <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{shortDate(log.date)} · {t('revision.passNumber', { pass: log.pass })} · {ayahCountLabel(spanCount(plan.memorized.flatMap(r => r.end <= log.from || r.start >= log.to ? [] : [{ start: Math.max(r.start, log.from), end: Math.min(r.end, log.to) }])))}</Text>

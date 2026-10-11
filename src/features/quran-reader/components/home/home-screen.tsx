@@ -21,11 +21,12 @@ import { shortDate } from '@/features/plans/presentation';
 import { CollectionRow, MisbahaRow } from '@/features/adhkar/adhkar-screen';
 import { t } from '@/i18n';
 
-interface Area { href: Href; icon: ReaderIconName; text: 'plans' | 'adhkar' | 'index' | 'bookmarks' | 'search' | 'settings' }
+interface Area { href: Href; icon: ReaderIconName; text: 'plans' | 'adhkar' | 'practice' | 'index' | 'bookmarks' | 'search' | 'settings' }
 /** Everything beyond the reader. A new area (dashboard, halaqat, groups…) is one more entry. */
 const areas: Area[] = [
   { href: '/plans', icon: 'calendar', text: 'plans' },
   { href: '/adhkar', icon: 'moon-star', text: 'adhkar' },
+  { href: '/practice', icon: 'practice', text: 'practice' },
   { href: '/quran-index', icon: 'index', text: 'index' },
   { href: '/bookmarks', icon: 'bookmark', text: 'bookmarks' },
   { href: '/search', icon: 'search', text: 'search' },

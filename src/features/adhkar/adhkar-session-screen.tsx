@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, ActivityIndicator, Animated, Easing, Platform, Pressable, ScrollView, StyleSheet, Vibration, View } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Vibration, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import Svg, { Circle } from 'react-native-svg';
-import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { createPager } from '@/components/pager';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { Alert, Button } from '@/components/ui';
 import type { ReaderPalette } from '@/features/quran-reader/theme';
@@ -11,7 +12,6 @@ import { readerElevation, readerLayout, readerShape, withAlpha } from '@/feature
 import { ReaderIcon, type ReaderIconName } from '@/features/quran-reader/components/ui/reader-chrome';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
 import { useReaderContent } from '@/features/quran-reader/hooks/use-reader-content';
-import { swipePageDelta } from '@/features/quran-reader/utils/navigation';
 import { formatNumber, t } from '@/i18n';
 import { collectionIcons, collections, isCollectionId, type CollectionId, type Dhikr } from './content';
 import { collectionProgress, countsOn, nextUnfinished } from './progress';
@@ -35,38 +35,6 @@ function MissingCollection() {
   const { palette: p } = useReadingPreferences();
   useEffect(() => { router.replace('/adhkar'); }, []);
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }} />;
-}
-
-/**
- * Horizontal paging like the mushaf: the next dhikr lies to the left, so dragging to the right
- * moves forward. Mutable gesture state lives in one object (gesture callbacks may be compiled as
- * worklets, which copy the plain variables they capture).
- */
-function createPager(translation: Animated.Value) {
-  const state = { index: 0, last: 0, width: 360, reduceMotion: false, animating: false, onChange: (_: number) => {} };
-  const settle = () => Animated.spring(translation, { toValue: 0, speed: 24, bounciness: 0, useNativeDriver: nativeDriver }).start();
-  const go = (target: number) => {
-    if (target < 0 || target > state.last || target === state.index) { settle(); return; }
-    // Only neighbours slide in; a longer jump changes the page at once.
-    if (state.reduceMotion || Math.abs(target - state.index) > 1) { state.onChange(target); return; }
-    state.animating = true;
-    Animated.timing(translation, { toValue: Math.sign(target - state.index) * state.width, duration: 220, easing: Easing.out(Easing.cubic), useNativeDriver: nativeDriver })
-      .start(({ finished }) => { state.animating = false; if (finished) state.onChange(target); else settle(); });
-  };
-  const pan = Gesture.Pan().runOnJS(true)
-    .activeOffsetX([-14, 14]).failOffsetY([-18, 18])
-    .onUpdate((e) => {
-      if (state.animating || state.reduceMotion) return;
-      const blocked = e.translationX > 0 ? state.index >= state.last : state.index <= 0;
-      translation.setValue(Math.max(-state.width, Math.min(state.width, e.translationX * (blocked ? 0.2 : 1))));
-    })
-    .onEnd((e) => {
-      if (state.animating) return;
-      const delta = swipePageDelta(e.translationX, e.translationY, e.velocityX / 1000);
-      if (delta) go(state.index + delta); else settle();
-    })
-    .onFinalize((_, success) => { if (!success && !state.animating) settle(); });
-  return { state, pan, go };
 }
 
 function Session({ id }: { id: CollectionId }) {

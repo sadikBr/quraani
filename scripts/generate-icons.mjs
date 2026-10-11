@@ -9,7 +9,7 @@ const icons = {
   alert: 'circle-alert', info: 'info', 'chevron-down': 'chevron-down', done: 'circle-check', home: 'house', bell: 'bell', pencil: 'pencil',
   play: 'play', pause: 'pause', 'skip-back': 'skip-back', 'skip-forward': 'skip-forward', headphones: 'headphones', download: 'download',
   sunrise: 'sunrise', sunset: 'sunset', bed: 'bed', alarm: 'alarm-clock', 'hand-heart': 'hand-heart', 'moon-star': 'moon-star',
-  beads: 'orbit', undo: 'undo-2',
+  beads: 'orbit', undo: 'undo-2', practice: 'book-open-check', hint: 'lightbulb', wrong: 'circle-x',
 };
 const out = {};
 for (const [name, lucide] of Object.entries(icons)) {

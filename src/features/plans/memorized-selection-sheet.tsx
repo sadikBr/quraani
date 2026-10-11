@@ -16,10 +16,27 @@ import { PlanField, PlanNotice, sheet } from './components';
 import { t } from '@/i18n';
 
 type SelectionTab = 'surahs' | 'juzs' | 'hizbs' | 'quarters' | 'ayahs';
-export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy = false, error }: {
-  index: PlanIndex; selected: AyahSpan[]; onSave: (ranges: AyahSpan[]) => void; onClose: () => void; busy?: boolean; error?: string;
+/** The sheet's own words: choosing what is memorized, or what to recite in a tasmee'. */
+const sheetTexts = {
+  memorized: {
+    title: () => t('memorization.selection.title'), subtitle: () => t('memorization.selection.subtitle'), close: () => t('memorization.selection.close'),
+    tabsLabel: () => t('memorization.selection.tabsLabel'), add: () => t('memorization.selection.custom.add'), remove: () => t('memorization.selection.custom.remove'),
+    partial: (count: number) => t('memorization.selection.partial', { count }), total: (count: number) => t('memorization.selection.total', { count }),
+    confirm: () => t('memorization.selection.confirm'),
+  },
+  practice: {
+    title: () => t('practice.selection.title'), subtitle: () => t('practice.selection.subtitle'), close: () => t('practice.selection.close'),
+    tabsLabel: () => t('practice.selection.tabsLabel'), add: () => t('practice.selection.add'), remove: () => t('practice.selection.remove'),
+    partial: (count: number) => t('practice.selection.partial', { count }), total: (count: number) => t('practice.selection.total', { count }),
+    confirm: () => t('practice.selection.confirm'),
+  },
+};
+
+export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy = false, error, purpose = 'memorized' }: {
+  index: PlanIndex; selected: AyahSpan[]; onSave: (ranges: AyahSpan[]) => void; onClose: () => void; busy?: boolean; error?: string; purpose?: keyof typeof sheetTexts;
 }) {
   const { palette: p } = useReadingPreferences();
+  const texts = sheetTexts[purpose];
   const [draft, setDraft] = useState(selected), [tab, setTab] = useState<SelectionTab>('surahs'), [query, setQuery] = useState('');
   const [fromSurah, setFromSurah] = useState('1'), [fromAyah, setFromAyah] = useState('1');
   const [toSurah, setToSurah] = useState('1'), [toAyah, setToAyah] = useState('7');
@@ -51,8 +68,8 @@ export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy
         <GestureDetector gesture={swipe.gesture}><AnimatedSafeAreaView edges={['bottom']} accessibilityViewIsModal onLayout={swipe.onSheetLayout} onAccessibilityEscape={() => { if (!busy) onClose(); }} style={[{ height: '94%', width: '100%', maxWidth: readerLayout.maxWidth, backgroundColor: p.background, borderTopLeftRadius: readerShape.sheet, borderTopRightRadius: readerShape.sheet, borderWidth: StyleSheet.hairlineWidth, borderBottomWidth: 0, borderColor: p.border }, swipe.sheetStyle]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
           <View style={[sheet.grabber, { backgroundColor: p.border }]} />
           <View onLayout={swipe.onHeaderLayout} style={{ padding: 16, paddingTop: 8, paddingBottom: 10, gap: 12 }}>
-            <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}><View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('memorization.selection.title')}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('memorization.selection.subtitle')}</Text></View><Pressable ref={close} accessibilityRole="button" accessibilityLabel={t('memorization.selection.close')} disabled={busy} onPress={onClose} hitSlop={4} style={({ pressed }) => [sheet.close, { backgroundColor: pressed ? p.accent : 'transparent' }]}><ReaderIcon name="close" color={p.mutedForeground} size={18} /></Pressable></View>
-            <LibraryTabs palette={p} label={t('memorization.selection.tabsLabel')} value={tab} onChange={value => { setTab(value as SelectionTab); setQuery(''); list.current?.scrollToOffset({ offset: 0, animated: false }); }} options={[{ value: 'surahs', label: t('memorization.selection.tabs.surahs') }, { value: 'juzs', label: t('memorization.selection.tabs.juzs') }, { value: 'hizbs', label: t('memorization.selection.tabs.hizbs') }, { value: 'quarters', label: t('memorization.selection.tabs.quarters') }, { value: 'ayahs', label: t('memorization.selection.tabs.ayahs') }]} />
+            <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}><View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{texts.title()}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{texts.subtitle()}</Text></View><Pressable ref={close} accessibilityRole="button" accessibilityLabel={texts.close()} disabled={busy} onPress={onClose} hitSlop={4} style={({ pressed }) => [sheet.close, { backgroundColor: pressed ? p.accent : 'transparent' }]}><ReaderIcon name="close" color={p.mutedForeground} size={18} /></Pressable></View>
+            <LibraryTabs palette={p} label={texts.tabsLabel()} value={tab} onChange={value => { setTab(value as SelectionTab); setQuery(''); list.current?.scrollToOffset({ offset: 0, animated: false }); }} options={[{ value: 'surahs', label: t('memorization.selection.tabs.surahs') }, { value: 'juzs', label: t('memorization.selection.tabs.juzs') }, { value: 'hizbs', label: t('memorization.selection.tabs.hizbs') }, { value: 'quarters', label: t('memorization.selection.tabs.quarters') }, { value: 'ayahs', label: t('memorization.selection.tabs.ayahs') }]} />
             {tab !== 'ayahs' && <LibrarySearch palette={p} value={query} onChange={setQuery} placeholder={t('memorization.selection.searchPlaceholder')} label={t('memorization.selection.searchLabel')} />}
           </View>
           <GestureDetector gesture={swipe.scrollGesture}><FlatList {...swipe.scrollProps} ref={list} data={filtered} keyExtractor={item => String(item.number)} extraData={draft} keyboardShouldPersistTaps="handled" initialNumToRender={10} windowSize={5} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
@@ -62,7 +79,7 @@ export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy
               <View style={{ flexDirection: 'row', gap: 12 }}><View style={{ flex: 1 }}><PlanField label={t('memorization.selection.custom.fromSurah')} value={fromSurah} onChange={setFromSurah} numeric /></View><View style={{ flex: 1 }}><PlanField label={t('memorization.selection.custom.fromAyah')} value={fromAyah} onChange={setFromAyah} numeric /></View></View>
               <View style={{ flexDirection: 'row', gap: 12 }}><View style={{ flex: 1 }}><PlanField label={t('memorization.selection.custom.toSurah')} value={toSurah} onChange={setToSurah} numeric /></View><View style={{ flex: 1 }}><PlanField label={t('memorization.selection.custom.toAyah')} value={toAyah} onChange={setToAyah} numeric /></View></View>
               <View style={{ paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: p.border }}><Text style={{ color: validRange ? p.foreground : p.destructive, fontSize: 15, fontWeight: validRange ? '600' : '400' }}>{validRange ? ayahRangeLabel(index, customStart, customEnd) : t('memorization.selection.custom.invalid')}</Text></View>
-              <ReaderButton palette={p} disabled={!validRange || busy} onPress={() => toggle(customRange)}>{validRange && coversSpan(draft, customRange) ? t('memorization.selection.custom.remove') : t('memorization.selection.custom.add')}</ReaderButton>
+              <ReaderButton palette={p} disabled={!validRange || busy} onPress={() => toggle(customRange)}>{validRange && coversSpan(draft, customRange) ? texts.remove() : texts.add()}</ReaderButton>
               <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 22 }}>{t('memorization.selection.custom.note')}</Text>
             </View> : null}
             ListEmptyComponent={tab !== 'ayahs' ? <Text style={{ color: p.mutedForeground, padding: 16, textAlign: 'center' }}>{t('memorization.selection.noResults')}</Text> : null}
@@ -71,13 +88,13 @@ export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy
               const first = position === 0, last = position === filtered.length - 1;
               return <Pressable accessibilityRole="checkbox" accessibilityLabel={item.label} accessibilityState={{ checked: partial ? 'mixed' : checked }} aria-checked={partial ? 'mixed' : checked} disabled={busy} onPress={() => toggle(item)}
                 style={({ pressed }) => [sheet.row, { borderColor: p.border, backgroundColor: checked || pressed ? p.accent : p.card, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: last ? StyleSheet.hairlineWidth : 0 }, first && sheet.rowFirst, last && sheet.rowLast]}>
-                <View style={{ flex: 1 }}><Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{item.label}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{tab === 'surahs' ? partial ? t('memorization.selection.partial', { count: item.end - item.start }) : t('memorization.ayahCount', { count: item.end - item.start }) : ayahRangeLabel(index, item.start, item.end)}</Text></View>
+                <View style={{ flex: 1 }}><Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{item.label}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{tab === 'surahs' ? partial ? texts.partial(item.end - item.start) : t('memorization.ayahCount', { count: item.end - item.start }) : ayahRangeLabel(index, item.start, item.end)}</Text></View>
                 <View style={[sheet.check, { borderColor: checked || partial ? p.primary : p.input, backgroundColor: checked ? p.primary : p.background }]}>{checked ? <ReaderIcon name="check" color={p.primaryForeground} size={14} /> : partial ? <View style={{ width: 10, height: 2, backgroundColor: p.primary }} /> : null}</View>
               </Pressable>;
             }} /></GestureDetector>
           <View style={{ padding: 16, gap: 8, borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }}>
-            <PlanNotice message={error} /><Text accessibilityLiveRegion="polite" style={{ color: p.mutedForeground, fontSize: 13 }}>{t('memorization.selection.total', { count: spanCount(draft) })}</Text>
-            <ReaderButton palette={p} selected disabled={busy} onPress={() => onSave(draft)}>{busy ? t('memorization.selection.saving') : t('memorization.selection.confirm')}</ReaderButton>
+            <PlanNotice message={error} /><Text accessibilityLiveRegion="polite" style={{ color: p.mutedForeground, fontSize: 13 }}>{texts.total(spanCount(draft))}</Text>
+            <ReaderButton palette={p} selected disabled={busy} onPress={() => onSave(draft)}>{busy ? t('memorization.selection.saving') : texts.confirm()}</ReaderButton>
           </View>
         </AnimatedSafeAreaView></GestureDetector>
       </KeyboardAvoidingView>

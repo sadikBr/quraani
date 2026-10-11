@@ -18,6 +18,7 @@ import { currentMemorizationGoal } from './goal-limit';
 import { memorizationReplanDate, memorizationSchedule, memoryFor, quarterLabel, recordMemorizationProgress, reviseMemorization, undoMemorizationProgress } from './memorization';
 import { MemorizationHero } from './memorization-components';
 import { MemorizedSelectionSheet } from './memorized-selection-sheet';
+import { PracticeGoalCard } from '../practice/goal-card';
 import { remindersSupported, requestPlanReminders } from './notifications';
 import { PlanDateField } from './plan-date-field';
 import { DetailAction, DetailScreen, d, PlanSettingsSheet } from './plan-detail-components';
@@ -140,6 +141,7 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
     </PlanCard>}
     {index && !mismatch && <>
       {plan.status !== 'archived' && !other && <PlanCard><View style={[d.row, { gap: 12, alignItems: 'flex-start' }]}><IconTile name="check" /><View style={d.grow}><Copy title>{t('memorization.detail.record.title')}</Copy><Copy muted>{t('memorization.detail.record.description')}</Copy></View></View><DetailAction label={t('memorization.detail.record.edit')} disabled={busy} onPress={() => { setMessage(''); setChoosing(true); }} /></PlanCard>}
+      {!!ranges.length && plan.status !== 'archived' && <PracticeGoalCard riwayah={plan.riwayah} />}
       {plan.undoable && plan.status !== 'archived' && !other && <DetailAction label={t('memorization.detail.undo')} disabled={busy} onPress={() => void mutate(current => undoMemorizationProgress(current, index, localDate()))} />}
       {!!schedule.length && plan.status !== 'archived' && <WeeklySchedule index={index} sessions={schedule} today={today} labels={MEMORIZATION_LABELS} summary={t('memorization.detail.scheduleSummary', { amount: quarterLabel(plan.goal.weeklyQuarters), days: weekdaysLabel(plan.weekdays) })} footer={t('memorization.detail.scheduleFooter', { date: dateLabel(schedule.at(-1)!.date) })} />}
       {!!plan.progress.length && <PlanCard><Copy title>{t('memorization.detail.recent')}</Copy><View>{plan.progress.slice(-5).reverse().map((log, i) => <View key={`${log.date}-${i}`} style={{ gap: 2, paddingVertical: 10, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: p.border }}><Text style={{ color: p.foreground, fontSize: 15 }}>{ayahRangeLabel(index, log.from, log.to)}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{shortDate(log.date)}</Text></View>)}</View></PlanCard>}

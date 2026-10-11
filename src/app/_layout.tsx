@@ -10,6 +10,7 @@ import { I18nManager, Platform, Pressable, ScrollView, StyleSheet, Text, View, u
 import type { ErrorBoundaryProps } from 'expo-router';
 import { PlansProvider, PlanNotificationObserver } from '@/features/plans/provider';
 import { AdhkarNotificationObserver, AdhkarProvider } from '@/features/adhkar/provider';
+import { PracticeProvider } from '@/features/practice/provider';
 import { readerThemes } from '@/features/quran-reader/theme';
 import { readerShape } from '@/features/quran-reader/design';
 import { localeInfo, t } from '@/i18n';
@@ -26,7 +27,7 @@ if (Platform.OS !== 'web') {
 export default function RootLayout() {
   return <>
     {Platform.OS === 'web' && <Head><title>{t('common.appName')}</title></Head>}
-    <ReadingPreferencesProvider><BookmarksProvider><PlansProvider><AdhkarProvider><RootNavigator /></AdhkarProvider></PlansProvider></BookmarksProvider></ReadingPreferencesProvider>
+    <ReadingPreferencesProvider><BookmarksProvider><PlansProvider><AdhkarProvider><PracticeProvider><RootNavigator /></PracticeProvider></AdhkarProvider></PlansProvider></BookmarksProvider></ReadingPreferencesProvider>
   </>;
 }
 
