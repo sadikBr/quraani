@@ -18,6 +18,7 @@ import { BEFORE_OPTIONS, HIJRI_OFFSET_LIMIT } from './settings';
 import { clock, countdown, dayOf, dayTimes, PRAYERS, prayerWindow, type PrayerId } from './times';
 import { AdjustmentsSheet, AlertSheet, LocationSheet, MethodSheet, TakbirSheet, useLocate, VoiceSheet } from './prayer-sheets';
 import { alertIcons, effectiveAlert, hijriLabel, signedMinutes } from './format';
+import { timesNotificationSupported } from './times-notification';
 
 type Sheet = 'location' | 'method' | 'adjust' | 'voice' | 'takbir' | { alert: PrayerId };
 /** Prayer times at the chosen place, the next prayer, and the alerts and athan. */
@@ -134,6 +135,24 @@ function TodayTimes({ onAlert }: { onAlert: (prayer: PrayerId) => void }) {
         </View>;
       })}
     </View>
+    {timesNotificationSupported && <TimesNotificationSwitch />}
+  </View>;
+}
+
+/** The prayer times kept in the phone's notifications (Android app). */
+function TimesNotificationSwitch() {
+  const { palette: p } = useReadingPreferences();
+  // `revision` changes on each return to the app, as from the exact alarms setting.
+  const { state, revision, setTimesNotification } = usePrayers();
+  const [refused, setRefused] = useState(false);
+  const exact = revision >= 0 && canScheduleExactAlarms();
+  const note = refused || (state.timesNotification && !exact);
+  return <View style={[s.timesNotification, { borderColor: p.border, backgroundColor: p.card }, note && { paddingBottom: 12 }]}>
+    <PlanSwitch label={t('prayers.timesNotification.label')} detail={t('prayers.timesNotification.detail')} checked={state.timesNotification}
+      onChange={(on) => { setRefused(false); void setTimesNotification(on).then((done) => setRefused(!done)); }} />
+    {refused && <Alert variant="destructive" palette={p}>{t('prayers.alerts.permissionDenied')}</Alert>}
+    {!refused && state.timesNotification && !exact && <Alert palette={p} icon="alarm"
+      action={<Button size="sm" variant="outline" palette={p} onPress={() => { openExactAlarmSettings(); }}>{t('prayers.reliability.exactAction')}</Button>}>{t('prayers.timesNotification.exact')}</Alert>}
   </View>;
 }
 
@@ -290,6 +309,7 @@ const s = StyleSheet.create({
   hero: { borderRadius: readerShape.card, borderWidth: StyleSheet.hairlineWidth, padding: 20, gap: 12 },
   heroRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 },
   list: { borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card, overflow: 'hidden' },
+  timesNotification: { borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card, paddingHorizontal: 16, paddingVertical: 4, gap: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingStart: 16, paddingEnd: 6, minHeight: 56 },
   rowText: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
   alertButton: { width: 44, height: 44, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },

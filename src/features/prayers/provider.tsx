@@ -5,7 +5,8 @@ import { contentStorage } from '@/features/quran-reader/storage/content-storage'
 import { createPersistedStore } from '@/features/quran-reader/state/persisted-store';
 import { usePlans } from '@/features/plans/provider';
 import { applyPrayers, decodePrayers, defaultPrayerState, PRAYERS_KEY, type AlertKind, type PrayerChange, type PrayerState } from './settings';
-import { observePrayerNotifications, PrayerAlertError, requestPrayerAlerts, syncPrayerAlerts } from './notifications';
+import { observePrayerNotifications, PrayerAlertError, requestNotifications, requestPrayerAlerts, syncPrayerAlerts } from './notifications';
+import { syncTimesNotification } from './times-notification';
 import type { PrayerId } from './times';
 
 export type AlertIssue = 'permission' | 'unavailable' | 'sync';
@@ -24,6 +25,8 @@ interface PrayersContext {
   setEnabled: (enabled: boolean) => Promise<boolean>;
   /** Sets one prayer's alert; choosing one while alerts are off turns them on. */
   setAlert: (prayer: PrayerId, kind: AlertKind) => Promise<boolean>;
+  /** Turns the prayer times notification on (asking for notifications first) or off. Resolves false when not allowed. */
+  setTimesNotification: (on: boolean) => Promise<boolean>;
 }
 
 const Context = createContext<PrayersContext | null>(null);
@@ -50,6 +53,13 @@ export function PrayersProvider({ children }: PropsWithChildren) {
       (e) => { if (active) setAlertIssue(e instanceof PrayerAlertError && e.issue === 'permission' ? 'permission' : 'sync'); });
     return () => { active = false; };
   }, [ready, state, today, revision]);
+  // The times notification gets the coming days again on the same occasions, once changes settle
+  // (Android drops a burst of updates, such as a few taps on a minute adjustment).
+  useEffect(() => {
+    if (!ready) return;
+    const timer = setTimeout(() => syncTimesNotification(state), 400);
+    return () => clearTimeout(timer);
+  }, [ready, state, today, revision]);
 
   const update = useCallback((change: PrayerChange) => store.update(change), [store]);
   const setEnabled = useCallback(async (enabled: boolean) => {
@@ -70,8 +80,14 @@ export function PrayersProvider({ children }: PropsWithChildren) {
     return true;
   }, [store, setEnabled]);
 
-  const value = useMemo(() => ({ state, ready, error, alertIssue, revision, update, setEnabled, setAlert }),
-    [state, ready, error, alertIssue, revision, update, setEnabled, setAlert]);
+  const setTimesNotification = useCallback(async (on: boolean) => {
+    if (on && !(await requestNotifications())) return false;
+    store.update({ timesNotification: on });
+    return true;
+  }, [store]);
+
+  const value = useMemo(() => ({ state, ready, error, alertIssue, revision, update, setEnabled, setAlert, setTimesNotification }),
+    [state, ready, error, alertIssue, revision, update, setEnabled, setAlert, setTimesNotification]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 

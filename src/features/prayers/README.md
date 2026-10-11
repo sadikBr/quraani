@@ -71,6 +71,34 @@ and each return to the app:
   optimisation.
 - On iOS, which cannot play the Ogg clips, alerts are plain notifications.
 
+## The prayer times notification (`times-notification.ts`, `AthanTimes.kt`)
+
+«المواقيت في الإشعارات» (under today's times; Android app only, setting `timesNotification`) keeps
+a quiet notification (channel `prayer-times`, low importance) that is always there:
+
+- **Collapsed:** the next prayer in colour, its time, the time left, then the next two times of
+  that day (or the date when none are left).
+- **Expanded:** the same line, the Hijri and Gregorian date, a hairline, and the six times as a
+  list: the next one in colour and bold, those past dimmed. After Isha it shows the next day,
+  marked «غدًا». Tapping it opens this screen (`quranmobile://prayers`).
+
+It is drawn natively with `DecoratedCustomViewStyle` and two layouts
+(`modules/athan/android/src/main/res/layout/athan_times_*.xml`). Each row has its normal, next and
+past versions in the layout, switched with `setViewVisibility`, so every colour comes from resources
+(`values` and `values-night`) and follows the system's light or dark shade; the rest of the text
+uses the system's notification text styles. The countdown is a `Chronometer` running in the
+notification.
+
+The app sends 30 days of times (and their date labels) after every change, each day and each return
+to the app, debounced; the module keeps them, writes the clock times in the phone's zone, and
+refreshes the notification at each prayer and at midnight with a non-waking alarm (exact when
+allowed; it never uses the athan's "while idle" quota), on the athan's own alarm, and after a
+restart, an update or a change of the clock. Without exact alarms the refresh can be up to ten
+minutes late, so the countdown is hidden and the switch offers the permission. Android 14+ lets
+the user swipe it away; it comes back at the next refresh. Turning it off removes it and its alarm.
+
+## Credits
+
 The recordings, how they were cut and their licences are in `assets/athan/README.md`. The screen
 ends with a link to the app's credits page (`/credits`, `features/credits`), which lists every
 recording, Adhan and GeoNames with the rest of what the app uses: title, author, source and
@@ -81,5 +109,6 @@ licence links, and the changes.
 `modules/athan` is a local Expo module (autolinked from `modules/`, Android only). It is built with
 the app (EAS or `expo run:android`) and is absent from Expo Go. Kotlin, platform APIs only
 (no AndroidX); `AthanModule.schedule(json)` replaces the list, `test(json, seconds)` arms a test,
+`showTimes(json)` and `hideTimes()` drive the prayer times notification,
 `stop()`, and the permission checks and settings shortcuts the screen uses. `AthanActivity` is
 built in code (no layout resources) and declared with `showWhenLocked` and `turnScreenOn`.

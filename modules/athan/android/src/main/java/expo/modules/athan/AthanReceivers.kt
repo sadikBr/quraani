@@ -45,7 +45,7 @@ internal object AthanPlayer {
   }
 }
 
-/** The alarm of an athan, and the stop button of its notification. */
+/** The alarm of an athan, the stop button of its notification, and the prayer times notification's refresh. */
 class AthanAlarmReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
     when (intent.action) {
@@ -55,17 +55,25 @@ class AthanAlarmReceiver : BroadcastReceiver() {
         if (id != null) AthanScheduler.markFired(context, id)
         if (athan != null) AthanPlayer.start(context, athan)
         AthanScheduler.arm(context)
+        // The prayer times notification moves on to the next prayer at the same moment.
+        AthanTimes.refresh(context)
       }
+      AthanTimes.ACTION_UPDATE -> AthanTimes.refresh(context)
       AthanScheduler.ACTION_STOP -> AthanService.stop(context)
       AthanScheduler.ACTION_TEST -> AthanScheduler.testAthan(context)?.let { AthanPlayer.start(context, it, checkSilence = false) }
     }
   }
 }
 
-/** Alarms do not survive a restart, an update or a change of the clock: arm the next one again. */
+/**
+ * Alarms do not survive a restart, an update or a change of the clock: arm the next one again, and
+ * show the prayer times notification again (a restart clears it).
+ */
 class AthanBootReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
-    if (intent.action in ACTIONS) AthanScheduler.arm(context)
+    if (intent.action !in ACTIONS) return
+    AthanScheduler.arm(context)
+    AthanTimes.refresh(context)
   }
 
   private companion object {

@@ -6,6 +6,8 @@ interface AthanNativeModule {
   schedule(json: string): void;
   play(json: string): void;
   test(json: string, seconds: number): void;
+  showTimes(json: string): void;
+  hideTimes(): void;
   canUseFullScreenIntent(): boolean;
   openFullScreenIntentSettings(): boolean;
   stop(): boolean;
@@ -37,6 +39,18 @@ export const scheduleAthans = (labels: AthanLabels, athans: AthanEntry[]) => {
 export const testAthan = (labels: AthanLabels, athan: AthanEntry, seconds: number) => {
   athanModule?.test(JSON.stringify({ labels, athan }), Math.round(seconds));
 };
+/** The prayer times notification's content: see `AthanTimes.show` in the module. */
+export interface TimesNotification {
+  labels: { channel: string; tomorrow: string; countdown: string };
+  place: string;
+  url: string;
+  names: Record<string, string>;
+  /** Days in the phone's calendar; the module writes the clock times itself, in the phone's zone. */
+  days: { day: string; date: string; times: { prayer: string; at: number }[] }[];
+}
+/** Shows or updates the prayer times notification. Errors go to the caller. */
+export const showTimesNotification = (content: TimesNotification) => { athanModule?.showTimes(JSON.stringify(content)); };
+export const hideTimesNotification = () => attempt((m) => { m.hideTimes(); return true; }, false);
 export const canUseFullScreenIntent = () => attempt((m) => m.canUseFullScreenIntent(), true);
 export const openFullScreenIntentSettings = () => attempt((m) => m.openFullScreenIntentSettings(), false);
 export const stopAthan = () => attempt((m) => m.stop(), false);

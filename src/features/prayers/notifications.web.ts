@@ -11,6 +11,7 @@ export class PrayerAlertError extends Error {
 export const takbirChannelId = (takbir: TakbirId) => `prayer-takbir-${takbir}`;
 export const athanLabels = (takbir: TakbirId): AthanLabels => ({ stop: '', channel: '', fallbackChannel: takbirChannelId(takbir) });
 export async function requestPrayerAlerts(_takbir: TakbirId): Promise<void> { throw new PrayerAlertError('unavailable'); }
+export async function requestNotifications(): Promise<boolean> { return false; }
 export const TEST_SECONDS = 10;
 export async function testPrayerAlert(_state: PrayerState, _kind: 'notify' | 'takbir' | 'full', _prayer: PrayerId, _time: Date) { throw new PrayerAlertError('unavailable'); }
 export async function syncPrayerAlerts(_state: PrayerState) {}

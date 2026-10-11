@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The prayer times notification (dark shade). The rest of its text takes the system's notification colours. -->
+<resources>
+  <!-- The next prayer: its name, time and the time left. -->
+  <color name="athan_times_accent">#86D9BC</color>
+  <!-- Times already past. -->
+  <color name="athan_times_past">#66FFFFFF</color>
+  <!-- The line above the list. -->
+  <color name="athan_times_rule">#1AFFFFFF</color>
+</resources>

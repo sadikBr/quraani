@@ -203,6 +203,19 @@ export default {
     moonsighting: { name: 'لجنة رؤية الهلال', detail: 'الفجر ١٨°، العشاء ١٨°، مع تعديلات فصلية' },
     tehran: { name: 'معهد الجيوفيزياء، جامعة طهران', detail: 'الفجر ١٧٫٧°، العشاء ١٤°، المغرب ٤٫٥°' },
   },
+  /** The prayer times notification, always shown (Android app). */
+  timesNotification: {
+    label: 'المواقيت في الإشعارات',
+    detail: 'إشعار ثابت فيه مواقيت اليوم والصلاة القادمة والوقت الباقي عليها.',
+    /** Without exact alarms, Android may refresh it up to ten minutes late, so it hides the countdown. */
+    exact: 'اسمح للتطبيق بضبط المنبّهات ليتجدّد الإشعار مع دخول كل وقت ويُظهر الوقت الباقي.',
+    /** Its notification channel, in the system settings. */
+    channel: 'مواقيت الصلاة',
+    /** Before the date, after Isha, when it shows the next day's times. */
+    tomorrow: 'غدًا',
+    /** The live countdown to the next prayer; %s is the time left, «1:23:45». */
+    countdown: 'بعد %s',
+  },
   /** Link at the bottom of the screen to the app's credits page. */
   creditsLink: 'المصادر والتراخيص',
   home: {

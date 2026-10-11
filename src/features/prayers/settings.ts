@@ -41,6 +41,8 @@ export interface PrayerState extends TimesSettings {
   /** The takbir notification's sound. */
   takbir: TakbirId;
   hijriOffset: number;
+  /** The prayer times notification, always shown (Android app). */
+  timesNotification: boolean;
 }
 
 export const PRAYERS_KEY = 'prayers:v1';
@@ -48,7 +50,7 @@ const noAdjustments: Adjustments = { fajr: 0, sunrise: 0, dhuhr: 0, asr: 0, magh
 export const defaultAlerts: Record<PrayerId, AlertKind> = { fajr: 'takbir', sunrise: 'off', dhuhr: 'takbir', asr: 'takbir', maghrib: 'takbir', isha: 'takbir' };
 export const defaultPrayerState: PrayerState = {
   version: 1, location: null, method: 'habous', madhab: 'shafi', adjustments: noAdjustments,
-  enabled: false, alerts: defaultAlerts, before: 0, voice: 'original', takbir: 'makkah', hijriOffset: 0,
+  enabled: false, alerts: defaultAlerts, before: 0, voice: 'original', takbir: 'makkah', hijriOffset: 0, timesNotification: false,
 };
 
 const within = (value: unknown, limit: number) => Number.isInteger(value) && Math.abs(value as number) <= limit;
@@ -97,6 +99,7 @@ export function normalizePrayers(value: unknown): PrayerState {
     voice: VOICES.includes(s.voice as VoiceId) ? s.voice! : d.voice,
     takbir: TAKBIRS.includes(s.takbir as TakbirId) ? s.takbir! : d.takbir,
     hijriOffset: within(s.hijriOffset, HIJRI_OFFSET_LIMIT) ? s.hijriOffset! : d.hijriOffset,
+    timesNotification: typeof s.timesNotification === 'boolean' ? s.timesNotification : d.timesNotification,
   };
 }
 
@@ -165,6 +168,22 @@ export function prayerAlerts(state: PrayerState, now: Date, horizon: AlertHorizo
     }
   }
   return { notifications: notifications.sort((a, b) => a.date.getTime() - b.date.getTime()), athans };
+}
+
+/** A day's six times (those that exist at the place). */
+export interface TimesOfDay { day: string; times: { prayer: PrayerId; at: Date }[] }
+
+/**
+ * The times of `count` days from today, for the prayer times notification, which shows the day of
+ * the next one. Nothing without a place.
+ */
+export function upcomingTimes(state: PrayerState, now: Date, count: number): TimesOfDay[] {
+  if (!state.location) return [];
+  const today = dayOf(now);
+  return Array.from({ length: count }, (_, i) => {
+    const day = shiftDay(today, i), times = dayTimes(state.location!, day, state);
+    return { day, times: PRAYERS.map((prayer) => ({ prayer, at: times[prayer] })).filter((m) => Number.isFinite(m.at.getTime())) };
+  });
 }
 
 export const isPrayerAlertData = (data: unknown): data is { prayer: PrayerId } =>

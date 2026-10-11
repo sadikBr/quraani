@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { countdown, dayTimes, hijriDate, PRAYERS, prayerWindow, shiftDay } from '../src/features/prayers/times';
-import { applyPrayers, decodePrayers, defaultPrayerState, normalizePrayers, prayerAlerts } from '../src/features/prayers/settings';
+import { countdown, dayOf, dayTimes, hijriDate, PRAYERS, prayerWindow, shiftDay } from '../src/features/prayers/times';
+import { applyPrayers, decodePrayers, defaultPrayerState, normalizePrayers, prayerAlerts, upcomingTimes } from '../src/features/prayers/settings';
 import { CITIES, nearestCity } from '../src/features/prayers/cities';
 import ar from '../src/i18n/locales/ar/prayers';
 
@@ -111,6 +111,21 @@ describe('prayer settings', () => {
     expect(applyPrayers(defaultPrayerState, { before: 10, voice: 'azeez' })).toMatchObject({ before: 10, voice: 'azeez', method: 'habous' });
     expect([decoded.takbir, normalizePrayers({ takbir: 'medina' }).takbir, normalizePrayers({ takbir: 'cairo' }).takbir]).toEqual(['makkah', 'medina', 'makkah']);
     expect(normalizePrayers({ voice: 'aishatu' }).voice).toBe('aishatu');
+  });
+
+  test('the prayer times notification is off until chosen, and gets whole days from today', () => {
+    expect(defaultPrayerState.timesNotification).toBe(false);
+    expect(normalizePrayers({ timesNotification: true }).timesNotification).toBe(true);
+    expect(normalizePrayers({ timesNotification: 'yes' }).timesNotification).toBe(false);
+    expect(upcomingTimes(defaultPrayerState, new Date(), 3)).toEqual([]);
+    const place = { ...defaultPrayerState, location: { source: 'city', city: 'casablanca', latitude: 33.5883, longitude: -7.6114, updated: '' } };
+    const at = new Date(Date.UTC(2026, 9, 11, 21, 0)), today = dayOf(at);
+    const days = upcomingTimes(place, at, 3);
+    expect(days.map((d) => d.day)).toEqual([today, shiftDay(today, 1), shiftDay(today, 2)]);
+    expect(days.every((d) => d.times.map((m) => m.prayer).join() === 'fajr,sunrise,dhuhr,asr,maghrib,isha')).toBe(true);
+    // In order within each day, and each day after the one before.
+    const all = days.flatMap((d) => d.times.map((m) => m.at.getTime()));
+    expect(all.every((at, i) => i === 0 || at > all[i - 1])).toBe(true);
   });
 
   test('the opening of the athan («أذان قصير») became the takbir', () => {

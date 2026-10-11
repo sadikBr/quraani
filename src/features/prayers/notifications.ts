@@ -60,6 +60,15 @@ async function retireOldChannels() {
 const allowed = (permission: Awaited<ReturnType<typeof Notifications.getPermissionsAsync>>) =>
   permission.granted || permission.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
 
+/** Asks for notifications alone (the prayer times notification makes its own channel). Resolves whether they are allowed. */
+export async function requestNotifications(): Promise<boolean> {
+  try {
+    return allowed(await Notifications.requestPermissionsAsync());
+  } catch {
+    return false;
+  }
+}
+
 /** Asks for notifications when alerts are turned on. */
 export async function requestPrayerAlerts(takbir: TakbirId): Promise<void> {
   try {

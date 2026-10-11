@@ -46,6 +46,15 @@ class AthanModule : Module() {
       AthanScheduler.armTest(context, json, seconds)
     }
 
+    /** Shows (or updates) the prayer times notification: see AthanTimes.show for the JSON. */
+    Function("showTimes") { json: String ->
+      AthanTimes.show(context, json)
+    }
+
+    Function("hideTimes") {
+      AthanTimes.hide(context)
+    }
+
     Function("canUseFullScreenIntent") {
       AthanNotifications.canUseFullScreen(context)
     }

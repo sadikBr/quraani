@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The prayer times notification, collapsed: the next prayer, the time left, and the ones after it. Filled by AthanTimes. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:orientation="vertical"
+  android:gravity="center_vertical"
+  android:layoutDirection="rtl">
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:baselineAligned="true">
+    <TextView
+      android:id="@+id/athan_times_next_name"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:singleLine="true"
+      android:textColor="@color/athan_times_accent"
+      android:textSize="16dp"
+      android:textStyle="bold" />
+    <TextView
+      android:id="@+id/athan_times_next_time"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:layout_marginStart="8dp"
+      android:singleLine="true"
+      android:textAppearance="@android:style/TextAppearance.Material.Notification.Title"
+      android:fontFamily="sans-serif-medium"
+      android:fontFeatureSettings="tnum"
+      android:textSize="16dp" />
+    <Chronometer
+      android:id="@+id/athan_times_countdown"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="8dp"
+      android:singleLine="true"
+      android:textDirection="rtl"
+      android:textColor="@color/athan_times_accent"
+      android:fontFamily="sans-serif-medium"
+      android:fontFeatureSettings="tnum"
+      android:textSize="14dp" />
+  </LinearLayout>
+  <TextView
+    android:id="@+id/athan_times_following"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="2dp"
+    android:singleLine="true"
+    android:ellipsize="end"
+    android:textAppearance="@android:style/TextAppearance.Material.Notification"
+    android:fontFeatureSettings="tnum"
+    android:textSize="13dp" />
+</LinearLayout>
