@@ -1,6 +1,11 @@
 {
-  "platforms": ["android"],
+  "platforms": [
+    "android"
+  ],
   "android": {
-    "modules": ["expo.modules.athan.AthanModule"]
+    "modules": [
+      "expo.modules.athan.AthanModule",
+      "expo.modules.athan.CompassModule"
+    ]
   }
 }

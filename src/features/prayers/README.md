@@ -131,6 +131,23 @@ saved in `prayers:v1` (`screen`) and sent to the module (`setScreenStyle`), whic
 screen opens. Each athan carries its screen text (`name`, `time`, `date`, `place`); athans saved
 by an earlier version show their notification's text instead.
 
+## The qibla (`qibla.ts`, `heading.ts`, `qibla-compass.tsx`, `CompassModule.kt`)
+
+The qibla is the great circle's bearing from the prayer times' place to the Kaaba (adhan's
+`Qibla`), with the distance to Makkah. The prayer times page shows it as a compass under a mihrab:
+at rest, north up and the qibla in words; with the compass on, the rose turns with the phone until
+the Kaaba stands under the mihrab, which lights up (within 3°, held until 6°). It runs only while
+the page is seen (the screen focused, the home tab shown, the app in front).
+
+The heading comes, in the Android app, from the module's `CompassModule` (`QiblaCompass`):
+Android's rotation vector (or the accelerometer and magnetometer), true north from the
+declination at the prayer times' place, so no permission is needed, and the magnetometer's
+calibration as Android reports it: when it is low, the page asks for the figure-8 movement.
+Elsewhere (iOS, Expo Go) it comes from `expo-location`'s `watchHeadingAsync`, which on Android
+needs the location permission and reports the accuracy of whichever sensor changed last (usually
+the accelerometer, always high), so it cannot tell that the compass needs calibrating; the page
+then always mentions the figure 8.
+
 ## Credits
 
 The recordings, how they were cut and their licences are in `assets/athan/README.md`. The

@@ -20,6 +20,7 @@ import { alertsSupported } from './notifications';
 import { placeName } from './place';
 import { AlertSheet, LocationSheet, useLocate } from './prayer-sheets';
 import { usePrayers, useNow } from './provider';
+import { QiblaSection } from './qibla-compass';
 import type { PrayerState } from './settings';
 import { sunPath, SunMark } from './sheet';
 import { clock, countdown, dayOf, dayTimes, PRAYERS, prayerWindow, shiftDay, type PrayerId } from './times';
@@ -30,7 +31,8 @@ type Sheet = 'location' | { alert: PrayerId };
  * The prayer times at the chosen place. The day seen through an arched window, as on the home
  * screen but the whole page's: the sun's path across the sky in the arch, the next prayer and the
  * time left under it. Then any day's six times, week by week, each with the sun's place and its
- * alert. The alerts, the athan and the calculation are in the settings' «الصلاة» tab.
+ * alert, and the qibla's compass. The alerts, the athan and the calculation are in the settings'
+ * «الصلاة» tab.
  */
 export function PrayersScreen() {
   const { palette: p } = useReadingPreferences();
@@ -47,6 +49,7 @@ export function PrayersScreen() {
       {!ready ? null : state.location ? <>
         <DayWindow />
         <DayTimes onAlert={(prayer) => setSheet({ alert: prayer })} />
+        <QiblaSection />
       </> : <LocationSetup onChoose={() => setSheet('location')} />}
       {ready && <RowGroup palette={p}>
         <Row palette={p} icon="settings" role="link" title={t('prayers.settingsLink.title')} detail={t('prayers.settingsLink.detail')}

@@ -42,6 +42,10 @@ export function useSwipeTabs<T extends string>(tabs: readonly T[], initial: T) {
 export type SwipeTabsPages<T extends string> = ReturnType<typeof useSwipeTabs<T>>['pages'];
 
 const PagerGesture = createContext<PanGesture | null>(null);
+const PageShown = createContext(true);
+
+/** Whether the page is the one shown: the pages beside it are mounted for the swipe, not seen. */
+export const usePageShown = () => useContext(PageShown);
 
 /** The pages of `useSwipeTabs`: the tab shown, with those beside it laid out to either side. */
 export function SwipePages<T extends string>({ pages, render }: { pages: SwipeTabsPages<T>; render: (tab: T) => ReactNode }) {
@@ -56,7 +60,7 @@ export function SwipePages<T extends string>({ pages, render }: { pages: SwipeTa
           return <Animated.View key={id} pointerEvents={offset ? 'none' : 'auto'} accessibilityElementsHidden={!!offset} importantForAccessibility={offset ? 'no-hide-descendants' : 'auto'}
             {...(Platform.OS === 'web' && offset ? { 'aria-hidden': true, inert: true } : {})}
             style={[StyleSheet.absoluteFill, Math.abs(offset) > 1 ? styles.hidden : { transform: [{ translateX: Animated.add(translation, -offset * (width || 360)) }] }]}>
-            {render(id)}
+            <PageShown.Provider value={!offset}>{render(id)}</PageShown.Provider>
           </Animated.View>;
         })}
       </View>

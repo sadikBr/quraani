@@ -58,6 +58,41 @@ export default {
   },
   /** The last row of the prayer times, to their settings. */
   settingsLink: { title: 'إعدادات الصلاة', detail: 'التنبيهات والأذان وطريقة الحساب' },
+  /** The qibla from the place of the prayer times: a compass whose rose turns under a mihrab. */
+  qibla: {
+    title: 'القبلة',
+    /** At rest: where the qibla lies, by the eight winds. */
+    towards: 'القبلة نحو {{wind}}',
+    winds: {
+      n: 'الشمال', ne: 'الشمال الشرقي', e: 'الشرق', se: 'الجنوب الشرقي',
+      s: 'الجنوب', sw: 'الجنوب الغربي', w: 'الغرب', nw: 'الشمال الغربي',
+    },
+    /** Under the compass: its bearing from true north, and the distance to Makkah. */
+    where: 'على ⁦{{bearing}}°⁩ من الشمال الجغرافي، وتبعد مكة المكرمة {{distance, number}} كم',
+    /** Spoken for the compass at rest. */
+    spoken: 'بوصلة القبلة. القبلة نحو {{wind}}، على {{bearing}} درجة من الشمال',
+    /** The letters of the four winds on the rose. */
+    letters: { n: 'ش', e: 'ق', s: 'ج', w: 'غ' },
+    start: 'تشغيل البوصلة',
+    stop: 'إيقاف البوصلة',
+    starting: 'جارٍ تشغيل البوصلة…',
+    /** With the compass on: which way to turn, and by how much. */
+    right: 'استدر يمينًا ⁦{{degrees}}°⁩',
+    left: 'استدر يسارًا ⁦{{degrees}}°⁩',
+    facing: 'أنت مستقبل القبلة',
+    /** With the compass on: where the phone's top points, to compare with another compass. */
+    phone: 'يتجه هاتفك إلى ⁦{{degrees}}°⁩ ({{wind}})',
+    how: 'شغّل البوصلة، ثم استدر حتى تقف الكعبة تحت المحراب.',
+    flat: 'أمسك هاتفك مستويًا، بعيدًا عن الحديد والمغناطيس.',
+    /** Where the phone cannot say whether its compass is calibrated. */
+    flatCalibrate: 'أمسك هاتفك مستويًا، بعيدًا عن الحديد والمغناطيس. إن بدا الاتجاه خاطئًا، حرّك الهاتف في الهواء على شكل الرقم 8 لمعايرة البوصلة.',
+    calibrate: 'البوصلة تحتاج إلى معايرة: حرّك هاتفك في الهواء على شكل الرقم 8.',
+    /** On Android without the app's own compass (in Expo Go), Expo's works only with the location permission. */
+    denied: 'لا تعمل البوصلة على هاتفك دون إذن الموقع. امنحه من إعدادات الهاتف ثم أعد المحاولة.',
+    settings: 'فتح إعدادات الهاتف',
+    unavailable: 'لم تصل قراءة من بوصلة الهاتف. قد لا يحتوي هاتفك على مستشعر اتجاه.',
+    phoneOnly: 'تعمل البوصلة في التطبيق على الهاتف.',
+  },
   today: {
     /** Spoken label of a row: «العصر 15:33، أذان قصير». */
     row: '{{prayer}} {{time}}، {{alert}}',
