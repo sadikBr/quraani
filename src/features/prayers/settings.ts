@@ -4,11 +4,16 @@ import { isCityId, type CityId } from './cities';
 /** What happens at a prayer's time: nothing, a notification, a notification with the takbir, or the whole athan. */
 export const ALERT_KINDS = ['off', 'notify', 'takbir', 'full'] as const;
 export type AlertKind = typeof ALERT_KINDS[number];
-/** Voices of the whole athan (`assets/athan/README.md` has each recording's source). */
-export const VOICES = ['original', 'azeez', 'azemi', 'shalqar', 'ghana', 'nigeria', 'aishatu'] as const;
+/**
+ * Voices of the whole athan (`assets/athan/README.md` has each recording's source): the athans of
+ * the three mosques first, then the muezzins.
+ */
+export const MOSQUE_VOICES = ['makkah', 'madinah', 'aqsa'] as const;
+export const MUEZZIN_VOICES = ['alafasy', 'alafasy2', 'nufais', 'zahrani', 'qatami', 'dosari', 'kurdi', 'abdulbasit', 'ozcan'] as const;
+export const VOICES = [...MOSQUE_VOICES, ...MUEZZIN_VOICES] as const;
 export type VoiceId = typeof VOICES[number];
-/** Takbir sounds of the notification: each voice's opening «الله أكبر، الله أكبر», and two takbirs alone. */
-export const TAKBIRS = ['makkah', 'medina', 'original', 'azeez', 'azemi', 'shalqar', 'ghana', 'nigeria', 'aishatu'] as const;
+/** Takbir sounds of the notification: each voice's opening «الله أكبر، الله أكبر», and a single takbir. */
+export const TAKBIRS = [...VOICES, 'single'] as const;
 export type TakbirId = typeof TAKBIRS[number];
 /** The athan's screen: photos of mosques (in the Android module's resources), then plain colours. */
 export const SCREEN_PHOTOS = ['makkah_night', 'makkah_day', 'madinah', 'madinah_night', 'aqsa', 'hassan2', 'koutoubia'] as const;
@@ -75,7 +80,7 @@ const noAdjustments: Adjustments = { fajr: 0, sunrise: 0, dhuhr: 0, asr: 0, magh
 export const defaultAlerts: Record<PrayerId, AlertKind> = { fajr: 'takbir', sunrise: 'off', dhuhr: 'takbir', asr: 'takbir', maghrib: 'takbir', isha: 'takbir' };
 export const defaultPrayerState: PrayerState = {
   version: 1, location: null, method: 'habous', madhab: 'shafi', adjustments: noAdjustments,
-  enabled: false, alerts: defaultAlerts, before: 0, voice: 'original', takbir: 'makkah', hijriOffset: 0, timesNotification: false,
+  enabled: false, alerts: defaultAlerts, before: 0, voice: 'makkah', takbir: 'makkah', hijriOffset: 0, timesNotification: false,
   screen: defaultScreen,
 };
 

@@ -97,7 +97,7 @@ describe('prayer settings', () => {
     const decoded = decodePrayers(JSON.stringify({
       location: { source: 'city', city: 'oujda', latitude: 34.68, longitude: -1.9, updated: 'x' },
       method: 'nope', madhab: 'hanafi', adjustments: { fajr: 2, isha: 99, dhuhr: 1.5 },
-      enabled: 'yes', alerts: { fajr: 'full', sunrise: 'loud' }, before: 7, voice: 'azemi', hijriOffset: -1,
+      enabled: 'yes', alerts: { fajr: 'full', sunrise: 'loud' }, before: 7, voice: 'qatami', hijriOffset: -1,
     }));
     expect(decoded.location).toEqual({ source: 'city', city: 'oujda', latitude: 34.68, longitude: -1.9, updated: 'x' });
     expect(decoded.method).toBe('habous');
@@ -105,14 +105,18 @@ describe('prayer settings', () => {
     expect(decoded.adjustments).toEqual({ fajr: 2, sunrise: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 });
     expect(decoded.enabled).toBe(false);
     expect(decoded.alerts).toEqual({ ...defaultPrayerState.alerts, fajr: 'full' });
-    expect([decoded.before, decoded.voice, decoded.hijriOffset]).toEqual([0, 'azemi', -1]);
+    expect([decoded.before, decoded.voice, decoded.hijriOffset]).toEqual([0, 'qatami', -1]);
     expect(normalizePrayers({ location: { source: 'city', city: 'atlantis', latitude: 1, longitude: 1 } }).location).toBeNull();
     expect(normalizePrayers({ location: { source: 'gps', latitude: 95, longitude: 1 } }).location).toBeNull();
-    expect(applyPrayers(defaultPrayerState, { before: 10, voice: 'azeez' })).toMatchObject({ before: 10, voice: 'azeez', method: 'habous' });
+    expect(applyPrayers(defaultPrayerState, { before: 10, voice: 'alafasy' })).toMatchObject({ before: 10, voice: 'alafasy', method: 'habous' });
     // 20 minutes is no longer offered: a reminder saved with it comes 15 minutes before, not never.
     expect([20, 30, 15, 0].map((before) => normalizePrayers({ before }).before)).toEqual([15, 30, 15, 0]);
-    expect([decoded.takbir, normalizePrayers({ takbir: 'medina' }).takbir, normalizePrayers({ takbir: 'cairo' }).takbir]).toEqual(['makkah', 'medina', 'makkah']);
-    expect(normalizePrayers({ voice: 'aishatu' }).voice).toBe('aishatu');
+    expect([decoded.takbir, normalizePrayers({ takbir: 'madinah' }).takbir, normalizePrayers({ takbir: 'single' }).takbir, normalizePrayers({ takbir: 'cairo' }).takbir]).toEqual(['makkah', 'madinah', 'single', 'makkah']);
+    expect(normalizePrayers({ voice: 'ozcan' }).voice).toBe('ozcan');
+    // A voice or takbir of the earlier recordings, which are gone, is the default again.
+    expect([normalizePrayers({ voice: 'azemi' }).voice, normalizePrayers({ takbir: 'medina' }).takbir]).toEqual(['makkah', 'makkah']);
+    // A takbir alone is not a whole athan.
+    expect(normalizePrayers({ voice: 'single' }).voice).toBe('makkah');
   });
 
   test('the prayer times notification is off until chosen, and gets whole days from today', () => {

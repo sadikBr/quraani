@@ -14,9 +14,9 @@ import { CITIES, type City } from './cities';
 import { LocateError, locate } from './location';
 import { athanSoundsSupported, fullAthanSupported } from './notifications';
 import { cityName, countryName, placeName } from './place';
-import { playPreview, stopPreview, usePreview } from './preview';
+import { playPreview, stopPreview, usePreview, type PreviewKey } from './preview';
 import { usePrayers } from './provider';
-import { ADJUSTMENT_LIMIT, TAKBIRS, VOICES, type AlertKind } from './settings';
+import { ADJUSTMENT_LIMIT, MOSQUE_VOICES, MUEZZIN_VOICES, type AlertKind, type TakbirId, type VoiceId } from './settings';
 import { PrayerSheet, SheetListHeading, SheetOption, sheetStyles, SunMark } from './sheet';
 import { alertIcons, effectiveAlert, signedMinutes } from './format';
 import { dayOf, dayTimes, METHOD_IDS, PRAYERS, type PrayerId } from './times';
@@ -125,20 +125,44 @@ function ListenButton({ name, playing, onPress }: { name: string; playing: boole
   </Pressable>;
 }
 
+/** A group of sounds on one card, under its heading (none for a group that stands first alone). */
+interface SoundGroup<Id extends string> { title?: string; ids: readonly Id[] }
+
+/**
+ * The sounds to choose from, in groups (the athans of the three mosques, then the muezzins'),
+ * each a radio with a button to listen to it.
+ */
+function SoundChoices<Id extends VoiceId | TakbirId>({ groups, chosen, name, detail, previewKey, onChoose }: {
+  groups: readonly SoundGroup<Id>[]; chosen: Id; name: (id: Id) => string; detail: (id: Id) => string;
+  previewKey: (id: Id) => PreviewKey; onChoose: (id: Id) => void;
+}) {
+  const preview = usePreview();
+  return <View accessibilityRole="radiogroup">
+    {groups.map((group, g) => <View key={group.ids[0]} style={{ marginTop: g > 0 && !group.title ? 16 : 0 }}>
+      {!!group.title && <SheetListHeading title={group.title} />}
+      {group.ids.map((id, i) => {
+        const title = name(id), key = previewKey(id), playing = preview.playing === key;
+        return <SheetOption key={id} title={title} detail={detail(id)} checked={chosen === id} first={i === 0} last={i === group.ids.length - 1}
+          onPress={() => onChoose(id)}
+          trailing={<ListenButton name={title} playing={playing} onPress={() => { if (playing) stopPreview(); else void playPreview(key); }} />} />;
+      })}
+    </View>)}
+  </View>;
+}
+
+const voiceGroups = (): SoundGroup<VoiceId>[] => [
+  { title: t('prayers.voices.groups.mosques'), ids: MOSQUE_VOICES },
+  { title: t('prayers.voices.groups.muezzins'), ids: MUEZZIN_VOICES },
+];
+
 export function VoiceSheet({ onClose }: { onClose: () => void }) {
   const { palette: p } = useReadingPreferences();
   const { state, update } = usePrayers();
   const preview = usePreview();
   const close = () => { stopPreview(); onClose(); };
   return <PrayerSheet title={t('prayers.voices.title')} subtitle={t('prayers.voices.subtitle')} onClose={close}>
-    <View accessibilityRole="radiogroup">
-      {VOICES.map((voice, i) => {
-        const name = t(`prayers.voices.${voice}.name`), key = `athan:${voice}` as const, playing = preview.playing === key;
-        return <SheetOption key={voice} title={name} detail={t(`prayers.voices.${voice}.source`)} checked={state.voice === voice} first={i === 0} last={i === VOICES.length - 1}
-          onPress={() => update({ voice })}
-          trailing={<ListenButton name={name} playing={playing} onPress={() => { if (playing) stopPreview(); else void playPreview(key); }} />} />;
-      })}
-    </View>
+    <SoundChoices<VoiceId> groups={voiceGroups()} chosen={state.voice} onChoose={(voice) => update({ voice })} previewKey={(voice) => `athan:${voice}`}
+      name={(voice) => t(`prayers.voices.${voice}.name`)} detail={(voice) => t(`prayers.voices.${voice}.source`)} />
     {preview.error && <Alert variant="destructive" palette={p}>{t('prayers.voices.playFailed')}</Alert>}
   </PrayerSheet>;
 }
@@ -148,15 +172,10 @@ export function TakbirSheet({ onClose }: { onClose: () => void }) {
   const { state, update } = usePrayers();
   const preview = usePreview();
   const close = () => { stopPreview(); onClose(); };
+  const groups: SoundGroup<TakbirId>[] = [{ ids: ['single'] }, ...voiceGroups()];
   return <PrayerSheet title={t('prayers.takbirs.title')} subtitle={t('prayers.takbirs.subtitle')} onClose={close}>
-    <View accessibilityRole="radiogroup">
-      {TAKBIRS.map((takbir, i) => {
-        const name = t(`prayers.takbirs.${takbir}.name`), key = `takbir:${takbir}` as const, playing = preview.playing === key;
-        return <SheetOption key={takbir} title={name} detail={t(`prayers.takbirs.${takbir}.source`)} checked={state.takbir === takbir} first={i === 0} last={i === TAKBIRS.length - 1}
-          onPress={() => update({ takbir })}
-          trailing={<ListenButton name={name} playing={playing} onPress={() => { if (playing) stopPreview(); else void playPreview(key); }} />} />;
-      })}
-    </View>
+    <SoundChoices<TakbirId> groups={groups} chosen={state.takbir} onChoose={(takbir) => update({ takbir })} previewKey={(takbir) => `takbir:${takbir}`}
+      name={(takbir) => t(`prayers.takbirs.${takbir}.name`)} detail={(takbir) => t(`prayers.takbirs.${takbir}.source`)} />
     {preview.error && <Alert variant="destructive" palette={p}>{t('prayers.voices.playFailed')}</Alert>}
   </PrayerSheet>;
 }

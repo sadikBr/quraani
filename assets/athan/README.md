@@ -1,123 +1,81 @@
 # Athan and takbir recordings
 
-Seven voices for the whole athan and nine takbir sounds, chosen in the prayer settings. The files:
+Twelve voices for the whole athan, and thirteen takbir sounds (the same twelve and a single
+takbir), chosen in the prayer settings. The pickers group them: the athans of the three mosques
+(`makkah`, `madinah`, `aqsa`), then the muezzins. The files:
 
 - `takbir_<id>.ogg` (this folder): the opening «الله أكبر، الله أكبر», the notification sound for
-  «تكبير». The `expo-notifications` plugin copies them into the Android app (`res/raw`), where each
-  has its own notification channel (`prayer-takbir-<id>`), since a channel keeps its sound.
+  «تكبير». The `expo-notifications` plugin copies them into the Android app (`res/raw`, listed in
+  `app.json`), where each has its own notification channel (`prayer-takbir2-<id>`), since a
+  channel keeps its sound. The channels of the earlier recordings (`prayer-takbir-<id>`,
+  `prayer-athan-<voice>`) are deleted when the app next syncs its alerts.
 - `athan_full_<voice>.ogg` (`modules/athan/android/src/main/res/raw/`): the whole athan, played by
-  the app's own Android module for «الأذان كاملًا», with its screen and a button to stop it.
+  the app's own Android module (`AthanService.kt`, which names each file so resource shrinking
+  keeps them) for «الأذان كاملًا», with its screen and a button to stop it.
 - `preview_<voice>.m4a` and `preview_takbir_<id>.m4a` (this folder): the athan's opening and each
   takbir as AAC, so the pickers can play them on every platform.
-- `athan_<voice>.ogg` (this folder, `original`, `azeez`, `azemi`): the first version's sounds for
-  «أذان قصير». Nothing new uses them; they stay one more version for the notifications scheduled
-  before an update on the old `prayer-athan-<voice>` channels, which the app deletes when it next
-  syncs its alerts. Remove them, and their lines in `app.json`, in the version after.
 
 ## How they were made
 
-`original`, `azeez`, `azemi`: the clips prepared by the Taqwa project
-(https://github.com/MohamedAbulgasem/Taqwa, `assets/audio/`, commit `7533d29`), copied unchanged:
-`athan_full_*` from its whole athans, `takbir_*` from its takbir clips. Its `assets/audio/README.md`
-records how each was cut.
+Each source was heard and measured (phrase segments, bandwidth, clipping, noise) before it was
+chosen, then cut here with ffmpeg on phrase boundaries, the same way for all:
 
-The others were cut here from the Commons originals with ffmpeg, on phrase boundaries, the same way:
-a 0.15 s fade in and a short fade out, `loudnorm=I=-16:TP=-2:LRA=11` then a limiter at −4 dBFS,
-mono 44.1 kHz, Vorbis q4 (`.ogg`) or AAC 64 kbit/s (`.m4a`). Measured afterwards: −15.6 to
-−18.7 LUFS, peaks near −3.6 dBFS. The previews of the first three voices are their Taqwa
-excerpts transcoded; every `preview_takbir_*` is its `takbir_*` transcoded.
+- whole athan: from 0.3 s before the first phrase to 2.5 s after the last;
+- takbir: the opening phrase, or its first two phrases when they are short takbirs, with a short
+  tail before the next phrase;
+- preview: the takbir, extended over the following phrases up to 34 s;
+- a 0.15 s fade in and a short fade out, two-pass `loudnorm=I=-16:TP=-2:LRA=11` (linear), then
+  `alimiter` at −4 dBFS, mono 44.1 kHz, Vorbis q3 (`.ogg`) or AAC 64 kbit/s (`.m4a`);
+- `aqsa` only: a light denoise first (`afftdn=nr=10:nf=-38:tn=1`).
 
-| Id | Whole athan (s in the source) | Takbir (s in the source) | Preview |
-|---|---|---|---|
-| `original` | Taqwa, 154.1 s | Taqwa, 15.8 s | Taqwa excerpt |
-| `azeez` | Taqwa, 86.2 s | Taqwa, 5.6 s | Taqwa excerpt |
-| `azemi` | Taqwa, 211.4 s | Taqwa, 5.2 s | Taqwa excerpt |
-| `shalqar` | 2.9–134.3 (131.4 s) | 2.9–11.5 | 2.9–27.5 |
-| `ghana` | 0.7–84.06 (83.4 s) | 0.7–7.4 | 0.7–20.2 |
-| `nigeria` | 0.1–64.89 (64.8 s) | 0.1–8.4 (its two short pairs) | 0.1–20.0 |
-| `aishatu` | 1.6–93.0 (91.4 s) | 1.6–10.8 | 1.6–28.0 |
-| `makkah` | none (the recording stops early) | 7.9–15.6 | the takbir |
-| `medina` | none (a takbir only) | 0.3–13.6 | the takbir |
+Measured afterwards: every whole athan at −16.0 ± 0.1 LUFS, peaks −3.4 to −4.7 dBFS.
 
-## Sources and licences
+| Id | Source file | Whole athan (s in the source) | Takbir (s) | Preview (s) |
+|---|---|---|---|---|
+| `makkah` | Muezzin, `Adhan - Mecca.mp3` | 0.0–204.3 | 13.6 | 28.9 |
+| `madinah` | Al-Azan, `masjid_an_nabawi.mp3` | 0.0–215.0 | 13.6 | 32.4 |
+| `aqsa` | Muezzin, `Adhan - al-Aqsa.mp3` | 0.7–251.7 | 8.3 | 27.0 |
+| `alafasy` | AlAdhan `a7` | 4.8–241.0 | 17.3 | 17.3 |
+| `alafasy2` | AlAdhan `a4` (Dubai One TV) | 0.2–214.5 | 23.2 | 23.2 |
+| `nufais` | AlAdhan `a1` | 9.5–210.1 | 16.4 | 16.4 |
+| `zahrani` | AlAdhan `a11` | 0.0–131.5 | 13.7 | 26.0 |
+| `ozcan` | AlAdhan `a2` | 0.1–232.9 | 22.0 | 22.0 |
+| `qatami` | Islamweb, «أذان ناصر القطامي» | 0.2–132.1 | 13.8 | 26.9 |
+| `dosari` | Islamweb, «أذان بصوت الشيخ ياسر الدوسري» | 0.0–175.1 | 15.2 | 34.5 |
+| `kurdi` | Islamweb, «الأذان بصوت أحمد الكوردي» | 0.0–197.5 | 15.6 | 34.5 |
+| `abdulbasit` | Al-Azan, `abdul_basit_abdus_samad.mp3` | 0.0–172.9 | 14.7 | 32.7 |
+| `single` | Muezzin, `AllahuAkbar.mp3` | none (a takbir only) | 5.9 (0.5–6.35 in the source) | the takbir |
 
-The licences are those of the recordings, not of the Taqwa code (GPL-3.0), which is not used. Where
-a licence is ShareAlike, these cut files are released under it too. The app's credits page
-(`src/features/credits/credits.ts`, route `/credits`) gives each recording's title, author, source
-link, licence link and changes, which is the attribution the CC BY licences ask for; the pickers
-repeat the licence.
+The takbir and preview columns are lengths from the athan's start. Not checked by ear yet:
+`alafasy2` may end with a short spoken du'a after the athan.
 
-### `original`: "Beautiful adhan"
+## Sources and rights
 
-- **By:** Adam-synagda, own work, via Wikimedia Commons:
-  https://commons.wikimedia.org/wiki/File:Beautiful_adhan.ogg
-- **Licence:** CC0 1.0 Universal (public domain dedication). No attribution required.
+These are well-known muezzins' recordings, chosen for their quality over the freely licensed
+field recordings used before. They are **not** under open licences:
 
-### `azeez`: "The Adhan – Muslim Call to Prayer – Aaqib Azeez"
+- **AlAdhan** (https://aladhan.com, its adhan recordings `a1`–`a11`, taken here from the copies
+  in https://github.com/ki1lux/Adhani): AlAdhan's maintainer has said on the Islamic Network
+  community forum (thread `d/255`) that its adhan audio may be used in apps. `alafasy`, `alafasy2`,
+  `nufais`, `zahrani`, `ozcan`.
+- **Islamweb** (https://audio.islamweb.net, files tagged `www.islamweb.net`, taken from the copies
+  in https://github.com/HouariZegai/PrayerTimes): no licence stated. `qatami`, `dosari`, `kurdi`.
+- **Muezzin** by DBChoco (https://github.com/DBChoco/Muezzin, `ressources/audio/`): the app's
+  code is open, its recordings carry no licence of their own. `makkah`, `aqsa`, `single`.
+- **Al-Azan** by meypod (https://github.com/meypod/al-azan-compose, `app/src/main/res/raw/`): as
+  above. `madinah`, `abdulbasit` (tagged `www.ayouby.com`).
 
-- **By:** Aaqib Azeez, uploaded by Atcovi, own work, via Wikimedia Commons:
-  https://commons.wikimedia.org/wiki/File:The_Adhan_-_Muslim_Call_to_Prayer_-_Aaqib_Azeez.mp3
-- **Licence:** Creative Commons Attribution-ShareAlike 4.0,
-  https://creativecommons.org/licenses/by-sa/4.0/
-- **Changes:** trimmed, faded and loudness-matched (by Taqwa), transcoded (here).
+The rights to all of them stay with the muezzins and their publishers. They are included at the
+app author's choice for personal use; before a store release, get the publishers' permission
+(Islamweb, the mosques' broadcasters) or replace those voices. The credits page
+(`src/features/credits/credits.ts`, route `/credits`) names each recording, its source and its
+terms («بإذن الناشر» for AlAdhan's, «الحقوق لأصحابها» for the others).
 
-### `azemi`: "Eid al-Fitr Fajr azan at Malmö Mosque – 19 August 2012"
+### Heard and left out
 
-- **By:** Islamic Center Malmö (muezzin Besim Azemi), published under YouTube's CC BY licence and
-  imported to Wikimedia Commons, where a licence reviewer confirmed it:
-  https://commons.wikimedia.org/wiki/File:Eid_al-Fitr_Fajr_azan_at_Malm%C3%B6_Mosque_-_19_August_2012.webm
-- **Licence:** Creative Commons Attribution 3.0 Unported, https://creativecommons.org/licenses/by/3.0/
-- **Changes:** the recording is a Fajr athan; the two «الصلاة خير من النوم» phrases were cut out
-  so it serves every prayer, and it ends before the salawat that follow. Trimmed, faded and
-  loudness-matched (by Taqwa), transcoded (here).
-
-### `shalqar`: "Adhan in Shalqar mosque"
-
-- **By:** Esetok, own work, via Wikimedia Commons (a video; its sound is used):
-  https://commons.wikimedia.org/wiki/File:Adhan_in_Shalqar_mosque.webm
-- **Licence:** Creative Commons Attribution-ShareAlike 4.0
-- **Changes:** sound taken from the video, trimmed, faded, loudness-matched, re-encoded.
-
-### `ghana`: "Athan during Ramadan 2"
-
-- **By:** daSupremo, own work, via Wikimedia Commons (Wiki Loves Ramadan 2026):
-  https://commons.wikimedia.org/wiki/File:Athan_during_Ramadan_2.wav
-- **Licence:** Creative Commons Attribution-ShareAlike 4.0
-- **Changes:** cut from Commons' MP3 rendering of the WAV; trimmed, faded, loudness-matched,
-  re-encoded.
-
-### `nigeria`: "Call to prayer"
-
-- **By:** Isaacayodele32, own work, via Wikimedia Commons (Wiki Loves Africa 2026):
-  https://commons.wikimedia.org/wiki/File:Call_to_prayer.ogg
-- **Licence:** Creative Commons Attribution-ShareAlike 4.0
-- **Changes:** trimmed, faded, loudness-matched, re-encoded.
-
-### `aishatu`: "Iqamah"
-
-- **By:** Aishatu98, own work, via Wikimedia Commons:
-  https://commons.wikimedia.org/wiki/File:Iqamah.ogg
-- **Licence:** CC0 1.0 Universal. No attribution required.
-- **Note:** despite its title, the recording is a whole athan (its twelve phrases, «حيّ على
-  الصلاة» twice and so on), not the iqamah.
-- **Changes:** trimmed, faded, loudness-matched, re-encoded.
-
-### `makkah` (takbir only): "AZAAN in makkah"
-
-- **By:** Seyfula Islam, published on YouTube under its CC BY licence and imported to Wikimedia
-  Commons: https://commons.wikimedia.org/wiki/File:Adhan,_Great_Mosque_of_Mecca_-_Jan_21,_2013.webm
-- **Licence:** Creative Commons Attribution 3.0 Unported
-- **Changes:** the opening takbir taken from the video's sound, faded, loudness-matched,
-  re-encoded. The recording stops before the athan ends, so it is not offered as a whole athan.
-
-### `medina` (takbir only): "Oración Al-Azzan"
-
-- **By:** B9., own work, via Wikimedia Commons:
-  https://commons.wikimedia.org/wiki/File:Oraci%C3%B3n_Al-Azzan.ogg
-- **Licence:** released into the public domain by its author.
-- **Changes:** the opening takbir, faded, loudness-matched, re-encoded.
-
-### Not used
-
-Other free recordings on Commons were heard and left out: one that repeats the `original` voice,
-and recordings of the Hassan II Mosque, the Koutoubia and Makkah (2018), noisier or incomplete.
+- Too low in quality: three TvQuran adhans (narrow band, artefacts), one Islamweb adhan with clicks
+  and clipping, an Iranian broadcast of Ragheb Mustafa Ghalwash (about 4 kHz of bandwidth), and the
+  Mihrab app's files (8 kbit/s).
+- A Fajr adhan (it has «الصلاة خير من النوم»), recordings whose muezzin is unknown, and
+  a concert piece.
+- No Moroccan muezzin's recording of usable quality was found.

@@ -11,8 +11,11 @@ export interface Credit {
   /** A licence with its text online, by its usual name. */
   licence?: string;
   licenceUrl?: string;
-  /** Otherwise its kind, named in the catalog: no licence needed, or the publisher's own terms. */
-  terms?: 'publicDomain' | 'kfgqpc';
+  /**
+   * Otherwise its kind, named in the catalog: no licence needed, the publisher's own terms, used
+   * with the publisher's leave, or no licence stated (the rights stay with their owners).
+   */
+  terms?: 'publicDomain' | 'kfgqpc' | 'permission' | 'rights';
 }
 
 const CC = {
@@ -25,6 +28,11 @@ const CC = {
 const OFL = { licence: 'SIL OFL 1.1', licenceUrl: 'https://openfontlicense.org' };
 const MIT = { licence: 'MIT', licenceUrl: 'https://opensource.org/license/mit' };
 const commons = (file: string) => `https://commons.wikimedia.org/wiki/File:${file}`;
+/** Where the athans came from: AlAdhan's recordings, Islamweb's, and two open-source athan apps. */
+const ALADHAN = 'https://aladhan.com';
+const ISLAMWEB = 'https://audio.islamweb.net';
+const MUEZZIN = 'https://github.com/DBChoco/Muezzin';
+const AL_AZAN = 'https://github.com/meypod/al-azan-compose';
 
 export const CREDIT_SECTIONS = [
   { id: 'quran', items: [
@@ -38,15 +46,19 @@ export const CREDIT_SECTIONS = [
     { id: 'hisn', work: 'Hisn al-Muslim', source: 'https://www.hisnmuslim.com' },
   ] },
   { id: 'recordings', items: [
-    { id: 'original', work: '"Beautiful adhan" by Adam-synagda', source: commons('Beautiful_adhan.ogg'), ...CC.zero },
-    { id: 'azeez', work: '"The Adhan – Muslim Call to Prayer – Aaqib Azeez", uploaded by Atcovi', source: commons('The_Adhan_-_Muslim_Call_to_Prayer_-_Aaqib_Azeez.mp3'), ...CC.bySa4 },
-    { id: 'azemi', work: '"Eid al-Fitr Fajr azan at Malmö Mosque – 19 August 2012" by Islamic Center Malmö', source: commons('Eid_al-Fitr_Fajr_azan_at_Malm%C3%B6_Mosque_-_19_August_2012.webm'), ...CC.by3 },
-    { id: 'shalqar', work: '"Adhan in Shalqar mosque" by Esetok', source: commons('Adhan_in_Shalqar_mosque.webm'), ...CC.bySa4 },
-    { id: 'ghana', work: '"Athan during Ramadan 2" by daSupremo', source: commons('Athan_during_Ramadan_2.wav'), ...CC.bySa4 },
-    { id: 'nigeria', work: '"Call to prayer" by Isaacayodele32', source: commons('Call_to_prayer.ogg'), ...CC.bySa4 },
-    { id: 'aishatu', work: '"Iqamah" by Aishatu98', source: commons('Iqamah.ogg'), ...CC.zero },
-    { id: 'makkah', work: '"AZAAN in makkah" by Seyfula Islam', source: commons('Adhan,_Great_Mosque_of_Mecca_-_Jan_21,_2013.webm'), ...CC.by3 },
-    { id: 'medina', work: '"Oración Al-Azzan" by B9.', source: commons('Oraci%C3%B3n_Al-Azzan.ogg'), terms: 'publicDomain' },
+    { id: 'makkah', work: '"Adhan - Mecca", in Muezzin by DBChoco', source: MUEZZIN, terms: 'rights' },
+    { id: 'madinah', work: '"masjid_an_nabawi", in Al-Azan by meypod', source: AL_AZAN, terms: 'rights' },
+    { id: 'aqsa', work: '"Adhan - al-Aqsa", in Muezzin by DBChoco', source: MUEZZIN, terms: 'rights' },
+    { id: 'alafasy', work: '"Another Adhan by Mishary Rashid Alafasy", AlAdhan', source: ALADHAN, terms: 'permission' },
+    { id: 'alafasy2', work: 'Adhan by Mishary Rashid Alafasy (Dubai One TV), AlAdhan', source: ALADHAN, terms: 'permission' },
+    { id: 'nufais', work: 'Adhan by Ahmad al-Nafees, AlAdhan', source: ALADHAN, terms: 'permission' },
+    { id: 'zahrani', work: 'Adhan by Mansour Al-Zahrani, AlAdhan', source: ALADHAN, terms: 'permission' },
+    { id: 'qatami', work: 'Adhan by Nasser Al-Qatami, Islamweb', source: ISLAMWEB, terms: 'rights' },
+    { id: 'dosari', work: 'Adhan by Yasser Al-Dosari, Islamweb', source: ISLAMWEB, terms: 'rights' },
+    { id: 'kurdi', work: 'Adhan by Ahmad Al-Kurdi, Islamweb', source: ISLAMWEB, terms: 'rights' },
+    { id: 'abdulbasit', work: '"abdul_basit_abdus_samad", in Al-Azan by meypod', source: AL_AZAN, terms: 'rights' },
+    { id: 'ozcan', work: 'Adhan by Hafiz Mustafa Özcan, AlAdhan', source: ALADHAN, terms: 'permission' },
+    { id: 'single', work: '"AllahuAkbar", in Muezzin by DBChoco', source: MUEZZIN, terms: 'rights' },
   ] },
   { id: 'photos', items: [
     { id: 'photoMakkahNight', work: '"Al Haram, Mecca 24231, Saudi Arabia" by TaLha Hussain (BAIG)', source: commons('Al_Haram,_Mecca_24231,_Saudi_Arabia_-_panoramio_(6).jpg'), ...CC.by3 },

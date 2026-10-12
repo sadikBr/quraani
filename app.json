@@ -54,17 +54,18 @@
           "color": "#103E35",
           "sounds": [
             "./assets/athan/takbir_makkah.ogg",
-            "./assets/athan/takbir_medina.ogg",
-            "./assets/athan/takbir_original.ogg",
-            "./assets/athan/takbir_azeez.ogg",
-            "./assets/athan/takbir_azemi.ogg",
-            "./assets/athan/takbir_shalqar.ogg",
-            "./assets/athan/takbir_ghana.ogg",
-            "./assets/athan/takbir_nigeria.ogg",
-            "./assets/athan/takbir_aishatu.ogg",
-            "./assets/athan/athan_original.ogg",
-            "./assets/athan/athan_azeez.ogg",
-            "./assets/athan/athan_azemi.ogg"
+            "./assets/athan/takbir_madinah.ogg",
+            "./assets/athan/takbir_aqsa.ogg",
+            "./assets/athan/takbir_alafasy.ogg",
+            "./assets/athan/takbir_alafasy2.ogg",
+            "./assets/athan/takbir_nufais.ogg",
+            "./assets/athan/takbir_zahrani.ogg",
+            "./assets/athan/takbir_qatami.ogg",
+            "./assets/athan/takbir_dosari.ogg",
+            "./assets/athan/takbir_kurdi.ogg",
+            "./assets/athan/takbir_abdulbasit.ogg",
+            "./assets/athan/takbir_ozcan.ogg",
+            "./assets/athan/takbir_single.ogg"
           ]
         }
       ],

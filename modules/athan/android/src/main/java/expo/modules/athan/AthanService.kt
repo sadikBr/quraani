@@ -88,14 +88,20 @@ class AthanService : Service() {
       if (audio.requestAudioFocus(request) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) return false
       focus = request
     }
+    // Each named, so that resource shrinking keeps them all.
     val resource = when (voice) {
-      "azeez" -> R.raw.athan_full_azeez
-      "azemi" -> R.raw.athan_full_azemi
-      "shalqar" -> R.raw.athan_full_shalqar
-      "ghana" -> R.raw.athan_full_ghana
-      "nigeria" -> R.raw.athan_full_nigeria
-      "aishatu" -> R.raw.athan_full_aishatu
-      else -> R.raw.athan_full_original
+      "madinah" -> R.raw.athan_full_madinah
+      "aqsa" -> R.raw.athan_full_aqsa
+      "alafasy" -> R.raw.athan_full_alafasy
+      "alafasy2" -> R.raw.athan_full_alafasy2
+      "nufais" -> R.raw.athan_full_nufais
+      "zahrani" -> R.raw.athan_full_zahrani
+      "qatami" -> R.raw.athan_full_qatami
+      "dosari" -> R.raw.athan_full_dosari
+      "kurdi" -> R.raw.athan_full_kurdi
+      "abdulbasit" -> R.raw.athan_full_abdulbasit
+      "ozcan" -> R.raw.athan_full_ozcan
+      else -> R.raw.athan_full_makkah
     }
     val created = MediaPlayer.create(this, resource, attributes, audio.generateAudioSessionId()) ?: return false
     created.setWakeMode(applicationContext, PowerManager.PARTIAL_WAKE_LOCK)

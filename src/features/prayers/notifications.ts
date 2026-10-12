@@ -38,8 +38,11 @@ function channel(id: string, options: Parameters<typeof Notifications.setNotific
   return result;
 }
 const alertChannel = () => channel('prayer-alerts', { name: t('prayers.alerts.channels.alerts'), importance: Notifications.AndroidImportance.HIGH });
-/** A channel keeps the sound it was made with, so each takbir has its own. */
-export const takbirChannelId = (takbir: TakbirId) => `prayer-takbir-${takbir}`;
+/**
+ * A channel keeps the sound it was made with, so each takbir has its own. The second set of
+ * recordings has new channels: a phone that had the first keeps those channels' old sounds.
+ */
+export const takbirChannelId = (takbir: TakbirId) => `prayer-takbir2-${takbir}`;
 const takbirChannel = (takbir: TakbirId) => channel(takbirChannelId(takbir), {
   name: t('prayers.alerts.channels.takbir', { voice: t(`prayers.takbirs.${takbir}.name`) }),
   importance: Notifications.AndroidImportance.HIGH,
@@ -47,15 +50,17 @@ const takbirChannel = (takbir: TakbirId) => channel(takbirChannelId(takbir), {
 });
 
 /**
- * The first version had a channel per voice for the athan's opening, which the takbir replaced.
- * Their sounds (`athan_<voice>.ogg`) stay in the app for one more version, for the alerts scheduled
- * before an update until the app is next opened.
+ * The channels of earlier versions, whose sounds are gone: the first version's, a channel per
+ * voice for the athan's opening (which the takbir replaced), and the first set of takbirs'
+ * (`prayer-takbir-<id>`).
  */
+const FIRST_TAKBIRS = ['makkah', 'medina', 'original', 'azeez', 'azemi', 'shalqar', 'ghana', 'nigeria', 'aishatu'];
 let retired = false;
 async function retireOldChannels() {
   if (retired || Platform.OS !== 'android' || isRunningInExpoGo()) return;
   retired = true;
   for (const voice of ['original', 'azeez', 'azemi']) await Notifications.deleteNotificationChannelAsync(`prayer-athan-${voice}`).catch(() => {});
+  for (const takbir of FIRST_TAKBIRS) await Notifications.deleteNotificationChannelAsync(`prayer-takbir-${takbir}`).catch(() => {});
 }
 
 const allowed = (permission: Awaited<ReturnType<typeof Notifications.getPermissionsAsync>>) =>

@@ -8,7 +8,7 @@ export const athanSoundsSupported = false;
 export class PrayerAlertError extends Error {
   constructor(readonly issue: 'permission' | 'unavailable') { super(issue); }
 }
-export const takbirChannelId = (takbir: TakbirId) => `prayer-takbir-${takbir}`;
+export const takbirChannelId = (takbir: TakbirId) => `prayer-takbir2-${takbir}`;
 export const athanLabels = (takbir: TakbirId): AthanLabels => ({ stop: '', channel: '', fallbackChannel: takbirChannelId(takbir), heading: '' });
 export const athanScreenText = (_state: PrayerState, _prayer: PrayerId, _time: Date) => ({ name: '', time: '', date: '', place: '' });
 export async function requestPrayerAlerts(_takbir: TakbirId): Promise<void> { throw new PrayerAlertError('unavailable'); }

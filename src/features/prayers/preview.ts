@@ -5,24 +5,33 @@ import type { TakbirId, VoiceId } from './settings';
 
 /** Each voice's opening and each takbir, bundled as AAC so they play everywhere. */
 const athans: Record<VoiceId, number> = {
-  original: require('@/assets/athan/preview_original.m4a'),
-  azeez: require('@/assets/athan/preview_azeez.m4a'),
-  azemi: require('@/assets/athan/preview_azemi.m4a'),
-  shalqar: require('@/assets/athan/preview_shalqar.m4a'),
-  ghana: require('@/assets/athan/preview_ghana.m4a'),
-  nigeria: require('@/assets/athan/preview_nigeria.m4a'),
-  aishatu: require('@/assets/athan/preview_aishatu.m4a'),
+  makkah: require('@/assets/athan/preview_makkah.m4a'),
+  madinah: require('@/assets/athan/preview_madinah.m4a'),
+  aqsa: require('@/assets/athan/preview_aqsa.m4a'),
+  alafasy: require('@/assets/athan/preview_alafasy.m4a'),
+  alafasy2: require('@/assets/athan/preview_alafasy2.m4a'),
+  nufais: require('@/assets/athan/preview_nufais.m4a'),
+  zahrani: require('@/assets/athan/preview_zahrani.m4a'),
+  qatami: require('@/assets/athan/preview_qatami.m4a'),
+  dosari: require('@/assets/athan/preview_dosari.m4a'),
+  kurdi: require('@/assets/athan/preview_kurdi.m4a'),
+  abdulbasit: require('@/assets/athan/preview_abdulbasit.m4a'),
+  ozcan: require('@/assets/athan/preview_ozcan.m4a'),
 };
 const takbirs: Record<TakbirId, number> = {
   makkah: require('@/assets/athan/preview_takbir_makkah.m4a'),
-  medina: require('@/assets/athan/preview_takbir_medina.m4a'),
-  original: require('@/assets/athan/preview_takbir_original.m4a'),
-  azeez: require('@/assets/athan/preview_takbir_azeez.m4a'),
-  azemi: require('@/assets/athan/preview_takbir_azemi.m4a'),
-  shalqar: require('@/assets/athan/preview_takbir_shalqar.m4a'),
-  ghana: require('@/assets/athan/preview_takbir_ghana.m4a'),
-  nigeria: require('@/assets/athan/preview_takbir_nigeria.m4a'),
-  aishatu: require('@/assets/athan/preview_takbir_aishatu.m4a'),
+  madinah: require('@/assets/athan/preview_takbir_madinah.m4a'),
+  aqsa: require('@/assets/athan/preview_takbir_aqsa.m4a'),
+  alafasy: require('@/assets/athan/preview_takbir_alafasy.m4a'),
+  alafasy2: require('@/assets/athan/preview_takbir_alafasy2.m4a'),
+  nufais: require('@/assets/athan/preview_takbir_nufais.m4a'),
+  zahrani: require('@/assets/athan/preview_takbir_zahrani.m4a'),
+  qatami: require('@/assets/athan/preview_takbir_qatami.m4a'),
+  dosari: require('@/assets/athan/preview_takbir_dosari.m4a'),
+  kurdi: require('@/assets/athan/preview_takbir_kurdi.m4a'),
+  abdulbasit: require('@/assets/athan/preview_takbir_abdulbasit.m4a'),
+  ozcan: require('@/assets/athan/preview_takbir_ozcan.m4a'),
+  single: require('@/assets/athan/preview_takbir_single.m4a'),
 };
 
 /** What is playing: `athan:<voice>` or `takbir:<id>`. */
