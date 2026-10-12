@@ -11,7 +11,10 @@ import { useQuranFont } from '../../hooks/use-quran-font';
 import { useReadingPosition } from '../../hooks/use-reading-position';
 import { deferPrintedPagePreparation, getCachedPrintedPage, preloadPrintedPages, setPrintedPageInteraction, waitForPagePreparation } from '../../services/printed-page-service';
 import { preloadPrintedImage } from '../../services/printed-page-render';
-import { preloadPageNumbers, swipePageDelta } from '../../utils/navigation';
+import { ayahDestination, preloadPageNumbers, swipePageDelta } from '../../utils/navigation';
+import { paginateByThumun, readerPaging, thumunName } from '../../utils/thumun-pages';
+import { RIWAYAT } from '../../riwayat';
+import type { ReaderPaging } from '../../types/reader';
 import { AyahActionSheet } from './ayah-action-sheet';
 import { ayahKey } from '../../utils/references';
 import type { Ayah, AyahReference } from '@/lib/quranpedia/types';
@@ -34,16 +37,20 @@ import { useListen, useWholeSurahs } from '@/features/recitation/use-listen';
 import { t } from '@/i18n';
 
 export function ReaderScreen() {
-  const { preferences: { riwayah } } = useReadingPreferences();
-  const { plan, planCycle, planSlot } = useLocalSearchParams<{ plan?: string; planCycle?: string; planSlot?: string }>();
   // Under the settings, the pages are not laid out again at every step of a size or letter change.
   const focused = useIsFocused();
-  return <HoldTextPreferences held={!focused}>
-    <RiwayahReaderScreen key={`${riwayah}:${plan ?? ''}:${planCycle ?? ''}:${planSlot ?? ''}`} />
-  </HoldTextPreferences>;
+  return <HoldTextPreferences held={!focused}><PagedReaderScreen /></HoldTextPreferences>;
 }
 
-function RiwayahReaderScreen() {
+/** A reader per riwayah, goal reading and paging (taken with the text choices it is shown in). */
+function PagedReaderScreen() {
+  const { preferences } = useReadingPreferences();
+  const { plan, planCycle, planSlot } = useLocalSearchParams<{ plan?: string; planCycle?: string; planSlot?: string }>();
+  const paging = readerPaging(preferences, !!plan);
+  return <RiwayahReaderScreen key={`${preferences.riwayah}:${paging}:${plan ?? ''}:${planCycle ?? ''}:${planSlot ?? ''}`} paging={paging} />;
+}
+
+function RiwayahReaderScreen({ paging }: { paging: ReaderPaging }) {
   const focused = useIsFocused();
   const insets = useSafeAreaInsets();
   // Initial metrics can precede Android's camera-cutout measurement. Accept later
@@ -58,6 +65,11 @@ function RiwayahReaderScreen() {
   const bottomInset = Platform.OS === 'web' ? insets.bottom : reservedInsets.bottom;
   const { surah: targetSurah, ayah: targetAyah, plan: planId, planCycle, planSlot } = useLocalSearchParams<{ surah?: string; ayah?: string; plan?: string; planCycle?: string; planSlot?: string }>();
   const { content, error, refresh } = useReaderContent();
+  // What the reader pages: the content, or (Warsh) its view a thumun to a page. The rest of the app,
+  // goal readings and listening keep the mushaf's pages.
+  const data = useMemo(() => content && paging === 'thumun' && content.data.quran.id === RIWAYAT.warsh.mushafId
+    ? paginateByThumun(content.data) : content?.data, [content, paging]);
+  const thumun = data?.paging === 'thumun';
   const { plans, ready: plansReady, today, error: plansError, retry: retryPlans } = usePlans();
   const plan = plans.find(p => p.id === planId);
   const reading = useMemo(() => {
@@ -68,9 +80,9 @@ function RiwayahReaderScreen() {
   }, [planId, plansReady, content, plan, planCycle, planSlot, today]);
   const session = reading.session;
   const planActions = usePlanReadingActions(session);
-  const readerPages = session?.pages ?? content?.data.pages;
+  const readerPages = session?.pages ?? data?.pages;
   const firstPage = session?.firstPage ?? 1;
-  const lastPageNumber = session?.lastPage ?? content?.data.pages.at(-1)?.number ?? 604;
+  const lastPageNumber = session?.lastPage ?? data?.pages.at(-1)?.number ?? 604;
   const font = useQuranFont();
   const { preferences: { mode, textLayout, fontSize, spacious, tajweed, riwayah, repeat }, palette, dark } = useReadingPreferences();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -81,7 +93,7 @@ function RiwayahReaderScreen() {
   const practiceScrollY = useRef(0);
   const readingScrollY = useRef(0);
   const practiceOffsets = useRef(new Map<string, number>());
-  const { position, ready: positionReady, move, selectAyah, setScroll, recordScroll } = useReadingPosition(planId ? session?.content : content?.data);
+  const { position, ready: positionReady, carried, move, selectAyah, setScroll, recordScroll } = useReadingPosition(planId ? session?.content : data, content?.data);
   // Callbacks handed to the memoized pages read the latest position here, so a
   // debounced scroll commit does not give them new identities and re-render
   // every mounted page.
@@ -153,7 +165,7 @@ function RiwayahReaderScreen() {
     practiceScrollY.current = Math.max(0, y + contentTop + openingOffset - toolbarHeight - 12);
     scroll.current?.scrollTo({ y: practiceScrollY.current, animated: !reduceMotion });
   }, [practiceTargetKey, reduceMotion, mode, toolbarHeight, session, pageNumber, firstPage]);
-  const totalPages = content?.data.pages.length ?? 604;
+  const totalPages = data?.pages.length ?? 604;
   const overlayOpen = drawerOpen || !!actionAyah;
   const immersive = ready && !actionsVisible && !overlayOpen;
   const recitation = useRecitation();
@@ -194,22 +206,31 @@ function RiwayahReaderScreen() {
   }, [pageNumber, ready]);
   useEffect(() => {
     if (!ready || !content || (!targetSurah && !targetAyah)) return;
-    const target = indexRouteDestination(session?.content ?? content.data, targetSurah, targetAyah);
+    const target = indexRouteDestination(session?.content ?? data!, targetSurah, targetAyah);
     // Apply an external Router command once the saved reader position is ready.
     if (target) {
-      const pageStart = content.data.pages.find(p => p.number === target.pageNumber)?.ayahs[0];
+      const pageStart = data!.pages.find(p => p.number === target.pageNumber)?.ayahs[0];
       const beginsPage = session && pageStart && ayahKey(pageStart) === ayahKey(target);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       navigate(target.pageNumber, beginsPage ? undefined : target);
     }
     // Consume the jump so subsequent reloads restore the latest reading position.
     router.setParams({ surah: undefined, ayah: undefined });
-  }, [ready, content, session, targetSurah, targetAyah, navigate]);
+  }, [ready, content, data, session, targetSurah, targetAyah, navigate]);
+  // A position carried over from the other paging opens at its selected ayah.
+  const carriedTo = useRef(false);
+  useEffect(() => {
+    if (!ready || !carried || carriedTo.current || !position.ayah) return;
+    carriedTo.current = true;
+    navigate(position.pageNumber, position.ayah);
+  }, [ready, carried, position, navigate]);
   // The page follows the recitation: the ayah being recited is selected, on its own page.
   // An open sheet or index is left alone; the page catches up once it closes.
   const recitedSurah = listening ? recitation.current?.surahNumber : undefined;
   const recitedAyah = listening ? recitation.current?.ayahNumber : undefined;
-  const recitedPage = listening ? recitation.current?.pageNumber : undefined;
+  // Its page as this reader pages it (the recitation's own pages are the mushaf's).
+  const recitedPage = recitedSurah !== undefined && recitedAyah !== undefined && data
+    ? ayahDestination(session?.content ?? data, recitedSurah, recitedAyah)?.pageNumber : undefined;
   useEffect(() => {
     if (!ready || overlayOpen || quranId === undefined || recitedSurah === undefined || recitedAyah === undefined || recitedPage === undefined) return;
     const ayah = { mushafId: quranId, surahNumber: recitedSurah, ayahNumber: recitedAyah };
@@ -457,6 +478,7 @@ function RiwayahReaderScreen() {
         previous={readerPages?.find((value) => value.number === displayNumber - 1)}
         next={readerPages?.find((value) => value.number === displayNumber + 1)}
         pageLabel={session ? t('reader.screen.sessionPage', { index: displayNumber - firstPage + 1, total: session.pages.length, page: displayNumber }) : undefined}
+        pageName={thumun ? thumunName(displayNumber) : undefined}
         topInset={topInset} toolbarHeight={toolbarHeight} onToolbarHeight={setToolbarHeight}
         bottomInset={bottomInset} practiceActive={practicing}
         planControls={session ? <PlanReadingControls session={session} pageNumber={displayNumber} actions={planActions} /> : undefined}
@@ -469,8 +491,9 @@ function RiwayahReaderScreen() {
       </Animated.View>;
       })}
       </View>
-      {actionAyah && content && <AyahActionSheet key={ayahKey(actionAyah)} ayah={actionAyah} quran={content.data.quran} palette={palette} onClose={() => setActionAyah(null)} onListen={listenFrom} wholeSurah={wholeSurahs} />}
-      {drawerOpen && <ReaderDrawer content={session?.content ?? content?.data} limited={!!session} currentPage={pageNumber} onJump={navigate} onClose={() => setDrawerOpen(false)} palette={palette} />}
+      {actionAyah && content && <AyahActionSheet key={ayahKey(actionAyah)} ayah={actionAyah} quran={content.data.quran} palette={palette} onClose={() => setActionAyah(null)} onListen={listenFrom} wholeSurah={wholeSurahs}
+        location={thumun ? t('reader.thumun.ayahLocation', { ayah: actionAyah.ayahNumber, position: thumunName(actionAyah.pageNumber) }) : undefined} />}
+      {drawerOpen && <ReaderDrawer content={session?.content ?? data} limited={!!session} currentPage={pageNumber} onJump={navigate} onClose={() => setDrawerOpen(false)} palette={palette} />}
     </SafeAreaView>
   );
 }

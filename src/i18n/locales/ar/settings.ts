@@ -27,6 +27,11 @@ export default {
     title: 'طريقة القراءة',
     page: { label: 'صفحات المصحف', detail: 'كالمصحف المطبوع' },
     text: { label: 'النص القرآني', detail: 'بالحجم الذي يناسبك' },
+    /** Warsh in the text view: one page per thumun (eighth of a hizb) instead of the mushaf's pages. */
+    thumun: {
+      label: 'صفحة لكل ثمن',
+      detail: 'تُقسَّم القراءة إلى {{count, number}} صفحة: لكل ثمن صفحته، تُعرَف بحزبها وثمنها.',
+    },
   },
   textLayout: {
     title: 'عرض الآيات',

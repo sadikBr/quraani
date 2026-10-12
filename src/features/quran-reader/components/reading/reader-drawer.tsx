@@ -9,6 +9,7 @@ import type { ReaderPalette } from '../../theme';
 import type { ReaderContent } from '../../types/reader';
 import type { AyahReference } from '@/lib/quranpedia/types';
 import { ReaderJump } from './reader-jump';
+import { thumunName } from '../../utils/thumun-pages';
 import { ReaderIcon } from '../ui/reader-chrome';
 import { t } from '@/i18n';
 
@@ -52,7 +53,8 @@ export function ReaderDrawer({ onClose, palette, content, currentPage, onJump, l
               <IconTile name="jump" palette={palette} />
               <View style={styles.title}>
                 <Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 18, fontWeight: '600' }}>{limited ? t('reader.drawer.titleSession') : t('reader.drawer.title')}</Text>
-                <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('reader.drawer.currentPosition', { riwayah: content?.quran.riwayah.name ?? '', page: currentPage })}</Text>
+                <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{content?.paging === 'thumun' ? t('reader.thumun.currentPosition', { riwayah: content.quran.riwayah.name, position: thumunName(currentPage) })
+                  : t('reader.drawer.currentPosition', { riwayah: content?.quran.riwayah.name ?? '', page: currentPage })}</Text>
               </View>
               <Pressable ref={close} accessibilityRole="button" accessibilityLabel={t('reader.drawer.close')} onPress={onClose}
                 hitSlop={4} style={({ pressed }) => [styles.close, { backgroundColor: pressed ? palette.accent : 'transparent' }]}><ReaderIcon name="close" color={palette.mutedForeground} size={18} /></Pressable>

@@ -5,7 +5,7 @@ import { readerThemeOptions, readerThemes, resolveReaderTheme } from '../src/fea
 test('every theme survives preference storage without losing reading settings', () => {
   for (const { id } of readerThemeOptions) {
     const saved = { appearance: id, mode: 'text', textLayout: 'flowing', fontSize: 36, spacious: true };
-    expect(decodeReadingPreferences(JSON.stringify(saved))).toEqual({ riwayah: 'warsh', tajweed: false, reciters: {}, repeat: 1, listening: 'ayah', surahReciters: {}, surahRepeat: 1, warshScript: 'maghribi', ...saved });
+    expect(decodeReadingPreferences(JSON.stringify(saved))).toEqual({ riwayah: 'warsh', tajweed: false, reciters: {}, repeat: 1, listening: 'ayah', surahReciters: {}, surahRepeat: 1, warshScript: 'maghribi', thumunPages: false, ...saved });
   }
   for (const appearance of ['toString', '__proto__', 'constructor', {}, null]) {
     expect(decodeReadingPreferences(JSON.stringify({ appearance })).appearance).toBe('system');

@@ -22,8 +22,10 @@ import { calligraphyStyle, surahNameGlyph } from '../../utils/reader-typography'
 import { formatList, t } from '@/i18n';
 import { useSurahFollows } from '@/features/recitation/use-listen';
 
-export function AyahActionSheet({ ayah, quran, palette, onClose, onListen, wholeSurah = false }: {
+export function AyahActionSheet({ ayah, quran, palette, onClose, onListen, wholeSurah = false, location }: {
   ayah: Ayah; quran: Quran; palette: ReaderPalette; onClose: () => void;
+  /** Where the ayah is, when not by its page ("الآية 5 · الحزب 2 · الثمن 1"). */
+  location?: string;
   /** Listen from this ayah onward, or repeat this ayah alone (`single`). */
   onListen?: (ayah: Ayah, single: boolean) => void;
   /** Listening onward plays the surah's whole recording (repeating the ayah stays ayah by ayah). */
@@ -65,7 +67,7 @@ export function AyahActionSheet({ ayah, quran, palette, onClose, onListen, whole
               style={[styles.surah, { color: palette.ornament }]}>
               {surahNameGlyph(ayah.surahNumber)}
             </Text>
-            <Text style={[styles.reference, { color: palette.mutedForeground }]}>{t('reader.ayah.location', { ayah: ayah.ayahNumber, page: ayah.pageNumber })}</Text>
+            <Text style={[styles.reference, { color: palette.mutedForeground }]}>{location ?? t('reader.ayah.location', { ayah: ayah.ayahNumber, page: ayah.pageNumber })}</Text>
           </View>
           <Pressable ref={close} accessibilityRole="button" accessibilityLabel={t('reader.actions.close')} onPress={onClose}
             hitSlop={4} style={({ pressed }) => [styles.close, { backgroundColor: pressed ? palette.accent : 'transparent' }]}>

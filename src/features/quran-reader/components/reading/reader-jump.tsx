@@ -9,6 +9,8 @@ import type { ReaderPalette } from '../../theme';
 import { ayahDestination, parseReaderNumber } from '../../utils/navigation';
 import { pageDivisions } from '../../utils/page-divisions';
 import { normalizeArabicSearch } from '../../utils/search';
+import { thumunName } from '../../utils/thumun-pages';
+import { eighthInHizb } from '../../utils/warsh-eighths';
 import { ReaderIcon } from '../ui/reader-chrome';
 import { LibrarySearch } from '../ui/library-chrome';
 import { formatList, formatNumber, t } from '@/i18n';
@@ -16,6 +18,7 @@ import { formatList, formatNumber, t } from '@/i18n';
 /**
  * Quick navigation, to a page or to an ayah. The surah is chosen from a list of the available
  * surahs (`picking`), shown in place of the form; `onReveal` scrolls the chosen one into view.
+ * Paged by thumun, a page is chosen by its hizb and thumun.
  */
 export function ReaderJump({ content, currentPage, palette: p, onJump, limited = false, picking, onPickingChange, onReveal }: {
   content: ReaderContent; currentPage: number; palette: ReaderPalette; onJump: (page: number, ayah?: AyahReference) => void; limited?: boolean;
@@ -24,19 +27,28 @@ export function ReaderJump({ content, currentPage, palette: p, onJump, limited =
   const initialAyah = (content.pages.find(value => value.number === currentPage) ?? content.pages[0]).ayahs[0] ?? content.quran.surahs[0].ayahs[0];
   const [kind, setKind] = useState<'page' | 'ayah'>('page');
   const [page, setPage] = useState(String(currentPage));
+  const thumun = content.paging === 'thumun';
+  const [hizb, setHizb] = useState(String(eighthInHizb(currentPage).hizb));
+  const [eighth, setEighth] = useState(String(eighthInHizb(currentPage).thumun));
   const [surah, setSurah] = useState(String(initialAyah.surahNumber));
   const [ayah, setAyah] = useState(String(initialAyah.ayahNumber));
   const [error, setError] = useState('');
   const firstPage = content.pages[0].number, lastPage = content.pages.at(-1)!.number;
-  const pageIndex = content.pages.findIndex(value => value.number === parseReaderNumber(page));
+  const firstHizb = eighthInHizb(firstPage).hizb, lastHizb = eighthInHizb(lastPage).hizb;
+  const typedEighth = parseReaderNumber(eighth);
+  const typedPage = !thumun ? parseReaderNumber(page) : typedEighth >= 1 && typedEighth <= 8 ? (parseReaderNumber(hizb) - 1) * 8 + typedEighth : NaN;
+  const pageIndex = content.pages.findIndex(value => value.number === typedPage);
   const selectedSurah = content.quran.surahs.find(value => value.number === parseReaderNumber(surah));
   const targetAyah = ayahDestination(content, parseReaderNumber(surah), parseReaderNumber(ayah));
   const destinationPage = kind === 'page' ? content.pages[pageIndex] : content.pages.find(value => value.number === targetAyah?.pageNumber);
   const surahNumbers = kind === 'ayah' ? [targetAyah?.surahNumber] : [...new Set(destinationPage?.ayahs.map(value => value.surahNumber) ?? [])];
   const destinationName = formatList(content.quran.surahs.filter(value => surahNumbers.includes(value.number)).map(value => value.name));
   const divisions = destinationPage ? pageDivisions(destinationPage) : undefined;
-  const previewDetail = kind === 'ayah' && targetAyah ? t('reader.ayah.location', { ayah: targetAyah.ayahNumber, page: targetAyah.pageNumber })
-    : [divisions?.juz.length ? t('reader.divisions.juz', { juz: formatList(divisions.juz.map(String)) }) : '', divisions?.quarters.length ? t('reader.divisions.hizb', { hizb: formatList([...new Set(divisions.quarters.map(value => value.hizb))].map(String)) }) : ''].filter(Boolean).join(' · ');
+  const previewDetail = kind === 'ayah' && targetAyah ? thumun ? t('reader.thumun.ayahLocation', { ayah: targetAyah.ayahNumber, position: thumunName(targetAyah.pageNumber) })
+    : t('reader.ayah.location', { ayah: targetAyah.ayahNumber, page: targetAyah.pageNumber })
+    : [divisions?.juz.length ? t('reader.divisions.juz', { juz: formatList(divisions.juz.map(String)) }) : '',
+      thumun && destinationPage ? thumunName(destinationPage.number)
+        : divisions?.quarters.length ? t('reader.divisions.hizb', { hizb: formatList([...new Set(divisions.quarters.map(value => value.hizb))].map(String)) }) : ''].filter(Boolean).join(' · ');
   const pageHint = t(limited ? 'reader.jump.sessionPages' : 'reader.jump.range', { first: firstPage, last: lastPage });
   const ayahHint = selectedSurah ? t('reader.jump.range', { first: selectedSurah.ayahs[0].ayahNumber, last: selectedSurah.ayahs.at(-1)!.ayahNumber }) : t('reader.jump.chooseSurahFirst');
   const change = (setter: (value: string) => void) => (value: string) => { setter(value); setError(''); };
@@ -59,7 +71,7 @@ export function ReaderJump({ content, currentPage, palette: p, onJump, limited =
   };
   const submit = () => {
     if (kind === 'page') {
-      if (!destinationPage) { setError(t('reader.jump.pageError', { first: firstPage, last: lastPage })); return; }
+      if (!destinationPage) { setError(thumun ? t('reader.thumun.error', { firstHizb, lastHizb }) : t('reader.jump.pageError', { first: firstPage, last: lastPage })); return; }
       Keyboard.dismiss(); onJump(destinationPage.number);
     } else {
       if (!targetAyah) { setError(limited ? t('reader.jump.sessionAyahError') : t('reader.jump.ayahError')); return; }
@@ -68,14 +80,17 @@ export function ReaderJump({ content, currentPage, palette: p, onJump, limited =
   };
   const stepPage = (delta: number) => {
     const next = pageIndex >= 0 ? content.pages[pageIndex + delta] : undefined;
-    if (next) change(setPage)(String(next.number));
+    if (!next) return;
+    change(setPage)(String(next.number));
+    setHizb(String(eighthInHizb(next.number).hizb)); setEighth(String(eighthInHizb(next.number).thumun));
   };
-  if (picking) return <SurahPicker surahs={content.quran.surahs} selected={selectedSurah?.number} limited={limited} palette={p}
+  if (picking) return <SurahPicker surahs={content.quran.surahs} selected={selectedSurah?.number} limited={limited} palette={p} pageName={thumun ? thumunName : undefined}
     onChoose={chooseSurah} onBack={() => { Keyboard.dismiss(); onPickingChange(false); }} onReveal={onReveal} />;
-  const actionLabel = destinationPage ? kind === 'page' ? t('reader.jump.toPage', { page: destinationPage.number }) : t('reader.jump.toAyah', { ayah: targetAyah!.ayahNumber }) : t('reader.jump.toDestination');
+  const actionLabel = destinationPage ? kind === 'page' ? thumun ? t('reader.thumun.to', { position: thumunName(destinationPage.number) }) : t('reader.jump.toPage', { page: destinationPage.number })
+    : t('reader.jump.toAyah', { ayah: targetAyah!.ayahNumber }) : t('reader.jump.toDestination');
   return <View style={s.form}>
     <View accessibilityRole="tablist" accessibilityLabel={t('reader.jump.method')} style={[s.tabs, { borderColor: p.border }]}>
-      {([{ value: 'page', label: t('reader.jump.byPage'), icon: 'book' }, { value: 'ayah', label: t('reader.jump.byAyah'), icon: 'lines' }] as const).map(option => {
+      {([{ value: 'page', label: thumun ? t('reader.thumun.byThumun') : t('reader.jump.byPage'), icon: 'book' }, { value: 'ayah', label: t('reader.jump.byAyah'), icon: 'lines' }] as const).map(option => {
         const selected = kind === option.value;
         return <Pressable key={option.value} accessibilityRole="tab" accessibilityLabel={option.label} accessibilityState={{ selected }} aria-selected={selected}
           onPress={() => { Keyboard.dismiss(); setKind(option.value); setError(''); }}
@@ -86,9 +101,12 @@ export function ReaderJump({ content, currentPage, palette: p, onJump, limited =
       })}
     </View>
     {kind === 'page' ? <View style={s.pagePicker}>
-      <PageStep label={t('reader.jump.increasePage')} plus disabled={pageIndex < 0 || pageIndex === content.pages.length - 1} palette={p} onPress={() => stepPage(1)} />
-      <NumberField label={t('reader.jump.pageNumber')} value={page} onChange={change(setPage)} hint={pageHint} palette={p} onSubmit={submit} large />
-      <PageStep label={t('reader.jump.decreasePage')} disabled={pageIndex <= 0} palette={p} onPress={() => stepPage(-1)} />
+      <PageStep label={thumun ? t('reader.thumun.next') : t('reader.jump.increasePage')} plus disabled={pageIndex < 0 || pageIndex === content.pages.length - 1} palette={p} onPress={() => stepPage(1)} />
+      {thumun ? <>
+        <NumberField label={t('reader.thumun.hizb')} value={hizb} onChange={change(setHizb)} hint={t('reader.jump.range', { first: firstHizb, last: lastHizb })} palette={p} onSubmit={submit} large />
+        <NumberField label={t('reader.thumun.thumun')} value={eighth} onChange={change(setEighth)} hint={t('reader.jump.range', { first: 1, last: 8 })} palette={p} onSubmit={submit} large />
+      </> : <NumberField label={t('reader.jump.pageNumber')} value={page} onChange={change(setPage)} hint={pageHint} palette={p} onSubmit={submit} large />}
+      <PageStep label={thumun ? t('reader.thumun.previous') : t('reader.jump.decreasePage')} disabled={pageIndex <= 0} palette={p} onPress={() => stepPage(-1)} />
     </View> : <View style={s.ayahFields}>
       <SurahField ref={surahField} surah={selectedSurah} hint={limited ? t('reader.jump.withinSession') : selectedSurah ? t('reader.jump.surahHint', { number: selectedSurah.number }) : ''}
         palette={p} onPress={() => { Keyboard.dismiss(); onPickingChange(true); }} />
@@ -101,7 +119,7 @@ export function ReaderJump({ content, currentPage, palette: p, onJump, limited =
         <Text style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{destinationName || t('reader.jump.chooseDestination')}</Text>
         {!!previewDetail && <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{previewDetail}</Text>}
       </View>
-      {destinationPage && <View style={[s.pageBadge, { borderColor: p.border }]}><Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center' }}>{t('reader.jump.page')}</Text><Text style={{ color: p.foreground, fontSize: 21, textAlign: 'center' }}>{destinationPage.number}</Text></View>}
+      {destinationPage && !thumun && <View style={[s.pageBadge, { borderColor: p.border }]}><Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center' }}>{t('reader.jump.page')}</Text><Text style={{ color: p.foreground, fontSize: 21, textAlign: 'center' }}>{destinationPage.number}</Text></View>}
     </View>
     {!!error && <Text accessibilityRole="alert" style={{ color: p.destructive, fontSize: 13 }}>{error}</Text>}
     <Button palette={p} size="lg" label={actionLabel} onPress={submit} iconEnd="chevron" block>{actionLabel}</Button>
@@ -141,8 +159,10 @@ function SurahField({ surah, hint, palette: p, onPress, ref }: { surah?: Surah; 
 }
 
 /** The available surahs (all, or those of the goal session), searchable by name or number. */
-function SurahPicker({ surahs, selected, limited, palette: p, onChoose, onBack, onReveal }: {
+function SurahPicker({ surahs, selected, limited, palette: p, onChoose, onBack, onReveal, pageName = (page) => t('reader.jump.startPage', { page }) }: {
   surahs: Surah[]; selected?: number; limited: boolean; palette: ReaderPalette; onChoose: (number: number) => void; onBack: () => void; onReveal: (y: number) => void;
+  /** Where a surah starts: its page, or its thumun. */
+  pageName?: (page: number) => string;
 }) {
   const [query, setQuery] = useState('');
   const back = useRef<View>(null);
@@ -178,7 +198,7 @@ function SurahPicker({ surahs, selected, limited, palette: p, onChoose, onBack, 
           </View>
           <View style={s.grow}>
             <Text style={{ color: p.foreground, fontSize: 16, fontWeight: current ? '600' : '400' }}>{value.name}</Text>
-            <Text style={{ color: p.mutedForeground, fontSize: 12 }}>{t('reader.jump.ayahs', { count: value.ayahs.length })} · {t('reader.jump.startPage', { page: value.ayahs[0].pageNumber })}</Text>
+            <Text style={{ color: p.mutedForeground, fontSize: 12 }}>{t('reader.jump.ayahs', { count: value.ayahs.length })} · {pageName(value.ayahs[0].pageNumber)}</Text>
           </View>
           {current && <ReaderIcon name="done" size={18} color={p.primary} />}
         </Pressable>;

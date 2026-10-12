@@ -1,12 +1,19 @@
 import { printedPageAyah } from './printed-page-ayahs';
 import type { AyahReference } from '@/lib/quranpedia/types';
-import type { ReaderContent } from '../types/reader';
+import type { ReaderContent, ReaderPaging } from '../types/reader';
 
 export interface ReadingPosition {
   mushafId: number;
   pageNumber: number;
   ayah: AyahReference | null;
   scrollY: number;
+  /** Saved while the reader was paged by thumun (its page is then an eighth); unset: by the mushaf's pages. */
+  paging?: 'thumun';
+}
+
+/** The paging a saved position was recorded in. */
+export function savedPaging(raw: string | null): ReaderPaging {
+  try { return JSON.parse(raw ?? 'null')?.paging === 'thumun' ? 'thumun' : 'mushaf'; } catch { return 'mushaf'; }
 }
 
 export function parseReaderNumber(value: string): number {
@@ -19,12 +26,27 @@ export function ayahDestination(content: ReaderContent, surah: number, ayah: num
   return content.quran.surahs.find((value) => value.number === surah)?.ayahs.find((value) => value.ayahNumber === ayah);
 }
 
-export function restoreReadingPosition(raw: string | null, content: ReaderContent): ReadingPosition {
+/**
+ * The saved reading position, in `content`'s pages. A position saved in the other paging (by the
+ * mushaf's pages or by thumun) is carried over by its ayah: the selected one, or else the first of
+ * its page there (`pageStart`), and starts at the top of the page holding it.
+ */
+export function restoreReadingPosition(raw: string | null, content: ReaderContent,
+  pageStart?: (paging: ReaderPaging, page: number) => AyahReference | undefined): ReadingPosition {
   const fallback: ReadingPosition = { mushafId: content.quran.id, pageNumber: content.pages[0].number, ayah: null, scrollY: 0 };
   try {
     const saved = JSON.parse(raw ?? 'null');
-    if (saved?.mushafId !== content.quran.id || !content.pages.some((page) => page.number === saved.pageNumber)) return fallback;
+    if (saved?.mushafId !== content.quran.id) return fallback;
     const target = saved.ayah?.mushafId === content.quran.id ? ayahDestination(content, saved.ayah.surahNumber, saved.ayah.ayahNumber) : undefined;
+    const from = savedPaging(raw);
+    if (from !== (content.paging ?? 'mushaf')) {
+      const start = Number.isSafeInteger(saved.pageNumber) ? pageStart?.(from, saved.pageNumber) : undefined;
+      const anchor = target ?? (start && ayahDestination(content, start.surahNumber, start.ayahNumber));
+      if (!anchor) return fallback;
+      return { mushafId: content.quran.id, pageNumber: anchor.pageNumber, scrollY: 0,
+        ayah: target ? { mushafId: content.quran.id, surahNumber: target.surahNumber, ayahNumber: target.ayahNumber } : null };
+    }
+    if (!content.pages.some((page) => page.number === saved.pageNumber)) return fallback;
     const savedPage = content.pages.find((page) => page.number === saved.pageNumber)!;
     const onSavedPage = target && printedPageAyah(savedPage, target);
     return { mushafId: content.quran.id, pageNumber: onSavedPage ? saved.pageNumber : target?.pageNumber ?? saved.pageNumber,

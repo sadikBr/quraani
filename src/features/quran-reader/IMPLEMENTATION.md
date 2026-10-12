@@ -251,10 +251,32 @@ opens them the same way; bookmark keys are persisted separately from position.
 Quranpedia's Warsh edition tags `juz`/`hizb` by ayah number, as if Warsh ayahs
 were Hafs ayahs with the same number (Warsh 2:142 carries the tag of Hafs 2:142),
 so every division after a numbering difference is one or more ayahs late.
-`utils/divisions.ts` recomputes both tags from each ayah's `number_in_hafs` and the
-standard 240 Hafs quarter starts, so divisions follow the text in every riwayah
-(juz 2 / hizb 3 starts at Warsh 2:141). Edition data already tagged by text, like
-Hafs, is unchanged. Goals saved against the old tags are re-linked automatically.
+`utils/divisions.ts` recomputes both tags so divisions follow the text in every
+riwayah. Edition data already tagged by text, like Hafs, is unchanged. Goals saved
+against the old tags are re-linked automatically.
+
+The Warsh mushaf divides by its own ۞ marks, the Maghribi athman (eighths of a
+hizb, 480 in all), which in 57 of the 240 quarters fall a few ayahs from the Hafs
+quarters (its hizb 2 starts at «وإذا لقوا», 2:75, not «أفتطمعون», 2:74). Its tags
+come from `utils/warsh-eighths.ts`, two eighths to a quarter: 435 starts are the
+marks in the King Fahd Complex Warsh text the reader shows; the 45 that open a
+surah carry no mark and come from the Moroccan Muhammadi mushaf's index
+(nuralhifz-data, CC BY 4.0), which agrees on 433 of the 435 marked ones. Every
+16th start is a juz start of the King Fahd Complex data (juz 2 / hizb 3 at Warsh
+2:141). Other riwayat take the 240 standard Hafs quarter starts through each
+ayah's `number_in_hafs`.
+
+## Thumun pages (Warsh)
+
+In the text view, Warsh can be read a thumun to a page (`thumunPages`, shown in
+the settings only for Warsh in the text view): 480 pages, labelled «الحزب ٢ ·
+الثمن ١», each starting at the ayah that holds its ۞ and scrolling when it is
+longer than the screen (an eighth is 0.7–1.8 printed pages). Only the reader
+pages this way (`utils/thumun-pages.ts` gives it a paged view of the content in
+which each ayah's `pageNumber` is its eighth); plans, goal readings, search,
+the index and recitation keep the mushaf's pages. The saved reading position
+records its paging, and is carried across a change of paging by its ayah (the
+selected one, or the first of the page).
 
 ## API and cache
 
