@@ -54,6 +54,9 @@ export function AyahActionSheet({ ayah, quran, palette, onClose, onListen, whole
   const close = useRef<View>(null);
   const backButton = useRef<View>(null);
   const [science, setScience] = useState<Science | null>(null);
+  // Whether the ayah is too long to quote whole; kept while a science is open, so the quote does
+  // not unfold and fold again on the way back.
+  const [long, setLong] = useState(false);
   const [shown] = useState(() => new Animated.Value(1));
   // A view's own step back (its list of books) answers before the sheet's.
   const innerBack = useRef<(() => void) | null>(null);
@@ -130,7 +133,7 @@ export function AyahActionSheet({ ayah, quran, palette, onClose, onListen, whole
                   <ScienceView science={science} ayah={ayah} quran={quran} palette={p} onOpenAyah={onOpenAyah} />
                   <Text style={[styles.edition, { color: p.mutedForeground, marginTop: 28 }]}>{t('reader.related.sources', { references: formatList(hafsNumbers(ayah).map((hafs) => `${ayah.surahNumber}:${hafs}`)) })}</Text>
                 </View>
-                : <Hub ayah={ayah} quran={quran} surahName={surahName} palette={p} onListen={onListen} wholeSurah={wholeSurah} groups={groups} onOpen={open}
+                : <Hub ayah={ayah} quran={quran} surahName={surahName} palette={p} onListen={onListen} wholeSurah={wholeSurah} groups={groups} onOpen={open} long={long} onLong={() => setLong(true)}
                   onShare={() => { onClose(); router.push({ pathname: '/share-ayah', params: { surah: ayah.surahNumber, ayah: ayah.ayahNumber } }); }} />}
             </InnerBack.Provider>
           </Animated.View>
@@ -151,9 +154,11 @@ function SurahTitle({ surah, name, reference, palette: p }: { surah: number; nam
 }
 
 /** The sheet's first page: the ayah, what is done with it at once, and the arcade of its sciences. */
-function Hub({ ayah, quran, surahName, palette: p, onListen, wholeSurah, groups, onOpen, onShare }: {
+function Hub({ ayah, quran, surahName, palette: p, onListen, wholeSurah, groups, onOpen, onShare, long, onLong }: {
   ayah: Ayah; quran: Quran; surahName: string; palette: ReaderPalette; onListen?: (ayah: Ayah, single: boolean) => void; wholeSurah: boolean;
   groups: Parameters<typeof Arcade>[0]['groups']; onOpen: (science: Science) => void; onShare: () => void;
+  /** The ayah is cut to its first lines; `onLong` once its whole text is found too tall. */
+  long: boolean; onLong: () => void;
 }) {
   const { preferences: { repeat } } = useReadingPreferences();
   const font = useQuranFont();
@@ -162,7 +167,6 @@ function Hub({ ayah, quran, surahName, palette: p, onListen, wholeSurah, groups,
   const fromTop = wholeSurah && follows === false;
   const { bookmarks, toggle, ready, error: bookmarkError } = useBookmarks();
   const [message, setMessage] = useState('');
-  const [long, setLong] = useState(false);
   const bookmarked = bookmarks.includes(ayahKey(ayah));
   const copy = async () => {
     try {
@@ -175,7 +179,9 @@ function Hub({ ayah, quran, surahName, palette: p, onListen, wholeSurah, groups,
   const separator = <View style={[styles.separator, { backgroundColor: p.border }]} />;
   return <View>
     {font.loaded && <View style={[styles.quote, long && { maxHeight: QUOTE_LINE * QUOTE_LINES }]}>
-      <Text onLayout={(event) => setLong(event.nativeEvent.layout.height > QUOTE_LINE * QUOTE_LINES + 4)}
+      {/* Measured whole only until it is cut: once its box is capped, Android measures the text to
+          the cap, and deciding again from that would undo the cut, in a loop. */}
+      <Text onLayout={(event) => { if (!long && event.nativeEvent.layout.height > QUOTE_LINE * QUOTE_LINES + 4) onLong(); }}
         style={{ fontFamily: font.fontFamily, fontSize: QUOTE, lineHeight: QUOTE_LINE, color: p.foreground, textAlign: 'center', writingDirection: 'rtl' }}>
         {font.display(ayah.text)}{' '}<NativeText style={{ color: p.ornament }}>{ayah.marker}</NativeText>
       </Text>

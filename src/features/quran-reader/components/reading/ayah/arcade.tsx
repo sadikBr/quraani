@@ -7,7 +7,7 @@ import { contrastRatio, withAlpha } from '../../../design';
 import type { ReaderPalette } from '../../../theme';
 import type { Science, ScienceGroup } from './sciences';
 
-const GAP = 8, ROW = 42, HEAD = 36, FOOT = 14, MEDALLION = 15;
+const GAP = 8, ROW = 42, HEAD = 36, FOOT = 12, MEDALLION = 15;
 
 /**
  * The ayah's sciences as an arcade of three arches, as the riwaq of a Maghribi mosque: each arch a
@@ -25,7 +25,9 @@ export function Arcade({ groups, palette: p, onOpen }: {
   const w = count ? Math.floor((width - GAP * (count - 1)) / count) : 0;
   const rise = Math.round(Math.min(64, w * 0.5)), lift = count === 3 ? 14 : 0;
   const rows = Math.max(1, ...shown.map((entry) => entry.sciences.length));
-  const content = Math.max(HEAD + rows * ROW, ...shown.map((entry) => inside[entry.group.id] ?? 0));
+  // The tallest door as measured once all are; an estimate until then.
+  const measured = shown.every((entry) => inside[entry.group.id]) ? Math.max(...shown.map((entry) => inside[entry.group.id])) : 0;
+  const content = measured || HEAD + rows * ROW;
   const height = rise + lift + 2 + content + FOOT;
   const colors = artColors(p);
   // The arch's name in the theme's gold, unless the gold is too close to the tile to be read.
