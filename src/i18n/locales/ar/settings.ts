@@ -44,9 +44,11 @@ export default {
   /** Warsh only: the letters as in the Maghrib (the Warsh font) or the East (the Madinah mushaf's font). */
   warshScript: {
     title: 'شكل الحروف',
+    /** On the Maghribi choice: the letters Warsh's own mushafs are written in. */
+    recommended: 'موصى به',
     /** Under the choice, for the one chosen; the preview shows the dots of ق and ف. */
-    maghribi: { label: 'مغاربي', detail: 'كمصاحف المغرب' },
-    mashriqi: { label: 'مشرقي', detail: 'كمصحف المدينة' },
+    maghribi: { label: 'مغاربي', detail: 'كمصاحف المغرب، وهو الموصى به لرواية ورش' },
+    mashriqi: { label: 'مشرقي', detail: 'كمصحف المدينة. والموصى به لرواية ورش هو المغاربي' },
   },
   tajweed: {
     title: 'ألوان التجويد',

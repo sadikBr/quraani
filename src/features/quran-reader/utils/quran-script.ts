@@ -9,12 +9,17 @@ export type WarshScript = 'maghribi' | 'mashriqi';
 
 /**
  * The Warsh text in the Hafs font. The text uses the common letters, so the font alone sets the
- * dots; two forms are the Hafs font's own: the Maghribi final ya (yeh barree) is written ى, as in
- * the Madinah mushaf, and alif with madda (absent from that font) as alif and a madda mark. Applied
- * to each piece as it is drawn, so offsets into the original text (tajweed runs, words) still hold.
+ * dots. Three characters the Hafs font cannot draw (it shows a dotted circle for them) take its own
+ * forms: the Maghribi final ya (yeh barree) is written ى, as in the Madinah mushaf; alif with
+ * madda (absent from that font) as alif and a madda mark; and the Warsh hamza dot ۟ (a hamza
+ * eased, moved by naql, or the vowel to start a wasl with: «أَ۟ذَا», «ا۟وْلَٰٓئِكَ»,
+ * «اُ۟عْبُدُواْ») as the dot the Madinah mushaf has for an eased hamza, ۬ («ءَا۬عْجَمِيٌّ»).
+ * Every other character the Warsh font draws, the Hafs font draws too (`tests/quran-script.test.js`).
+ * Applied to each piece as it is drawn, so offsets into the original text (tajweed runs, words)
+ * still hold.
  */
 // eslint-disable-next-line no-restricted-syntax -- Quran letters being redrawn, not interface text.
-export const mashriqiLetters = (text: string) => text.replace(/ے/g, 'ى').replace(/آ/g, 'آ');
+export const mashriqiLetters = (text: string) => text.replace(/ے/g, 'ى').replace(/آ/g, 'آ').replace(/\u06DF/g, '\u06EC');
 const asIs = (text: string) => text;
 
 export interface QuranScript {

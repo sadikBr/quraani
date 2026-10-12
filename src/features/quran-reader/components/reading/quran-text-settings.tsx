@@ -4,7 +4,7 @@ import { ArabicText as Text } from '@/components/arabic-text';
 import { Tabs } from '@/components/ui';
 import { t } from '@/i18n';
 import type { ReaderPalette } from '../../theme';
-import { readerShape } from '../../design';
+import { readerShape, withAlpha } from '../../design';
 import { useReadingPreferences } from '../../state/reading-preferences-provider';
 import type { WarshScript } from '../../utils/quran-script';
 import { readerFontLabel, readerFontStep, readerFontSteps, snapReaderFontSize } from '../../utils/reader-typography';
@@ -39,7 +39,9 @@ export function QuranTextSettings({ palette: p }: { palette: ReaderPalette }) {
       <View style={[styles.rows, wide && { flex: 1 }]}>
         {riwayah === 'warsh' && <Row title={t('settings.warshScript.title')} detail={t(`settings.warshScript.${warshScript}.detail`)} palette={p} first={wide}>
           <Tabs palette={p} role="radio" label={t('settings.warshScript.title')} value={warshScript} onChange={(value) => update({ warshScript: value })}
-            options={SCRIPTS.map((script) => ({ value: script, label: t(`settings.warshScript.${script}.label`) }))} />
+            options={SCRIPTS.map((script) => ({ value: script, label: t(`settings.warshScript.${script}.label`),
+              // The letters Warsh's own mushafs are written in, shown as the one to choose.
+              ...(script === 'maghribi' && { hint: t('settings.warshScript.recommended'), badge: <Text style={[styles.recommended, { color: p.success, backgroundColor: withAlpha(p.success, 0.12) }]}>{t('settings.warshScript.recommended')}</Text> }) }))} />
         </Row>}
         <View style={[styles.row, { borderColor: p.border }, wide && riwayah !== 'warsh' && styles.first]}>
           <Pressable accessibilityRole="switch" accessibilityState={{ checked: tajweed }} aria-checked={tajweed} accessibilityLabel={t('settings.tajweed.title')}
@@ -105,6 +107,7 @@ const styles = StyleSheet.create({
   first: { borderTopWidth: 0, paddingTop: 0 },
   rowHeading: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   value: { fontSize: 12, lineHeight: 20, paddingHorizontal: 8, paddingVertical: 1, borderRadius: readerShape.pill, overflow: 'hidden', textAlign: 'center' },
+  recommended: { fontSize: 11, lineHeight: 18, fontWeight: '600', paddingHorizontal: 7, borderRadius: readerShape.pill, overflow: 'hidden' },
   switch: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48 },
   colors: { width: 40, height: 40, borderRadius: readerShape.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3 },
   slider: { paddingHorizontal: 2 },

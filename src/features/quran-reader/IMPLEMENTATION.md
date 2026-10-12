@@ -32,10 +32,15 @@ Quranpedia has one Warsh font (V21, Maghribi: ق with one dot above, ف with one
 below). Settings → القراءة → النص القرآني offers `warshScript: maghribi | mashriqi` for Warsh;
 **مشرقي** draws the same Warsh text in the Hafs V22 font (Madinah letters). The
 Warsh text spells ق/ف with the standard letters, so the font alone decides the
-dots. V22 covers every Warsh character but U+0622 (drawn as U+0627 U+0653) and
-U+06D2 (drawn as U+0649); `utils/quran-script.ts` maps them for display only,
-per piece after tajweed slicing, so the corpus, offsets, search and copying are
-unchanged. Ayah markers sit at the same codepoints in both fonts. It applies to
+dots. V22 draws every character the Warsh font draws but three, which it shows
+as a dot in a dashed circle (or lacks): U+0622 (drawn as U+0627 U+0653), U+06D2
+(drawn as U+0649) and U+06DF, the Warsh hamza dot (eased, moved by naql, or the
+vowel to start a wasl with; 281 times), drawn as U+06EC, V22's own dot for an
+eased hamza. Found by comparing every glyph outline of both fonts with V22's
+placeholder; `tests/quran-script.test.js` keeps the list. `utils/quran-script.ts`
+maps them for display only, per piece after tajweed slicing, so the corpus,
+offsets, search and copying are unchanged. The choice marks مغاربي as «موصى به»
+for Warsh, the letters its mushafs are written in. Ayah markers sit at the same codepoints in both fonts. It applies to
 the text layouts, tajweed text, practice, search results, share cards and the
 adhkar's Quran passages; printed Warsh pages stay as printed.
 

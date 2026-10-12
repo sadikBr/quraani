@@ -164,13 +164,13 @@ export function Empty({ icon, title, description, children, palette }: PropsWith
 
 /** Segmented tabs: `muted` track, the active trigger on `background` with shadow-sm. */
 export function Tabs<T extends string>({ options, value, onChange, palette, label, role = 'tab' }: {
-  options: readonly { value: T; label: string; badge?: ReactNode; icon?: ReaderIconName }[]; value: T; onChange: (value: T) => void; palette?: ReaderPalette; label?: string; role?: 'tab' | 'button' | 'radio';
+  options: readonly { value: T; label: string; badge?: ReactNode; icon?: ReaderIconName; hint?: string }[]; value: T; onChange: (value: T) => void; palette?: ReaderPalette; label?: string; role?: 'tab' | 'button' | 'radio';
 }) {
   const p = usePalette(palette);
   return <View accessibilityRole={role === 'tab' ? 'tablist' : role === 'radio' ? 'radiogroup' : undefined} accessibilityLabel={label} style={[ui.tabs, { backgroundColor: p.muted }]}>
     {options.map(option => {
       const selected = option.value === value;
-      return <Pressable key={option.value} accessibilityRole={role} accessibilityLabel={option.label} accessibilityState={role === 'radio' ? { checked: selected } : { selected }}
+      return <Pressable key={option.value} accessibilityRole={role} accessibilityLabel={option.label} accessibilityHint={option.hint} accessibilityState={role === 'radio' ? { checked: selected } : { selected }}
         aria-selected={role === 'tab' ? selected : undefined} aria-pressed={role === 'button' ? selected : undefined} aria-checked={role === 'radio' ? selected : undefined}
         onPress={() => onChange(option.value)} hitSlop={{ top: 5, bottom: 5 }}
         style={({ pressed }) => [ui.trigger, { backgroundColor: selected ? p.background : 'transparent', borderColor: selected ? p.border : 'transparent', opacity: pressed && !selected ? 0.7 : 1 }, selected && readerElevation(2, p)]}>
