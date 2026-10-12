@@ -1,9 +1,9 @@
 /**
- * Compares what the listening model heard with the ayahs it should have heard, word by word, and
+ * Compares what the speech recognition heard with the ayahs it should have heard, word by word, and
  * says which words were recited, which were said differently, which were left out and what was
  * added. Pure (no React Native), so it can be tested.
  *
- * The model writes what it hears in ordinary Arabic spelling, with or without diacritics; the
+ * It writes what it hears in ordinary Arabic spelling, with or without diacritics; the
  * mushaf is in the Uthmani script of its riwayah. So both are reduced to their letters first
  * (`normalizeWord`), and a word counts as recited when it is close enough letter by letter
  * (`similarity`), which absorbs spelling differences (الصلوة / الصلاة) but not a changed word
@@ -119,7 +119,7 @@ type Step = 'match' | 'missed' | 'extra' | 'heardTwo' | 'writtenTwo';
 /**
  * Aligns what was heard with the ayahs. The recitation may start with the isti'adha and the
  * basmala and end with «صدق الله العظيم» (left out of the comparison), and may stop anywhere: the
- * words after where it stopped are not counted as left out. A word the model splits or joins
+ * words after where it stopped are not counted as left out. A word heard split or joined
  * differently (يا أيها / يَٰٓأَيُّهَا) still counts as recited.
  */
 export function checkRecitation(ayahs: ExpectedAyah[], heardText: string): RecitationCheck {

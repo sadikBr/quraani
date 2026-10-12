@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text as QuranText
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { Badge, Button, Progress } from '@/components/ui';
+import { Badge, Button } from '@/components/ui';
 import type { Ayah } from '@/lib/quranpedia/types';
 import { readerElevation, readerLayout, readerShape, withAlpha } from '@/features/quran-reader/design';
 import { useReaderContent } from '@/features/quran-reader/hooks/use-reader-content';
@@ -14,25 +14,27 @@ import { readerTextLineHeight } from '@/features/quran-reader/utils/reader-typog
 import { ReaderIcon } from '@/features/quran-reader/components/ui/reader-chrome';
 import { t } from '@/i18n';
 import { ayahsToCompare, checkRecitation, writtenWords, type RecitationCheck } from './compare';
-import { allowMicrophone, listeningSupported, startRecording, transcribe, type Recording } from './listener';
-import { downloadListeningModel, LISTENING_MODEL, listeningModelPath, removeListeningModel } from './model';
+import { allowListening, listeningSupported, recognitionAvailable, startListening, type Listening, type ListeningProblem } from './listener';
 
 type Phase =
   | { kind: 'idle' }
-  | { kind: 'downloading'; fraction: number }
-  | { kind: 'recording' }
-  | { kind: 'checking'; percent: number }
-  | { kind: 'result'; check: RecitationCheck; ayahs: Ayah[]; heard: string; recorded: number; took: number }
+  | { kind: 'listening' }
+  | { kind: 'finishing' }
+  | { kind: 'result'; check: RecitationCheck; ayahs: Ayah[]; heard: string; recorded: number }
   | { kind: 'error'; message: string };
 
 const QURAN_SIZE = 26;
 const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
+const problemMessage = (problem: ListeningProblem) => ({
+  permission: t('listening.microphone.denied'), unavailable: t('listening.noService'), language: t('listening.noArabic'),
+  network: t('listening.network'), failed: t('listening.failed'),
+})[problem];
 
 /**
- * «التسميع بالصوت» (experimental): the reader recites from memory, starting at an ayah; the phone
- * listens (`listener`), and what it heard is compared with the mushaf (`compare`): each word is
- * shown recited, said differently or left out, with any words added. The listening model is
- * downloaded once (`model`); everything runs on the phone.
+ * «التسميع بالصوت» (experimental): the reader recites from memory, starting at an ayah; the phone's
+ * speech recognition listens (`listener`), showing what it hears as it goes, and what it heard is
+ * compared with the mushaf (`compare`): each word is shown recited, said differently or left out,
+ * with any words added.
  */
 export function ReciteCheckScreen() {
   const params = useLocalSearchParams<{ surah?: string; ayah?: string }>();
@@ -42,61 +44,54 @@ export function ReciteCheckScreen() {
   const [start, setStart] = useState(() => ({ surah: Number(params.surah) || 1, ayah: Number(params.ayah) || 1 }));
   const surah = content?.data.quran.surahs.find((item) => item.number === start.surah);
   const fromHere = surah?.ayahs.filter((ayah) => ayah.ayahNumber >= start.ayah) ?? [];
-  const [modelPath, setModelPath] = useState(() => listeningModelPath());
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
-  const recording = useRef<Recording | null>(null);
-  const download = useRef<AbortController | null>(null);
+  const session = useRef<Listening | null>(null);
   const [elapsed, setElapsed] = useState(0);
-  // The time recorded so far, from the audio received.
+  const [live, setLive] = useState('');
+  const [level, setLevel] = useState(-2);
   useEffect(() => {
-    if (phase.kind !== 'recording') return;
-    const timer = setInterval(() => setElapsed(recording.current?.seconds() ?? 0), 500);
+    if (phase.kind !== 'listening') return;
+    const timer = setInterval(() => setElapsed(session.current?.seconds() ?? 0), 500);
     return () => clearInterval(timer);
   }, [phase.kind]);
-  // Leaving stops the microphone and any download.
-  useEffect(() => () => { void recording.current?.stop(); download.current?.abort(); }, []);
+  // Leaving stops listening.
+  useEffect(() => () => session.current?.cancel(), []);
 
-  const getModel = async () => {
-    const controller = new AbortController();
-    download.current = controller;
-    setPhase({ kind: 'downloading', fraction: 0 });
-    try {
-      const path = await downloadListeningModel((fraction) => setPhase((now) => now.kind === 'downloading' ? { kind: 'downloading', fraction } : now), controller.signal);
-      setModelPath(path);
-      setPhase({ kind: 'idle' });
-    } catch {
-      setPhase(controller.signal.aborted ? { kind: 'idle' } : { kind: 'error', message: t('listening.model.failed') });
-    } finally { download.current = null; }
+  const compare = (ayahsFrom: Ayah[], heard: string, recorded: number) => {
+    const ayahs = ayahsToCompare(ayahsFrom, heard.split(/\s+/).filter(Boolean).length);
+    const check = checkRecitation(ayahs, heard);
+    setPhase(check.reached < 0 ? { kind: 'error', message: t('listening.nothing') } : { kind: 'result', check, ayahs, heard, recorded });
   };
   const begin = async () => {
-    if (!await allowMicrophone({ title: t('listening.microphone.title'), message: t('listening.microphone.message'), ok: t('listening.microphone.ok') })) {
-      setPhase({ kind: 'error', message: t('listening.microphone.denied') });
-      return;
-    }
+    if (!recognitionAvailable()) { setPhase({ kind: 'error', message: t('listening.noService') }); return; }
+    if (!await allowListening()) { setPhase({ kind: 'error', message: t('listening.microphone.denied') }); return; }
+    const ayahsFrom = fromHere;
+    setLive(''); setLevel(-2); setElapsed(0);
     try {
-      recording.current = await startRecording();
-      setElapsed(0);
-      setPhase({ kind: 'recording' });
+      session.current = startListening({
+        text: setLive, level: setLevel,
+        // Listening stopped by itself: after a long silence, compare what was heard; for a problem, say it.
+        ended: (heard, seconds, problem) => {
+          session.current = null;
+          if (problem && !heard) setPhase({ kind: 'error', message: problemMessage(problem) });
+          else compare(ayahsFrom, heard, seconds);
+        },
+      });
+      setPhase({ kind: 'listening' });
     } catch { setPhase({ kind: 'error', message: t('listening.failed') }); }
   };
   const finish = async () => {
-    const current = recording.current;
-    recording.current = null;
-    if (!current || !modelPath) return;
-    setPhase({ kind: 'checking', percent: 0 });
-    try {
-      const { audio, seconds } = await current.stop();
-      const { text: heard, took } = await transcribe(modelPath, audio, (percent) => setPhase((now) => now.kind === 'checking' ? { kind: 'checking', percent } : now));
-      const ayahs = ayahsToCompare(fromHere, heard.split(/\s+/).length);
-      const check = checkRecitation(ayahs, heard);
-      setPhase(check.reached < 0
-        ? { kind: 'error', message: t('listening.nothing') }
-        : { kind: 'result', check, ayahs, heard, recorded: Math.round(seconds), took: Math.round(took) });
-    } catch { setPhase({ kind: 'error', message: t('listening.failed') }); }
+    const current = session.current;
+    session.current = null;
+    if (!current) return;
+    setPhase({ kind: 'finishing' });
+    const { text, seconds } = await current.stop();
+    compare(fromHere, text, seconds);
   };
 
   const startAyah = fromHere[0];
   const quranStyle = { fontFamily: font.fontFamily, fontSize: QURAN_SIZE, lineHeight: readerTextLineHeight(QURAN_SIZE, false), color: p.foreground, writingDirection: 'rtl' as const, includeFontPadding: true };
+  const listening = phase.kind === 'listening' || phase.kind === 'finishing';
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <View style={s.navigation}>
       <Button variant="outline" icon="back" label={t('common.back')} onPress={() => { if (router.canGoBack()) router.back(); else router.replace('/'); }} />
@@ -118,33 +113,25 @@ export function ReciteCheckScreen() {
           </Text>}
         </View>}
 
-        {!modelPath ? <View style={[s.card, { backgroundColor: p.card, borderColor: p.border }, readerElevation(1, p)]}>
-          <Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{t('listening.model.title')}</Text>
-          <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22 }}>
-            {t('listening.model.detail', { size: t('listening.model.size', { value: Math.round(LISTENING_MODEL.bytes / 1_000_000) }) })}
-          </Text>
-          {phase.kind === 'downloading' ? <View style={{ gap: 10 }}>
-            <Progress palette={p} value={phase.fraction} />
-            <View style={s.row}>
-              <Text accessibilityLiveRegion="polite" style={{ flex: 1, color: p.foreground, fontSize: 14 }}>{t('listening.model.downloading', { percent: Math.round(phase.fraction * 100) })}</Text>
-              <Button size="sm" variant="ghost" palette={p} onPress={() => download.current?.abort()}>{t('listening.model.cancel')}</Button>
+        {listening ? <View style={{ gap: 16 }}>
+          <View style={s.centre}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('listening.stop')} disabled={phase.kind === 'finishing'} onPress={() => void finish()}
+              style={({ pressed }) => [s.mic, { backgroundColor: p.destructive, opacity: phase.kind === 'finishing' ? 0.5 : pressed ? 0.8 : 1 }]}>
+              {phase.kind === 'finishing' ? <ActivityIndicator color={p.background} /> : <ReaderIcon name="stop" color={p.background} size={30} />}
+            </Pressable>
+            <Text accessibilityLiveRegion="polite" style={{ color: p.foreground, fontSize: 17, fontWeight: '600' }}>
+              {phase.kind === 'finishing' ? t('listening.finishing') : t('listening.listening', { time: clock(elapsed) })}
+            </Text>
+            {/* The input volume, so the reader sees the phone hears them. */}
+            <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[s.level, { backgroundColor: withAlpha(p.primary, 0.15) }]}>
+              <View style={{ width: `${Math.round(Math.max(0, Math.min(1, (level + 2) / 12)) * 100)}%`, height: '100%', borderRadius: 3, backgroundColor: p.primary }} />
             </View>
-          </View> : <Button palette={p} icon="download" block onPress={() => void getModel()}>{t('listening.model.download')}</Button>}
-        </View>
-
-        : phase.kind === 'recording' ? <View style={s.centre}>
-          <Pressable accessibilityRole="button" accessibilityLabel={t('listening.stop')} onPress={() => void finish()}
-            style={({ pressed }) => [s.mic, { backgroundColor: p.destructive, opacity: pressed ? 0.8 : 1 }]}>
-            <ReaderIcon name="stop" color={p.background} size={30} />
-          </Pressable>
-          <Text accessibilityLiveRegion="polite" style={{ color: p.foreground, fontSize: 17, fontWeight: '600' }}>{t('listening.listening', { time: clock(elapsed) })}</Text>
-          <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('listening.stop')}</Text>
-        </View>
-
-        : phase.kind === 'checking' ? <View style={[s.card, s.centre, { backgroundColor: p.card, borderColor: p.border }]}>
-          <ActivityIndicator color={p.primary} />
-          <Text accessibilityLiveRegion="polite" style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{t('listening.checking', { percent: Math.round(phase.percent) })}</Text>
-          <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('listening.checkingDetail')}</Text>
+            <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('listening.stopHint')}</Text>
+          </View>
+          <View style={[s.card, { backgroundColor: p.muted, borderColor: p.border }]}>
+            <Text style={{ color: p.mutedForeground, fontSize: 13, fontWeight: '600' }}>{t('listening.result.heard')}</Text>
+            <Text accessibilityLiveRegion="polite" style={{ color: live ? p.foreground : p.mutedForeground, fontSize: 15, lineHeight: 26 }}>{live || t('listening.waiting')}</Text>
+          </View>
         </View>
 
         : phase.kind === 'result' ? <Result phase={phase} palette={p} quranStyle={quranStyle} display={font.display}
@@ -161,9 +148,7 @@ export function ReciteCheckScreen() {
           <Text style={{ color: p.mutedForeground, fontSize: 14, textAlign: 'center' }}>{t('listening.startHint')}</Text>
         </View>}
 
-        <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 20 }}>{t('listening.limits')}</Text>
-        {modelPath && phase.kind !== 'recording' && phase.kind !== 'checking' && <Button variant="ghost" size="sm" palette={p} tone={p.mutedForeground}
-          onPress={() => { removeListeningModel(); setModelPath(null); setPhase({ kind: 'idle' }); }}>{t('listening.model.remove')}</Button>}
+        <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 20 }}>{t('listening.limits')} {t('listening.service')}</Text>
       </>}
     </ScrollView>
   </SafeAreaView>;
@@ -174,7 +159,7 @@ function Result({ phase, palette: p, quranStyle, display, onAgain, onNext }: {
   phase: Extract<Phase, { kind: 'result' }>; palette: ReaderPalette; quranStyle: object; display: (text: string) => string;
   onAgain: () => void; onNext: (ayah: number) => void;
 }) {
-  const { check, ayahs, heard, recorded, took } = phase;
+  const { check, ayahs, heard, recorded } = phase;
   const byWord = new Map(check.words.map((word) => [`${word.ayah}:${word.word}`, word]));
   const extrasAfter = new Map<string, string[]>();
   for (const extra of check.extras) {
@@ -240,7 +225,7 @@ function Result({ phase, palette: p, quranStyle, display, onAgain, onNext }: {
     <View style={[s.card, { backgroundColor: p.muted, borderColor: p.border }]}>
       <Text style={{ color: p.mutedForeground, fontSize: 13, fontWeight: '600' }}>{t('listening.result.heard')}</Text>
       <Text selectable style={{ color: p.foreground, fontSize: 15, lineHeight: 26 }}>{heard}</Text>
-      <Text style={{ color: p.mutedForeground, fontSize: 12 }}>{t('listening.result.timing', { recorded, took })}</Text>
+      <Text style={{ color: p.mutedForeground, fontSize: 12 }}>{t('listening.result.timing', { recorded })}</Text>
     </View>
 
     <View style={s.actions}>
@@ -255,9 +240,9 @@ const s = StyleSheet.create({
   content: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', padding: 16, paddingTop: 8, paddingBottom: 40, gap: 20 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   card: { borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card, padding: 16, gap: 10 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   centre: { alignItems: 'center', gap: 12, paddingVertical: 12 },
   mic: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center' },
+  level: { width: 120, height: 6, borderRadius: 3, overflow: 'hidden', flexDirection: 'row-reverse' },
   counts: { flexDirection: 'row', borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card, paddingVertical: 12 },
   count: { flex: 1, alignItems: 'center', gap: 2 },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 4 },

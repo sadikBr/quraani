@@ -1,6 +1,7 @@
-/** Listening needs the phone's microphone and the native model; the web only explains that. */
+/** Listening needs the phone's speech recognition; the web only explains that. */
 export const listeningSupported = false;
-export interface Recording { seconds(): number; stop(): Promise<{ audio: ArrayBuffer; seconds: number }> }
-export const allowMicrophone = async () => false;
-export const startRecording = (): Promise<Recording> => Promise.reject(new Error('Listening runs on the phone only'));
-export const transcribe = (): Promise<{ text: string; took: number }> => Promise.reject(new Error('Listening runs on the phone only'));
+export type ListeningProblem = 'permission' | 'unavailable' | 'language' | 'network' | 'failed';
+export interface Listening { seconds(): number; stop(): Promise<{ text: string; seconds: number }>; cancel(): void }
+export const recognitionAvailable = () => false;
+export const allowListening = async () => false;
+export function startListening(): Listening { throw new Error('Listening runs on the phone only'); }

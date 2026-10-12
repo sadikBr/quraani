@@ -88,13 +88,127 @@ describe('a recitation compared with the ayahs', () => {
   });
 });
 
-describe('the microphone\'s samples', () => {
-  test('base64 decodes to the same bytes as the platform decoder, at every padding', async () => {
-    const { fromBase64 } = await import('../src/features/recite-check/base64');
-    for (const length of [0, 1, 2, 3, 4, 5, 4096]) {
-      const bytes = Uint8Array.from({ length }, (_, i) => (i * 37 + 11) % 256);
-      const encoded = Buffer.from(bytes).toString('base64');
-      expect(Array.from(fromBase64(encoded))).toEqual(Array.from(bytes));
-    }
+/** A stand-in for the phone's speech recognition service, driven by the test. */
+function fakeService(services = ['com.google.android.tts', 'com.samsung.android.bixby.agent']) {
+  const listeners = new Map();
+  const service = {
+    starts: [], stops: 0, aborts: 0,
+    getSpeechRecognitionServices: () => services,
+    addListener(event, listener) {
+      const set = listeners.get(event) ?? new Set();
+      set.add(listener);
+      listeners.set(event, set);
+      return { remove: () => set.delete(listener) };
+    },
+    start(options) { service.starts.push(options); },
+    stop() { service.stops++; },
+    abort() { service.aborts++; },
+    emit(event, payload) { for (const listener of [...(listeners.get(event) ?? [])]) listener(payload); },
+    listeners: () => [...listeners.values()].reduce((count, set) => count + set.size, 0),
+  };
+  return service;
+}
+const said = (transcript, isFinal = false) => ({ isFinal, results: [{ transcript, confidence: -1, segments: [] }] });
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const fast = { restart: 1, lastWords: 30 };
+
+describe('listening with the phone\'s speech recognition', () => {
+  const listen = async (service, platform = 'android') => {
+    const { listenWith } = await import('../src/features/recite-check/listening-session');
+    const seen = { text: '', ended: null };
+    const session = listenWith(service, platform, { text: (text) => { seen.text = text; }, ended: (text, seconds, problem) => { seen.ended = { text, problem }; } }, fast);
+    return { session, seen };
+  };
+
+  test('Arabic, continuous, with live words, through Google\'s service when the phone has it', async () => {
+    const service = fakeService();
+    await listen(service);
+    expect(service.starts[0]).toMatchObject({ lang: 'ar-SA', continuous: true, interimResults: true, androidRecognitionServicePackage: 'com.google.android.tts' });
+    const other = fakeService(['com.samsung.android.bixby.agent']);
+    await listen(other);
+    expect(other.starts[0].androidRecognitionServicePackage).toBeUndefined();
+  });
+
+  test('Android\'s segments add up; a segment not yet final is shown as it changes', async () => {
+    const service = fakeService();
+    const { seen } = await listen(service);
+    service.emit('result', said('الحمد لله'));
+    expect(seen.text).toBe('الحمد لله');
+    service.emit('result', said('الحمد لله رب العالمين', true));
+    service.emit('result', said('الرحمن'));
+    expect(seen.text).toBe('الحمد لله رب العالمين الرحمن');
+    service.emit('result', said('الرحمن الرحيم'));
+    expect(seen.text).toBe('الحمد لله رب العالمين الرحمن الرحيم');
+  });
+
+  test('a session the service ends after a pause: listening goes on, keeping what was heard', async () => {
+    const service = fakeService();
+    const { session, seen } = await listen(service);
+    service.emit('result', said('الحمد لله رب العالمين'));
+    service.emit('end');
+    await wait(5);
+    expect(service.starts).toHaveLength(2);
+    service.emit('result', said('الرحمن الرحيم', true));
+    expect(seen.text).toBe('الحمد لله رب العالمين الرحمن الرحيم');
+    // Stopping waits for the service's last words.
+    const stopped = session.stop();
+    expect(service.stops).toBe(1);
+    service.emit('result', said('مالك يوم الدين', true));
+    service.emit('end');
+    expect((await stopped).text).toBe('الحمد لله رب العالمين الرحمن الرحيم مالك يوم الدين');
+    expect(service.listeners()).toBe(0);
+    expect(seen.ended).toBeNull();
+  });
+
+  test('stopping when the service gives nothing more still ends', async () => {
+    const service = fakeService();
+    const { session } = await listen(service);
+    service.emit('result', said('قل هو الله أحد'));
+    expect((await session.stop()).text).toBe('قل هو الله أحد');
+    expect(service.aborts).toBe(1);
+  });
+
+  test('a problem stops listening and says which', async () => {
+    const service = fakeService();
+    const { seen } = await listen(service);
+    service.emit('result', said('قل أعوذ'));
+    service.emit('error', { error: 'network', message: '' });
+    service.emit('end');
+    await wait(5);
+    expect(service.starts).toHaveLength(1);
+    expect(seen.ended).toEqual({ text: 'قل أعوذ', problem: 'network' });
+  });
+
+  test('a long silence ends listening with what was heard', async () => {
+    const service = fakeService();
+    const { seen } = await listen(service);
+    service.emit('result', said('والعصر', true));
+    for (let i = 0; i < 7 && !seen.ended; i++) { service.emit('error', { error: 'no-speech', message: '' }); service.emit('end'); await wait(5); }
+    expect(seen.ended).toEqual({ text: 'والعصر', problem: undefined });
+  });
+
+  test('on iOS a session gives its whole text each time; the sessions add up', async () => {
+    const service = fakeService();
+    service.getSpeechRecognitionServices = () => { throw new Error('Android only'); };
+    const { seen } = await listen(service, 'ios');
+    expect(service.starts[0].androidRecognitionServicePackage).toBeUndefined();
+    service.emit('result', said('بسم'));
+    service.emit('result', said('بسم الله'));
+    service.emit('end');
+    await wait(5);
+    service.emit('result', said('الرحمن الرحيم'));
+    expect(seen.text).toBe('بسم الله الرحمن الرحيم');
+  });
+
+  test('leaving the screen stops at once', async () => {
+    const service = fakeService();
+    const { session, seen } = await listen(service);
+    session.cancel();
+    expect(service.aborts).toBe(1);
+    expect(service.listeners()).toBe(0);
+    service.emit('end');
+    await wait(5);
+    expect(service.starts).toHaveLength(1);
+    expect(seen.ended).toBeNull();
   });
 });

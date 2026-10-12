@@ -90,9 +90,17 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "يستمع «قرآني» إلى تلاوتك في «التسميع بالصوت» ليقارنها بالنص على هاتفك، ولا يرسلها إلى أي جهة.",
+          "microphonePermission": "يستمع «قرآني» إلى تلاوتك في «التسميع بالصوت» ليقارنها بنص المصحف.",
           "recordAudioAndroid": true,
           "enableBackgroundPlayback": true
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "يستمع «قرآني» إلى تلاوتك في «التسميع بالصوت» ليقارنها بنص المصحف.",
+          "speechRecognitionPermission": "تحوّل خدمة التعرّف على الكلام تلاوتك إلى نص ليقارنه «قرآني» بنص المصحف.",
+          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox", "com.google.android.tts"]
         }
       ]
     ],
