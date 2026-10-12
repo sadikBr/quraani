@@ -90,8 +90,8 @@
       [
         "expo-audio",
         {
-          "microphonePermission": false,
-          "recordAudioAndroid": false,
+          "microphonePermission": "يستمع «قرآني» إلى تلاوتك في «التسميع بالصوت» ليقارنها بالنص على هاتفك، ولا يرسلها إلى أي جهة.",
+          "recordAudioAndroid": true,
           "enableBackgroundPlayback": true
         }
       ]

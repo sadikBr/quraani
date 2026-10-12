@@ -24,6 +24,7 @@ const CC = {
 };
 const OFL = { licence: 'SIL OFL 1.1', licenceUrl: 'https://openfontlicense.org' };
 const MIT = { licence: 'MIT', licenceUrl: 'https://opensource.org/license/mit' };
+const APACHE = { licence: 'Apache 2.0', licenceUrl: 'https://www.apache.org/licenses/LICENSE-2.0' };
 const commons = (file: string) => `https://commons.wikimedia.org/wiki/File:${file}`;
 
 export const CREDIT_SECTIONS = [
@@ -32,6 +33,7 @@ export const CREDIT_SECTIONS = [
     { id: 'mushafFonts', work: 'KFGQPC Uthmanic Hafs V22, KFGQPC Uthmanic Warsh V21', source: 'https://qurancomplex.gov.sa', terms: 'kfgqpc' },
     { id: 'tajweed', work: 'QUD Quranic Phonemizer', source: 'https://github.com/QUD-Technologies/quranic-phonemizer', ...MIT },
     { id: 'surahFont', work: 'arab quran islamic 140', source: 'http://quranb1og.blogspot.com' },
+    { id: 'listeningModel', work: 'whisper-base-ar-quran by Tarteel AI, fine-tuned from Whisper by OpenAI', source: 'https://huggingface.co/tarteel-ai/whisper-base-ar-quran', ...APACHE },
   ] },
   { id: 'adhkar', items: [
     { id: 'hisn', work: 'Hisn al-Muslim', source: 'https://www.hisnmuslim.com' },
@@ -66,5 +68,6 @@ export const CREDIT_SECTIONS = [
     { id: 'noto', work: 'Noto Naskh Arabic, Noto Sans Arabic by the Noto Project Authors', source: 'https://github.com/notofonts/arabic', ...OFL },
     { id: 'lucide', work: 'Lucide', source: 'https://lucide.dev', licence: 'ISC', licenceUrl: 'https://lucide.dev/license' },
     { id: 'expo', work: 'Expo, React Native', source: 'https://expo.dev', ...MIT },
+    { id: 'whisper', work: 'whisper.cpp by the ggml authors; whisper.rn by Fugood', source: 'https://github.com/mybigday/whisper.rn', ...MIT },
   ] },
 ] as const satisfies readonly { id: string; items: readonly Credit[] }[];

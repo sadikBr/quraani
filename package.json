@@ -6,8 +6,10 @@
     "@expo-google-fonts/geist": "^0.4.2",
     "@expo-google-fonts/ibm-plex-sans-arabic": "^0.4.2",
     "@expo/ui": "~57.0.22",
+    "@fugood/react-native-audio-pcm-stream": "1.1.4",
     "@react-native-community/slider": "5.2.0",
     "adhan": "^4.4.6",
+    "buffer": "6.0.3",
     "expo": "~57.0.27",
     "expo-asset": "~57.0.19",
     "expo-audio": "~57.0.5",
@@ -39,7 +41,8 @@
     "react-native-web": "~0.21.0",
     "react-native-webview": "13.16.1",
     "svg-path-bbox": "^2.1.0",
-    "svgpath": "^2.6.0"
+    "svgpath": "^2.6.0",
+    "whisper.rn": "0.7.4"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",

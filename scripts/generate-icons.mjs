@@ -11,7 +11,7 @@ const icons = {
   sunrise: 'sunrise', sunset: 'sunset', bed: 'bed', alarm: 'alarm-clock', 'hand-heart': 'hand-heart', 'moon-star': 'moon-star',
   beads: 'orbit', undo: 'undo-2', practice: 'book-open-check', hint: 'lightbulb', wrong: 'circle-x',
   mosque: 'mosque', 'map-pin': 'map-pin', locate: 'locate', 'bell-ring': 'bell-ring', 'bell-off': 'bell-off', volume: 'volume-2',
-  stop: 'square', battery: 'battery-warning',
+  stop: 'square', battery: 'battery-warning', mic: 'mic',
 };
 const out = {};
 for (const [name, lucide] of Object.entries(icons)) {

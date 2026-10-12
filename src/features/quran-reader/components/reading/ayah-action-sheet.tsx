@@ -17,6 +17,7 @@ import { ayahKey } from '../../utils/references';
 import { ayahShareText, parallelAyahs } from '../../utils/ayah-actions';
 import type { ReaderPalette } from '../../theme';
 import { ReaderButton } from './reader-button';
+import { listeningSupported } from '@/features/recite-check/listener';
 import { ReaderIcon, type ReaderIconName, Segments } from '../ui/reader-chrome';
 import { calligraphyStyle, surahNameGlyph } from '../../utils/reader-typography';
 import { formatList, t } from '@/i18n';
@@ -48,6 +49,10 @@ export function AyahActionSheet({ ayah, quran, palette, onClose, onListen, whole
   const share = () => {
     onClose();
     router.push({ pathname: '/share-ayah', params: { surah: ayah.surahNumber, ayah: ayah.ayahNumber } });
+  };
+  const reciteFromHere = () => {
+    onClose();
+    router.push({ pathname: '/recite-check', params: { surah: ayah.surahNumber, ayah: ayah.ayahNumber } });
   };
   const swipe = useSwipeToClose(onClose);
   // Cover the system bars with the backdrop; SafeAreaView keeps controls inset.
@@ -91,6 +96,10 @@ export function AyahActionSheet({ ayah, quran, palette, onClose, onListen, whole
               <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: palette.border }} />
               <ListenAction palette={palette} icon="loop" label={t('recitation.ayahSheet.repeatAyah')}
                 detail={repeat > 1 ? t('recitation.ayahSheet.repeatAyahDetail', { count: repeat }) : t('recitation.ayahSheet.repeatAyahEndless')} onPress={() => onListen(ayah, true)} />
+              <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: palette.border }} />
+            </>}
+            {listeningSupported && <>
+              <ListenAction palette={palette} icon="mic" label={`${t('listening.action')} · ${t('listening.beta')}`} detail={t('listening.actionDetail')} onPress={reciteFromHere} />
               <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: palette.border }} />
             </>}
             <RelatedAction palette={palette} icon="book" label={t('reader.actions.tafsir')} detail={t('reader.actions.tafsirDetail')} expanded={kind === 'tafsir'} onPress={() => setKind(kind === 'tafsir' ? null : 'tafsir')} />
