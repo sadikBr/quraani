@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { Alert, Button, Chip, Tabs } from '@/components/ui';
+import { Alert, Button, Tabs } from '@/components/ui';
 import { readerElevation, readerShape } from '@/features/quran-reader/design';
 import { ReaderIcon } from '@/features/quran-reader/components/ui/reader-chrome';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
@@ -15,7 +15,7 @@ import { effectiveAlert, hijriLabel, signedMinutes } from './format';
 import { alertsSupported, athanSoundsSupported, fullAthanSupported, TEST_SECONDS, testPrayerAlert } from './notifications';
 import { AdjustmentsSheet, MethodSheet, TakbirSheet, VoiceSheet } from './prayer-sheets';
 import { usePrayers } from './provider';
-import { BEFORE_OPTIONS, HIJRI_OFFSET_LIMIT } from './settings';
+import { BEFORE_MINUTES, HIJRI_OFFSET_LIMIT } from './settings';
 import { dayOf, PRAYERS } from './times';
 import { timesNotificationSupported } from './times-notification';
 
@@ -63,6 +63,8 @@ function Alerts({ onVoice, onTakbir }: { onVoice: () => void; onTakbir: () => vo
   const { state, alertIssue, setEnabled, update } = usePrayers();
   const kinds = PRAYERS.map((prayer) => effectiveAlert(state.alerts[prayer]));
   const before = state.before;
+  // The length chosen last, given back when the reminder is turned on again.
+  const [length, setLength] = useState(before || 10);
   return <SettingsCard palette={p}>
     <SettingsCardHeading title={t('prayers.alerts.title')} detail={t('prayers.alerts.description')} icon="bell" palette={p} />
     {!alertsSupported ? <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('prayers.alerts.phoneOnly')}</Text> : <View style={{ gap: 16 }}>
@@ -73,12 +75,11 @@ function Alerts({ onVoice, onTakbir }: { onVoice: () => void; onTakbir: () => vo
         {athanSoundsSupported && <SettingRow label={t('prayers.alerts.takbirSound')} value={t(`prayers.takbirs.${state.takbir}.name`)} onPress={onTakbir} />}
         {fullAthanSupported && <SettingRow label={t('prayers.alerts.voice')} value={t(`prayers.voices.${state.voice}.name`)} onPress={onVoice} />}
         {fullAthanSupported && <SettingRow label={t('prayers.screen.title')} value={t(`prayers.screen.backgrounds.${state.screen.background}`)} onPress={() => router.push('/athan-screen')} />}
-        <View style={{ gap: 8 }}>
-          <Text style={{ color: p.foreground, fontSize: 15, fontWeight: '500' }}>{t('prayers.alerts.before')}</Text>
-          <View accessibilityRole="radiogroup" accessibilityLabel={t('prayers.alerts.before')} style={s.chips}>
-            {BEFORE_OPTIONS.map((minutes) => <Chip key={minutes} accessibilityRole="radio" palette={p} selected={before === minutes}
-              label={minutes ? t('prayers.alerts.beforeChip', { count: minutes }) : t('prayers.alerts.beforeNone')} onPress={() => update({ before: minutes })} />)}
-          </View>
+        <View style={{ gap: 10 }}>
+          <PlanSwitch label={t('prayers.alerts.before')} checked={before > 0} onChange={(on) => update({ before: on ? length : 0 })} />
+          {before > 0 && <Tabs palette={p} role="radio" label={t('prayers.alerts.beforeLength')} value={String(before)}
+            onChange={(value) => { setLength(Number(value)); update({ before: Number(value) }); }}
+            options={BEFORE_MINUTES.map((minutes) => ({ value: String(minutes), label: t('prayers.alerts.beforeChip', { count: minutes }) }))} />}
         </View>
         <AlertTest usesFull={kinds.includes('full')} />
         {athanModule && <Reliability usesFull={kinds.includes('full')} />}
@@ -200,7 +201,6 @@ function SettingRow({ label, value, onPress }: { label: string; value: string; o
 }
 
 const s = StyleSheet.create({
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   section: { gap: 10, paddingTop: 14, borderTopWidth: StyleSheet.hairlineWidth },
   testButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   ok: { flexDirection: 'row', alignItems: 'center', gap: 8 },

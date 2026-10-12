@@ -49,13 +49,10 @@ export function ReaderControls({ page, totalPages, previous, next, surahName, pa
     importantForAccessibility: visible ? 'auto' as const : 'no-hide-descendants' as const,
     ...(Platform.OS === 'web' && !visible ? { 'aria-hidden': true, inert: true } : {}),
   };
-  const button = (icon: ReaderIconName, label: string, onPress: () => void, disabled = false, reversed = false) => (
-    <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress}
-      style={({ pressed }) => [styles.icon, { opacity: disabled ? 0.25 : pressed ? 0.5 : 1,
-        backgroundColor: pressed ? palette.accent : 'transparent' }]}>
-      <View style={reversed ? { transform: [{ rotate: '180deg' }] } : undefined}>
-        <ReaderIcon name={icon} color={palette.foreground} size={20} />
-      </View>
+  const button = (icon: ReaderIconName, label: string, onPress: () => void) => (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress}
+      style={({ pressed }) => [styles.icon, { opacity: pressed ? 0.5 : 1, backgroundColor: pressed ? palette.accent : 'transparent' }]}>
+      <ReaderIcon name={icon} color={palette.foreground} size={20} />
     </Pressable>
   );
   const practiceButton = (icon: ReaderIconName, text: string, label: string, onPress: () => void, disabled = false) => (
@@ -92,13 +89,21 @@ export function ReaderControls({ page, totalPages, previous, next, surahName, pa
         </View>}
         {recitation && <View style={styles.content}>{recitation}</View>}
         <View style={[styles.content, styles.navigation]} {...(Platform.OS === 'web' ? { dir: 'ltr' } : {})}>
-          <Link href="/bookmarks" asChild style={styles.icon}>
-            <Pressable accessibilityRole="link" accessibilityLabel={t('reader.controls.bookmarks')}>
-              {({ pressed }) => <ReaderIcon name="bookmark" color={pressed ? palette.primary : palette.foreground} size={20} />}
-            </Pressable>
-          </Link>
-          {button('chevron', t('reader.controls.nextPage'), () => next && onNavigate(next.number), !next)}
-          <Pressable accessibilityRole="button" accessibilityLabel={t('reader.controls.jump', { position: pageLabel ?? t('reader.controls.pageOf', { page: page.number, total: totalPages }) })}
+          {/* The page sits in the middle; the two sides share the rest equally, their buttons at the edges. */}
+          <View style={[styles.side, styles.left]}>
+            <Link href="/bookmarks" asChild style={styles.icon}>
+              <Pressable accessibilityRole="link" accessibilityLabel={t('reader.controls.bookmarks')}>
+                {({ pressed }) => <ReaderIcon name="bookmark" color={pressed ? palette.primary : palette.foreground} size={20} />}
+              </Pressable>
+            </Link>
+          </View>
+          {/* Pages turn by swiping the page; with a screen reader, by adjusting this (swipe up or down). */}
+          <Pressable accessibilityRole="adjustable" accessibilityLabel={t('reader.controls.jump', { position: pageLabel ?? t('reader.controls.pageOf', { page: page.number, total: totalPages }) })}
+            accessibilityActions={[{ name: 'increment', label: t('reader.controls.nextPage') }, { name: 'decrement', label: t('reader.controls.previousPage') }]}
+            onAccessibilityAction={(event) => {
+              const to = event.nativeEvent.actionName === 'increment' ? next : event.nativeEvent.actionName === 'decrement' ? previous : undefined;
+              if (to) onNavigate(to.number);
+            }}
             onPress={onJump} style={({ pressed }) => [styles.page, { opacity: pressed ? 0.6 : 1 }]}>
             <View style={[styles.pagePill, { backgroundColor: palette.muted }]}>
               <Text numberOfLines={1} style={{ color: palette.foreground, fontSize: 13, fontWeight: '500', lineHeight: 22, writingDirection: 'rtl', textAlign: 'center' }}>{pageLabel ?? t('reader.controls.page', { page: page.number })}</Text>
@@ -107,14 +112,15 @@ export function ReaderControls({ page, totalPages, previous, next, surahName, pa
               </View>}
             </View>
           </Pressable>
-          {button('chevron', t('reader.controls.previousPage'), () => previous && onNavigate(previous.number), !previous, true)}
-          <Pressable accessibilityRole="button" accessibilityLabel={listening ? t('recitation.stop') : t('recitation.start')} accessibilityState={{ selected: listening }} onPress={onListen}
-            style={({ pressed }) => [styles.icon, { opacity: pressed ? 0.5 : 1, backgroundColor: pressed ? palette.accent : listening ? palette.secondary : 'transparent' }]}>
-            <ReaderIcon name="headphones" color={listening ? palette.primary : palette.foreground} size={20} />
-          </Pressable>
-          {practiceActive
-            ? button('close', t('reader.controls.hideTools'), onDismiss)
-            : button('eye-off', t('reader.controls.practice'), onPractice)}
+          <View style={[styles.side, styles.right]}>
+            <Pressable accessibilityRole="button" accessibilityLabel={listening ? t('recitation.stop') : t('recitation.start')} accessibilityState={{ selected: listening }} onPress={onListen}
+              style={({ pressed }) => [styles.icon, { opacity: pressed ? 0.5 : 1, backgroundColor: pressed ? palette.accent : listening ? palette.secondary : 'transparent' }]}>
+              <ReaderIcon name="headphones" color={listening ? palette.primary : palette.foreground} size={20} />
+            </Pressable>
+            {practiceActive
+              ? button('close', t('reader.controls.hideTools'), onDismiss)
+              : button('eye-off', t('reader.controls.practice'), onPractice)}
+          </View>
         </View>
       </Animated.View>
     </View>
@@ -128,7 +134,10 @@ const styles = StyleSheet.create({
   navigation: { ...Platform.select({ native: { direction: 'ltr' as const } }), flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 8, paddingVertical: 4, gap: 2 },
   icon: { width: 44, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.control },
-  page: { flex: 1, minWidth: 0, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  side: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  left: { justifyContent: 'flex-start' },
+  right: { justifyContent: 'flex-end' },
+  page: { flexShrink: 1, minWidth: 0, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   pagePill: { minWidth: 104, maxWidth: '100%', paddingHorizontal: 14, paddingTop: 3, paddingBottom: 7, borderRadius: readerShape.lg, alignItems: 'center', gap: 3 },
   // The track fills from the reading start (right), like the mushaf.
   pageTrack: { width: 72, height: 4, borderRadius: readerShape.pill, overflow: 'hidden', flexDirection: 'row-reverse' },

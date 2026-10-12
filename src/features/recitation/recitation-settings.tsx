@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { Alert, Button, Chip, Progress } from '@/components/ui';
+import { Alert, Button, Progress } from '@/components/ui';
 import type { Reciter } from '@/lib/quranpedia/reciters';
 import type { Quran } from '@/lib/quranpedia/types';
 import type { ReaderPalette } from '@/features/quran-reader/theme';
 import { readerShape } from '@/features/quran-reader/design';
 import { RIWAYAT } from '@/features/quran-reader/riwayat';
 import { ReaderIcon } from '@/features/quran-reader/components/ui/reader-chrome';
+import { PlanSwitch } from '@/features/plans/components';
 import { SettingsCard, SettingsCardHeading, SettingsSelection } from '@/features/quran-reader/components/reading/settings-ui';
 import { useReaderContent } from '@/features/quran-reader/hooks/use-reader-content';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
@@ -20,6 +21,9 @@ import { setRepeat, recitationState } from './player';
 import { ReciterSheet, reciterDetail } from './reciter-sheet';
 import { repeatTimes } from './recitation-bar';
 import { SurahDownloadSheet } from './surah-download-sheet';
+
+/** The counts the stepper moves through (0, repeating until stopped, is the switch below it). */
+const COUNTS = REPEAT_CHOICES.filter((choice) => choice > 0);
 
 /** Quranpedia's rawi id of Warsh; the app's other riwayah is Hafs. */
 const WARSH_RAWI = 2;
@@ -52,6 +56,16 @@ export function RecitationSettings({ palette: p }: { palette: ReaderPalette }) {
     // A recitation under way of this kind follows the new choice from its next ayah (or surah).
     if (recitationState().status !== 'idle') setRepeat(next, listening);
   };
+  // The count shown (greyed while repeating without end, and given back when that is turned off).
+  const [counts, setCounts] = useState<Record<ListeningMode, number>>(() => ({ ayah: preferences.repeat || 1, surah: preferences.surahRepeat || 1 }));
+  const endless = repeat === 0;
+  const count = repeat || counts[listening];
+  const index = COUNTS.indexOf(count as typeof COUNTS[number]);
+  const stepCount = (delta: number) => {
+    const next = COUNTS[Math.max(0, Math.min(COUNTS.length - 1, index + delta))];
+    setCounts({ ...counts, [listening]: next });
+    chooseRepeat(next);
+  };
   const chooseReciterFor = (next: Reciter) => {
     update(whole ? { surahReciters: { ...preferences.surahReciters, [preferences.riwayah]: next.id } } : { reciters: { ...preferences.reciters, [preferences.riwayah]: next.id } });
     setPicking(false);
@@ -79,9 +93,16 @@ export function RecitationSettings({ palette: p }: { palette: ReaderPalette }) {
     <SettingsCard palette={p}>
       <SettingsCardHeading title={t(whole ? 'recitation.settings.repeat.surahTitle' : 'recitation.settings.repeat.title')}
         detail={t(whole ? 'recitation.settings.repeat.surahDescription' : 'recitation.settings.repeat.description')} icon="loop" palette={p} />
-      <View accessibilityRole="radiogroup" accessibilityLabel={t(whole ? 'recitation.settings.repeat.surahTitle' : 'recitation.settings.repeat.title')} style={styles.chips}>
-        {REPEAT_CHOICES.map((choice) => <Chip key={choice} palette={p} accessibilityRole="radio" label={repeatTimes(choice)}
-          selected={repeat === choice} onPress={() => chooseRepeat(choice)} />)}
+      <View style={{ gap: 14 }}>
+        <View style={[styles.stepper, endless && { opacity: 0.4 }]}>
+          <Text style={{ flex: 1, minWidth: 0, color: p.foreground, fontSize: 15, fontWeight: '500' }}>{t('recitation.settings.repeat.count')}</Text>
+          <Button size="sm" variant="outline" palette={p} icon="minus" label={t('recitation.settings.repeat.fewer')} disabled={endless || index <= 0} onPress={() => stepCount(-1)} />
+          <Text accessibilityLiveRegion="polite" style={{ width: 84, color: p.foreground, fontSize: 16, fontWeight: '600', textAlign: 'center' }}>{repeatTimes(count)}</Text>
+          <Button size="sm" variant="outline" palette={p} icon="plus" label={t('recitation.settings.repeat.more')} disabled={endless || index >= COUNTS.length - 1} onPress={() => stepCount(1)} />
+        </View>
+        <View style={[styles.rule, { backgroundColor: p.border }]} />
+        <PlanSwitch label={t('recitation.settings.repeat.endless')} detail={t(whole ? 'recitation.settings.repeat.surahEndlessDetail' : 'recitation.settings.repeat.endlessDetail')}
+          checked={endless} onChange={(on) => chooseRepeat(on ? 0 : count)} />
       </View>
     </SettingsCard>
     {quran && reciter && <OfflineCard key={reciter.id} reciter={reciter} quran={quran} palette={p} />}
@@ -196,7 +217,8 @@ const styles = StyleSheet.create({
   loading: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48 },
   current: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderWidth: 1, borderRadius: readerShape.lg },
   change: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  rule: { height: StyleSheet.hairlineWidth },
   listening: { flexDirection: 'row', gap: 10 },
   choice: { flex: 1, minWidth: 0, gap: 4, borderWidth: 1.5, borderRadius: readerShape.lg, paddingHorizontal: 12, paddingVertical: 12 },
   choiceTop: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },

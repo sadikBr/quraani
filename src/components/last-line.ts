@@ -4,6 +4,18 @@ import { Fragment, cloneElement, createElement, isValidElement, type ElementType
 
 const NO_BACKGROUND = { backgroundColor: 'transparent' };
 
+/** The text style that decides where text breaks into lines (colour and backgrounds do not). */
+const LAYOUT_STYLE = ['fontFamily', 'fontSize', 'lineHeight', 'letterSpacing', 'fontWeight', 'fontStyle', 'fontVariant', 'writingDirection', 'includeFontPadding', 'textAlignVertical'] as const;
+
+/**
+ * What a layout of text depends on: its characters and the type it is set in (`style` flattened).
+ * Two renderings with the same key break into the same lines at the same width.
+ */
+export function layoutKey(text: string, style: object | undefined | null): string {
+  const values = style as Record<string, unknown> | undefined | null;
+  return JSON.stringify([text, ...LAYOUT_STYLE.map((name) => values?.[name] ?? null)]);
+}
+
 /** The characters of nested text, as the text view joins them. */
 export function textOf(node: ReactNode): string {
   if (node === null || node === undefined || typeof node === 'boolean') return '';

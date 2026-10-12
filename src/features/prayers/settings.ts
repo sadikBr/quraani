@@ -30,7 +30,11 @@ export interface AthanScreenStyle {
 export const defaultScreen: AthanScreenStyle = { background: 'makkah_night', dim: 'medium', motion: 'pulse', date: true };
 
 /** A reminder this many minutes before each prayer that has an alert (0: none). */
-export const BEFORE_OPTIONS = [0, 5, 10, 15, 20, 30] as const;
+export const BEFORE_OPTIONS = [0, 5, 10, 15, 30] as const;
+/** The lengths offered once the reminder is on. */
+export const BEFORE_MINUTES = BEFORE_OPTIONS.filter((minutes) => minutes > 0);
+/** Offered until 2026-10; a reminder saved with it comes 15 minutes before, the nearest offered. */
+const LEGACY_BEFORE = 20;
 export const ADJUSTMENT_LIMIT = 30;
 export const HIJRI_OFFSET_LIMIT = 2;
 
@@ -128,7 +132,7 @@ export function normalizePrayers(value: unknown): PrayerState {
     adjustments: decodeRecord(s.adjustments, d.adjustments, (v) => within(v, ADJUSTMENT_LIMIT)),
     enabled: typeof s.enabled === 'boolean' ? s.enabled : d.enabled,
     alerts: decodeAlerts(s.alerts),
-    before: BEFORE_OPTIONS.includes(s.before as never) ? s.before! : d.before,
+    before: s.before === LEGACY_BEFORE ? 15 : BEFORE_OPTIONS.includes(s.before as never) ? s.before! : d.before,
     voice: VOICES.includes(s.voice as VoiceId) ? s.voice! : d.voice,
     takbir: TAKBIRS.includes(s.takbir as TakbirId) ? s.takbir! : d.takbir,
     hijriOffset: within(s.hijriOffset, HIJRI_OFFSET_LIMIT) ? s.hijriOffset! : d.hijriOffset,

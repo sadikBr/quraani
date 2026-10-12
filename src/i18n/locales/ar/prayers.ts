@@ -97,9 +97,11 @@ export default {
     offNote: 'التنبيهات متوقفة. إذا اخترت تنبيهًا هنا شُغِّلت لكل الصلوات بما ضُبط لها.',
     voice: 'صوت الأذان كاملًا',
     takbirSound: 'صوت التكبير',
+    /** A switch; once on, the lengths below it. */
     before: 'تذكير قبل الوقت',
-    beforeNone: 'بلا تذكير',
-    /** Chip of the reminder before: «١٠ دقائق». */
+    /** Spoken name of the lengths. */
+    beforeLength: 'مدة التذكير قبل الوقت',
+    /** A length of the reminder before: «١٠ دقائق». */
     beforeChip_zero: 'بلا تذكير',
     beforeChip_one: 'دقيقة',
     beforeChip_two: 'دقيقتان',

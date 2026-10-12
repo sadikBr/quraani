@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { createElement as h, isValidElement } from 'react';
-import { splitLastLine, textOf } from '../src/components/last-line';
+import { layoutKey, splitLastLine, textOf } from '../src/components/last-line';
 
 // Stands for React Native's Text, the host span.
 const Text = (props) => props.children;
@@ -79,5 +79,18 @@ describe('justified text with a centred last line', () => {
         expect(keyProblems(line)).toEqual([]);
       }
     }
+  });
+
+  test('a layout is known again only for the same text in the same type', () => {
+    const style = { fontFamily: 'QuranWarsh', fontSize: 32, lineHeight: 61, color: 'black' };
+    const key = layoutKey('قل هو الله أحد', style);
+    // Colours and highlights do not move the lines.
+    expect(layoutKey('قل هو الله أحد', { ...style, color: 'gold', backgroundColor: 'yellow' })).toBe(key);
+    // Another size, spacing, font or text does.
+    expect(layoutKey('قل هو الله أحد', { ...style, fontSize: 36 })).not.toBe(key);
+    expect(layoutKey('قل هو الله أحد', { ...style, lineHeight: 72 })).not.toBe(key);
+    expect(layoutKey('قل هو الله أحد', { ...style, fontFamily: 'QuranHafs' })).not.toBe(key);
+    expect(layoutKey('قل هو الله احد', style)).not.toBe(key);
+    expect(layoutKey('', undefined)).toBe(layoutKey('', {}));
   });
 });

@@ -2,7 +2,7 @@ import { type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { router, type Href } from 'expo-router';
+import { router } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { Embedded } from '@/components/embedded';
 import { HorizontalControl, SwipePages, useSwipeTabs } from '@/components/swipe-tabs';
@@ -34,16 +34,9 @@ import { t } from '@/i18n';
 const TABS = ['today', 'prayers', 'goals', 'adhkar', 'practice'] as const;
 type Tab = typeof TABS[number];
 
-/** The reader's own tools, a row on the «اليوم» tab; a new small tool is one more entry. */
-const TOOLS: { href: Href; icon: ReaderIconName; text: 'index' | 'bookmarks' | 'search' | 'settings' }[] = [
-  { href: '/quran-index', icon: 'index', text: 'index' },
-  { href: '/bookmarks', icon: 'bookmark', text: 'bookmarks' },
-  { href: '/search', icon: 'search', text: 'search' },
-  { href: '/settings', icon: 'settings', text: 'settings' },
-];
-
 /**
- * The app's front door, opened from the reader's menu button (going back returns to the reader).
+ * The app's front door, opened from the reader's menu button (going back returns to the reader;
+ * the top bar holds the settings).
  * Tabs keep it tidy as the app grows: «اليوم» gathers what matters now (the prayer times, what is
  * due today, the reader's tools), and each other tab is a whole section, shown in place. A swipe
  * moves between tabs like the mushaf's pages: the next tab lies to the left, as in the tab bar.
@@ -57,7 +50,7 @@ export function HomeScreen() {
     <View style={s.header}>
       <QuranniLogo color={p.ornament} size={30} />
       <View style={{ flex: 1 }}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 20, fontWeight: '600' }}>{t('common.appName')}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{shortDate(today)} · {t('common.riwayahOf', { riwayah: RIWAYAT[riwayah].label })}</Text></View>
-      <IconButton name="close" label={t('common.backToReading')} palette={p} onPress={() => router.dismissTo('/')} />
+      <IconButton name="settings" label={t('common.settings')} palette={p} onPress={() => router.push('/settings')} />
     </View>
     <View style={[s.tabBar, { borderColor: p.border }]}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} accessibilityRole="tablist" contentContainerStyle={s.tabs}>
@@ -76,7 +69,10 @@ export function HomeScreen() {
   </SafeAreaView></GestureHandlerRootView>;
 }
 
-/** What matters now: the prayer times, then what is due today as cards to swipe, then the reader's tools. */
+/**
+ * What matters now: the prayer times, then what is due today as cards to swipe. The reader's tools
+ * (index, bookmarks, search) are in its own toolbar.
+ */
 function TodayTab({ onTab }: { onTab: (tab: Tab) => void }) {
   const { palette: p } = useReadingPreferences();
   return <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
@@ -84,16 +80,6 @@ function TodayTab({ onTab }: { onTab: (tab: Tab) => void }) {
     <View style={s.section}>
       <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('home.now.title')}</Text>
       <NowCards onTab={onTab} />
-    </View>
-    <View style={s.section}>
-      <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('home.tools')}</Text>
-      <View style={s.tools}>
-        {TOOLS.map((tool) => <Pressable key={tool.text} accessibilityRole="link" accessibilityLabel={t(`home.areas.${tool.text}.label`)} onPress={() => router.push(tool.href)}
-          style={({ pressed }) => [s.tool, { backgroundColor: pressed ? p.accent : p.card, borderColor: p.border }, readerElevation(1, p)]}>
-          <IconTile name={tool.icon} palette={p} />
-          <Text numberOfLines={1} style={{ color: p.foreground, fontSize: 13, fontWeight: '500' }}>{t(`home.areas.${tool.text}.label`)}</Text>
-        </Pressable>)}
-      </View>
     </View>
   </ScrollView>;
 }
@@ -113,7 +99,8 @@ function adhkarNow(prayer: string | undefined, hour: number): CollectionId {
 }
 
 /**
- * A swipeable row: the adhkar for now, each goal due today (or an invitation), and the misbaha.
+ * A swipeable row: the adhkar for now, and each goal due today (or an invitation). The misbaha
+ * is in the adhkar tab.
  * A swipe that starts on the row scrolls the row, not the tabs.
  */
 function NowCards({ onTab }: { onTab: (tab: Tab) => void }) {
@@ -133,7 +120,6 @@ function NowCards({ onTab }: { onTab: (tab: Tab) => void }) {
     <AdhkarCard id={adhkarNow(current, now.getHours())} width={card} />
     {ready && overview.due.map((plan) => <GoalCard key={plan.id} plan={plan} today={today} width={card} />)}
     {ready && !overview.due.length && <NoGoalCard width={card} hasGoals={!!overview.all.length} completed={overview.completedToday > 0} later={later} onTab={onTab} />}
-    <MisbahaCard width={card} />
   </ScrollView></HorizontalControl>;
 }
 
@@ -204,13 +190,6 @@ function NoGoalCard({ width, hasGoals, completed, later, onTab }: { width: numbe
     detail={completed ? t('home.today.completed') : later} done={completed} label={t('home.today.allGoals')} onPress={() => onTab('goals')} />;
 }
 
-function MisbahaCard({ width }: { width: number }) {
-  const { state } = useAdhkar();
-  const title = t('adhkar.misbaha.title');
-  const detail = state.misbaha ? t('adhkar.misbaha.count', { count: state.misbaha }) : t('adhkar.misbaha.empty');
-  return <NowCard width={width} icon="beads" kind={t('home.now.dhikr')} title={title} detail={detail} label={t('adhkar.openLabel', { title, state: detail })} onPress={() => router.push('/misbaha')} />;
-}
-
 function describePortion(plan: ReadingPlan, index: PlanIndex, start: number, end: number) {
   if (!isSequentialPlan(plan)) return ayahRangeLabel(index, start, end);
   return `${rangeLabel(index, start, end)} · ${ayahRangeLabel(index, start, end)}`;
@@ -227,6 +206,4 @@ const s = StyleSheet.create({
   card: { borderRadius: readerShape.card, borderWidth: StyleSheet.hairlineWidth, padding: 16, gap: 12, minHeight: 184 },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   action: { alignSelf: 'flex-start', minHeight: 36, paddingHorizontal: 16, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
-  tools: { flexDirection: 'row', gap: 10 },
-  tool: { flex: 1, alignItems: 'center', gap: 8, paddingVertical: 14, paddingHorizontal: 4, borderRadius: readerShape.card, borderWidth: StyleSheet.hairlineWidth },
 });

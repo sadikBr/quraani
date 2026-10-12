@@ -1,12 +1,21 @@
-/** The settings screen: riwayah, reading mode, tajweed, text comfort and appearance. */
+/** The settings screen: the mushaf (riwayah, reading mode), the Quran text's look, recitation, appearance, prayers. */
 export default {
   tabs: { label: 'أقسام الإعدادات', reading: 'القراءة', recitation: 'التلاوة', appearance: 'المظهر', prayers: 'الصلاة' },
-  /** Headline and sentence at the top of each settings tab. */
+  /** Headline and sentence at the top of each settings tab (the reading tab has group headings instead). */
   intro: {
-    reading: { title: 'قراءة تناسبك', detail: 'اختر روايتك وطريقة العرض التي تريحك.' },
     recitation: { title: 'تلاوة تعينك على الحفظ', detail: 'اختر قارئك وعدد مرات التكرار، ونزّل التلاوة لتستمع إليها دون اتصال.' },
     appearance: { title: 'ألوان تريح عينك', detail: 'اختر مظهرًا يرافقك في كل صفحة.' },
     prayers: { title: 'صلاتك في وقتها', detail: 'اختر كيف ينبّهك التطبيق لكل صلاة، وطريقة حساب المواقيت.' },
+  },
+  /** The reading tab's two groups: what is read, then how the Quran text looks. */
+  groups: {
+    mushaf: 'المصحف',
+    text: {
+      title: 'النص القرآني',
+      detail: 'في وضع النص، والأذكار، والبحث. كل تغيير يظهر في المعاينة.',
+      /** Added for Warsh while the printed pages are chosen: the letter style and colours leave them as they are. */
+      pagesStay: 'صفحات المصحف تبقى كما طُبعت.',
+    },
   },
   riwayah: {
     title: 'رواية القرآن',
@@ -16,11 +25,8 @@ export default {
   },
   mode: {
     title: 'طريقة القراءة',
-    detail: 'اختر كيف يظهر لك المصحف.',
     page: { label: 'صفحات المصحف', detail: 'كالمصحف المطبوع' },
     text: { label: 'النص القرآني', detail: 'بالحجم الذي يناسبك' },
-    /** Shown when the printed pages are chosen: their font size and spacing can't be changed. */
-    pageNote: 'يبقى حجم الخط وتباعد السطور كما في المصحف المطبوع.',
   },
   textLayout: {
     title: 'عرض الآيات',
@@ -33,33 +39,24 @@ export default {
   /** Warsh only: the letters as in the Maghrib (the Warsh font) or the East (the Madinah mushaf's font). */
   warshScript: {
     title: 'شكل الحروف',
-    detail: 'كيف تُرسم حروف نص ورش في النص القرآني.',
-    maghribi: { label: 'مغاربي', detail: 'كمصاحف المغرب: القاف بنقطة فوقها، والفاء بنقطة تحتها.' },
-    mashriqi: { label: 'مشرقي', detail: 'بخط مصحف المدينة: القاف بنقطتين، والفاء بنقطة فوقها.' },
-    pagesNote: 'تبقى صفحات المصحف كما طُبعت؛ يتغيّر النص القرآني وألوان التجويد فيه، وآيات الأذكار.',
+    /** Under the choice, for the one chosen; the preview shows the dots of ق and ف. */
+    maghribi: { label: 'مغاربي', detail: 'كمصاحف المغرب' },
+    mashriqi: { label: 'مشرقي', detail: 'كمصحف المدينة' },
   },
   tajweed: {
     title: 'ألوان التجويد',
-    /** State of the tajweed colors (feminine: agrees with ألوان). */
-    on: 'مفعّلة',
-    off: 'غير مفعّلة',
-    detail: 'تمييز أحكام التجويد',
-    warshNote: 'الأحكام وفق رواية ورش من طريق الأزرق. تظهر الألوان في النص القرآني، وتبقى صفحات المصحف كما هي.',
-    hafsNote: 'تظهر ألوان مصحف التجويد من الموسوعة القرآنية في الصفحات والنص معًا.',
+    /** Under the switch: whose rules (Warsh), or where the colours show (Hafs: the printed pages too). */
+    warshDetail: 'وفق رواية ورش من طريق الأزرق',
+    hafsDetail: 'ألوان مصحف التجويد، في الصفحات والنص معًا',
     stopNote: 'تُعرض الأحكام باعتبار الوقف على رأس كل آية.',
   },
   footer: {
     /** Avoids «تُحفظ», which reads as memorizing. */
     autoSaved: 'تُسجَّل اختياراتك تلقائيًا',
-    sourceLabel: 'المحتوى القرآني من الموسوعة القرآنية',
-    /** Link text; the arrow marks an external link. */
-    source: 'المحتوى من الموسوعة القرآنية ↗',
-    /** Link to the credits page. */
+    /** Link to the credits page, which names the sources (the Quran content is Quranpedia's). */
     credits: 'المصادر والتراخيص',
   },
   textComfort: {
-    title: 'راحة القراءة',
-    detail: 'اضبط حجم الخط وتباعد السطور، وعاين النتيجة فورًا.',
     /** Labels at the two ends of the size slider. */
     rangeSmall: 'صغير',
     rangeLarge: 'كبير',
@@ -67,8 +64,8 @@ export default {
     spacing: { normal: 'معتدل', spacious: 'واسع' },
     preview: {
       live: 'معاينة مباشرة',
-      /** Shown while the surah name of the preview is not loaded yet. */
-      fallbackSurah: 'سورة الفاتحة',
+      /** Shown while the surah name of the preview (Al-Mulk 9) is not loaded yet. */
+      fallbackSurah: 'سورة الملك',
       loading: 'جارٍ تحميل المعاينة',
       error: 'تعذّر عرض المعاينة، ويمكنك مع ذلك ضبط الخط والتباعد.',
       reload: 'إعادة تحميل المعاينة',

@@ -29,7 +29,7 @@ text available and offers retry.
 ### Warsh letter style — 2026-10-12
 
 Quranpedia has one Warsh font (V21, Maghribi: ق with one dot above, ف with one
-below). Settings → القراءة offers `warshScript: maghribi | mashriqi` for Warsh;
+below). Settings → القراءة → النص القرآني offers `warshScript: maghribi | mashriqi` for Warsh;
 **مشرقي** draws the same Warsh text in the Hafs V22 font (Madinah letters). The
 Warsh text spells ق/ف with the standard letters, so the font alone decides the
 dots. V22 covers every Warsh character but U+0622 (drawn as U+0627 U+0653) and
@@ -140,7 +140,14 @@ Sources: [Hafs Unicode corpus](https://api.quranpedia.net/v1/mushafs/2),
 - Runtime interaction state lives in `components/reading/reader-screen.tsx`;
   framework-independent selection helpers remain in `state/reader-state.ts`.
 
-## Text comfort settings
+## Quran text settings
+
+The reading tab has two groups (2026-10-12): **المصحف** (riwayah, reading mode)
+and **النص القرآني**, one card (`quran-text-settings.tsx`) with a live preview
+above the choices it shows: letter style (Warsh), tajweed colours and, in text
+mode, size, spacing and the ayah layout. The letter style and colours stay
+visible with the printed pages chosen, since the adhkar and search set the
+Quran as text too.
 
 Text mode offers seven font sizes (24–48 in steps of four) through an RTL slider.
 Native uses the SDK-compatible community slider with tap-to-seek and accessibility
@@ -150,15 +157,24 @@ keyboard-accessible range input. Dragging updates a local
 preview immediately and saves on release, avoiding repeated reader/storage updates.
 Legacy in-between saved sizes snap to the nearest stop when restored.
 
-The preview uses the first two original Al-Fatiha ayahs of the selected riwayah from the cached reader
-content, the bundled Quran font, and the same line-height calculation as the reader.
+The preview (`text-preview.tsx`) shows Al-Mulk 9–10 by their Hafs numbers (Warsh
+9–11) from the cached reader content: they open with both ق and ف, so the letter
+style shows at any size. It uses the selected riwayah's font and letter style and
+the same line-height calculation as the reader, in a window of fixed height (four
+lines at the default size) so the choices below never move while a size is tried;
+larger text runs past it and fades out. On native, `JustifiedText` keeps the
+previous layout on screen while a changed text or size is measured in an invisible
+copy, then changes once, so the centred last line never flashes. While Settings
+covers the reader, `HoldTextPreferences` keeps the reader's text choices until they
+have been still for 700 ms (or the reader is shown again), so its pages are laid
+out once rather than at every step.
 It follows separate/continuous text layout, spacing and theme. With tajweed
 enabled, it reuses the reader's cached color rules and joined-text renderer in a
 compact, non-interactive preview, including light/dark colors. Disabling tajweed
 returns to plain text; each riwayah uses its own annotations and font. It wraps without
-clipping at larger sizes, stacks below controls on phones, and sits alongside them
-when the settings panel has at least 620 points of width. Printed-page mode keeps
-its fixed typography. Native gesture and screen-reader acceptance need device QA.
+clipping at larger sizes, sits above the choices on phones, and beside them when
+the card has at least 620 points of width. Printed-page mode keeps its fixed
+typography. Native gesture and screen-reader acceptance need device QA.
 
 ## Live response and asset validation
 

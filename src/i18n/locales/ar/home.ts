@@ -7,18 +7,9 @@ export default {
     /** Above the adhkar of this part of the day. */
     adhkar: 'أذكار هذا الوقت',
     begin: 'ابدأ',
-    dhikr: 'الذكر',
     noGoals: 'ضع لنفسك هدفًا',
     goalsDone: 'أتممت ورد اليوم',
     goalsLater: 'تجد أهدافك ومواعيدها في «الأهداف».',
-  },
-  /** The reader's tools on «اليوم». */
-  tools: 'المصحف',
-  areas: {
-    index: { label: 'الفهرس', detail: 'السور والأجزاء والأحزاب' },
-    bookmarks: { label: 'العلامات', detail: 'آيات علّمت عليها لتعود إليها' },
-    search: { label: 'البحث', detail: 'بكلمة، أو برقم السورة والآية' },
-    settings: { label: 'الإعدادات', detail: 'الرواية والمظهر والخط' },
   },
   today: {
     allGoals: 'كل الأهداف',

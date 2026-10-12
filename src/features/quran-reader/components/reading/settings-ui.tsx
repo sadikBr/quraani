@@ -20,6 +20,14 @@ export function SettingsCardHeading({ title, detail, icon, palette }: { title: s
   </View>;
 }
 
+/** The heading of a group of cards within a tab, with what the group is about. */
+export function SettingsGroupHeading({ title, detail, palette }: { title: string; detail?: string; palette: ReaderPalette }) {
+  return <View style={settingsStyles.group}>
+    <Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 19, fontWeight: '700' }}>{title}</Text>
+    {!!detail && <Text style={{ color: palette.mutedForeground, fontSize: 13, lineHeight: 20 }}>{detail}</Text>}
+  </View>;
+}
+
 /** Single-choice mark (RadioGroup item). */
 export function SettingsSelection({ selected, palette }: { selected: boolean; palette: ReaderPalette }) {
   return <CheckMark checked={selected} palette={palette} radio />;
@@ -44,6 +52,7 @@ export function ReadingLayoutPreview({ kind, palette, selected }: { kind: 'page'
 export const settingsStyles = StyleSheet.create({
   card: { padding: 20, gap: 20 },
   heading: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  group: { paddingHorizontal: 4, paddingTop: 6, gap: 2 },
   layoutPreview: { height: 82, borderRadius: readerShape.control, padding: 14, alignItems: 'flex-start', justifyContent: 'center', overflow: 'hidden' },
   layoutFrame: { position: 'absolute', top: 6, bottom: 6, left: 7, right: 7, borderWidth: 1, borderRadius: 2 },
 });

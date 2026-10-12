@@ -19,7 +19,7 @@ import { QuranPage } from './quran-page';
 import { PrintedQuranPage } from './printed-quran-page';
 import { ReaderButton } from './reader-button';
 import { ReaderDrawer } from './reader-drawer';
-import { useReadingPreferences } from '../../state/reading-preferences-provider';
+import { HoldTextPreferences, useReadingPreferences } from '../../state/reading-preferences-provider';
 import { Stack, router, useIsFocused, useLocalSearchParams } from 'expo-router';
 import { indexRouteDestination } from '../../utils/reader-index';
 import { ReaderControls } from './reader-controls';
@@ -36,7 +36,11 @@ import { t } from '@/i18n';
 export function ReaderScreen() {
   const { preferences: { riwayah } } = useReadingPreferences();
   const { plan, planCycle, planSlot } = useLocalSearchParams<{ plan?: string; planCycle?: string; planSlot?: string }>();
-  return <RiwayahReaderScreen key={`${riwayah}:${plan ?? ''}:${planCycle ?? ''}:${planSlot ?? ''}`} />;
+  // Under the settings, the pages are not laid out again at every step of a size or letter change.
+  const focused = useIsFocused();
+  return <HoldTextPreferences held={!focused}>
+    <RiwayahReaderScreen key={`${riwayah}:${plan ?? ''}:${planCycle ?? ''}:${planSlot ?? ''}`} />
+  </HoldTextPreferences>;
 }
 
 function RiwayahReaderScreen() {

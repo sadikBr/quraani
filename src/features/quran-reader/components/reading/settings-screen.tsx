@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { RIWAYAT } from '../../riwayat';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
@@ -9,12 +9,11 @@ import { ArabicText as Text } from '@/components/arabic-text';
 import { Tabs } from '@/components/ui';
 import { SwipePages, useSwipeTabs } from '@/components/swipe-tabs';
 import { useReadingPreferences } from '../../state/reading-preferences-provider';
-import { ReaderSettings } from './reader-settings';
+import { ReaderThemePicker } from './reader-theme-picker';
 import { IconButton, ReaderIcon, type ReaderIconName } from '../ui/reader-chrome';
 import { QuranniLogo } from '../ui/quranni-logo';
-import { WarshTajweedLegend } from './warsh-tajweed-legend';
-import { WarshScriptCard } from './warsh-script-card';
-import { ReadingLayoutPreview, SettingsCard, SettingsCardHeading, SettingsSelection, SettingsToggle } from './settings-ui';
+import { QuranTextSettings } from './quran-text-settings';
+import { ReadingLayoutPreview, SettingsCard, SettingsCardHeading, SettingsGroupHeading, SettingsSelection } from './settings-ui';
 import { readerLayout, readerShape } from '../../design';
 import { RecitationSettings } from '@/features/recitation/recitation-settings';
 import { PrayerSettings } from '@/features/prayers/prayer-settings';
@@ -55,16 +54,21 @@ export function SettingsScreen() {
   </SafeAreaView></GestureHandlerRootView>;
 }
 
-/** One tab's settings, with the tab's introduction above and the app's footer below. */
+/**
+ * One tab's settings, with the app's footer below. Each tab opens with its introduction, but for
+ * the reading tab, whose two groups have headings of their own: the mushaf (riwayah and reading
+ * mode), then how the Quran text looks, under one live preview.
+ */
 function SettingsPage({ tab }: { tab: SettingsTab }) {
-  const { preferences, update, palette, dark } = useReadingPreferences();
-  const { appearance, mode, textLayout, fontSize, spacious, riwayah, tajweed } = preferences;
+  const { preferences, update, palette } = useReadingPreferences();
+  const { appearance, mode, textLayout, riwayah } = preferences;
   return <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-    <View style={styles.intro}>
+    {tab !== 'reading' && <View style={styles.intro}>
       <Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 24, fontWeight: '600' }}>{t(`settings.intro.${tab}.title`)}</Text>
       <Text style={{ color: palette.mutedForeground, fontSize: 15 }}>{t(`settings.intro.${tab}.detail`)}</Text>
-    </View>
+    </View>}
     {tab === 'reading' && <>
+      <SettingsGroupHeading title={t('settings.groups.mushaf')} palette={palette} />
       <SettingsCard palette={palette}>
         <SettingsCardHeading title={t('settings.riwayah.title')} icon="book" palette={palette} />
         <View accessibilityRole="radiogroup" accessibilityLabel={t('settings.riwayah.title')} style={styles.row}>
@@ -72,7 +76,7 @@ function SettingsPage({ tab }: { tab: SettingsTab }) {
             const selected = riwayah === item.value;
             return <Pressable key={item.value} accessibilityRole="radio" accessibilityLabel={t(`common.riwayah.${item.value}.label`)} accessibilityState={{ checked: selected }} aria-checked={selected}
               onPress={() => update({ riwayah: item.value })} style={({ pressed }) => [styles.riwayah, { backgroundColor: pressed ? palette.accent : palette.background, borderColor: selected ? palette.primary : palette.input }]}>
-              <View style={styles.riwayahTop}><SettingsSelection palette={palette} selected={selected} /></View>
+              <View style={styles.choiceTop}><SettingsSelection palette={palette} selected={selected} /></View>
               <Text style={{ color: palette.foreground, fontSize: 22, lineHeight: 36, fontWeight: '600' }}>{item.name}</Text>
               <Text style={{ color: palette.mutedForeground, fontSize: 14, marginTop: -4 }}>{item.from}</Text>
             </Pressable>;
@@ -81,51 +85,31 @@ function SettingsPage({ tab }: { tab: SettingsTab }) {
         <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('settings.riwayah.savedSeparately')}</Text>
       </SettingsCard>
       <SettingsCard palette={palette}>
-        <SettingsCardHeading title={t('settings.mode.title')} detail={t('settings.mode.detail')} icon="lines" palette={palette} />
+        <SettingsCardHeading title={t('settings.mode.title')} icon="lines" palette={palette} />
         <View accessibilityRole="radiogroup" accessibilityLabel={t('settings.mode.title')} style={styles.row}>
           {([{ value: 'page', label: t('settings.mode.page.label'), detail: t('settings.mode.page.detail') }, { value: 'text', label: t('settings.mode.text.label'), detail: t('settings.mode.text.detail') }] as const).map(item => {
             const selected = mode === item.value;
             return <Pressable key={item.value} accessibilityRole="radio" accessibilityLabel={item.label} accessibilityState={{ checked: selected }} aria-checked={selected}
               onPress={() => update({ mode: item.value })} style={({ pressed }) => [styles.layoutChoice, { backgroundColor: pressed ? palette.accent : palette.background, borderColor: selected ? palette.primary : palette.input }]}>
+              <View style={styles.choiceTop}><SettingsSelection palette={palette} selected={selected} /></View>
               <ReadingLayoutPreview kind={item.value === 'page' ? 'page' : textLayout} palette={palette} selected={selected} />
-              <View style={styles.layoutLabel}><Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600', flex: 1 }}>{item.label}</Text><SettingsSelection palette={palette} selected={selected} /></View>
+              <Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600', marginTop: 4 }}>{item.label}</Text>
               <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{item.detail}</Text>
             </Pressable>;
           })}
         </View>
-        {mode === 'text' ? <View style={[styles.textLayout, { borderColor: palette.border }]}>
-          <Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600' }}>{t('settings.textLayout.title')}</Text>
-          <Tabs palette={palette} role="radio" label={t('settings.textLayout.label')} value={textLayout} onChange={value => update({ textLayout: value })} options={[{ value: 'ayah', label: t('settings.textLayout.ayah') }, { value: 'flowing', label: t('settings.textLayout.flowing') }] as const} />
-          <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{textLayout === 'ayah' ? t('settings.textLayout.ayahDetail') : t('settings.textLayout.flowingDetail')}</Text>
-        </View> : <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('settings.mode.pageNote')}</Text>}
       </SettingsCard>
-      {riwayah === 'warsh' && <WarshScriptCard palette={palette} />}
-      <SettingsCard palette={palette}>
-        <Pressable accessibilityRole="switch" accessibilityState={{ checked: tajweed }} aria-checked={tajweed} accessibilityLabel={t('settings.tajweed.title')}
-          onPress={() => update({ tajweed: !tajweed })} style={({ pressed }) => [styles.tajweed, { opacity: pressed ? 0.65 : 1 }]}>
-          <View style={[styles.colors, { backgroundColor: palette.muted }]}>{['#537fff', '#dd5359', '#50a86b'].map((color, i) => <View key={color} style={{ width: 4, height: 12 + i * 4, backgroundColor: color, borderRadius: 2 }} />)}</View>
-          <View style={{ flex: 1, minWidth: 0 }}><Text style={{ color: palette.foreground, fontSize: 16, fontWeight: '600' }}>{t('settings.tajweed.title')}</Text><Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{tajweed ? t('settings.tajweed.on') : t('settings.tajweed.off')} · {t('settings.tajweed.detail')}</Text></View>
-          <SettingsToggle checked={tajweed} palette={palette} />
-        </Pressable>
-        {riwayah === 'warsh' ? <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('settings.tajweed.warshNote')}</Text>
-          : <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('settings.tajweed.hafsNote')}</Text>}
-        {riwayah === 'warsh' && tajweed && <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderColor: palette.border, paddingTop: 6 }}>
-          <WarshTajweedLegend palette={palette} dark={dark} />
-          <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('settings.tajweed.stopNote')}</Text>
-        </View>}
-      </SettingsCard>
+      <SettingsGroupHeading title={t('settings.groups.text.title')} palette={palette}
+        detail={riwayah === 'warsh' && mode === 'page' ? `${t('settings.groups.text.detail')} ${t('settings.groups.text.pagesStay')}` : t('settings.groups.text.detail')} />
+      <QuranTextSettings palette={palette} />
     </>}
     {tab === 'recitation' && <RecitationSettings palette={palette} />}
     {tab === 'prayers' && <PrayerSettings />}
-    {(tab === 'reading' || tab === 'appearance') && <ReaderSettings section={tab} palette={palette} fixedPage={mode === 'page'} textLayout={textLayout} appearance={appearance} setAppearance={value => update({ appearance: value })}
-      fontSize={fontSize} setFontSize={value => update({ fontSize: value })} spacious={spacious} setSpacious={value => update({ spacious: value })} />}
+    {tab === 'appearance' && <ReaderThemePicker appearance={appearance} onChange={value => update({ appearance: value })} palette={palette} />}
     <View style={styles.footer}>
       <View style={styles.saved}><ReaderIcon name="done" color={palette.mutedForeground} size={14} /><Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('settings.footer.autoSaved')}</Text></View>
       <View style={[styles.footerRule, { backgroundColor: palette.border }]} />
       <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('common.appName')} · {t('common.riwayahOf', { riwayah: RIWAYAT[riwayah].label })}</Text>
-      <Pressable accessibilityRole="link" accessibilityLabel={t('settings.footer.sourceLabel')} onPress={() => void Linking.openURL('https://quranpedia.net')} style={styles.source}>
-        <Text style={{ color: palette.mutedForeground, fontSize: 12 }}>{t('settings.footer.source')}</Text>
-      </Pressable>
       <Pressable accessibilityRole="link" onPress={() => router.push('/credits')} style={styles.source}>
         <Text style={{ color: palette.mutedForeground, fontSize: 12, textDecorationLine: 'underline' }}>{t('settings.footer.credits')}</Text>
       </Pressable>
@@ -144,14 +128,8 @@ const styles = StyleSheet.create({
   intro: { paddingHorizontal: 4, paddingTop: 2, paddingBottom: 6, gap: 2 }, row: { flexDirection: 'row', gap: 10 },
   // Option tiles: a constant 1.5 border keeps the layout still when the accent colour marks the selection.
   riwayah: { flex: 1, minWidth: 0, borderWidth: 1.5, borderRadius: readerShape.lg, paddingHorizontal: 14, paddingVertical: 12 },
-  riwayahTop: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 4, marginBottom: 2 },
-  layoutChoice: { flex: 1, minWidth: 0, padding: 10, borderWidth: 1.5, borderRadius: readerShape.lg, gap: 8 },
-  layoutLabel: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  textLayout: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 14, gap: 10 },
-  layoutSegments: { flexDirection: 'row', borderRadius: readerShape.control, padding: 4, gap: 4 },
-  layoutSegment: { flex: 1, minHeight: 44, padding: 4, borderRadius: readerShape.detail, borderWidth: StyleSheet.hairlineWidth, justifyContent: 'center' },
-  tajweed: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48 },
-  colors: { width: 40, height: 40, borderRadius: readerShape.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 3 },
+  choiceTop: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', gap: 4, marginBottom: 2 },
+  layoutChoice: { flex: 1, minWidth: 0, padding: 10, borderWidth: 1.5, borderRadius: readerShape.lg, gap: 6 },
   footer: { alignItems: 'center', paddingTop: 10, gap: 2 }, saved: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   footerRule: { width: 36, height: 1, marginVertical: 13 }, source: { minHeight: 44, justifyContent: 'center' },
 });

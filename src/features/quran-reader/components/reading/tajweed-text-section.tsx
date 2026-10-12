@@ -4,7 +4,7 @@ import type { Ayah, AyahReference } from '@/lib/quranpedia/types';
 import type { ReaderTextLayout } from '../../types/reader';
 import type { ReaderPalette } from '../../theme';
 import type { TajweedSurah } from '../../utils/tajweed';
-import { loadQuranDocumentFont } from '../../services/quran-document-font';
+import { loadedQuranDocumentFont, loadQuranDocumentFont } from '../../services/quran-document-font';
 import { editionForMushaf } from '../../riwayat';
 import { tajweedTextDocument, tajweedTextState } from '../../utils/tajweed-text-document';
 import { ayahKey } from '../../utils/references';
@@ -35,7 +35,8 @@ export const TajweedTextSection = memo(function TajweedTextSection({ ayahs, page
   const { preferences: { warshScript } } = useReadingPreferences();
   const { fontMushafId, display } = quranScriptForMushaf(mushafId, warshScript);
   const [loadedFont, setFont] = useState<{ mushafId: number; uri: string }>();
-  const font = loadedFont?.mushafId === fontMushafId ? loadedFont.uri : undefined;
+  // A font loaded before (the other letter style, chosen again) is used at once, without a spinner.
+  const font = loadedFont?.mushafId === fontMushafId ? loadedFont.uri : loadedQuranDocumentFont(fontMushafId);
   const [height, setHeight] = useState(() => preview ? readerTextLineHeight(fontSize, spacious) * 3 : 600);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);

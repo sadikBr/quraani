@@ -100,6 +100,14 @@ export default {
       description: 'عدد مرات تلاوة كل آية قبل الانتقال إلى التي تليها. يعين على الحفظ والمراجعة.',
       surahTitle: 'تكرار السورة',
       surahDescription: 'عدد مرات تلاوة السورة قبل الانتقال إلى التي تليها.',
+      /** Beside the − and + of the count. */
+      count: 'عدد المرات',
+      fewer: 'مرات أقل',
+      more: 'مرات أكثر',
+      /** A switch under the count: repeat until the listener stops. */
+      endless: 'تكرار دون توقف',
+      endlessDetail: 'تتكرر كل آية حتى تُوقفها.',
+      surahEndlessDetail: 'تتكرر السورة حتى تُوقفها.',
     },
     offline: {
       title: 'الاستماع دون اتصال',

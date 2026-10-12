@@ -109,6 +109,8 @@ describe('prayer settings', () => {
     expect(normalizePrayers({ location: { source: 'city', city: 'atlantis', latitude: 1, longitude: 1 } }).location).toBeNull();
     expect(normalizePrayers({ location: { source: 'gps', latitude: 95, longitude: 1 } }).location).toBeNull();
     expect(applyPrayers(defaultPrayerState, { before: 10, voice: 'azeez' })).toMatchObject({ before: 10, voice: 'azeez', method: 'habous' });
+    // 20 minutes is no longer offered: a reminder saved with it comes 15 minutes before, not never.
+    expect([20, 30, 15, 0].map((before) => normalizePrayers({ before }).before)).toEqual([15, 30, 15, 0]);
     expect([decoded.takbir, normalizePrayers({ takbir: 'medina' }).takbir, normalizePrayers({ takbir: 'cairo' }).takbir]).toEqual(['makkah', 'medina', 'makkah']);
     expect(normalizePrayers({ voice: 'aishatu' }).voice).toBe('aishatu');
   });

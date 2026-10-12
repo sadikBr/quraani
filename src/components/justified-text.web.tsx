@@ -7,10 +7,12 @@ export interface JustifiedTextProps extends Omit<TextProps, 'style' | 'children'
   containerStyle?: StyleProp<ViewStyle>;
   /** Unused on the web, where the browser centres the last line itself. */
   hiddenColor: string;
+  /** Unused on the web, where the text is laid out with its last line centred from the start. */
+  hideUntilLaidOut?: boolean;
 }
 
 /** Justified text whose last line is centred, as in a mushaf (`text-align-last` on the web). */
-export function JustifiedText({ children, style, containerStyle, hiddenColor: _hiddenColor, ...props }: JustifiedTextProps) {
+export function JustifiedText({ children, style, containerStyle, hiddenColor: _hiddenColor, hideUntilLaidOut: _hide, ...props }: JustifiedTextProps) {
   return <View style={containerStyle}>
     <Text {...props} style={[style, styles.justify]}>{children}</Text>
   </View>;
