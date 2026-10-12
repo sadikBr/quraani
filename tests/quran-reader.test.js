@@ -53,13 +53,20 @@ describe('Warsh data and reading behavior', () => {
     expect(() => decodeAyah({ ...fatiha[0], hizb: 241 }, 4)).toThrow();
   });
 
-  test('groups edition-local pages and derives 60 hizbs from quarter positions', () => {
-    const quran = structuredClone(corpus);
-    // Synthetic tags; no Hafs mapping, so text alignment (divisions.test.js) leaves them as given.
+  test('groups edition-local pages and divides Warsh by its own athman', () => {
+    // Al-Fatiha and Al-Baqarah 1–4 are all in the Warsh mushaf's first eighth, whatever the tags say.
+    const content = prepareReaderContent(structuredClone(corpus));
+    expect(content.pages.map((p) => p.ayahs.length)).toEqual([7, 4]);
+    expect(content.quarterHizbIndex.map((i) => i.number)).toEqual([1]);
+    expect(content.hizbIndex.map((i) => i.number)).toEqual([1]);
+  });
+
+  test('derives 60 hizbs from quarter positions', () => {
+    // Another edition's tags, with no Hafs mapping, so text alignment (divisions.test.js) leaves them as given.
+    const quran = { ...structuredClone(corpus), id: 2 };
     quran.surahs[0].ayahs.forEach((a) => { a.juzNumber = 1; a.hizbQuarter = 1; a.hafsAyahNumbers = []; });
     quran.surahs[1].ayahs.forEach((a) => { a.juzNumber = 1; a.hizbQuarter = 5; a.hafsAyahNumbers = []; });
     const content = prepareReaderContent(quran);
-    expect(content.pages.map((p) => p.ayahs.length)).toEqual([7, 4]);
     expect(content.hizbIndex.map((i) => i.number)).toEqual([1, 2]);
     expect(content.quarterHizbIndex.map((i) => i.number)).toEqual([1, 5]);
     expect(content.hizbIndex[1].start).toEqual({ mushafId: 4, surahNumber: 2, ayahNumber: 1 });

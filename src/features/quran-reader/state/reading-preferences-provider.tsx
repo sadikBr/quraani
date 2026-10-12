@@ -21,7 +21,7 @@ export function ReadingPreferencesProvider({ children }: PropsWithChildren) {
 }
 
 /** The choices that change how the Quran text is laid out, which a reader must lay out again for. */
-const TEXT_CHOICES = ['mode', 'textLayout', 'fontSize', 'spacious', 'tajweed', 'warshScript'] as const satisfies readonly (keyof ReadingPreferences)[];
+const TEXT_CHOICES = ['mode', 'textLayout', 'fontSize', 'spacious', 'tajweed', 'warshScript', 'thumunPages'] as const satisfies readonly (keyof ReadingPreferences)[];
 /** How long the choices stay unchanged before a covered screen takes them. */
 const SETTLE_MS = 700;
 

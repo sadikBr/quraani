@@ -17,6 +17,7 @@ import { ReadingLayoutPreview, SettingsCard, SettingsCardHeading, SettingsGroupH
 import { readerLayout, readerShape } from '../../design';
 import { RecitationSettings } from '@/features/recitation/recitation-settings';
 import { PrayerSettings } from '@/features/prayers/prayer-settings';
+import { PlanSwitch } from '@/features/plans/components';
 import { t } from '@/i18n';
 
 type SettingsTab = 'reading' | 'recitation' | 'appearance' | 'prayers';
@@ -98,6 +99,8 @@ function SettingsPage({ tab }: { tab: SettingsTab }) {
             </Pressable>;
           })}
         </View>
+        {riwayah === 'warsh' && mode === 'text' && <PlanSwitch label={t('settings.mode.thumun.label')} detail={t('settings.mode.thumun.detail', { count: 480 })}
+          checked={preferences.thumunPages} onChange={(on) => update({ thumunPages: on })} />}
       </SettingsCard>
       <SettingsGroupHeading title={t('settings.groups.text.title')} palette={palette}
         detail={riwayah === 'warsh' && mode === 'page' ? `${t('settings.groups.text.detail')} ${t('settings.groups.text.pagesStay')}` : t('settings.groups.text.detail')} />

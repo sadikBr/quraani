@@ -41,6 +41,26 @@ export default {
     /** {{range}} is "1–2" or "1، 3"; the isolates keep "1–2/4" in order inside right-to-left text. */
     quarterRange: 'الحزب {{hizb}} · الربع ⁦{{range}}/4⁩',
   },
+  /** The reader paged by thumun (Warsh, an eighth of a hizb to a page, 480 in all). */
+  thumun: {
+    /** A page's name, in place of its number: "الحزب 2 · الثمن 1". */
+    position: 'الحزب {{hizb}} · الثمن {{thumun}}',
+    /** Spoken page indicator: "الحزب 2 · الثمن 1، 9 من 480". */
+    spoken: '{{position}}، {{page}} من {{total}}',
+    /** Under an ayah: "الآية 5 · الحزب 2 · الثمن 1". */
+    ayahLocation: 'الآية {{ayah}} · {{position}}',
+    /** Jump drawer subtitle: "ورش · أنت في الحزب 2 · الثمن 1". */
+    currentPosition: '{{riwayah}} · أنت في {{position}}',
+    /** Jump tab and fields. */
+    byThumun: 'بالثمن',
+    hizb: 'الحزب',
+    thumun: 'الثمن',
+    next: 'الثمن التالي',
+    previous: 'الثمن السابق',
+    error: 'اختر حزبًا من {{firstHizb}} إلى {{lastHizb}} وثمنًا من 1 إلى 8.',
+    /** Jump button: "الانتقال إلى الحزب 2 · الثمن 1". */
+    to: 'الانتقال إلى {{position}}',
+  },
   screen: {
     sessionError: 'تعذّر فتح الورد.',
     openMushaf: 'فتح المصحف',

@@ -3,7 +3,8 @@ import { AppState } from 'react-native';
 import type { AyahReference } from '@/lib/quranpedia/types';
 import { contentStorage } from '../storage/content-storage';
 import type { ReaderContent } from '../types/reader';
-import { restoreReadingPosition, type ReadingPosition } from '../utils/navigation';
+import { restoreReadingPosition, savedPaging, type ReadingPosition } from '../utils/navigation';
+import { pageStartAyah } from '../utils/thumun-pages';
 
 import { RIWAYAT, readingPositionKey } from '../riwayat';
 import { useReadingPreferences } from '../state/reading-preferences-provider';
@@ -21,13 +22,18 @@ function takeScroll(timer: { current: ReturnType<typeof setTimeout> | null }, la
   return y;
 }
 
-export function useReadingPosition(content: ReaderContent | undefined) {
+/**
+ * The reading position of the chosen riwayah, saved as it changes. `content` is what the reader
+ * pages (by thumun, or the mushaf's pages); `whole` is the full content in the mushaf's pages, used
+ * to carry a position saved in the other paging over to this one (`carried`).
+ */
+export function useReadingPosition(content: ReaderContent | undefined, whole?: ReaderContent) {
   const { preferences: { riwayah } } = useReadingPreferences();
   const mushafId = RIWAYAT[riwayah].mushafId;
   const KEY = readingPositionKey(mushafId);
   // The loaded position is tagged with its storage key: after a riwayah switch
   // nothing is written (or shown) until the new key's position has been read.
-  const [saved, setSaved] = useState<{ key: string; position: ReadingPosition } | null>(null);
+  const [saved, setSaved] = useState<{ key: string; position: ReadingPosition; paging?: 'thumun'; carried: boolean } | null>(null);
   const ready = saved?.key === KEY;
   const initial = useMemo<ReadingPosition>(() => ({ mushafId, pageNumber: 1, ayah: null, scrollY: 0 }), [mushafId]);
   const position = ready ? saved.position : initial;
@@ -39,17 +45,22 @@ export function useReadingPosition(content: ReaderContent | undefined) {
     if (!content || ready || content.quran.id !== mushafId) return;
     let active = true;
     contentStorage.getItem(KEY).catch(() => null).then((raw) => {
-      if (active) setSaved({ key: KEY, position: restoreReadingPosition(raw, content) });
+      if (!active) return;
+      const position = restoreReadingPosition(raw, content, (paging, page) => pageStartAyah(whole ?? content, paging, page));
+      setSaved({ key: KEY, position, paging: content.paging, carried: raw !== null && savedPaging(raw) !== (content.paging ?? 'mushaf') });
     });
     return () => { active = false; };
-  }, [content, ready, KEY, mushafId]);
+  }, [content, whole, ready, KEY, mushafId]);
+  // Saved with the paging it is in, so the other paging can carry it over.
+  const paging = ready ? saved?.paging : undefined;
   useEffect(() => {
-    latestPosition.current = ready ? position : null;
-    if (ready) writes.current = writes.current.then(() => contentStorage.setItem(KEY, JSON.stringify(position))).catch(() => {});
-  }, [position, ready, KEY]);
+    const stamped = paging ? { ...position, paging } : position;
+    latestPosition.current = ready ? stamped : null;
+    if (ready) writes.current = writes.current.then(() => contentStorage.setItem(KEY, JSON.stringify(stamped))).catch(() => {});
+  }, [position, paging, ready, KEY]);
   /** Functional update of the current key's position; a stale callback cannot touch another key. */
   const update = useCallback((change: (position: ReadingPosition) => ReadingPosition) => {
-    setSaved((value) => value?.key === KEY ? { key: KEY, position: change(value.position) } : value);
+    setSaved((value) => value?.key === KEY ? { ...value, position: change(value.position) } : value);
   }, [KEY]);
   useEffect(() => {
     const flush = () => {
@@ -98,5 +109,5 @@ export function useReadingPosition(content: ReaderContent | undefined) {
       if (scrollY !== null) update((value) => value.scrollY === scrollY ? value : { ...value, scrollY });
     }, 250);
   }, [update]);
-  return { position, ready, move, selectAyah, setScroll, update, recordScroll };
+  return { position, ready, carried: ready && !!saved?.carried, move, selectAyah, setScroll, update, recordScroll };
 }

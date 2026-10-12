@@ -32,6 +32,7 @@ export const CREDIT_SECTIONS = [
     { id: 'mushafFonts', work: 'KFGQPC Uthmanic Hafs V22, KFGQPC Uthmanic Warsh V21', source: 'https://qurancomplex.gov.sa', terms: 'kfgqpc' },
     { id: 'tajweed', work: 'QUD Quranic Phonemizer', source: 'https://github.com/QUD-Technologies/quranic-phonemizer', ...MIT },
     { id: 'surahFont', work: 'arab quran islamic 140', source: 'http://quranb1og.blogspot.com' },
+    { id: 'athman', work: 'ma-mushaf-muhammadi-data by Noureddine El-Ahmadi', source: 'https://github.com/smartmaker-devs/nuralhifz-data', ...CC.by4 },
   ] },
   { id: 'adhkar', items: [
     { id: 'hisn', work: 'Hisn al-Muslim', source: 'https://www.hisnmuslim.com' },

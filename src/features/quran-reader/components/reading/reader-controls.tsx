@@ -33,6 +33,8 @@ interface Props {
   onDismiss: () => void;
   planControls?: ReactNode;
   pageLabel?: string;
+  /** The page's name in place of its number (a thumun page: "الحزب 2 · الثمن 1"); the progress stays. */
+  pageName?: string;
   /** A recitation is under way: the listen button stops it. */
   listening: boolean;
   onListen: () => void;
@@ -42,7 +44,7 @@ interface Props {
 
 /** Both edges use the same animation, over a reading surface that never resizes. */
 export function ReaderControls({ page, totalPages, previous, next, surahName, palette, visible, progress,
-  topInset, toolbarHeight, onToolbarHeight, bottomInset, practiceActive, practiceComplete, onNavigate, onJump, onMenu, onPractice, onRevealWord, onRevealAyah, onDismiss, planControls, pageLabel, listening, onListen, recitation }: Props) {
+  topInset, toolbarHeight, onToolbarHeight, bottomInset, practiceActive, practiceComplete, onNavigate, onJump, onMenu, onPractice, onRevealWord, onRevealAyah, onDismiss, planControls, pageLabel, pageName, listening, onListen, recitation }: Props) {
   const [bottomHeight, setBottomHeight] = useState(60 + bottomInset);
   const hiddenProps = {
     accessibilityElementsHidden: !visible,
@@ -98,7 +100,7 @@ export function ReaderControls({ page, totalPages, previous, next, surahName, pa
             </Link>
           </View>
           {/* Pages turn by swiping the page; with a screen reader, by adjusting this (swipe up or down). */}
-          <Pressable accessibilityRole="adjustable" accessibilityLabel={t('reader.controls.jump', { position: pageLabel ?? t('reader.controls.pageOf', { page: page.number, total: totalPages }) })}
+          <Pressable accessibilityRole="adjustable" accessibilityLabel={t('reader.controls.jump', { position: pageLabel ?? (pageName ? t('reader.thumun.spoken', { position: pageName, page: page.number, total: totalPages }) : t('reader.controls.pageOf', { page: page.number, total: totalPages })) })}
             accessibilityActions={[{ name: 'increment', label: t('reader.controls.nextPage') }, { name: 'decrement', label: t('reader.controls.previousPage') }]}
             onAccessibilityAction={(event) => {
               const to = event.nativeEvent.actionName === 'increment' ? next : event.nativeEvent.actionName === 'decrement' ? previous : undefined;
@@ -106,7 +108,7 @@ export function ReaderControls({ page, totalPages, previous, next, surahName, pa
             }}
             onPress={onJump} style={({ pressed }) => [styles.page, { opacity: pressed ? 0.6 : 1 }]}>
             <View style={[styles.pagePill, { backgroundColor: palette.muted }]}>
-              <Text numberOfLines={1} style={{ color: palette.foreground, fontSize: 13, fontWeight: '500', lineHeight: 22, writingDirection: 'rtl', textAlign: 'center' }}>{pageLabel ?? t('reader.controls.page', { page: page.number })}</Text>
+              <Text numberOfLines={1} style={{ color: palette.foreground, fontSize: 13, fontWeight: '500', lineHeight: 22, writingDirection: 'rtl', textAlign: 'center' }}>{pageLabel ?? pageName ?? t('reader.controls.page', { page: page.number })}</Text>
               {!pageLabel && <View style={[styles.pageTrack, { backgroundColor: withAlpha(palette.primary, 0.2) }]}>
                 <View style={[styles.pageFill, { backgroundColor: palette.primary, width: `${Math.max(2, Math.min(100, page.number / Math.max(1, totalPages) * 100))}%` }]} />
               </View>}

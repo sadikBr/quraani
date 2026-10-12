@@ -1,4 +1,6 @@
 import type { Ayah, Quran } from "@/lib/quranpedia/types";
+import { RIWAYAT } from "../riwayat";
+import { warshEighthOf } from "./warsh-eighths";
 
 /**
  * Start of each of the 240 hizb quarters, as [surah, ayah] in Hafs (Kufan)
@@ -42,20 +44,27 @@ export function hafsQuarterOf(surah: number, ayah: number): number {
  * Quarters and juz mark positions in the text, so they are the same in every
  * riwayah even where ayah numbering differs. Quranpedia's Warsh edition tags
  * them by ayah number instead (Warsh 2:142 carries the tag of Hafs 2:142), which
- * moves every boundary after a numbering difference. Recompute both tags from
- * the Hafs ayah each ayah corresponds to (`number_in_hafs`). A quarter never
- * starts mid-ayah: when ayahs are merged or split, the ayah containing the
+ * moves every boundary after a numbering difference.
+ *
+ * The Warsh mushaf divides by its own ۞ marks (the Maghribi athman), which in a
+ * quarter of the quarters fall a few ayahs from the Hafs ones (its hizb 2 starts
+ * at «وإذا لقوا», 2:75, not «أفتطمعون»): its tags come from its eighths
+ * (`WARSH_EIGHTH_STARTS`), two to a quarter. Other editions recompute both tags
+ * from the Hafs ayah each ayah corresponds to (`number_in_hafs`). A quarter
+ * never starts mid-ayah: when ayahs are merged or split, the ayah containing the
  * marked text starts the quarter.
  */
 export function alignDivisionsToText(quran: Quran): Quran {
+  const warsh = quran.id === RIWAYAT.warsh.mushafId;
   let changed = false;
   const surahs = quran.surahs.map((surah) => ({
     ...surah,
     ayahs: surah.ayahs.map((ayah): Ayah => {
       const hafs = ayah.hafsAyahNumbers;
-      if (!hafs.length) return ayah;
+      if (!warsh && !hafs.length) return ayah;
       // Merged ayahs: a quarter marked inside the ayah starts at that ayah.
-      const hizbQuarter = Math.max(...hafs.map((number) => hafsQuarterOf(ayah.surahNumber, number)));
+      const hizbQuarter = warsh ? Math.ceil(warshEighthOf(ayah.surahNumber, ayah.ayahNumber) / 2)
+        : Math.max(...hafs.map((number) => hafsQuarterOf(ayah.surahNumber, number)));
       const juzNumber = Math.ceil(hizbQuarter / 8);
       if (hizbQuarter === ayah.hizbQuarter && juzNumber === ayah.juzNumber) return ayah;
       changed = true;
