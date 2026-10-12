@@ -247,7 +247,11 @@ export default {
     },
   },
   index: {
-    /** Detail under a surah in the index: "286 آية", "7 آيات". Latin digits, like the rest of the index. */
+    /** Where a surah was revealed, as the mushaf's surah titles say it. */
+    revelation: { meccan: 'مكية', medinan: 'مدنية' },
+    /** Detail under a surah in the index: "مدنية · 286 آية". */
+    surahDetail: '{{revelation}} · {{ayahs}}',
+    /** The surah's size in that detail: "286 آية", "7 آيات". Latin digits, like the rest of the index. */
     ayahCount_zero: '{{count}} آية',
     ayahCount_one: 'آية واحدة',
     ayahCount_two: 'آيتان',

@@ -14,7 +14,7 @@ import { useReadingPreferences } from '../../state/reading-preferences-provider'
 import { contentStorage } from '../../storage/content-storage';
 import type { ReaderContent } from '../../types/reader';
 import { calligraphyStyle, surahNameGlyph } from '../../utils/reader-typography';
-import { readerIndexItems, type IndexKind, type ReaderIndexItem } from '../../utils/reader-index';
+import { readerIndexItems, type IndexKind, type ReaderIndexItem, type RevelationFilter } from '../../utils/reader-index';
 import { restoreReadingPosition } from '../../utils/navigation';
 import { pageStartAyah } from '../../utils/thumun-pages';
 import { readerLayout, withAlpha } from '../../design';
@@ -60,11 +60,13 @@ export function IndexScreen() {
   const { width } = useWindowDimensions();
   const list = useRef<FlatList<ReaderIndexItem>>(null);
   const [kind, setKind] = useState<IndexKind>('surah'), [query, setQuery] = useState('');
-  const items = useMemo(() => content ? readerIndexItems(content.data, kind, query) : [], [content, kind, query]);
+  const [revelation, setRevelation] = useState<RevelationFilter>('all');
+  const items = useMemo(() => content ? readerIndexItems(content.data, kind, query, revelation) : [], [content, kind, query, revelation]);
   const place = useReadingPlace(content?.data);
   const current = !place ? null : kind === 'surah' ? place.surah : kind === 'juz' ? place.juz : place.hizb;
   const open = (item: ReaderIndexItem) => router.dismissTo({ pathname: '/', params: { surah: String(item.start.surahNumber), ayah: String(item.start.ayahNumber) } });
   const changeQuery = (value: string) => { setQuery(value); list.current?.scrollToOffset({ offset: 0, animated: false }); };
+  const changeRevelation = (value: RevelationFilter) => { setRevelation(value); list.current?.scrollToOffset({ offset: 0, animated: false }); };
   const placeholder = t(`library.index.search.placeholder.${kind}`);
   const grid = kind === 'juz';
   const tile = Math.floor((Math.min(width, readerLayout.maxWidth) - readerLayout.gutter * 2 - GAP * (COLUMNS - 1)) / COLUMNS);
@@ -81,8 +83,9 @@ export function IndexScreen() {
       contentContainerStyle={[l.content, { paddingTop: 10 }]} numColumns={grid ? COLUMNS : 1} columnWrapperStyle={grid ? s.columns : undefined}
       keyboardShouldPersistTaps="handled" keyboardDismissMode={Platform.OS === 'web' ? 'none' : 'on-drag'} showsVerticalScrollIndicator={false} initialNumToRender={grid ? 15 : 12} windowSize={7}
       ItemSeparatorComponent={grid ? undefined : Separator}
-      ListHeaderComponent={content ? <View style={[l.results, { marginBottom: grid ? 14 : 4 }]}>
-        <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{query.trim() ? t('library.searchResults') : t('library.index.prompt')}</Text>
+      ListHeaderComponent={content ? <View style={[l.results, { marginBottom: grid ? 14 : 4 }, kind === 'surah' && { alignItems: 'center', marginBottom: 8 }]}>
+        {kind === 'surah' ? <RevelationChoice value={revelation} onChange={changeRevelation} palette={p} />
+          : <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{query.trim() ? t('library.searchResults') : t('library.index.prompt')}</Text>}
         <Text accessibilityLiveRegion="polite" style={{ color: p.mutedForeground, fontSize: 13 }}>{t(`library.index.count.${kind}`, { count: items.length })}</Text>
       </View> : null}
       ListEmptyComponent={!content ? loading ? <View style={l.status}><ActivityIndicator accessibilityLabel={t('library.index.loading')} color={p.primary} /></View> : <LibraryEmpty title={t('library.index.error.title')} description={error ? t('common.checkConnection') : t('library.index.error.unavailable')} icon="book" palette={p}><ReaderButton palette={p} onPress={refresh}>{t('common.retry')}</ReaderButton></LibraryEmpty>
@@ -90,6 +93,24 @@ export function IndexScreen() {
       renderItem={({ item }) => kind === 'juz' ? <JuzTile item={item} width={tile} current={item.number === current} calligraphy={calligraphy} palette={p} onOpen={open} />
         : <IndexRow item={item} kind={kind} current={item.number === current} quarter={kind === 'hizb' && item.number === current ? place?.quarter ?? null : null} calligraphy={calligraphy} palette={p} onOpen={open} />} />
   </SafeAreaView>;
+}
+
+const revelations = ['all', 'meccan', 'medinan'] as const satisfies readonly RevelationFilter[];
+
+/**
+ * Which surahs the index lists: all, the Meccan or the Medinan ones, as three words; the chosen
+ * one on a wash of gold, ringed in gold.
+ */
+function RevelationChoice({ value, onChange, palette: p }: { value: RevelationFilter; onChange: (value: RevelationFilter) => void; palette: ReaderPalette }) {
+  return <View accessibilityRole="radiogroup" accessibilityLabel={t('library.index.revelation.label')} style={s.choices}>
+    {revelations.map((option) => {
+      const on = option === value, label = t(`library.index.revelation.${option}`);
+      return <Pressable key={option} accessibilityRole="radio" accessibilityLabel={label} accessibilityState={{ checked: on }} aria-checked={on} onPress={() => onChange(option)} hitSlop={{ top: 6, bottom: 6 }}
+        style={({ pressed }) => [s.choice, { borderColor: on ? withAlpha(p.ornament, 0.8) : p.border, backgroundColor: on ? withAlpha(p.ornament, 0.14) : pressed ? p.accent : 'transparent' }]}>
+        <Text numberOfLines={1} style={{ color: on ? p.foreground : p.mutedForeground, fontSize: 13, lineHeight: 20, fontWeight: on ? '600' : '500' }}>{label}</Text>
+      </Pressable>;
+    })}
+  </View>;
 }
 
 function Separator() {
@@ -176,6 +197,8 @@ const s = StyleSheet.create({
   line: { flexDirection: 'row', alignItems: 'center' },
   detail: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: -2 },
   here: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  choices: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
+  choice: { minHeight: 32, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   columns: { gap: GAP, marginBottom: GAP },
   niche: { flex: 1, alignItems: 'center', paddingHorizontal: 8 },
 });

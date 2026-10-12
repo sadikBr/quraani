@@ -10,6 +10,8 @@ export default {
       placeholder: { surah: 'اسم السورة أو رقمها', juz: 'رقم الجزء أو سورته الأولى', hizb: 'رقم الحزب أو سورته الأولى' },
     },
     prompt: 'اختر موضعًا وابدأ القراءة',
+    /** Above the surahs: all of them, or the Meccan or the Medinan ones alone. */
+    revelation: { label: 'السور بحسب نزولها', all: 'الكل', meccan: 'المكية', medinan: 'المدنية' },
     /** Number of listed items; {{count}} keeps Latin digits, like the numbers in the list. Zero only after a search. */
     count: {
       surah_zero: 'لا نتائج',
