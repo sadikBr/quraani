@@ -172,12 +172,126 @@ export default {
     removeBookmark: 'إزالة العلامة',
     copy: 'نسخ الآية',
     share: 'مشاركة',
+    /** Short labels under the icons; what each does is spoken from the recitation's keys. */
+    listen: 'استماع',
+    repeat: 'تكرار',
     /** Bookmarks stay in memory until the app is closed. */
     bookmarkStorageError: 'تعذّر تسجيل العلامات على جهازك. ستبقى حتى تغلق التطبيق.',
-    tafsir: 'التفسير',
-    tafsirDetail: 'شرح الآية ومعانيها',
-    translation: 'ترجمة المعاني',
-    translationDetail: 'بالفرنسية والإنجليزية',
+  },
+  /**
+   * The ayah's sciences in its sheet, as Quranpedia gives them: three arches (its meaning; its
+   * revelation and recitation; what was handed down about it), each name opening its content.
+   */
+  sciences: {
+    title: 'علوم الآية',
+    /** The way back from a science to the arches. */
+    back: 'العودة إلى علوم الآية',
+    /** Spoken on an ayah that opens in the mushaf. */
+    open: 'فتح الآية في المصحف',
+    /** Under prose shown in part. */
+    more: 'قراءة المزيد',
+    less: 'إخفاء',
+    groups: { meaning: 'المعنى', revelation: 'النزول والتلاوة', narration: 'الأثر والتدبر' },
+    names: {
+      tafsir: 'التفسير',
+      meanings: 'معاني الكلمات',
+      e3rab: 'الإعراب',
+      translations: 'الترجمات',
+      asbab: 'أسباب النزول',
+      qiraat: 'القراءات',
+      similar: 'المتشابهات',
+      nasekh: 'الناسخ والمنسوخ',
+      mutshabeh: 'متشابه القرآن',
+      sayings: 'المرويات',
+      notes: 'التدبر',
+      topics: 'الموضوعات',
+      fatwa: 'الفتاوى',
+    },
+    /** Spoken after each name in the arches: what it holds of the ayah. */
+    hints: {
+      tafsir: 'ما قاله المفسرون فيها',
+      meanings: 'معاني غريب ألفاظها',
+      e3rab: 'إعراب كلماتها',
+      translations: 'معانيها بلغات أخرى',
+      asbab: 'ما نزلت فيه',
+      qiraat: 'كيف قرأها القراء',
+      similar: 'الآيات التي تشبهها في لفظها',
+      nasekh: 'ما قيل في نسخها',
+      mutshabeh: 'ما كُتب في مشكلها',
+      sayings: 'ما رُوي فيها عن السلف',
+      notes: 'وقفات وتأملات فيها',
+      topics: 'موضوعات القرآن التي تتناولها',
+      fatwa: 'فتاوى العلماء فيها',
+    },
+    books: {
+      choose: 'اختيار الكتاب',
+      /** Under the open book: how many books treat the ayah, all of them to choose from. */
+      among_zero: 'كتاب واحد',
+      among_one: 'كتاب واحد',
+      among_two: 'واحد من كتابين',
+      among_few: 'واحد من {{count}} كتب',
+      among_many: 'واحد من {{count}} كتابًا',
+      among_other: 'واحد من {{count}} كتاب',
+      fundamental: 'الكتب المعتمدة',
+      rest: 'سائر الكتب',
+      search: 'البحث باسم الكتاب أو مؤلفه',
+      none: 'لا كتاب بهذا الاسم.',
+      /** The author's death, in years of the Hijra: "ت 774هـ". */
+      died: 'ت {{year}}هـ',
+      /** Where the text is in the book. */
+      partPage: 'الجزء {{part}}، الصفحة {{page}}',
+      page: 'الصفحة {{page}}',
+    },
+    qiraat: {
+      intro_zero: 'لم يختلف القراء في كلماتها.',
+      intro_one: 'اختلف القراء في كلمة واحدة منها.',
+      intro_two: 'اختلف القراء في كلمتين منها.',
+      intro_few: 'اختلف القراء في {{count}} كلمات منها.',
+      intro_many: 'اختلف القراء في {{count}} كلمة منها.',
+      intro_other: 'اختلف القراء في {{count}} كلمة منها.',
+      /** A rawi and the imam of his qira'a: "ورش عن نافع". */
+      rawi: '{{rawi}} عن {{qiraa}}',
+      /** The rawi of the riwayah the reader reads. */
+      own: '{{name}}، روايتك',
+      listen: 'الاستماع إلى قراءة {{name}}',
+      stop: 'إيقاف قراءة {{name}}',
+      failed: 'تعذّر تشغيل هذه القراءة.',
+    },
+    similar: {
+      /** Above the note that tells the similar ayahs apart. */
+      note: 'للتمييز بينها',
+      here: 'هذه الآية',
+      video: 'مقطع في ضبطها',
+    },
+    topics: {
+      /** How many ayahs speak of the topic; opens them. */
+      ayahs_zero: 'لا آيات',
+      ayahs_one: 'آية واحدة',
+      ayahs_two: 'آيتان',
+      ayahs_few: '{{count}} آيات',
+      ayahs_many: '{{count}} آية',
+      ayahs_other: '{{count}} آية',
+    },
+    fatwa: {
+      /** The marks of a question and its answer, as in the books of fatwas. */
+      question: 'س',
+      answer: 'ج',
+      /** Who gave the fatwa. */
+      by: '{{names}}',
+    },
+    notes: {
+      more: 'عرض المزيد',
+      image: 'فتح الصورة',
+      video: 'مقطع مرئي',
+    },
+    sayings: {
+      all: 'الكل',
+      /** Who narrated it: "عن عبد الله بن عباس". */
+      from: 'عن {{names}}',
+    },
+    translations: {
+      languages: 'لغات الترجمة',
+    },
   },
   related: {
     /** {{references}} lists the matching "surah:ayah" references in the Hafs numbering, used by the source. */
@@ -189,7 +303,6 @@ export default {
     parallelReference: 'الآية {{surah}}:{{ayah}} بترقيم حفص',
     /** Content shown from the offline cache; follows the caption above after " · ". */
     stale: 'نسخة مخزّنة على الجهاز',
-    openSource: 'فتح المصدر',
   },
   page: {
     tajweedError: 'تعذّر تحميل ألوان التجويد. يظهر النص كاملًا دون ألوان.',

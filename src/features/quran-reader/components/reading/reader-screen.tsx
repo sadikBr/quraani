@@ -198,6 +198,11 @@ function RiwayahReaderScreen({ paging }: { paging: ReaderPaging }) {
     // the top. The incoming page is reset by the layout effect below.
     scroll.current?.scrollTo({ y: 0, animated: false });
   }, [ready, content, readerPages, session, move]);
+  // An ayah opened from the ayah sheet (one like it, one of its topic), found in the pages read.
+  const openAyah = useCallback((target: AyahReference) => {
+    const ayah = data?.quran.surahs.find((surah) => surah.number === target.surahNumber)?.ayahs.find((entry) => entry.ayahNumber === target.ayahNumber);
+    if (ayah) navigate(ayah.pageNumber, ayah);
+  }, [data, navigate]);
   // Runs after the scroll ref points to the incoming page, whose already mounted
   // ScrollView may keep an offset from an earlier visit.
   useLayoutEffect(() => {
@@ -489,6 +494,7 @@ function RiwayahReaderScreen({ paging }: { paging: ReaderPaging }) {
       })}
       </View>
       {actionAyah && content && <AyahActionSheet key={ayahKey(actionAyah)} ayah={actionAyah} quran={content.data.quran} palette={palette} onClose={() => setActionAyah(null)} onListen={listenFrom} wholeSurah={wholeSurahs}
+        onOpenAyah={session ? undefined : openAyah}
         location={thumun ? t('reader.thumun.ayahLocation', { ayah: actionAyah.ayahNumber, position: thumunName(actionAyah.pageNumber) }) : undefined} />}
       {drawerOpen && <ReaderDrawer content={session?.content ?? data} limited={!!session} currentPage={pageNumber} onJump={navigate} onClose={() => setDrawerOpen(false)} palette={palette} />}
     </SafeAreaView>

@@ -8,12 +8,21 @@ import {
 } from "./cache";
 import { QuranpediaError, refreshBackoffMs } from "./errors";
 import { decodeReciters } from "./reciters";
-import {
-    decodeBookContent,
-    decodeBooks,
-    decodeTranslations,
-} from "./related-content";
+import { decodeBookContent, decodeTranslations } from "./related-content";
 import type { AyahReference } from "./types";
+import {
+    BOOK_SERVICES,
+    type BookService,
+    decodeFatwas,
+    decodeMeanings,
+    decodeNotes,
+    decodeQiraat,
+    decodeSayings,
+    decodeServiceBooks,
+    decodeSimilar,
+    decodeTopics,
+    decodeTranslationLanguages,
+} from "./ayah-services";
 import {
     decodeAyah,
     decodeMushafs,
@@ -108,12 +117,6 @@ export class QuranpediaClient {
         return this.get("/reciters", decodeReciters, options, this.corpusTtlMs);
     }
 
-    getTafsirBooks(surah: number, ayah: number) {
-        validId(surah, 114);
-        validId(ayah);
-        return this.get(`/ayah/${surah}/${ayah}/tafsir`, decodeBooks);
-    }
-
     getBookContent(surah: number, ayah: number, book: number) {
         validId(surah, 114);
         validId(ayah);
@@ -129,10 +132,73 @@ export class QuranpediaClient {
         });
     }
 
-    getTranslations(surah: number, ayah: number, language: "en" | "fr") {
+    /** The books of one kind that treat an ayah (Hafs numbering), each read with getBookContent. */
+    getAyahBooks(surah: number, ayah: number, service: BookService) {
         validId(surah, 114);
         validId(ayah);
-        if (!["en", "fr"].includes(language))
+        if (!BOOK_SERVICES.includes(service))
+            throw new RangeError("Invalid ayah service");
+        return this.get(`/ayah/${surah}/${ayah}/${service}`, decodeServiceBooks);
+    }
+
+    /** The meanings of the ayah's rare words, by book. */
+    getMeanings(surah: number, ayah: number) {
+        return this.service(surah, ayah, "meanings", decodeMeanings);
+    }
+
+    /** The ayahs that resemble it, as memorizers tell them apart. */
+    getSimilar(surah: number, ayah: number) {
+        return this.service(surah, ayah, "similar", decodeSimilar);
+    }
+
+    /** Its words read in more than one way, with each rawi's reading. */
+    getQiraat(surah: number, ayah: number) {
+        return this.service(surah, ayah, "qiraat", decodeQiraat);
+    }
+
+    getTopics(surah: number, ayah: number) {
+        return this.service(surah, ayah, "topics", decodeTopics);
+    }
+
+    getFatwas(surah: number, ayah: number) {
+        return this.service(surah, ayah, "fatwa", decodeFatwas);
+    }
+
+    /** Reflections on the ayah (tadabbur). */
+    getNotes(surah: number, ayah: number) {
+        return this.service(surah, ayah, "notes", decodeNotes);
+    }
+
+    /** What the companions and their successors narrated of it. */
+    getSayings(surah: number, ayah: number) {
+        return this.service(surah, ayah, "sayings", decodeSayings);
+    }
+
+    /** The languages the ayah is translated into. */
+    getTranslationLanguages(surah: number, ayah: number) {
+        validId(surah, 114);
+        validId(ayah);
+        return this.get(
+            `/translations/available-languages/${surah}/${ayah}`,
+            decodeTranslationLanguages,
+        );
+    }
+
+    private service<T>(
+        surah: number,
+        ayah: number,
+        name: string,
+        decode: (value: unknown) => T,
+    ) {
+        validId(surah, 114);
+        validId(ayah);
+        return this.get(`/ayah/${surah}/${ayah}/${name}`, decode);
+    }
+
+    getTranslations(surah: number, ayah: number, language: string) {
+        validId(surah, 114);
+        validId(ayah);
+        if (!/^[a-z]{2,3}$/.test(language))
             throw new RangeError("Invalid translation language");
         return this.get(
             `/translations/${surah}/${ayah}/${language}`,

@@ -285,8 +285,13 @@ selected one, or the first of the page).
 
 ## API and cache
 
-`QuranpediaClient` provides corpus/ayah methods plus `getTafsirBooks`,
-`getBookContent`, and `getTranslations`.
+`QuranpediaClient` provides corpus/ayah methods plus the ayah's services, which
+the ayah sheet opens (`src/lib/quranpedia/ayah-services.ts`): `getAyahBooks` (the
+tafsir, i'rab, asbab, nasikh and mutashabih books that treat it, each read with
+`getBookContent`), `getMeanings`, `getSimilar`, `getQiraat`, `getTopics`,
+`getFatwas`, `getNotes`, `getSayings`, `getTranslationLanguages` and
+`getTranslations`. These services are undocumented by the source; their decoders
+keep the well-formed entries and skip the rest.
 It has no React or native dependencies. Inject storage/fetch/clock for reuse and
 testing. It validates references before requests and response structure before
 mapping or persistence, applies a 15-second timeout to fetching and JSON reading,

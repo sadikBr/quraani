@@ -17,3 +17,16 @@ export function mixColor(a: string, b: string, amount: number) {
   if (!pa || !pb) return a;
   return '#' + [0, 2, 4].map(i => Math.round(parseInt(pa.slice(i, i + 2), 16) * (1 - amount) + parseInt(pb.slice(i, i + 2), 16) * amount).toString(16).padStart(2, '0')).join('').toUpperCase();
 }
+
+/** WCAG contrast ratio of two #RRGGBB colours (1 to 21); 1 for anything else. */
+export function contrastRatio(a: string, b: string) {
+  const luminance = (color: string) => {
+    const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i.exec(color);
+    if (!m) return null;
+    const [r, g, bl] = m.slice(1).map((x) => { const c = parseInt(x, 16) / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+  };
+  const la = luminance(a), lb = luminance(b);
+  if (la === null || lb === null) return 1;
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}

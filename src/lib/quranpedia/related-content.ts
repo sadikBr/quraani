@@ -1,7 +1,11 @@
 import { QuranpediaError } from './errors';
 import { formatList } from '@/i18n';
 export interface ContentBook { id: number; name: string; author: string }
-export interface RelatedText { book: ContentBook; texts: string[]; direction: 'rtl' | 'ltr' }
+export interface RelatedText {
+  book: ContentBook; texts: string[]; direction: 'rtl' | 'ltr';
+  /** Where in the book the text is (its part and page), when the source gives it. */
+  citations?: { part: string; page: number }[];
+}
 function record(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new QuranpediaError('invalid-response', 'Invalid related content');
   return value as Record<string, unknown>;
@@ -12,16 +16,16 @@ function book(value: unknown): ContentBook {
   const author = typeof v.author === 'string' ? v.author : v.author ? record(v.author).ar_name : Array.isArray(v.authors) ? formatList(v.authors.map((a) => record(a).ar_name).filter((a): a is string => typeof a === 'string')) : '';
   return { id: Number(v.id), name: v.name, author: typeof author === 'string' ? author : '' };
 }
-export function decodeBooks(value: unknown): ContentBook[] {
-  if (!Array.isArray(value)) throw new QuranpediaError('invalid-response', 'Invalid book catalogue');
-  return value.map(book);
-}
 export function decodeBookContent(value: unknown): RelatedText {
   const v = record(value);
   if (!Array.isArray(v.content)) throw new QuranpediaError('invalid-response', 'Invalid book content');
   const texts = v.content.map((entry) => { const text = record(entry).text; if (typeof text !== 'string') throw new QuranpediaError('invalid-response', 'Invalid book text'); return text; });
   const language = record(record(v.book).language);
-  return { book: book(v.book), texts, direction: language.direction === 'ltr' ? 'ltr' : 'rtl' };
+  const citations = v.content.flatMap((entry) => {
+    const { part, page } = record(entry);
+    return typeof page === 'number' && Number.isSafeInteger(page) && page > 0 ? [{ part: typeof part === 'number' || typeof part === 'string' ? String(part) : '', page }] : [];
+  });
+  return { book: book(v.book), texts, direction: language.direction === 'ltr' ? 'ltr' : 'rtl', citations };
 }
 export function decodeTranslations(value: unknown): RelatedText[] {
   if (!Array.isArray(value)) throw new QuranpediaError('invalid-response', 'Invalid translations');

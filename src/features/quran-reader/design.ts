@@ -43,4 +43,4 @@ export function fieldElevation(focused: boolean, palette: { background: string; 
   return { ...readerElevation(1, palette), ...(focused ? { boxShadow: `0 0 0 3px ${withAlpha(palette.ring, 0.5)}` } : {}) } as ViewStyle & TextStyle;
 }
 
-export { isDarkColor, mixColor, withAlpha } from './colors';
+export { contrastRatio, isDarkColor, mixColor, withAlpha } from './colors';
