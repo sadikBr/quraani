@@ -4,16 +4,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedSafeAreaView, GestureDetector, GestureHandlerRootView, useSwipeToClose } from '@/components/swipe-to-close';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { CheckMark } from '@/components/ui';
+import { Beads, Medallion } from '@/components/craft/marks';
+import { SheetGrabber, SheetTitle } from '@/components/craft/page';
 import type { Quran } from '@/lib/quranpedia/types';
 import type { ReaderPalette } from '@/features/quran-reader/theme';
-import { readerLayout, readerShape } from '@/features/quran-reader/design';
+import { readerElevation, readerLayout, readerShape, withAlpha } from '@/features/quran-reader/design';
+import { useQuranFont } from '@/features/quran-reader/hooks/use-quran-font';
+import { calligraphyStyle, surahNameGlyph } from '@/features/quran-reader/utils/reader-typography';
 import { ReaderIcon } from '@/features/quran-reader/components/ui/reader-chrome';
 import { LibrarySearch } from '@/features/quran-reader/components/ui/library-chrome';
 import { ReaderButton } from '@/features/quran-reader/components/reading/reader-button';
 import { normalizeArabicSearch } from '@/features/quran-reader/utils/search';
 import { formatNumber, t } from '@/i18n';
 
-/** Picks surahs to save for listening offline; surahs already saved are marked and cannot be picked again. */
+/**
+ * Picks surahs to save for listening offline; surahs already saved are marked and cannot be picked
+ * again. Each surah is a row on one card, its number on the star and its name in calligraphy, as
+ * the index lists them; under the title, beads say how much of the recitation is already saved.
+ */
 export function SurahDownloadSheet({ quran, available, saved, palette: p, onDownload, onClose }: {
   quran: Quran; available: number[]; saved: number[]; palette: ReaderPalette;
   onDownload: (surahs: number[]) => void; onClose: () => void;
@@ -22,6 +30,8 @@ export function SurahDownloadSheet({ quran, available, saved, palette: p, onDown
   const [query, setQuery] = useState('');
   const close = useRef<View>(null);
   const surahs = useMemo(() => quran.surahs.filter((s) => available.includes(s.number)), [quran, available]);
+  const savedCount = available.filter((n) => saved.includes(n)).length;
+  const { loaded: calligraphy } = useQuranFont();
   const filtered = useMemo(() => {
     const q = normalizeArabicSearch(query);
     if (!q) return surahs;
@@ -34,24 +44,19 @@ export function SurahDownloadSheet({ quran, available, saved, palette: p, onDown
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: p.overlay }}>
       <KeyboardAvoidingView style={styles.frame} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <GestureDetector gesture={swipe.gesture}><AnimatedSafeAreaView edges={['bottom']} accessibilityViewIsModal onLayout={swipe.onSheetLayout} onAccessibilityEscape={onClose}
-          style={[styles.sheet, { backgroundColor: p.background, borderColor: p.border }, swipe.sheetStyle]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
-          <View style={[styles.grabber, { backgroundColor: p.border }]} />
+          style={[styles.sheet, { backgroundColor: p.background, borderColor: p.border }, readerElevation(4, p), swipe.sheetStyle]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
+          <SheetGrabber palette={p} />
           <View onLayout={swipe.onHeaderLayout} style={styles.header}>
-            <View style={styles.headingRow}>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('recitation.surahSheet.title')}</Text>
-                <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('recitation.surahSheet.subtitle')}</Text>
-              </View>
-              <Pressable ref={close} accessibilityRole="button" accessibilityLabel={t('recitation.surahSheet.close')} onPress={onClose} hitSlop={4}
-                style={({ pressed }) => [styles.close, { backgroundColor: pressed ? p.accent : 'transparent' }]}>
-                <ReaderIcon name="close" color={p.mutedForeground} size={18} />
-              </Pressable>
-            </View>
+            <SheetTitle title={t('recitation.surahSheet.title')} subtitle={t('recitation.surahSheet.subtitle')} palette={p} onClose={onClose} closeLabel={t('recitation.surahSheet.close')} closeRef={close} />
+            {savedCount > 0 && <View style={styles.progress}>
+              <Text style={{ color: p.mutedForeground, fontSize: 12, lineHeight: 18 }}>{savedCount >= available.length ? t('recitation.settings.offline.complete') : t('recitation.settings.offline.saved', { count: savedCount })}</Text>
+              <Beads count={available.length} done={savedCount} palette={p} size={7} />
+            </View>}
             <LibrarySearch palette={p} value={query} onChange={setQuery} label={t('recitation.surahSheet.searchLabel')} placeholder={t('recitation.surahSheet.searchPlaceholder')} />
           </View>
           <GestureDetector gesture={swipe.scrollGesture}><FlatList {...swipe.scrollProps} data={filtered} keyExtractor={(item) => String(item.number)} extraData={draft}
             keyboardShouldPersistTaps="handled" initialNumToRender={14} windowSize={7} contentContainerStyle={styles.list}
-            ListEmptyComponent={<Text style={{ color: p.mutedForeground, textAlign: 'center', padding: 16 }}>{t('recitation.surahSheet.empty')}</Text>}
+            ListEmptyComponent={<Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22, textAlign: 'center', padding: 20 }}>{t('recitation.surahSheet.empty')}</Text>}
             renderItem={({ item, index }) => {
               const onDevice = saved.includes(item.number);
               const checked = onDevice || draft.includes(item.number);
@@ -59,16 +64,19 @@ export function SurahDownloadSheet({ quran, available, saved, palette: p, onDown
               return <Pressable accessibilityRole="checkbox" accessibilityLabel={item.name} accessibilityHint={onDevice ? t('recitation.surahSheet.onDevice') : undefined}
                 accessibilityState={{ checked, disabled: onDevice }} aria-checked={checked} disabled={onDevice}
                 onPress={() => setDraft((items) => items.includes(item.number) ? items.filter((n) => n !== item.number) : [...items, item.number])}
-                style={({ pressed }) => [styles.row, { borderColor: p.border, backgroundColor: (checked && !onDevice) || pressed ? p.accent : p.card, borderBottomWidth: last ? StyleSheet.hairlineWidth : 0 }, first && styles.rowFirst, last && styles.rowLast]}>
-                <Text style={{ color: p.mutedForeground, fontSize: 13, minWidth: 28 }}>{formatNumber(item.number)}</Text>
+                style={({ pressed }) => [styles.row, { borderColor: p.border, backgroundColor: pressed ? p.accent : checked && !onDevice ? withAlpha(p.primary, 0.06) : p.card }, first && styles.rowFirst, last && styles.rowLast]}>
+                {!first && <View style={[styles.separator, { backgroundColor: p.border }]} />}
+                <Medallion value={item.number} size={40} palette={p} />
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ color: p.foreground, fontSize: 16, fontWeight: checked && !onDevice ? '600' : '400' }}>{item.name}</Text>
-                  {onDevice && <Text style={{ color: p.primary, fontSize: 12, fontWeight: '500' }}>{t('recitation.surahSheet.onDevice')}</Text>}
+                  {calligraphy
+                    ? <Text accessibilityLabel={item.name} numberOfLines={1} style={[calligraphyStyle(27), { color: p.ornament, lineHeight: 36 }]}>{surahNameGlyph(item.number)}</Text>
+                    : <Text numberOfLines={1} style={{ color: p.foreground, fontSize: 16, lineHeight: 26, fontFamily: 'ReaderNaskhBold' }}>{item.name}</Text>}
+                  {onDevice && <Text style={{ color: p.ornament, fontSize: 12, lineHeight: 18, fontWeight: '600' }}>{t('recitation.surahSheet.onDevice')}</Text>}
                 </View>
-                {onDevice ? <ReaderIcon name="done" color={p.primary} size={18} /> : <CheckMark checked={checked} palette={p} />}
+                {onDevice ? <ReaderIcon name="done" color={p.ornament} size={20} /> : <CheckMark checked={checked} palette={p} />}
               </Pressable>;
             }} /></GestureDetector>
-          <View style={[styles.footer, { borderColor: p.border }]}>
+          <View style={[styles.footer, { borderColor: p.border, backgroundColor: p.background }]}>
             <ReaderButton palette={p} selected disabled={!draft.length} onPress={() => onDownload([...draft].sort((a, b) => a - b))}>{t('recitation.surahSheet.confirm', { count: draft.length })}</ReaderButton>
           </View>
         </AnimatedSafeAreaView></GestureDetector>
@@ -81,14 +89,13 @@ export function SurahDownloadSheet({ quran, available, saved, palette: p, onDown
 const styles = StyleSheet.create({
   frame: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
   sheet: { height: '92%', width: '100%', maxWidth: readerLayout.maxWidth, borderTopLeftRadius: readerShape.sheet, borderTopRightRadius: readerShape.sheet, borderWidth: StyleSheet.hairlineWidth, borderBottomWidth: 0 },
-  grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: readerShape.pill, marginTop: 10 },
-  header: { padding: 16, paddingTop: 8, gap: 12 },
-  headingRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  close: { width: 40, height: 40, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
-  list: { paddingHorizontal: 16, paddingBottom: 16 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 12, minHeight: 56,
-    borderTopWidth: StyleSheet.hairlineWidth, borderStartWidth: StyleSheet.hairlineWidth, borderEndWidth: StyleSheet.hairlineWidth },
-  rowFirst: { borderTopStartRadius: readerShape.card, borderTopEndRadius: readerShape.card },
-  rowLast: { borderBottomStartRadius: readerShape.card, borderBottomEndRadius: readerShape.card },
+  header: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 14, gap: 12 },
+  progress: { gap: 6 },
+  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 8, minHeight: 60,
+    borderStartWidth: StyleSheet.hairlineWidth, borderEndWidth: StyleSheet.hairlineWidth },
+  separator: { position: 'absolute', top: 0, start: 66, end: 0, height: StyleSheet.hairlineWidth },
+  rowFirst: { borderTopWidth: StyleSheet.hairlineWidth, borderTopStartRadius: readerShape.card, borderTopEndRadius: readerShape.card },
+  rowLast: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomStartRadius: readerShape.card, borderBottomEndRadius: readerShape.card },
   footer: { padding: 16, borderTopWidth: StyleSheet.hairlineWidth },
 });

@@ -1,11 +1,12 @@
-import { IconTile } from '@/components/ui';
-import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { memo, useId } from 'react';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import Svg, { ClipPath, Defs, G, Path, Rect } from 'react-native-svg';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { readerThemeOptions, readerThemes, type ReaderAppearance, type ReaderPalette } from '../../theme';
-import { ReaderIcon } from '../ui/reader-chrome';
-import { readerShape } from '../../design';
-import { SettingsSelection } from './settings-ui';
+import { CheckMark } from '@/components/ui';
+import { archPath, khatam } from '@/components/craft/art';
+import { Row, RowGroup, Section } from '@/components/craft/page';
+import { readerThemeOptions, readerThemes, type ReaderAppearance, type ReaderPalette, type ReaderThemeId } from '../../theme';
+import { readerLayout, withAlpha } from '../../design';
 import { t } from '@/i18n';
 import { tRich } from '@/i18n/rich';
 
@@ -15,73 +16,90 @@ interface Props {
   palette: ReaderPalette;
 }
 
-/** A small reading surface shows paper, Quran ink, ornament and toolbar colors. */
-function ThemePreview({ palette }: { palette: ReaderPalette }) {
-  return <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden style={[styles.preview, { backgroundColor: palette.background }]}>
-    <View style={[styles.previewPage, { backgroundColor: palette.card, borderColor: palette.border }]}>
-      <View style={styles.ornamentRow}><View style={[styles.rule, { backgroundColor: palette.ornament }]} /><View style={[styles.ornament, { borderColor: palette.ornament }]} /><View style={[styles.rule, { backgroundColor: palette.ornament }]} /></View>
-      {[100, 100, 100, 72].map((width, i) => <View key={i} style={{ width: `${width}%`, flexDirection: 'row', alignSelf: 'center', gap: 3, alignItems: 'center' }}>
-        <View style={{ width: 4, height: 4, borderRadius: 2, borderWidth: 1, borderColor: palette.ornament }} />
-        <View style={[styles.previewLine, { backgroundColor: palette.foreground }]} />
-      </View>)}
-      <View style={[styles.previewToolbar, { backgroundColor: palette.accent }]}><View style={[styles.previewDot, { backgroundColor: palette.primary }]} /><View style={{ width: 22, height: 3, borderRadius: 2, backgroundColor: palette.primary, opacity: 0.45 }} /><View style={[styles.previewDot, { backgroundColor: palette.primary }]} /></View>
+const GAP = 10;
+
+/**
+ * The themes, as a gallery of arches: each one painted in its own theme (its page, a card in a
+ * niche lined with its gold, a few lines of its ink, its button), so a theme is seen before it is
+ * chosen. The light ones, then the dark; above them, following the device.
+ */
+export function ReaderThemePicker({ appearance, onChange, palette: p }: Props) {
+  const { width } = useWindowDimensions();
+  const inner = Math.min(width, readerLayout.maxWidth) - 32;
+  const columns = inner >= 600 ? 6 : inner >= 440 ? 4 : 3;
+  const tile = Math.floor((inner - GAP * (columns - 1)) / columns);
+  const selectedLabel = readerThemeOptions.find(option => option.id === appearance)?.label;
+  const system = appearance === 'system';
+  return <View accessibilityRole="radiogroup" accessibilityLabel={t('settings.appearance.label')} style={{ gap: 26 }}>
+    <View style={{ gap: 12 }}>
+      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{tRich('settings.appearance.current', { theme: <Text style={{ color: p.foreground, fontWeight: '600' }}>{selectedLabel}</Text> })}</Text>
+      <RowGroup palette={p}>
+        <Row title={t('themes.system')} detail={t('settings.appearance.systemDetail')} label={t('themes.system')} role="radio" selected={system} onPress={() => onChange('system')}
+          leading={<DeviceArch palette={p} />} trailing={<CheckMark checked={system} palette={p} radio />} palette={p} />
+      </RowGroup>
     </View>
+    {[false, true].map(dark => <Section key={String(dark)} title={dark ? t('settings.appearance.darkShades') : t('settings.appearance.lightShades')} palette={p}>
+      <View style={[styles.grid, { gap: GAP }]}>
+        {readerThemeOptions.map(option => option.id === 'system' || option.dark !== dark ? null
+          : <ThemeArch key={option.id} id={option.id} label={option.label} width={tile} selected={appearance === option.id} ring={p.primary} ink={p.foreground} muted={p.mutedForeground}
+            onChange={onChange} />)}
+      </View>
+    </Section>)}
   </View>;
 }
 
-export function ReaderThemePicker({ appearance, onChange, palette }: Props) {
-  const [width, setWidth] = useState(0);
-  const columns = width >= 560 ? 3 : 2;
-  const cardWidth = width ? Math.floor((width - (columns - 1) * 12) / columns) : undefined;
-  const selectedLabel = readerThemeOptions.find(option => option.id === appearance)?.label;
-  return <View accessibilityRole="radiogroup" accessibilityLabel={t('settings.appearance.label')} style={styles.panel}>
-    <View style={styles.current}>
-      <View style={[styles.currentDot, { backgroundColor: palette.primary }]} />
-      <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{tRich('settings.appearance.current', { theme: <Text style={{ color: palette.foreground, fontWeight: '600' }}>{selectedLabel}</Text> })}</Text>
-    </View>
-    <Pressable accessibilityRole="radio" accessibilityLabel={t('themes.system')} accessibilityState={{ checked: appearance === 'system' }} aria-checked={appearance === 'system'}
-      onPress={() => onChange('system')} style={({ pressed }) => [styles.system, { backgroundColor: pressed ? palette.accent : palette.card, borderColor: appearance === 'system' ? palette.primary : palette.border }]}>
-      <IconTile name="system" palette={palette} />
-      <View style={{ flex: 1 }}><Text style={{ color: palette.foreground, fontSize: 15, fontWeight: '600' }}>{t('themes.system')}</Text><Text style={{ color: palette.mutedForeground, fontSize: 14 }}>{t('settings.appearance.systemDetail')}</Text></View>
-      <SettingsSelection selected={appearance === 'system'} palette={palette} />
-    </Pressable>
-    <View style={{ gap: 22 }} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
-      {[false, true].map(dark => <View key={String(dark)} style={{ gap: 12 }}>
-        <View style={styles.groupHeading}><ReaderIcon name={dark ? 'moon' : 'sun'} color={palette.mutedForeground} size={16} /><Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 16, fontWeight: '600' }}>{dark ? t('settings.appearance.darkShades') : t('settings.appearance.lightShades')}</Text><View style={[styles.groupRule, { backgroundColor: palette.border }]} /></View>
-        <View style={styles.grid}>{readerThemeOptions.filter(option => option.id !== 'system' && option.dark === dark).map(option => {
-          if (option.id === 'system') return null;
-          const selected = appearance === option.id;
-          const sample = readerThemes[option.id];
-          return <Pressable key={option.id} accessibilityRole="radio" accessibilityLabel={option.label}
-            accessibilityState={{ checked: selected }} aria-checked={selected} accessibilityHint={t('settings.appearance.themeHint')}
-            onPress={() => onChange(option.id)}
-            style={({ pressed }) => [styles.card, { width: cardWidth, borderColor: selected ? palette.primary : palette.border,
-              backgroundColor: pressed ? palette.accent : palette.card }]}>
-            <ThemePreview palette={sample} />
-            <View style={styles.labelRow}><Text style={[styles.label, { color: palette.foreground }]}>{option.label}</Text><SettingsSelection selected={selected} palette={palette} /></View>
-          </Pressable>;
-        })}</View>
-      </View>)}
-    </View>
+/** A theme as a small arch painted in its colours, its name under it; the chosen one ringed and named in bold. */
+const ThemeArch = memo(function ThemeArch({ id, label, width: w, selected, ring, ink, muted, onChange }: {
+  id: ReaderThemeId; label: string; width: number; selected: boolean; ring: string; ink: string; muted: string; onChange: (appearance: ReaderAppearance) => void;
+}) {
+  const h = Math.round(w * 1.22);
+  return <Pressable accessibilityRole="radio" accessibilityLabel={label} accessibilityHint={t('settings.appearance.themeHint')}
+    accessibilityState={{ checked: selected }} aria-checked={selected} onPress={() => onChange(id)}
+    style={({ pressed }) => [styles.theme, { width: w, transform: [{ scale: pressed ? 0.97 : 1 }] }]}>
+    <ThemeSwatch theme={readerThemes[id]} w={w} h={h} ring={selected ? ring : null} />
+    <Text numberOfLines={2} style={{ color: selected ? ink : muted, fontSize: 13, lineHeight: 19, fontWeight: selected ? '700' : '500', textAlign: 'center' }}>{label}</Text>
+  </Pressable>;
+});
+
+/**
+ * The drawing of a theme: an arch of its page colour edged with its border, and within it a niche
+ * of its card lined with its gold, a star of its gold in the niche's head, lines of its ink and a
+ * button of its primary. Drawn with room for the ring of the chosen one around it.
+ */
+function ThemeSwatch({ theme: c, w, h, ring }: { theme: ReaderPalette; w: number; h: number; ring: string | null }) {
+  const m = 4, aw = w - m * 2, ah = h - m * 2, rise = Math.round(aw * 0.5);
+  const cx = w / 2, star = m + Math.round(rise * 0.62) + 4;
+  const line = withAlpha(c.foreground, 0.5);
+  const top = m + rise + 6;
+  return <Svg width={w} height={h} aria-hidden>
+    {ring && <Path d={archPath(w - 2, h - 2, rise + 3, 1, 1, 15)} fill="none" stroke={ring} strokeWidth={2} />}
+    <Path d={archPath(aw, ah, rise, m, m, 12)} fill={c.background} stroke={c.border} strokeWidth={1} />
+    <Path d={archPath(aw - 14, ah - 14, rise - 6, m + 7, m + 7, 7)} fill={c.card} stroke={c.ornament} strokeWidth={1} />
+    {/* The chosen theme's star is filled, as the kit's medallion fills the one chosen. */}
+    <Path d={khatam(cx, star, aw * 0.075)} fill={ring ? c.ornament : withAlpha(c.ornament, 0.2)} stroke={c.ornament} strokeWidth={1} strokeLinejoin="round" />
+    {[0.5, 0.36, 0.5, 0.28].map((share, i) => <Path key={i} d={`M ${cx + (aw * share) / 2} ${top + i * 7} H ${cx - (aw * share) / 2}`} stroke={line} strokeWidth={1.8} strokeLinecap="round" />)}
+    <Rect x={cx - aw * 0.18} y={h - m - 7 - 16} width={aw * 0.36} height={9} rx={4.5} fill={c.primary} />
+  </Svg>;
+}
+
+/** Following the device: an arch half in the light theme, half in the dark, one gold line round it. */
+function DeviceArch({ palette: p }: { palette: ReaderPalette }) {
+  const id = useId().replace(/[^\w-]/g, '');
+  const light = readerThemes.light, dark = readerThemes.dark;
+  const w = 38, h = 46, rise = 19;
+  const outline = archPath(w - 2, h - 2, rise, 1, 1, 8);
+  return <View aria-hidden style={{ width: 40, height: 48, alignItems: 'center', justifyContent: 'center' }}>
+    <Svg width={w} height={h}>
+      <Defs><ClipPath id={`night${id}`}><Rect x={0} y={0} width={w / 2} height={h} /></ClipPath></Defs>
+      <Path d={outline} fill={light.background} stroke={withAlpha(p.ornament, 0.8)} strokeWidth={1} />
+      <G clipPath={`url(#night${id})`}><Path d={outline} fill={dark.card} /></G>
+      <Path d={archPath(w - 10, h - 10, rise - 4, 5, 5, 5)} fill="none" stroke={withAlpha(p.ornament, 0.7)} strokeWidth={0.8} />
+      <Path d={khatam(w / 2, 17, 3.2)} fill={p.ornament} />
+    </Svg>
   </View>;
 }
 
 const styles = StyleSheet.create({
-  panel: { gap: 20 }, current: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 4 },
-  currentDot: { width: 6, height: 6, borderRadius: 3 },
-  // Option tiles: a constant 1.5 border keeps the layout still when the accent colour marks the selection.
-  system: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderWidth: 1.5, borderRadius: readerShape.card },
-  systemIcon: { width: 40, height: 40, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
-  groupHeading: { flexDirection: 'row', alignItems: 'center', gap: 8 }, groupRule: { height: StyleSheet.hairlineWidth, flex: 1, marginStart: 4 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  card: { padding: 8, borderWidth: 1.5, borderRadius: readerShape.card, gap: 6 },
-  preview: { height: 108, borderRadius: readerShape.sm, padding: 10, overflow: 'hidden' },
-  previewPage: { flex: 1, padding: 9, borderRadius: readerShape.detail, borderWidth: 1, gap: 6, overflow: 'hidden' },
-  ornamentRow: { flexDirection: 'row', alignSelf: 'center', alignItems: 'center', gap: 7, marginBottom: 3 },
-  rule: { width: 14, height: 1, opacity: 0.5 }, ornament: { width: 8, height: 8, borderWidth: 1, transform: [{ rotate: '45deg' }] },
-  previewLine: { flex: 1, height: 2, borderRadius: 2, opacity: 0.48 },
-  previewToolbar: { height: 12, position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  previewDot: { width: 3, height: 3, borderRadius: 2 },
-  labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6, minHeight: 38, paddingHorizontal: 4, paddingVertical: 3 },
-  label: { flex: 1, fontSize: 14, fontWeight: '500' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  theme: { alignItems: 'center', gap: 6 },
 });

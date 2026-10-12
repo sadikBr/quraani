@@ -4,6 +4,7 @@ import Slider from '@react-native-community/slider';
 import { HorizontalControl } from '@/components/swipe-tabs';
 import type { ReaderPalette } from '../../theme';
 import { readerFontLabel } from '../../utils/reader-typography';
+import { withAlpha } from '../../design';
 import { t } from '@/i18n';
 
 export interface ReaderFontSliderProps {
@@ -22,8 +23,8 @@ export function ReaderFontSlider({ value, previewValue, onPreview, onCommit, pal
   return <HorizontalControl><View collapsable={false}><Slider testID="reader-font-slider" accessibilityLabel={t('settings.fontSize.label')} accessibilityHint={t('settings.fontSize.hint')}
     accessibilityValue={{ min: 0, max: 6, now: previewValue, text: t('settings.fontSize.value', { label: readerFontLabel(previewValue), step: previewValue + 1, total: 7 }) }}
     minimumValue={0} maximumValue={6} step={1} value={value} tapToSeek
-    inverted style={{ width: '100%', height: 48, direction: 'ltr' }}
-    minimumTrackTintColor={palette.primary} maximumTrackTintColor={palette.muted} thumbTintColor={palette.primary}
+    inverted style={{ width: '100%', height: 44, direction: 'ltr' }}
+    minimumTrackTintColor={palette.primary} maximumTrackTintColor={withAlpha(palette.mutedForeground, 0.35)} thumbTintColor={palette.primary}
     onSlidingStart={() => { dragging.current = true; }}
     onValueChange={(step) => {
       onPreview(step);

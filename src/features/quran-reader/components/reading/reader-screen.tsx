@@ -1,8 +1,9 @@
 import { loadTajweedFont } from '../../services/tajweed-service';
 import { TajweedQuranPage } from './tajweed-quran-page';
 import { ArabicText as Text } from '@/components/arabic-text';
+import { Niche } from '@/components/craft/art';
 import { recentre } from '@/components/pager';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Animated, Easing, PanResponder, Platform, ScrollView, StatusBar as NativeStatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaView, initialWindowMetrics, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -15,6 +16,8 @@ import { ayahDestination, preloadPageNumbers, swipePageDelta } from '../../utils
 import { paginateByThumun, readerPaging, thumunName } from '../../utils/thumun-pages';
 import { RIWAYAT } from '../../riwayat';
 import type { ReaderPaging } from '../../types/reader';
+import type { ReaderPalette } from '../../theme';
+import { ReaderIcon, type ReaderIconName } from '../ui/reader-chrome';
 import { AyahActionSheet } from './ayah-action-sheet';
 import { ayahKey } from '../../utils/references';
 import type { Ayah, AyahReference } from '@/lib/quranpedia/types';
@@ -375,12 +378,11 @@ function RiwayahReaderScreen({ paging }: { paging: ReaderPaging }) {
   }, [ready, content, pageNumber, firstPage, lastPageNumber, mode, palette.foreground, palette.ornament, tajweed, riwayah]);
 
   if (planId && (reading.error || plansError)) return <SafeAreaView style={[styles.root, { backgroundColor: palette.card }]}>
-    <View style={styles.status}>
-      <Text accessibilityRole="alert" style={[styles.statusTitle, { color: palette.foreground }]}>{reading.error || plansError}</Text>
+    <ReaderStatus palette={palette} icon="calendar" title={reading.error || plansError || ''} alert>
       {!!plansError && <ReaderButton palette={palette} onPress={retryPlans}>{t('common.retry')}</ReaderButton>}
       <ReaderButton palette={palette} selected onPress={() => router.replace({ pathname: '/plans/[id]', params: { id: planId } })}>{t('goals.backToGoal')}</ReaderButton>
       <ReaderButton palette={palette} onPress={() => router.replace('/')}>{t('reader.screen.openMushaf')}</ReaderButton>
-    </View>
+    </ReaderStatus>
   </SafeAreaView>;
 
   return (
@@ -449,17 +451,12 @@ function RiwayahReaderScreen({ paging }: { paging: ReaderPaging }) {
         <View style={[styles.content, mode === 'page' && !practicing && styles.centeredContent]}>
           {ready && session && displayNumber === firstPage && <View onLayout={isCurrent ? event => { openingHeight.current = event.nativeEvent.layout.height; } : undefined}><PlanReadingOpening session={session} /></View>}
           {font.error || (error && !content) ? (
-            <View accessibilityRole="alert" style={styles.status}>
-              <Text style={[styles.statusTitle, { color: palette.foreground }]}>{font.error ? t('reader.screen.fontError') : t('reader.screen.quranError')}</Text>
-              <Text style={[styles.statusText, { color: palette.mutedForeground }]}>{font.error ? t('reader.screen.fontErrorDetail') : t('reader.screen.quranErrorDetail')}</Text>
+            <ReaderStatus palette={palette} icon={font.error ? 'alert' : 'book'} alert
+              title={font.error ? t('reader.screen.fontError') : t('reader.screen.quranError')} detail={font.error ? t('reader.screen.fontErrorDetail') : t('reader.screen.quranErrorDetail')}>
               {!font.error && <ReaderButton palette={palette} onPress={refresh}>{t('common.retry')}</ReaderButton>}
-            </View>
+            </ReaderStatus>
           ) : !font.loaded || !content || !ready ? (
-            <View style={styles.status} accessibilityLiveRegion="polite">
-              <ActivityIndicator color={palette.primary} size="large" />
-              <Text style={[styles.statusTitle, { color: palette.foreground }]}>{t('reader.screen.preparing')}</Text>
-              <Text style={[styles.statusText, { color: palette.mutedForeground }]}>{t('reader.screen.preparingDetail')}</Text>
-            </View>
+            <ReaderStatus palette={palette} busy title={t('reader.screen.preparing')} detail={t('reader.screen.preparingDetail')} />
           ) : displayPage ? (
             mode === 'page' && !practicing && tajweed && riwayah === 'hafs' ? <TajweedQuranPage key={`${displayPage.number}:${jumpRevision}`} page={displayPage} quran={content.data.quran} palette={palette} dark={dark} selectedAyah={isCurrent ? position.ayah : null} onTap={toggleActions} onSelect={select} onNavigate={navigate} onTargetOffset={isCurrent ? targetOffset : undefined} /> :
             mode === 'page' && !practicing ? <PrintedQuranPage key={`${displayPage.number}:${jumpRevision}`} page={displayPage} palette={palette}
@@ -468,7 +465,7 @@ function RiwayahReaderScreen({ paging }: { paging: ReaderPaging }) {
                 visibleWords={practicing ? visibleWords : undefined} fontSize={fontSize} spacious={spacious} palette={palette} selectedAyah={isCurrent ? position.ayah : null}
                 onTap={tapAyah} onSelect={select} onNavigate={navigate} onTargetOffset={isCurrent ? targetOffset : undefined}
                 onAyahOffset={isCurrent ? recordPracticeOffset : undefined} />
-          ) : <Text accessibilityRole="alert" style={{ color: palette.destructive }}>{t('reader.screen.pageUnavailable')}</Text>}
+          ) : <ReaderStatus palette={palette} icon="alert" title={t('reader.screen.pageUnavailable')} alert />}
           {ready && session && displayNumber === lastPageNumber && <PlanReadingEnd session={session} actions={planActions} />}
         </View>
       </ScrollView>
@@ -498,6 +495,26 @@ function RiwayahReaderScreen({ paging }: { paging: ReaderPaging }) {
   );
 }
 
+/**
+ * The reader's own notices (preparing the mushaf, a failure, a goal that cannot open), drawn as the
+ * app draws a place waiting to be filled: an empty niche holding a mark (or, while preparing, the
+ * wheel that says it is coming), a title in Naskh, a line of what to do, and the ways on.
+ */
+function ReaderStatus({ palette: p, icon = 'book', title, detail, busy = false, alert = false, children }: {
+  palette: ReaderPalette; icon?: ReaderIconName; title: string; detail?: string; busy?: boolean; alert?: boolean; children?: ReactNode;
+}) {
+  // The niche fades into the page it stands on, which is the reader's card.
+  const page = { ...p, background: p.card };
+  return <View style={styles.status}>
+    <Niche palette={page} w={76} h={94} motif={busy ? 'rosette' : 'khatam'}>
+      {busy ? <ActivityIndicator color={p.ornament} /> : <ReaderIcon name={icon} color={p.ornament} size={24} />}
+    </Niche>
+    <Text accessibilityRole={alert ? 'alert' : undefined} accessibilityLiveRegion={alert || busy ? 'polite' : undefined} style={[styles.statusTitle, { color: p.foreground }]}>{title}</Text>
+    {!!detail && <Text style={[styles.statusText, { color: p.mutedForeground }]}>{detail}</Text>}
+    {!!children && <View style={styles.statusActions}>{children}</View>}
+  </View>;
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1, ...Platform.select({ native: { direction: 'rtl' as const } }) },
   pager: { flex: 1, overflow: 'hidden' },
@@ -506,7 +523,8 @@ const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1, paddingHorizontal: 6 },
   content: { width: '100%', maxWidth: 700, alignSelf: 'center', flexGrow: 1 },
   centeredContent: { justifyContent: 'center' },
-  status: { paddingVertical: 64, paddingHorizontal: 20, alignItems: 'center', gap: 16 },
-  statusTitle: { fontSize: 18, fontWeight: '500', textAlign: 'center' },
-  statusText: { fontSize: 14, lineHeight: 22, textAlign: 'center' },
+  status: { flexGrow: 1, justifyContent: 'center', paddingVertical: 64, paddingHorizontal: 24, alignItems: 'center', gap: 6 },
+  statusTitle: { fontSize: 21, lineHeight: 36, fontFamily: 'ReaderNaskhBold', textAlign: 'center', marginTop: 10 },
+  statusText: { fontSize: 14, lineHeight: 22, textAlign: 'center', maxWidth: 320 },
+  statusActions: { alignSelf: 'center', width: '100%', maxWidth: 360, marginTop: 18, gap: 10 },
 });

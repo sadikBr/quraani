@@ -1,19 +1,21 @@
 import { useMemo, useRef, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
-import { ReaderIcon, Segments } from '../quran-reader/components/ui/reader-chrome';
+import { Segments } from '../quran-reader/components/ui/reader-chrome';
+import { withAlpha } from '../quran-reader/design';
+import { Medallion } from '@/components/craft/marks';
+import { PageTitle, Row, RowGroup, Section } from '@/components/craft/page';
 import { ReaderButton } from '../quran-reader/components/reading/reader-button';
 import { RIWAYAT, readingPositionKey, type Riwayah } from '../quran-reader/riwayat';
 import { contentStorage } from '../quran-reader/storage/content-storage';
-import { Badge, Card } from '@/components/ui';
 import { usePlans } from './provider';
 import { createPlan, rangeLabel } from './engine';
 import { localDate } from './dates';
 import { shortDate } from './presentation';
-import { formatNumber, t } from '@/i18n';
+import { formatList, formatNumber, t } from '@/i18n';
 import { remindersSupported, requestPlanReminders } from './notifications';
 import { usePlanIndex } from './use-plan-index';
 import { PlanDateField } from './plan-date-field';
@@ -24,8 +26,9 @@ import { RecurringCreationScreen } from './recurring-creation-screen';
 import { RevisionCreationScreen } from './revision-creation-screen';
 import { saveWithReminder } from './save-with-reminder';
 import { currentGoal, DuplicateGoalError } from './goal-limit';
-import { AmountPicker, CreationSection, CreationSteps, ExistingGoalCard, GoalTypeChoices, c } from './goal-creation-components';
-import { Copy, PlanField, PlanLoading, PlanNotice, PlanScreen, PlanSwitch } from './components';
+import { AmountPicker, BoardLabel, CreationBar, CreationBoard, CreationFooter, CreationSection, CreationSteps, ExistingGoalCard, GoalTypeChoices, c } from './goal-creation-components';
+import { HeroPanel, HeroStat, JuzRing, juzShares } from './plan-detail-components';
+import { Copy, PlanField, PlanLoading, PlanNotice, PlanScreen, SwitchRow } from './components';
 import { StartPointPicker } from './start-point-picker';
 
 export function parsePlanNumber(value: string) {
@@ -103,82 +106,82 @@ function GoalCreationForm({ initialKind }: { initialKind: SequentialGoal['type']
   };
   const unitOptions = [{ value: 'pages', label: t('khatma.create.units.pages') }, { value: 'hizbs', label: t('khatma.create.units.hizbs') }, { value: 'juzs', label: t('khatma.create.units.juzs') }] as const;
   const increment = unit === 'pages' ? 1 : unit === 'hizbs' ? 0.25 : 0.125;
+  const startAyah = preview.plan && index ? index.ayahs[preview.plan.cycle.start] : undefined;
   return <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: p.background }}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={c.navigation}>
-        <Pressable accessibilityRole="button" accessibilityLabel={step ? t('khatma.create.backToSetup') : t('goals.backToGoals')} disabled={busy} onPress={() => step ? changeStep(0) : router.back()}
-          style={({ pressed }) => [c.back, { opacity: pressed || busy ? 0.5 : 1 }]}>
-          <ReaderIcon name="back" color={p.foreground} size={20} /><Text style={{ color: p.foreground, fontSize: 15 }}>{step ? t('goals.setup') : t('goals.goals')}</Text>
-        </Pressable>
-        <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('goals.newGoal')}</Text>
-      </View>
+      <CreationBar kind={kind} label={t('goals.newGoal')} back={{ label: step ? t('khatma.create.backToSetup') : t('goals.backToGoals'), onPress: () => { if (step) changeStep(0); else router.back(); } }} disabled={busy} />
       <ScrollView ref={scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={c.content}>
-        <View style={{ gap: 2 }}>
-          <Text accessibilityRole="header" accessibilityLiveRegion="polite" style={{ color: p.foreground, fontSize: 24, fontWeight: '600' }}>{blocked ? t('khatma.create.heading.blocked') : step ? t('khatma.create.heading.review') : t('khatma.create.heading.setup')}</Text>
-          <Text style={{ color: p.mutedForeground, fontSize: 15 }}>{blocked ? t('khatma.create.subheading.blocked') : step ? t('khatma.create.subheading.review') : t('khatma.create.subheading.setup')}</Text>
-        </View>
+        <PageTitle title={blocked ? t('khatma.create.heading.blocked') : step ? t('khatma.create.heading.review') : t('khatma.create.heading.setup')}
+          subtitle={blocked ? t('khatma.create.subheading.blocked') : step ? t('khatma.create.subheading.review') : t('khatma.create.subheading.setup')} palette={p} />
         {!blocked && <CreationSteps step={step} canReview={!!preview.plan && !busy} onChange={changeStep} />}
         <View pointerEvents={busy ? 'none' : 'auto'} style={{ gap: 24 }}>
-          {(step === 0 || blocked) && <GoalTypeChoices kind={kind} existing={blocked} onChange={value => { setKind(value); setStep(0); setMessage(''); setConflictId(undefined); }} />}
           {blocked ? <>
+            <GoalTypeChoices kind={kind} existing={blocked} onChange={() => {}} />
             <ExistingGoalCard goal={blocked} onOpen={() => openGoal(blocked.id)} />
             <Copy muted>{t('khatma.create.blockedNote')}</Copy>
           </> : step === 0 ? <>
-            <CreationSection title={kind === 'khatma' ? t('khatma.create.amount.khatmaTitle') : t('khatma.create.amount.wirdTitle')} icon={kind === 'khatma' ? 'calendar' : 'book'}
-              description={kind === 'khatma' ? t('khatma.create.amount.khatmaDescription') : t('khatma.create.amount.wirdDescription')}>
-              {kind === 'wird' && <Segments palette={p} value={unit} onChange={value => { setUnit(value); setAmount(value === 'pages' ? '5' : '1'); }} options={unitOptions} />}
-              <AmountPicker label={kind === 'khatma' ? t('khatma.create.amount.khatmaLabel') : t('khatma.create.amount.wirdLabel')} value={kind === 'khatma' ? weeks : amount} onChange={kind === 'khatma' ? setWeeks : setAmount}
-                unit={kind === 'khatma' ? t('khatma.create.amount.weeks', { count: parsePlanNumber(weeks) }) : t(`khatma.create.amount.perDay.${unit}`, { count: parsePlanNumber(amount) })} presets={kind === 'khatma' ? ['2', '4', '8', '12'] : unit === 'pages' ? ['2', '5', '10', '20'] : unit === 'hizbs' ? ['0.25', '0.5', '1', '2'] : ['0.125', '0.25', '0.5', '1']}
-                minimum={kind === 'khatma' ? 1 : increment} maximum={kind === 'khatma' ? 52 : (index?.[unit].length ?? 2) - 1} increment={kind === 'khatma' ? 1 : increment} parse={parsePlanNumber}
-                presetLabel={value => t(`plans.units.${kind === 'khatma' ? 'weeks' : unit}`, { count: value })} />
-              {kind === 'khatma' && <View style={{ gap: 8, borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border, paddingTop: 16 }}><Copy muted>{t('khatma.create.amount.divideBy')}</Copy><Segments palette={p} value={unit} onChange={setUnit} options={unitOptions} /></View>}
-            </CreationSection>
-            <CreationSection title={t('khatma.create.timing.title')} icon="calendar">
-              <View style={{ gap: 8 }}><Copy muted>{t('khatma.create.timing.riwayah')}</Copy><Segments palette={p} value={riwayah} onChange={setRiwayah} options={[{ value: 'warsh', label: t('common.riwayah.warsh.name') }, { value: 'hafs', label: t('common.riwayah.hafs.name') }]} /></View>
+            <CreationBoard>
+              <GoalTypeChoices kind={kind} onChange={value => { setKind(value); setStep(0); setMessage(''); setConflictId(undefined); }} />
+              <View style={{ gap: 12, borderTopWidth: StyleSheet.hairlineWidth, borderColor: withAlpha(p.ornament, 0.35), paddingTop: 14 }}>
+                <BoardLabel>{kind === 'khatma' ? t('khatma.create.amount.khatmaTitle') : t('khatma.create.amount.wirdTitle')}</BoardLabel>
+                {kind === 'wird' && <Segments palette={p} value={unit} onChange={value => { setUnit(value); setAmount(value === 'pages' ? '5' : '1'); }} options={unitOptions} />}
+                <AmountPicker label={kind === 'khatma' ? t('khatma.create.amount.khatmaLabel') : t('khatma.create.amount.wirdLabel')} value={kind === 'khatma' ? weeks : amount} onChange={kind === 'khatma' ? setWeeks : setAmount}
+                  unit={kind === 'khatma' ? t('khatma.create.amount.weeks', { count: parsePlanNumber(weeks) }) : t(`khatma.create.amount.perDay.${unit}`, { count: parsePlanNumber(amount) })} presets={kind === 'khatma' ? ['2', '4', '8', '12'] : unit === 'pages' ? ['2', '5', '10', '20'] : unit === 'hizbs' ? ['0.25', '0.5', '1', '2'] : ['0.125', '0.25', '0.5', '1']}
+                  minimum={kind === 'khatma' ? 1 : increment} maximum={kind === 'khatma' ? 52 : (index?.[unit].length ?? 2) - 1} increment={kind === 'khatma' ? 1 : increment} parse={parsePlanNumber}
+                  presetLabel={value => t(`plans.units.${kind === 'khatma' ? 'weeks' : unit}`, { count: value })} />
+              </View>
+              {kind === 'khatma' && <View style={{ gap: 8 }}><Text style={{ color: p.mutedForeground, fontSize: 13, fontWeight: '600' }}>{t('khatma.create.amount.divideBy')}</Text><Segments palette={p} value={unit} onChange={setUnit} options={unitOptions} /></View>}
+              <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 21, textAlign: 'center' }}>{kind === 'khatma' ? t('khatma.create.amount.khatmaDescription') : t('khatma.create.amount.wirdDescription')}</Text>
+            </CreationBoard>
+            <CreationSection title={t('khatma.create.timing.title')}>
+              <View style={{ gap: 8 }}><Text style={{ color: p.foreground, fontSize: 14, fontWeight: '600' }}>{t('khatma.create.timing.riwayah')}</Text><Segments palette={p} value={riwayah} onChange={setRiwayah} options={[{ value: 'warsh', label: t('common.riwayah.warsh.name') }, { value: 'hafs', label: t('common.riwayah.hafs.name') }]} /></View>
               <PlanDateField label={t('khatma.create.timing.startDate')} value={startDate} onChange={setStartDate} mode="date" minimum={today} />
             </CreationSection>
-            {index && <CreationSection title={t('khatma.create.start.title')} icon="bookmark" description={kind === 'khatma' ? t('khatma.create.start.khatmaDescription') : t('khatma.create.start.wirdDescription')}>
+            {index && <CreationSection title={t('khatma.create.start.title')} description={kind === 'khatma' ? t('khatma.create.start.khatmaDescription') : t('khatma.create.start.wirdDescription')}>
               <StartPointPicker index={index} value={start} onChange={setStart} onCurrentPosition={() => void currentPage()} />
             </CreationSection>}
           </> : <>
-            {preview.plan && index && <>
-              <Card style={{ padding: 16, gap: 14 }}>
-                <Badge variant="outline">{t('common.riwayahOf', { riwayah: RIWAYAT[riwayah].label })}</Badge>
-                <Text style={{ color: p.foreground, fontSize: 22, fontWeight: '600' }}>{kind === 'khatma' ? t('khatma.create.summary.khatma', { count: parsePlanNumber(weeks) }) : t(`khatma.create.summary.wird.${unit}`, { count: parsePlanNumber(amount) })}</Text>
-                <View style={[c.row, { borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border, paddingTop: 14, alignItems: 'flex-start' }]}>
-                  <View style={c.grow}><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('khatma.create.summary.start')}</Text><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{shortDate(startDate)}</Text></View>
-                  <View style={c.grow}><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{kind === 'khatma' ? t('khatma.create.summary.completion') : t('khatma.create.summary.rhythm')}</Text><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{kind === 'khatma' ? shortDate(preview.plan.cycle.sessions.at(-1)!.date) : t('khatma.create.summary.noEndDate')}</Text></View>
-                  <View><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('khatma.create.summary.sessions')}</Text><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{formatNumber(preview.plan.cycle.sessions.length)}</Text></View>
-                </View>
-                <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('khatma.create.summary.from', { surah: index.surahNames[index.ayahs[preview.plan.cycle.start].surahNumber], ayah: index.ayahs[preview.plan.cycle.start].ayahNumber, page: index.ayahs[preview.plan.cycle.start].pageNumber })}</Text>
-              </Card>
-              <CreationSection title={t('khatma.create.firstSteps.title')} icon="lines" description={kind === 'wird' ? t('khatma.create.firstSteps.wirdNote') : undefined}>
-                <View>{preview.plan.cycle.sessions.slice(0, 3).map((session, i) => <View key={session.date} style={[c.row, { gap: 12, paddingVertical: 10, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: p.border }]}>
-                  <Text style={{ color: p.mutedForeground, fontSize: 13, minWidth: 20 }}>{formatNumber(i + 1)}</Text>
-                  <View style={c.grow}><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{rangeLabel(index, session.start, session.end)}</Text><Text style={{ color: p.mutedForeground, fontSize: 13 }}>{shortDate(session.date)}</Text></View>
-                </View>)}</View>
-              </CreationSection>
+            {preview.plan && index && startAyah && <>
+              <HeroPanel title={kind === 'khatma' ? t('khatma.create.summary.khatma', { count: parsePlanNumber(weeks) }) : t(`khatma.create.summary.wird.${unit}`, { count: parsePlanNumber(amount) })}
+                detail={t('khatma.create.summary.from', { surah: index.surahNames[startAyah.surahNumber], ayah: startAyah.ayahNumber, page: startAyah.pageNumber })}
+                figure={<JuzRing size={212} done={[]} held={juzShares(index, [{ start: preview.plan.cycle.start, end: preview.plan.totalAyahs }])} current={index.juzs.findIndex((at, i) => at <= preview.plan!.cycle.start && preview.plan!.cycle.start < index.juzs[i + 1])}
+                  label={formatList([t('khatma.create.summary.sessions'), t('session.plan.total', { count: preview.plan.cycle.sessions.length })])}>
+                  <Text style={{ color: p.foreground, fontSize: 36, lineHeight: 56, fontFamily: 'ReaderNaskhBold' }}>{formatNumber(preview.plan.cycle.sessions.length)}</Text>
+                  <Text style={{ color: p.mutedForeground, fontSize: 12 }}>{t('khatma.create.summary.sessions')}</Text>
+                </JuzRing>}
+                stats={<>
+                  <HeroStat label={t('khatma.create.summary.start')} value={shortDate(startDate)} />
+                  <HeroStat divided label={kind === 'khatma' ? t('khatma.create.summary.completion') : t('khatma.create.summary.rhythm')} value={kind === 'khatma' ? shortDate(preview.plan.cycle.sessions.at(-1)!.date) : t('khatma.create.summary.noEndDate')} />
+                </>}>
+                <Text style={{ color: p.mutedForeground, fontSize: 12, marginTop: 4 }}>{t('common.riwayahOf', { riwayah: RIWAYAT[riwayah].label })}</Text>
+              </HeroPanel>
+              <Section title={t('khatma.create.firstSteps.title')} palette={p}>
+                {kind === 'wird' && <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 21, marginTop: -4 }}>{t('khatma.create.firstSteps.wirdNote')}</Text>}
+                <RowGroup palette={p}>{preview.plan.cycle.sessions.slice(0, 3).map((session, i) => <Row key={session.date} palette={p} leading={<Medallion value={i + 1} size={36} palette={p} />}
+                  title={rangeLabel(index, session.start, session.end)} detail={shortDate(session.date)} />)}</RowGroup>
+              </Section>
             </>}
-            <CreationSection title={t('khatma.create.makeItYours')} icon="settings">
+            <Section title={t('khatma.create.makeItYours')} palette={p}>
               <PlanField label={t('goals.name')} value={name} onChange={setName} placeholder={t(`khatma.create.defaultName.${kind}`)} />
-              <PlanSwitch checked={repeat} onChange={setRepeat} label={t('khatma.repeat')} detail={t('khatma.create.repeatDetail')} />
-              <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: p.border }} />
-              <PlanSwitch checked={reminder} onChange={setReminder} disabled={!remindersSupported} label={t('khatma.create.reminder')} detail={remindersSupported ? t('khatma.create.reminderDetail') : t('goals.reminder.enableOnPhone')} />
+              <RowGroup palette={p}>
+                <SwitchRow icon="loop" checked={repeat} onChange={setRepeat} label={t('khatma.repeat')} detail={t('khatma.create.repeatDetail')} />
+                <SwitchRow icon="bell" checked={reminder} onChange={setReminder} disabled={!remindersSupported} label={t('khatma.create.reminder')} detail={remindersSupported ? t('khatma.create.reminderDetail') : t('goals.reminder.enableOnPhone')} />
+              </RowGroup>
               {reminder && <PlanDateField label={t('goals.reminder.time')} value={time} onChange={setTime} mode="time" />}
-            </CreationSection>
+            </Section>
             {replacesRepeat && <Copy muted>{t('khatma.create.replacesRepeat')}</Copy>}
           </>}
         </View>
         {!blocked && <><PlanNotice message={error} retry={retry} />{!index && !error && <PlanLoading />}</>}
       </ScrollView>
-      {!blocked && <View style={[c.footer, { backgroundColor: p.card, borderColor: p.border }]}>
+      {!blocked && <CreationFooter>
         <PlanNotice message={message || preview.error} />
         {conflictId ? <ReaderButton palette={p} onPress={() => openGoal(conflictId)}>{t('goals.viewCurrent')}</ReaderButton>
           : <>
             {step === 0 && preview.plan && <Text style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>{t('khatma.create.sessionsPreview', { count: preview.plan.cycle.sessions.length })}</Text>}
             <ReaderButton palette={p} selected disabled={!preview.plan || busy} onPress={() => step === 0 ? changeStep(1) : void save()}>{busy ? t('goals.saving') : step === 0 ? t('khatma.create.continueToReview') : t('khatma.create.create')}</ReaderButton>
           </>}
-      </View>}
+      </CreationFooter>}
     </KeyboardAvoidingView>
   </SafeAreaView>;
 }

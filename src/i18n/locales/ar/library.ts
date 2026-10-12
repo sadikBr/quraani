@@ -39,7 +39,11 @@ export default {
       label: '{{title}}، {{detail}}، الصفحة {{page}}',
       hint: 'فتح المصحف عند بداية هذا الموضع',
       page: 'صفحة {{page}}',
+      /** Where a juz' starts in its surah, under the surah's name. */
+      ayah: 'الآية {{ayah}}',
     },
+    /** Marks the surah, juz' or hizb the reader last stopped in. */
+    current: 'موضع قراءتك',
   },
   search: {
     title: 'البحث في القرآن',
@@ -103,7 +107,6 @@ export default {
   result: {
     label: '{{surah}}، الآية {{ayah}}، الصفحة {{page}}. {{text}}',
     hint: 'فتح الآية وتحديدها في المصحف',
-    position: 'الآية {{ayah}} · الصفحة {{page}}',
     /** Bookmark button: "وضع علامة على الآية 5 من سورة البقرة". */
     saveLabel: 'وضع علامة على الآية {{ayah}} من {{surah}}',
     unsaveLabel: 'إزالة العلامة عن الآية {{ayah}} من {{surah}}',

@@ -35,18 +35,31 @@ function wholeUnits(bounds: number[], spans: AyahSpan[]) {
   return units;
 }
 
+/** Where each surah begins, worked out once per edition (named as a selection changes, often). */
+const starts = new WeakMap<PlanIndex, number[]>();
+function surahStartsOf(index: PlanIndex) {
+  let list = starts.get(index);
+  if (!list) {
+    list = index.ayahs.flatMap((a, i) => i === 0 || index.ayahs[i - 1].surahNumber !== a.surahNumber ? [i] : []);
+    starts.set(index, list);
+  }
+  return list;
+}
+
 /** A short name for a selection: its surahs, juzs or hizbs when whole, else a segment or a count. */
 export function scopeLabel(index: PlanIndex, ranges: AyahSpan[]) {
   const spans = mergeSpans(ranges);
   if (!spans.length) return '';
-  const surahStarts = [...new Set(index.ayahs.map((a) => a.surahNumber))].map((n) => index.ayahs.findIndex((a) => a.surahNumber === n));
+  const surahStarts = surahStartsOf(index);
   const surahs = wholeUnits([...surahStarts, index.ayahs.length], spans);
   const names = surahs?.map((n) => index.surahNames[index.ayahs[surahStarts[n - 1]].surahNumber]);
-  if (names) return names.length <= 3 ? formatList(names) : `${formatList(names.slice(0, 2))}${t('practice.scope.andMore', { count: names.length - 2 })}`;
+  if (names && names.length <= 3) return formatList(names);
+  // Many surahs that make whole juz or hizbs (Juz' 'Amma): the juz or hizbs, shorter.
   const juzs = wholeUnits(index.juzs, spans);
   if (juzs && juzs.length <= 3) return formatList(juzs.map((juz) => t('practice.scope.juz', { juz })));
   const hizbs = wholeUnits(index.hizbs, spans);
   if (hizbs && hizbs.length <= 3) return formatList(hizbs.map((hizb) => t('practice.scope.hizb', { hizb })));
+  if (names) return `${formatList(names.slice(0, 2))}${t('practice.scope.andMore', { count: names.length - 2 })}`;
   if (spans.length === 1) return ayahRangeLabel(index, spans[0].start, spans[0].end);
   return `${t('practice.scope.parts', { count: spans.length })} · ${t('practice.scope.ayahs', { count: spanCount(spans) })}`;
 }

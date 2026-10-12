@@ -24,6 +24,9 @@ export default {
   /** Spoken label of a collection in the list. */
   openLabel: '{{title}}، {{state}}',
   notStarted: 'لم تبدأها اليوم',
+  /** On the collection of this part of the day: not started yet, or started today. */
+  begin: 'ابدأ',
+  resume: 'تابع',
   /** How many times a dhikr is said. */
   times_zero: 'دون عدد',
   times_one: 'مرة واحدة',

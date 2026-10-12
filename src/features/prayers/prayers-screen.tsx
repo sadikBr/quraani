@@ -1,28 +1,36 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop } from 'react-native-svg';
 import { router } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { Alert, Button, IconTile } from '@/components/ui';
+import { star } from '@/components/craft/art';
+import { BrushStroke } from '@/components/craft/marks';
+import { page, PageBar, PageTitle, Row, RowGroup } from '@/components/craft/page';
+import { ArchPanel } from '@/components/craft/panels';
+import { Alert, Button } from '@/components/ui';
 import { useEmbedded } from '@/components/embedded';
-import { withAlpha } from '@/features/quran-reader/colors';
-import { readerElevation, readerLayout, readerShape } from '@/features/quran-reader/design';
+import { readerShape, withAlpha } from '@/features/quran-reader/design';
 import { ReaderIcon } from '@/features/quran-reader/components/ui/reader-chrome';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
+import type { ReaderPalette } from '@/features/quran-reader/theme';
 import { formatDate, t } from '@/i18n';
 import { alertIcons, effectiveAlert, hijriLabel } from './format';
 import { alertsSupported } from './notifications';
 import { placeName } from './place';
 import { AlertSheet, LocationSheet, useLocate } from './prayer-sheets';
 import { usePrayers, useNow } from './provider';
+import type { PrayerState } from './settings';
+import { sunPath, SunMark } from './sheet';
 import { clock, countdown, dayOf, dayTimes, PRAYERS, prayerWindow, shiftDay, type PrayerId } from './times';
 
 type Sheet = 'location' | { alert: PrayerId };
 
 /**
- * The prayer times at the chosen place: the next prayer with the time left, and the times of any
- * day, week by week. The alerts, the athan and the calculation are in the settings' «الصلاة» tab.
+ * The prayer times at the chosen place. The day seen through an arched window, as on the home
+ * screen but the whole page's: the sun's path across the sky in the arch, the next prayer and the
+ * time left under it. Then any day's six times, week by week, each with the sun's place and its
+ * alert. The alerts, the athan and the calculation are in the settings' «الصلاة» tab.
  */
 export function PrayersScreen() {
   const { palette: p } = useReadingPreferences();
@@ -30,112 +38,151 @@ export function PrayersScreen() {
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const embedded = useEmbedded();
   const Frame = embedded ? View : SafeAreaView;
+  const place = ready && state.location ? <PlaceButton onPress={() => setSheet('location')} /> : null;
   return <Frame style={{ flex: 1, backgroundColor: p.background }}>
-    {!embedded && <View style={s.navigation}>
-      <Button variant="outline" icon="back" label={t('common.backToReading')} onPress={() => router.dismissTo('/')}>{t('plans.list.mushaf')}</Button>
-    </View>}
-    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[s.content, embedded && { paddingTop: 16 }]}>
-      {!embedded && <Text accessibilityRole="header" style={{ fontSize: 24, fontWeight: '600', color: p.foreground }}>{t('prayers.title')}</Text>}
+    {!embedded && <PageBar palette={p} back={{ label: t('common.backToReading'), text: t('common.mushaf'), onPress: () => router.dismissTo('/') }} />}
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, embedded && { paddingTop: 14 }]}>
+      {embedded ? place : <PageTitle title={t('prayers.title')} palette={p}>{place}</PageTitle>}
       {error && <Alert variant="destructive" palette={p}>{t('prayers.storageError')}</Alert>}
       {!ready ? null : state.location ? <>
-        <LocationRow onPress={() => setSheet('location')} />
-        <NextPrayer />
-        <WeekTimes onAlert={(prayer) => setSheet({ alert: prayer })} />
+        <DayWindow />
+        <DayTimes onAlert={(prayer) => setSheet({ alert: prayer })} />
       </> : <LocationSetup onChoose={() => setSheet('location')} />}
-      {ready && <SettingsLink />}
+      {ready && <RowGroup palette={p}>
+        <Row palette={p} icon="settings" role="link" title={t('prayers.settingsLink.title')} detail={t('prayers.settingsLink.detail')}
+          onPress={() => router.push({ pathname: '/settings', params: { tab: 'prayers' } })} />
+      </RowGroup>}
     </ScrollView>
     {sheet === 'location' && <LocationSheet onClose={() => setSheet(null)} />}
     {typeof sheet === 'object' && sheet && <AlertSheet prayer={sheet.alert} onClose={() => setSheet(null)} />}
   </Frame>;
 }
 
+/** The place, under the page's title: its name, and the way to change it. */
+function PlaceButton({ onPress }: { onPress: () => void }) {
+  const { palette: p } = useReadingPreferences();
+  const { state } = usePrayers();
+  const place = state.location ? placeName(state.location) : '';
+  return <Pressable accessibilityRole="button" accessibilityLabel={t('prayers.location.changeLabel', { place })} onPress={onPress} hitSlop={4}
+    style={({ pressed }) => [s.place, { opacity: pressed ? 0.7 : 1 }]}>
+    <ReaderIcon name="map-pin" color={p.ornament} size={17} />
+    <Text numberOfLines={1} style={{ flexShrink: 1, color: p.foreground, fontSize: 16, fontWeight: '600' }}>{place}</Text>
+    <View style={[s.change, { borderColor: withAlpha(p.ornament, 0.55) }]}>
+      <Text style={{ color: p.foreground, fontSize: 12, fontWeight: '500' }}>{t('prayers.location.change')}</Text>
+    </View>
+  </Pressable>;
+}
+
+/** The arch's rise, and where the sky's path sits in it. */
+const RISE = 64;
+const SKY = { top: 18, arc: 62, side: 8 };
+const SKY_HEIGHT = SKY.top + SKY.arc + 30;
+/** Stars in the arch at night, clear of the sun's path: where (a share of the width, a height in the sky) and how large. */
+const STARS = [[0.5, 46, 3.4], [0.41, 31, 2.3], [0.6, 34, 2.8], [0.54, 64, 2], [0.45, 60, 2.2], [0.23, 26, 2.6], [0.78, 20, 2.2], [0.69, 4, 1.8]] as const;
+
+/**
+ * The sky in the arched window: the day's path, the daylight under its arc, a mark at each time
+ * (the next one ringed, those passed filled), and the sun where it is now; stars when it is night.
+ * Redrawn each minute, not each second with the countdown.
+ */
+const Sky = memo(function Sky({ state, day, minute, today, next, width, p }: {
+  state: PrayerState; day: string; minute: number; today: boolean; next: PrayerId; width: number; p: ReaderPalette;
+}) {
+  const times = state.location ? dayTimes(state.location, day, state) : null;
+  const sun = times && sunPath(times, { width, ...SKY });
+  if (!times || !sun) return <View style={{ height: SKY_HEIGHT }} />;
+  const now = minute;
+  const night = now < sun.sunrise || now > sun.sunset;
+  const daylight = `${sun.line(sun.sunrise, sun.sunset)} L${sun.x(sun.sunset).toFixed(1)} ${sun.horizon} L${sun.x(sun.sunrise).toFixed(1)} ${sun.horizon} Z`;
+  const passed = today && now > sun.start ? Math.min(now, sun.end) : null;
+  const here = today && now > sun.start && now < sun.end ? { cx: sun.x(now), cy: sun.y(now), up: sun.y(now) <= sun.horizon } : null;
+  return <Svg width={width} height={SKY_HEIGHT} aria-hidden>
+    <Defs>
+      <LinearGradient id="daylight" x1="0" y1="0" x2="0" y2="1">
+        <Stop offset="0" stopColor={p.primary} stopOpacity={night ? 0.07 : 0.18} />
+        <Stop offset="1" stopColor={p.primary} stopOpacity={0} />
+      </LinearGradient>
+    </Defs>
+    {night && STARS.map(([share, top, size], i) => <Path key={i} d={star(width * share, top, 4, size, size * 0.38)} fill={withAlpha(p.ornament, 0.7)} />)}
+    <Path d={daylight} fill="url(#daylight)" />
+    <Line x1={2} y1={sun.horizon} x2={width - 2} y2={sun.horizon} stroke={p.border} strokeWidth={1} />
+    <Path d={sun.line(sun.start, sun.end, 64)} stroke={p.border} strokeWidth={1.5} fill="none" />
+    {passed && <Path d={sun.line(sun.start, passed, 64)} stroke={p.primary} strokeWidth={2.5} strokeLinecap="round" fill="none" />}
+    {PRAYERS.filter((prayer) => Number.isFinite(sun.at(prayer))).map((prayer) => {
+      const time = sun.at(prayer), done = today && time <= now, isNext = prayer === next;
+      return <Circle key={prayer} cx={sun.x(time)} cy={sun.y(time)} r={isNext ? 5.5 : 3.8}
+        fill={done ? p.primary : p.card} stroke={done || isNext ? p.primary : p.mutedForeground} strokeWidth={isNext ? 2.2 : 1.5} />;
+    })}
+    {/* Drawn in the SVG, whose coordinates the app's right-to-left layout does not mirror. */}
+    {here?.up && <Circle cx={here.cx} cy={here.cy} r={17} fill={p.ornament} opacity={0.2} />}
+    {here && (here.up
+      ? <Circle cx={here.cx} cy={here.cy} r={8} fill={p.ornament} stroke={p.card} strokeWidth={2} />
+      : <Circle cx={here.cx} cy={here.cy} r={5.5} fill={p.card} stroke={p.ornament} strokeWidth={2} />)}
+  </Svg>;
+});
+
+/**
+ * The window: the sky with the sun's path in the arch, then the next prayer and its time, the time
+ * left to the second, and the day's date in both calendars. After Isha, the next day's.
+ */
+function DayWindow() {
+  const { palette: p } = useReadingPreferences();
+  const { state } = usePrayers();
+  const now = useNow(1000);
+  const [width, setWidth] = useState(0);
+  if (!state.location) return null;
+  const { next } = prayerWindow(state.location, now, state);
+  if (!next) return null;
+  const today = next.day === dayOf(now);
+  const name = t(`prayers.names.${next.prayer}`), time = clock(next.at), left = countdown(now, next.at);
+  const date = formatDate(next.day, { weekday: 'long', day: 'numeric', month: 'long' });
+  return <ArchPanel palette={p} rise={RISE} contentStyle={s.window}>
+    <View onLayout={(e) => setWidth(Math.round(e.nativeEvent.layout.width))}>
+      <Sky state={state} day={next.day} minute={Math.floor(now.getTime() / 60_000) * 60_000} today={today} next={next.prayer} width={width} p={p} />
+    </View>
+    <View accessible accessibilityLabel={t('prayers.next.spoken', { prayer: name, time, countdown: left })} style={s.next}>
+      <Text style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>{next.prayer === 'sunrise' ? t('prayers.next.sunriseLabel') : t('prayers.next.label')}</Text>
+      <View style={s.nextName}>
+        <Text numberOfLines={1} style={{ flexShrink: 1, color: p.foreground, fontSize: 34, lineHeight: 56, fontFamily: 'ReaderNaskhBold' }}>{name}</Text>
+        <Text style={{ color: p.foreground, fontSize: 34, lineHeight: 56, fontFamily: 'ReaderNaskhBold' }}>{time}</Text>
+      </View>
+      <View style={s.left}>
+        <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('prayers.next.in')}</Text>
+        <Text style={{ color: p.primary, fontSize: 22, lineHeight: 30, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{left}</Text>
+      </View>
+    </View>
+    <View style={[s.dates, { borderColor: withAlpha(p.ornament, 0.35) }]}>
+      <Text style={{ color: p.foreground, fontSize: 14, fontWeight: '600', textAlign: 'center' }}>{today ? date : t('prayers.home.tomorrow', { date })}</Text>
+      <Text style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>{hijriLabel(next.day, state.hijriOffset)}</Text>
+    </View>
+  </ArchPanel>;
+}
+
+/** Before a place is chosen: the window's sky with the sun's path waiting, and the two ways to set the place. */
 function LocationSetup({ onChoose }: { onChoose: () => void }) {
   const { palette: p } = useReadingPreferences();
   const locate = useLocate();
-  return <View style={[s.setup, { borderColor: p.border }]}>
-    <View style={[s.setupIcon, { backgroundColor: p.secondary }]}><ReaderIcon name="map-pin" color={p.primary} size={22} /></View>
-    <Text style={{ color: p.foreground, fontSize: 17, fontWeight: '600', textAlign: 'center' }}>{t('prayers.location.emptyTitle')}</Text>
-    <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22, textAlign: 'center', maxWidth: 320 }}>{t('prayers.location.emptyText')}</Text>
+  const [width, setWidth] = useState(0);
+  return <ArchPanel palette={p} rise={RISE} contentStyle={s.setup}>
+    <View onLayout={(e) => setWidth(Math.round(e.nativeEvent.layout.width))} style={{ alignSelf: 'stretch', height: 96 }}>
+      {width > 0 && <Svg width={width} height={96} aria-hidden>
+        <Line x1={2} y1={84} x2={width - 2} y2={84} stroke={p.border} strokeWidth={1} />
+        <Path d={`M ${width * 0.08} 92 C ${width * 0.2} 88 ${width * 0.24} 18 ${width / 2} 18 C ${width * 0.76} 18 ${width * 0.8} 88 ${width * 0.92} 92`}
+          stroke={withAlpha(p.ornament, 0.7)} strokeWidth={1.5} strokeDasharray="1 6" strokeLinecap="round" fill="none" />
+      </Svg>}
+      {/* Where the sun would stand at noon; centred, so the same from either side. */}
+      {width > 0 && <View style={[s.pin, { left: width / 2 - 24, backgroundColor: p.card, borderColor: withAlpha(p.ornament, 0.7) }]}>
+        <ReaderIcon name="map-pin" color={p.ornament} size={22} />
+      </View>}
+    </View>
+    <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 22, lineHeight: 36, fontFamily: 'ReaderNaskhBold', textAlign: 'center', marginTop: 4 }}>{t('prayers.location.emptyTitle')}</Text>
+    <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22, textAlign: 'center', maxWidth: 300 }}>{t('prayers.location.emptyText')}</Text>
     <View style={s.setupActions}>
       <Button palette={p} icon="locate" block disabled={locate.busy} onPress={() => void locate.run()}>{locate.busy ? t('prayers.location.locating') : t('prayers.location.useMine')}</Button>
       <Button palette={p} variant="outline" icon="search" block onPress={onChoose}>{t('prayers.location.chooseCity')}</Button>
     </View>
     {!!locate.message && <Alert variant="destructive" palette={p}>{locate.message}</Alert>}
-  </View>;
-}
-
-function LocationRow({ onPress }: { onPress: () => void }) {
-  const { palette: p } = useReadingPreferences();
-  const { state } = usePrayers();
-  const place = state.location ? placeName(state.location) : '';
-  return <Pressable accessibilityRole="button" accessibilityLabel={t('prayers.location.changeLabel', { place })} onPress={onPress}
-    style={({ pressed }) => [s.locationRow, { opacity: pressed ? 0.7 : 1 }]}>
-    <ReaderIcon name="map-pin" color={p.primary} size={18} />
-    <Text numberOfLines={1} style={{ flexShrink: 1, color: p.foreground, fontSize: 16, fontWeight: '600' }}>{place}</Text>
-    <View style={[s.changePill, { backgroundColor: p.secondary }]}>
-      <Text style={{ color: p.secondaryForeground, fontSize: 13, fontWeight: '500' }}>{t('prayers.location.change')}</Text>
-    </View>
-  </Pressable>;
-}
-
-/** An eight-pointed star in faint lines at the hero's far side, cut by its edge. */
-function HeroOrnament({ color }: { color: string }) {
-  const star = (cx: number, cy: number, r: number) => {
-    const points = Array.from({ length: 16 }, (_, i) => {
-      const angle = Math.PI / 8 * i - Math.PI / 2, radius = i % 2 ? r * 0.76 : r;
-      return `${(cx + radius * Math.cos(angle)).toFixed(1)} ${(cy + radius * Math.sin(angle)).toFixed(1)}`;
-    });
-    return `M${points.join(' L')} Z`;
-  };
-  // SVG coordinates are not mirrored by the right-to-left layout: it stays at the left, the lines' end.
-  return <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} pointerEvents="none">
-    <Path d={star(18, 118, 118)} stroke={color} strokeOpacity={0.1} strokeWidth={1.5} fill="none" />
-    <Path d={star(18, 118, 82)} stroke={color} strokeOpacity={0.1} strokeWidth={1.5} fill="none" />
-    <Circle cx={18} cy={118} r={46} stroke={color} strokeOpacity={0.1} strokeWidth={1.5} fill="none" />
-  </Svg>;
-}
-
-/** The next prayer in the theme's colour: its name and time, the time left, and how far the present time has gone. */
-function NextPrayer() {
-  const { palette: p } = useReadingPreferences();
-  const { state } = usePrayers();
-  const now = useNow(1000);
-  if (!state.location) return null;
-  const { current, next } = prayerWindow(state.location, now, state);
-  if (!next) return null;
-  const today = dayOf(now);
-  const name = t(`prayers.names.${next.prayer}`), time = clock(next.at), left = countdown(now, next.at);
-  const fg = p.primaryForeground, soft = withAlpha(fg, 0.75);
-  const span = current ? next.at.getTime() - current.at.getTime() : 0;
-  const progress = current && span > 0 ? Math.min(1, Math.max(0, (now.getTime() - current.at.getTime()) / span)) : 0;
-  return <View style={[s.hero, { backgroundColor: p.primary }, readerElevation(3, p)]}>
-    <HeroOrnament color={fg} />
-    <View style={s.heroDates}>
-      <Text numberOfLines={1} style={{ flexShrink: 1, color: soft, fontSize: 13 }}>{hijriLabel(today, state.hijriOffset)}</Text>
-      <Text numberOfLines={1} style={{ flexShrink: 1, color: soft, fontSize: 13 }}>{formatDate(today, { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
-    </View>
-    <View accessible accessibilityLabel={t('prayers.next.spoken', { prayer: name, time, countdown: left })}>
-      <Text style={{ color: soft, fontSize: 14 }}>{next.prayer === 'sunrise' ? t('prayers.next.sunriseLabel') : t('prayers.next.label')}</Text>
-      <View style={s.heroRow}>
-        <Text numberOfLines={1} style={{ flexShrink: 1, color: fg, fontSize: 34, lineHeight: 52, fontWeight: '700' }}>{name}</Text>
-        <Text style={{ color: fg, fontSize: 34, lineHeight: 52, fontWeight: '600' }}>{time}</Text>
-      </View>
-    </View>
-    <View style={{ gap: 10 }}>
-      <View style={[s.track, { backgroundColor: withAlpha(fg, 0.22) }]}>
-        <View style={[s.fill, { width: `${progress * 100}%`, backgroundColor: fg }]} />
-      </View>
-      <View style={s.heroRow}>
-        <Text numberOfLines={1} style={{ flexShrink: 1, color: soft, fontSize: 13 }}>
-          {current ? t('prayers.next.since', { prayer: t(`prayers.names.${current.prayer}`), time: clock(current.at) }) : ''}
-        </Text>
-        <View style={s.countdown}>
-          <Text style={{ color: soft, fontSize: 14 }}>{t('prayers.next.in')}</Text>
-          <Text style={{ color: fg, fontSize: 20, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{left}</Text>
-        </View>
-      </View>
-    </View>
-  </View>;
+  </ArchPanel>;
 }
 
 /**
@@ -160,8 +207,11 @@ function weekRange(first: string, last: string, today: string) {
   return t('prayers.week.range', { from, to });
 }
 
-/** The times of any day: a week of days to choose from, and the chosen day's six times with their alerts. */
-function WeekTimes({ onAlert }: { onAlert: (prayer: PrayerId) => void }) {
+/**
+ * The times of any day, on one card: the week at its head (the chosen day underlined, as a word
+ * on the lawh), then the day's six times, each with the sun's place at it and its alert.
+ */
+function DayTimes({ onAlert }: { onAlert: (prayer: PrayerId) => void }) {
   const { palette: p } = useReadingPreferences();
   const { state } = usePrayers();
   const now = useNow(30_000);
@@ -182,112 +232,94 @@ function WeekTimes({ onAlert }: { onAlert: (prayer: PrayerId) => void }) {
   const title = relative ? t(`prayers.week.titles.${relative}`) : longDate;
   const hijri = hijriLabel(day, state.hijriOffset);
   const range = weekRange(days[0], days[6], today);
-  return <View style={{ gap: 14 }}>
-    <View style={[s.week, { backgroundColor: p.card, borderColor: p.border }, readerElevation(2, p)]}>
-      <View style={s.weekNavigation}>
-        <WeekArrow icon="chevron-right" label={t('prayers.week.previous')} disabled={offset <= -WEEK_LIMIT} onPress={() => choose(shiftDay(day, -7))} />
-        <Text accessibilityLiveRegion="polite" accessibilityLabel={t('prayers.week.label', { range })} numberOfLines={1}
-          style={{ flex: 1, textAlign: 'center', color: p.foreground, fontSize: 15, fontWeight: '600' }}>{range}</Text>
-        <WeekArrow icon="chevron" label={t('prayers.week.next')} disabled={offset >= WEEK_LIMIT} onPress={() => choose(shiftDay(day, 7))} />
-      </View>
-      <View accessibilityRole="tablist" style={s.days}>
-        {days.map((d) => {
-          const selected = d === day, isTodayPill = d === today;
-          const label = formatDate(d, { weekday: 'long', day: 'numeric', month: 'long' });
-          return <Pressable key={d} accessibilityRole="tab" accessibilityState={{ selected }} aria-selected={selected}
-            accessibilityLabel={isTodayPill ? t('prayers.week.todayLabel', { date: label }) : label} onPress={() => choose(d)}
-            style={({ pressed }) => [s.day, { backgroundColor: selected ? p.primary : pressed ? p.accent : 'transparent' }]}>
-            <Text numberOfLines={1} style={{ color: selected ? withAlpha(p.primaryForeground, 0.8) : isTodayPill ? p.primary : p.mutedForeground, fontSize: 11, fontWeight: '500' }}>{t(`prayers.week.days.${WEEKDAYS[weekday(d)]}`)}</Text>
-            <Text style={{ color: selected ? p.primaryForeground : isTodayPill ? p.primary : p.foreground, fontSize: 17, lineHeight: 24, fontWeight: selected || isTodayPill ? '700' : '500' }}>{String(Number(d.slice(8)))}</Text>
-            <View style={[s.todayDot, { backgroundColor: isTodayPill ? (selected ? p.primaryForeground : p.primary) : 'transparent' }]} />
-          </Pressable>;
-        })}
-      </View>
-    </View>
+  return <View style={{ gap: 12 }}>
     <View style={s.dayHeading}>
-      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-        <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{title}</Text>
-        <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{relative ? `${longDate} · ${hijri}` : hijri}</Text>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 20, lineHeight: 34, fontFamily: 'ReaderNaskhBold' }}>{title}</Text>
+        {!isToday && <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 20 }}>{relative ? `${longDate} · ${hijri}` : hijri}</Text>}
       </View>
       {!isToday && <Button size="sm" variant="outline" palette={p} icon="undo" label={t('prayers.week.backToToday')} onPress={() => setChosen(null)}>{t('prayers.week.today')}</Button>}
     </View>
-    <View style={[s.list, { borderColor: p.border, backgroundColor: p.card }, readerElevation(2, p)]}>
-      {PRAYERS.map((prayer, i) => {
+    <RowGroup palette={p}>
+      <View style={s.week}>
+        <View style={s.weekNavigation}>
+          <WeekArrow icon="chevron-right" label={t('prayers.week.previous')} disabled={offset <= -WEEK_LIMIT} onPress={() => choose(shiftDay(day, -7))} />
+          <Text accessibilityLiveRegion="polite" accessibilityLabel={t('prayers.week.label', { range })} numberOfLines={1}
+            style={{ flex: 1, textAlign: 'center', color: p.foreground, fontSize: 14, fontWeight: '600' }}>{range}</Text>
+          <WeekArrow icon="chevron" label={t('prayers.week.next')} disabled={offset >= WEEK_LIMIT} onPress={() => choose(shiftDay(day, 7))} />
+        </View>
+        <View accessibilityRole="tablist" style={s.days}>
+          {days.map((d) => {
+            const selected = d === day, isTodayPill = d === today;
+            const label = formatDate(d, { weekday: 'long', day: 'numeric', month: 'long' });
+            return <Pressable key={d} accessibilityRole="tab" accessibilityState={{ selected }} aria-selected={selected}
+              accessibilityLabel={isTodayPill ? t('prayers.week.todayLabel', { date: label }) : label} onPress={() => choose(d)}
+              style={({ pressed }) => [s.day, { backgroundColor: pressed && !selected ? p.accent : 'transparent' }]}>
+              <Text numberOfLines={1} style={{ color: isTodayPill ? p.ornament : p.mutedForeground, fontSize: 11, fontWeight: isTodayPill ? '700' : '500' }}>
+                {isTodayPill ? t('prayers.week.today') : t(`prayers.week.days.${WEEKDAYS[weekday(d)]}`)}
+              </Text>
+              <Text style={{ color: selected ? p.foreground : p.mutedForeground, fontSize: 18, lineHeight: 26, fontWeight: selected ? '700' : '500' }}>{String(Number(d.slice(8)))}</Text>
+              <BrushStroke on={selected} width={28} color={p.ornament} />
+            </Pressable>;
+          })}
+        </View>
+      </View>
+      {PRAYERS.map((prayer) => {
         const at = times[prayer], valid = Number.isFinite(at.getTime());
         const isCurrent = isToday && current?.day === today && current.prayer === prayer;
         const past = isToday && !isCurrent && valid && at.getTime() <= now.getTime();
+        const quiet = past || prayer === 'sunrise';
         // With alerts off, each bell still shows its setting, dimmed.
         const kind = effectiveAlert(state.alerts[prayer]), on = state.enabled && kind !== 'off';
         const alert = state.enabled ? t(`prayers.alerts.kinds.${kind}`) : t('prayers.today.alertsOff'), name = t(`prayers.names.${prayer}`);
         const time = valid ? clock(at) : '—';
-        return <View key={prayer} style={[s.row, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }, isCurrent && { backgroundColor: withAlpha(p.primary, 0.08) }]}>
-          <View style={[s.currentBar, { backgroundColor: isCurrent ? p.primary : 'transparent' }]} />
+        return <View key={prayer} style={[s.row, isCurrent && { backgroundColor: withAlpha(p.ornament, 0.1) }]}>
           <View accessible accessibilityLabel={t('prayers.today.row', { prayer: name, time, alert })} style={s.rowText}>
-            <Text style={{ flex: 1, color: past || prayer === 'sunrise' ? p.mutedForeground : p.foreground, fontSize: 16, fontWeight: isCurrent ? '700' : '500' }}>{name}</Text>
-            {isCurrent && <View style={[s.currentBadge, { backgroundColor: withAlpha(p.primary, 0.14) }]}>
-              <Text style={{ color: p.primary, fontSize: 11, fontWeight: '600' }}>{t('prayers.today.current')}</Text>
+            <SunMark times={times} prayer={prayer} palette={p} tone={isCurrent ? p.ornament : quiet ? p.mutedForeground : p.foreground} />
+            <Text style={{ color: quiet ? p.mutedForeground : p.foreground, fontSize: 16, fontWeight: isCurrent ? '700' : '600' }}>{name}</Text>
+            {isCurrent && <View style={[s.current, { backgroundColor: withAlpha(p.ornament, 0.18) }]}>
+              <Text style={{ color: p.foreground, fontSize: 11, fontWeight: '600' }}>{t('prayers.today.current')}</Text>
             </View>}
-            <Text style={{ color: isCurrent ? p.primary : past ? p.mutedForeground : p.foreground, fontSize: 17, fontWeight: isCurrent ? '700' : '500', fontVariant: ['tabular-nums'] }}>{time}</Text>
+            <View style={{ flex: 1 }} />
+            <Text style={{ color: isCurrent ? p.foreground : quiet ? p.mutedForeground : p.foreground, fontSize: 17, fontWeight: isCurrent ? '700' : '500', fontVariant: ['tabular-nums'] }}>{time}</Text>
           </View>
           {alertsSupported && <Pressable accessibilityRole="button" accessibilityLabel={t('prayers.today.alertLabel', { prayer: name, alert })} hitSlop={4} onPress={() => onAlert(prayer)}
-            style={({ pressed }) => [s.alertButton, { backgroundColor: pressed ? p.accent : 'transparent' }]}>
-            <ReaderIcon name={alertIcons[kind]} color={on ? p.primary : p.mutedForeground} size={20} />
+            style={({ pressed }) => [s.alert, { backgroundColor: pressed ? p.accent : 'transparent' }]}>
+            <ReaderIcon name={alertIcons[kind]} color={on ? p.ornament : withAlpha(p.mutedForeground, 0.7)} size={18} />
           </Pressable>}
         </View>;
       })}
-    </View>
+    </RowGroup>
   </View>;
 }
 
 function WeekArrow({ icon, label, disabled, onPress }: { icon: 'chevron' | 'chevron-right'; label: string; disabled: boolean; onPress: () => void }) {
   const { palette: p } = useReadingPreferences();
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }} disabled={disabled} hitSlop={4} onPress={onPress}
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled }} disabled={disabled} hitSlop={6} onPress={onPress}
     style={({ pressed }) => [s.arrow, { borderColor: p.border, backgroundColor: pressed ? p.accent : p.background, opacity: disabled ? 0.35 : 1 }]}>
-    <ReaderIcon name={icon} color={p.foreground} size={18} />
-  </Pressable>;
-}
-
-/** The way to the alerts, the athan and the calculation, in the settings. */
-function SettingsLink() {
-  const { palette: p } = useReadingPreferences();
-  return <Pressable accessibilityRole="link" accessibilityLabel={`${t('prayers.settingsLink.title')}: ${t('prayers.settingsLink.detail')}`}
-    onPress={() => router.push({ pathname: '/settings', params: { tab: 'prayers' } })}
-    style={({ pressed }) => [s.settingsLink, { borderColor: p.border, backgroundColor: pressed ? p.accent : p.card }]}>
-    <IconTile name="settings" palette={p} />
-    <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-      <Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{t('prayers.settingsLink.title')}</Text>
-      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('prayers.settingsLink.detail')}</Text>
-    </View>
-    <ReaderIcon name="chevron" color={p.mutedForeground} size={18} />
+    <ReaderIcon name={icon} color={p.foreground} size={16} />
   </Pressable>;
 }
 
 const s = StyleSheet.create({
-  navigation: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 16, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  content: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', padding: 16, paddingTop: 8, paddingBottom: 40, gap: 18 },
-  setup: { alignItems: 'center', gap: 10, padding: 20, borderWidth: 1, borderStyle: 'dashed', borderRadius: readerShape.lg },
-  setupIcon: { width: 48, height: 48, borderRadius: readerShape.lg, alignItems: 'center', justifyContent: 'center' },
-  setupActions: { alignSelf: 'stretch', gap: 8, marginTop: 6 },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, alignSelf: 'flex-start', marginVertical: -6 },
-  changePill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: readerShape.pill },
-  hero: { borderRadius: readerShape.card, padding: 20, paddingTop: 16, gap: 14, overflow: 'hidden' },
-  heroDates: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  heroRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  track: { height: 6, borderRadius: 3, overflow: 'hidden', flexDirection: 'row' },
-  fill: { height: 6, borderRadius: 3 },
-  countdown: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  week: { borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card, padding: 10, gap: 8 },
-  weekNavigation: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  arrow: { width: 36, height: 36, borderRadius: readerShape.pill, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
+  place: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 40, alignSelf: 'flex-start' },
+  change: { paddingHorizontal: 10, paddingVertical: 2, borderRadius: readerShape.pill, borderWidth: 1 },
+  window: { paddingTop: 16, paddingHorizontal: 14, paddingBottom: 18 },
+  next: { alignItems: 'center', marginTop: -2 },
+  nextName: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 14 },
+  left: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 6, marginTop: -6 },
+  dates: { alignItems: 'center', gap: 2, marginTop: 14, paddingTop: 12, marginHorizontal: 24, borderTopWidth: StyleSheet.hairlineWidth },
+  setup: { alignItems: 'center', gap: 8, paddingTop: 32, paddingBottom: 22 },
+  pin: { position: 'absolute', top: 18 - 24, width: 48, height: 48, borderRadius: 24, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  setupActions: { alignSelf: 'stretch', gap: 8, marginTop: 10 },
+  dayHeading: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  week: { paddingHorizontal: 8, paddingTop: 10, paddingBottom: 4, gap: 6 },
+  weekNavigation: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 2 },
+  arrow: { width: 34, height: 34, borderRadius: 17, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' },
   days: { flexDirection: 'row', gap: 2 },
-  day: { flex: 1, minWidth: 0, alignItems: 'center', paddingTop: 8, paddingBottom: 6, borderRadius: readerShape.lg, gap: 1 },
-  todayDot: { width: 4, height: 4, borderRadius: 2 },
-  dayHeading: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4 },
-  list: { borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingEnd: 6, minHeight: 56 },
-  currentBar: { width: 3, alignSelf: 'stretch', marginVertical: 12, borderRadius: 2, marginEnd: 9 },
-  rowText: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
-  currentBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: readerShape.pill },
-  alertButton: { width: 44, height: 44, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
-  settingsLink: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card },
+  day: { flex: 1, minWidth: 0, alignItems: 'center', paddingTop: 6, paddingBottom: 2, borderRadius: readerShape.lg },
+  row: { flexDirection: 'row', alignItems: 'center', paddingEnd: 6, minHeight: 58 },
+  rowText: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 10, paddingStart: 12, paddingEnd: 8, paddingVertical: 12 },
+  current: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: readerShape.pill },
+  alert: { width: 40, height: 40, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
 });

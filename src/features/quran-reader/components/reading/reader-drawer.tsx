@@ -1,16 +1,14 @@
-import { IconTile } from '@/components/ui';
 import { useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Modal, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArabicText as Text } from '@/components/arabic-text';
 import { GestureDetector, GestureHandlerRootView, useSwipeToClose } from '@/components/swipe-to-close';
+import { SheetGrabber, SheetTitle } from '@/components/craft/page';
 import { readerElevation, readerShape } from '../../design';
 import type { ReaderPalette } from '../../theme';
 import type { ReaderContent } from '../../types/reader';
 import type { AyahReference } from '@/lib/quranpedia/types';
 import { ReaderJump } from './reader-jump';
 import { thumunName } from '../../utils/thumun-pages';
-import { ReaderIcon } from '../ui/reader-chrome';
 import { t } from '@/i18n';
 
 interface Props {
@@ -48,16 +46,12 @@ export function ReaderDrawer({ onClose, palette, content, currentPage, onJump, l
         <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel={t('reader.drawer.close')} onPress={onClose} />
         <GestureDetector gesture={swipe.gesture}><Animated.View accessibilityViewIsModal onAccessibilityEscape={back} onLayout={swipe.onSheetLayout} style={[styles.drawer, picking && styles.tall, readerElevation(4, palette), { backgroundColor: palette.background, borderColor: palette.border, transform: [{ translateY: position }] }]}>
           <SafeAreaView edges={['bottom']} style={styles.sheetContent}>
-            <View style={[styles.handle, { backgroundColor: palette.border }]} />
+            <SheetGrabber palette={palette} />
             <View onLayout={swipe.onHeaderLayout} style={styles.heading}>
-              <IconTile name="jump" palette={palette} />
-              <View style={styles.title}>
-                <Text accessibilityRole="header" style={{ color: palette.foreground, fontSize: 18, fontWeight: '600' }}>{limited ? t('reader.drawer.titleSession') : t('reader.drawer.title')}</Text>
-                <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{content?.paging === 'thumun' ? t('reader.thumun.currentPosition', { riwayah: content.quran.riwayah.name, position: thumunName(currentPage) })
-                  : t('reader.drawer.currentPosition', { riwayah: content?.quran.riwayah.name ?? '', page: currentPage })}</Text>
-              </View>
-              <Pressable ref={close} accessibilityRole="button" accessibilityLabel={t('reader.drawer.close')} onPress={onClose}
-                hitSlop={4} style={({ pressed }) => [styles.close, { backgroundColor: pressed ? palette.accent : 'transparent' }]}><ReaderIcon name="close" color={palette.mutedForeground} size={18} /></Pressable>
+              <SheetTitle palette={palette} title={limited ? t('reader.drawer.titleSession') : t('reader.drawer.title')}
+                subtitle={content?.paging === 'thumun' ? t('reader.thumun.currentPosition', { riwayah: content.quran.riwayah.name, position: thumunName(currentPage) })
+                  : t('reader.drawer.currentPosition', { riwayah: content?.quran.riwayah.name ?? '', page: currentPage })}
+                onClose={onClose} closeLabel={t('reader.drawer.close')} closeRef={close} />
             </View>
             <GestureDetector gesture={swipe.scrollGesture}><ScrollView ref={scroll} {...swipe.scrollProps} onLayout={(event) => { viewport.current = event.nativeEvent.layout.height; }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.formContent}>
               {content && <ReaderJump key={currentPage} content={content} currentPage={currentPage} palette={palette} onJump={onJump} limited={limited}
@@ -83,10 +77,6 @@ const styles = StyleSheet.create({
   // While searching the surahs, the sheet keeps its height instead of shrinking with the results.
   tall: { height: '90%' },
   sheetContent: { flexShrink: 1 },
-  handle: { width: 40, height: 4, borderRadius: readerShape.pill, alignSelf: 'center', marginTop: 10 },
-  heading: { padding: 16, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  headingIcon: { width: 44, height: 44, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
-  title: { flex: 1, minWidth: 0 },
-  close: { width: 40, height: 40, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
-  formContent: { paddingHorizontal: 16, paddingBottom: 16, paddingTop: 4 },
+  heading: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 12 },
+  formContent: { paddingHorizontal: 16, paddingBottom: 20, paddingTop: 4 },
 });

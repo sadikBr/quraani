@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Animated, Easing, Image, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Circle, Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { router } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { Alert, Button, Chip } from '@/components/ui';
-import { readerLayout, readerShape } from '@/features/quran-reader/design';
+import { archPath, Niche } from '@/components/craft/art';
+import { page, PageBar, PageTitle, Row, RowGroup, Section } from '@/components/craft/page';
+import { Alert, Button, SwitchMark, Tabs } from '@/components/ui';
+import { isDarkColor, mixColor, readerElevation, withAlpha } from '@/features/quran-reader/design';
 import { ReaderIcon } from '@/features/quran-reader/components/ui/reader-chrome';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
-import { PlanSwitch } from '@/features/plans/components';
 import { t } from '@/i18n';
 import { openScreenPreview, screenImage, upcomingScreenText } from './athan-screen';
 import { fullAthanSupported } from './notifications';
@@ -131,29 +132,51 @@ function ScreenPreview({ style, width }: { style: AthanScreenStyle; width: numbe
   </View>;
 }
 
-/** One background to choose: its photo (or colour) and its name. */
-function BackgroundTile({ id, selected, size, onPress }: { id: ScreenBackground; selected: boolean; size: number; onPress: () => void }) {
+/** A background's thumbnail and the arch it is framed in. */
+const TILE = { width: 78, height: 112, rise: 34 };
+
+/**
+ * One background to choose: its photo (or colour) seen through a niche, as the athan's screen is
+ * seen through the phone, and its name. The chosen one is outlined in the theme's colour.
+ */
+function BackgroundTile({ id, selected, onPress }: { id: ScreenBackground; selected: boolean; onPress: () => void }) {
   const { palette: p } = useReadingPreferences();
   const name = t(`prayers.screen.backgrounds.${id}`);
+  const { width: w, height: h, rise } = TILE;
+  // The photo in an arch a little inside the tile, and round it, when chosen, a ring in the theme's colour.
+  const arch = archPath(w - 10, h - 10, rise - 4, 5, 5, 9);
   return <Pressable accessibilityRole="radio" accessibilityLabel={name} accessibilityState={{ checked: selected }} aria-checked={selected} onPress={onPress}
-    style={({ pressed }) => [s.tile, { width: size, opacity: pressed ? 0.75 : 1 }]}>
-    <View style={[s.thumb, { width: size, height: Math.round(size * 1.45), borderColor: selected ? p.primary : p.border, borderWidth: selected ? 2 : StyleSheet.hairlineWidth }]}>
-      {isScreenPhoto(id)
-        ? <Image source={screenImage(id, true)} resizeMode="cover" resizeMethod="resize" style={{ width: '100%', height: '100%' }} />
-        : <Gradient id={`tile-${id}`} colors={PLAIN[id as 'green' | 'night']} />}
-      {selected && <View style={[s.check, { backgroundColor: p.primary }]}><ReaderIcon name="done" color={p.primaryForeground} size={12} /></View>}
+    style={({ pressed }) => [s.tile, { opacity: pressed ? 0.75 : 1 }]}>
+    <View style={{ width: w, height: h }}>
+      <View style={[StyleSheet.absoluteFill, s.thumb]}>
+        {isScreenPhoto(id)
+          ? <Image source={screenImage(id, true)} resizeMode="cover" resizeMethod="resize" style={{ width: '100%', height: '100%' }} />
+          : <Gradient id={`tile-${id}`} colors={PLAIN[id as 'green' | 'night']} />}
+      </View>
+      <Svg width={w} height={h} style={StyleSheet.absoluteFill} aria-hidden>
+        {/* The page around the arch, so the photo shows through the niche alone. */}
+        <Path d={`M 0 0 H ${w} V ${h} H 0 Z ${arch}`} fill={p.background} fillRule="evenodd" />
+        <Path d={arch} fill="none" stroke={withAlpha(p.ornament, 0.7)} strokeWidth={1} />
+        <Path d={archPath(w - 20, h - 20, rise - 10, 10, 10, 5)} fill="none" stroke={withAlpha(p.ornament, 0.5)} strokeWidth={0.8} />
+        {selected && <Path d={archPath(w - 2, h - 2, rise + 1, 1, 1, 12)} fill="none" stroke={p.primary} strokeWidth={2} />}
+      </Svg>
+      {selected && <View style={[s.check, { backgroundColor: p.primary, borderColor: p.background }]}><ReaderIcon name="done" color={p.primaryForeground} size={12} /></View>}
     </View>
     <Text numberOfLines={2} style={{ color: selected ? p.foreground : p.mutedForeground, fontSize: 12, lineHeight: 17, textAlign: 'center', fontWeight: selected ? '600' : '400' }}>{name}</Text>
   </Pressable>;
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+/** The phone the preview is shown in: a body round the screen, dark on a light page and light on a dark one. */
+function Phone({ width, children }: { width: number; children: ReactNode }) {
   const { palette: p } = useReadingPreferences();
-  return <View style={{ gap: 10 }}>
-    <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{title}</Text>
+  const dark = isDarkColor(p.background);
+  const radius = 22 * (width / PHONE_WIDTH) + 8;
+  return <View style={[s.phoneBody, { borderRadius: radius + BEZEL, borderColor: withAlpha(p.ornament, 0.5),
+    backgroundColor: dark ? mixColor(p.card, p.foreground, 0.16) : mixColor(p.foreground, p.card, 0.06) }, readerElevation(3, p)]}>
     {children}
   </View>;
 }
+const BEZEL = 7;
 
 /** «شاشة الأذان»: choose the background, its darkness, the movement and the date, with a live preview. */
 export function AthanScreenDesigner() {
@@ -163,53 +186,52 @@ export function AthanScreenDesigner() {
   const [failed, setFailed] = useState(false);
   const style = state.screen;
   const set = (change: Partial<AthanScreenStyle>) => update({ screen: { ...style, ...change } });
-  const previewWidth = Math.round(Math.min(230, width * 0.56));
-  // Three backgrounds a row, across the page.
-  const tile = Math.floor((Math.min(width, readerLayout.maxWidth) - 32 - 2 * 12) / 3);
+  const previewWidth = Math.round(Math.min(224, width * 0.56));
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
-    <View style={s.navigation}>
-      <Button variant="outline" icon="back" label={t('common.back')} onPress={() => { if (router.canGoBack()) router.back(); else router.replace('/prayers'); }} />
-    </View>
-    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.content}>
-      <View style={{ gap: 4 }}>
-        <Text accessibilityRole="header" style={{ fontSize: 24, fontWeight: '600', color: p.foreground }}>{t('prayers.screen.title')}</Text>
-        <Text style={{ fontSize: 15, lineHeight: 24, color: p.mutedForeground }}>{t('prayers.screen.subtitle')}</Text>
-      </View>
-      {!fullAthanSupported ? <Alert palette={p}>{t('prayers.screen.unavailable')}</Alert> : <>
-        <View style={{ alignItems: 'center', gap: 12 }}>
-          <ScreenPreview style={style} width={previewWidth} />
+    <PageBar palette={p} back={{ label: t('common.back'), onPress: () => { if (router.canGoBack()) router.back(); else router.replace('/prayers'); } }} />
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={page.content}>
+      <PageTitle title={t('prayers.screen.title')} subtitle={t('prayers.screen.subtitle')} palette={p} />
+      {!fullAthanSupported ? <View style={s.unavailable}>
+        <Niche palette={p} motif="arches" w={72} h={90}><ReaderIcon name="mosque" color={p.ornament} size={24} /></Niche>
+        <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22, textAlign: 'center', maxWidth: 280 }}>{t('prayers.screen.unavailable')}</Text>
+      </View> : <>
+        <View style={s.hero}>
+          <Phone width={previewWidth}><ScreenPreview style={style} width={previewWidth} /></Phone>
           <Button palette={p} icon="eye" onPress={() => setFailed(!openScreenPreview(state))}>{t('prayers.screen.preview')}</Button>
-          <Text style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>{t('prayers.screen.previewHint')}</Text>
+          <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: -4 }}>{t('prayers.screen.previewHint')}</Text>
           {failed && <Alert variant="destructive" palette={p}>{t('prayers.screen.previewFailed')}</Alert>}
         </View>
-        <Section title={t('prayers.screen.background')}>
-          <View accessibilityRole="radiogroup" accessibilityLabel={t('prayers.screen.background')} style={s.tiles}>
-            {SCREEN_BACKGROUNDS.map((id) => <BackgroundTile key={id} id={id} size={tile} selected={style.background === id} onPress={() => set({ background: id })} />)}
+        <Section title={t('prayers.screen.background')} palette={p}>
+          <View accessibilityRole="radiogroup" accessibilityLabel={t('prayers.screen.background')}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={s.tiles}>
+              {SCREEN_BACKGROUNDS.map((id) => <BackgroundTile key={id} id={id} selected={style.background === id} onPress={() => set({ background: id })} />)}
+            </ScrollView>
           </View>
         </Section>
-        <Section title={t('prayers.screen.dim')}>
-          <View accessibilityRole="radiogroup" accessibilityLabel={t('prayers.screen.dim')} style={s.chips}>
-            {SCREEN_DIMS.map((dim) => <Chip key={dim} accessibilityRole="radio" flex palette={p} selected={style.dim === dim} label={t(`prayers.screen.dims.${dim}`)} onPress={() => set({ dim })} />)}
-          </View>
+        <Section title={t('prayers.screen.dim')} palette={p}>
+          <Tabs palette={p} role="radio" label={t('prayers.screen.dim')} value={style.dim} onChange={(dim) => set({ dim })}
+            options={SCREEN_DIMS.map((dim) => ({ value: dim, label: t(`prayers.screen.dims.${dim}`) }))} />
         </Section>
-        <Section title={t('prayers.screen.motion')}>
-          <View accessibilityRole="radiogroup" accessibilityLabel={t('prayers.screen.motion')} style={s.chips}>
-            {SCREEN_MOTIONS.map((motion) => <Chip key={motion} accessibilityRole="radio" flex palette={p} selected={style.motion === motion} label={t(`prayers.screen.motions.${motion}`)} onPress={() => set({ motion })} />)}
-          </View>
+        <Section title={t('prayers.screen.motion')} palette={p}>
+          <Tabs palette={p} role="radio" label={t('prayers.screen.motion')} value={style.motion} onChange={(motion) => set({ motion })}
+            options={SCREEN_MOTIONS.map((motion) => ({ value: motion, label: t(`prayers.screen.motions.${motion}`) }))} />
         </Section>
-        <PlanSwitch label={t('prayers.screen.date')} detail={t('prayers.screen.dateDetail')} checked={style.date} onChange={(date) => set({ date })} />
+        <RowGroup palette={p}>
+          <Row palette={p} icon="moon-star" role="switch" selected={style.date} title={t('prayers.screen.date')} detail={t('prayers.screen.dateDetail')}
+            trailing={<SwitchMark checked={style.date} palette={p} />} onPress={() => set({ date: !style.date })} />
+        </RowGroup>
       </>}
     </ScrollView>
   </SafeAreaView>;
 }
 
 const s = StyleSheet.create({
-  navigation: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 16, paddingVertical: 8, flexDirection: 'row', alignItems: 'center' },
-  content: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', padding: 16, paddingTop: 8, paddingBottom: 40, gap: 24 },
   phone: { overflow: 'hidden', backgroundColor: '#000' },
-  tiles: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 16 },
-  tile: { gap: 6, alignItems: 'center' },
-  thumb: { borderRadius: readerShape.control, overflow: 'hidden', backgroundColor: '#000' },
-  check: { position: 'absolute', top: 8, left: 8, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  chips: { flexDirection: 'row', gap: 8 },
+  phoneBody: { padding: BEZEL, borderWidth: 1 },
+  hero: { alignItems: 'center', gap: 14, paddingTop: 4 },
+  tiles: { paddingHorizontal: 16, gap: 12 },
+  tile: { width: TILE.width, gap: 10, alignItems: 'center' },
+  thumb: { borderRadius: 12, overflow: 'hidden', backgroundColor: '#000' },
+  check: { position: 'absolute', bottom: -4, alignSelf: 'center', width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  unavailable: { alignItems: 'center', gap: 12, paddingVertical: 24 },
 });

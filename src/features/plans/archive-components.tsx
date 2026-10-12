@@ -4,8 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { ReaderIcon } from '../quran-reader/components/ui/reader-chrome';
-import { readerElevation, readerLayout, readerShape } from '../quran-reader/design';
-import { Button, IconTile } from '@/components/ui';
+import { mixColor, readerElevation, readerLayout, readerShape, withAlpha } from '../quran-reader/design';
+import { Medallion } from '@/components/craft/marks';
+import { Button } from '@/components/ui';
+import { GoalMark, goalKind } from './goal-card';
 import { RIWAYAT } from '../quran-reader/riwayat';
 import { usePlans } from './provider';
 import { ARCHIVE_RETENTION_DAYS, archiveDeletionDate, deleteArchivedGoal, restoreArchivedGoal } from './archive';
@@ -19,15 +21,22 @@ import { memorizationReplanDate, memoryFor, quarterLabel, reviseMemorization } f
 import { loadReaderContent } from '../quran-reader/services/reader-service';
 import { completedOccurrences, weekdaysLabel } from './recurring';
 
+/**
+ * The archive: how long a goal stays here (the days in a star), then each archived goal with the
+ * way to restore it or delete it for good.
+ */
 export function ArchivedGoals({ plans, onOpen }: { plans: ReadingPlan[]; onOpen: (id: string) => void }) {
   const { palette: p } = useReadingPreferences();
   return <View style={{ gap: 16 }}>
-    <View style={[s.notice, { borderColor: p.border }]}>
-      <View style={[s.days, { borderColor: p.border }]}><Text style={{ color: p.foreground, fontSize: 22, fontWeight: '600', textAlign: 'center' }}>{formatNumber(ARCHIVE_RETENTION_DAYS)}</Text><Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center' }}>{t('plans.archive.notice.days', { count: ARCHIVE_RETENTION_DAYS })}</Text></View>
-      <View style={s.grow}><Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{t('plans.archive.notice.title')}</Text>
+    <View style={[s.notice, { backgroundColor: mixColor(p.card, p.ornament, 0.05), borderColor: withAlpha(p.ornament, 0.35) }]}>
+      <View style={{ alignItems: 'center' }} accessible accessibilityLabel={`${formatNumber(ARCHIVE_RETENTION_DAYS)} ${t('plans.archive.notice.days', { count: ARCHIVE_RETENTION_DAYS })}`}>
+        <Medallion value={ARCHIVE_RETENTION_DAYS} size={50} palette={p} />
+        <Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center' }}>{t('plans.archive.notice.days', { count: ARCHIVE_RETENTION_DAYS })}</Text>
+      </View>
+      <View style={s.grow}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 17, lineHeight: 28, fontFamily: 'ReaderNaskhBold' }}>{t('plans.archive.notice.title')}</Text>
         <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 20 }}>{t('plans.archive.notice.description')}</Text></View>
     </View>
-    <View style={[s.list, { backgroundColor: p.card, borderColor: p.border }, readerElevation(2, p)]}>
+    <View style={[s.list, { backgroundColor: p.card, borderColor: p.border }]}>
       {plans.map((plan, i) => <View key={plan.id} style={i ? { borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border } : undefined}><ArchivedGoalCard plan={plan} onOpen={onOpen} /></View>)}
     </View>
   </View>;
@@ -55,19 +64,22 @@ function ArchivedGoalCard({ plan, onOpen }: { plan: ReadingPlan; onOpen: (id: st
   return <View>
     <Pressable accessibilityRole="button" accessibilityLabel={t('plans.archive.card.openLabel', { name: plan.name })} onPress={() => onOpen(plan.id)} style={({ pressed }) => [s.cardBody, { backgroundColor: pressed ? p.accent : 'transparent' }]}>
       <View style={s.row}>
-        <IconTile name={plan.goal.type === 'khatma' ? 'calendar' : plan.goal.type === 'revision' ? 'loop' : 'book'} tone={p.mutedForeground} />
-        <View style={s.grow}><Text style={{ color: p.foreground, fontSize: 16, fontWeight: '600' }}>{plan.name}</Text>
-          <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{isMemorizationPlan(plan) ? t('plans.summary.memorization', { amount: quarterLabel(plan.goal.weeklyQuarters) }) : isRecurringPlan(plan) ? t('plans.summary.recurring', { days: weekdaysLabel(plan.weekdays) }) : isRevisionPlan(plan) ? t('plans.summary.revision', { amount: quarterLabel(plan.goal.dailyQuarters) }) : plan.goal.type === 'khatma' ? t('plans.summary.khatma', { count: plan.goal.weeks }) : t('plans.summary.wird', { amount: unitAmount(plan.unit, plan.goal.amount) })} · {RIWAYAT[plan.riwayah].label}</Text></View>
+        <GoalMark kind={goalKind(plan)} width={40} muted />
+        <View style={s.grow}><Text style={{ color: p.foreground, fontSize: 17, lineHeight: 28, fontFamily: 'ReaderNaskhBold' }}>{plan.name}</Text>
+          <Text style={{ color: p.mutedForeground, fontSize: 12, lineHeight: 18 }}>{isMemorizationPlan(plan) ? t('plans.summary.memorization', { amount: quarterLabel(plan.goal.weeklyQuarters) }) : isRecurringPlan(plan) ? t('plans.summary.recurring', { days: weekdaysLabel(plan.weekdays) }) : isRevisionPlan(plan) ? t('plans.summary.revision', { amount: quarterLabel(plan.goal.dailyQuarters) }) : plan.goal.type === 'khatma' ? t('plans.summary.khatma', { count: plan.goal.weeks }) : t('plans.summary.wird', { amount: unitAmount(plan.unit, plan.goal.amount) })} · {RIWAYAT[plan.riwayah].label}</Text></View>
         <ReaderIcon name="chevron" color={p.mutedForeground} size={16} />
       </View>
-      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{isMemorizationPlan(plan) ? t('plans.archive.card.memorizationDone', { count: completed }) : isRecurringPlan(plan) ? t('plans.archive.card.recurringDone', { count: completed }) : isRevisionPlan(plan) ? t('plans.archive.card.revisionDone', { count: completed }) : t('plans.progress.completedOfTotal', { completed, count: plan.cycle.sessions.length })}</Text>
-      {deletionDate && <View style={[s.row, { gap: 7 }]}><ReaderIcon name="archive" color={p.mutedForeground} size={16} />
-        <Text style={{ color: p.mutedForeground, fontSize: 13, flexShrink: 1 }}>{t('plans.archive.card.autoDelete', { date: shortDate(deletionDate) })}</Text></View>}
+      <View style={{ gap: 4 }}>
+        <View style={[s.row, { gap: 7 }]}><ReaderIcon name="check" color={p.ornament} size={15} />
+          <Text style={{ color: p.foreground, fontSize: 13, flexShrink: 1 }}>{isMemorizationPlan(plan) ? t('plans.archive.card.memorizationDone', { count: completed }) : isRecurringPlan(plan) ? t('plans.archive.card.recurringDone', { count: completed }) : isRevisionPlan(plan) ? t('plans.archive.card.revisionDone', { count: completed }) : t('plans.progress.completedOfTotal', { completed, count: plan.cycle.sessions.length })}</Text></View>
+        {deletionDate && <View style={[s.row, { gap: 7 }]}><ReaderIcon name="archive" color={p.mutedForeground} size={15} />
+          <Text style={{ color: p.mutedForeground, fontSize: 13, flexShrink: 1 }}>{t('plans.archive.card.autoDelete', { date: shortDate(deletionDate) })}</Text></View>}
+      </View>
     </Pressable>
-    {!!error && <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}><PlanNotice message={error} />
+    {!!error && <View style={{ paddingHorizontal: 14, paddingBottom: 12 }}><PlanNotice message={error} />
       {conflictId && <Button variant="link" onPress={() => onOpen(conflictId)}>{t('goals.viewCurrent')}</Button>}
     </View>}
-    <View style={[s.row, { paddingHorizontal: 16, paddingBottom: 16, gap: 8 }]}>
+    <View style={[s.row, { paddingHorizontal: 14, paddingBottom: 14, gap: 8 }]}>
       <Button variant="outline" icon="restore" label={t('plans.archive.card.restoreLabel', { name: plan.name })} disabled={busy} onPress={() => void restore()} style={s.grow}>{busy ? t('plans.archive.card.restoring') : t('plans.archive.card.restore')}</Button>
       <Button variant="ghost" icon="trash" tone={p.destructive} label={t('plans.archive.card.deleteLabel', { name: plan.name })} disabled={busy} onPress={() => setDeleting(true)} style={s.grow}>{t('plans.archive.card.delete')}</Button>
     </View>
@@ -94,9 +106,10 @@ export function DeleteArchivedGoalDialog({ plan, onClose, onDeleted }: { plan: R
     onShow={() => { if (Platform.OS === 'web') cancel.current?.focus(); else if (cancel.current) AccessibilityInfo.sendAccessibilityEvent(cancel.current, 'focus'); }}>
     <SafeAreaView style={[s.backdrop, { backgroundColor: p.overlay }]}>
       <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel={t('plans.archive.dialog.dismiss')} disabled={busy} onPress={dismiss} />
-      <View accessibilityViewIsModal onAccessibilityEscape={dismiss} style={[s.dialog, { backgroundColor: p.background, borderColor: p.border }, readerElevation(4, p)]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
-        <ScrollView contentContainerStyle={{ padding: 24, gap: 12 }}>
-          <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('plans.archive.dialog.title')}</Text>
+      <View accessibilityViewIsModal onAccessibilityEscape={dismiss} style={[s.dialog, { backgroundColor: p.background, borderColor: withAlpha(p.destructive, 0.35) }, readerElevation(4, p)]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
+        <ScrollView contentContainerStyle={{ padding: 22, gap: 10 }}>
+          <View style={[s.warn, { backgroundColor: withAlpha(p.destructive, 0.1) }]}><ReaderIcon name="trash" color={p.destructive} size={20} /></View>
+          <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 21, lineHeight: 34, fontFamily: 'ReaderNaskhBold' }}>{t('plans.archive.dialog.title')}</Text>
           <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22 }}>{isMemorizationPlan(plan) ? t('plans.archive.dialog.bodyMemorization', { name: plan.name }) : t('plans.archive.dialog.body', { name: plan.name })}</Text>
           <PlanNotice message={error} />
           <View style={{ gap: 8, marginTop: 12 }}>
@@ -112,12 +125,10 @@ export function DeleteArchivedGoalDialog({ plan, onClose, onDeleted }: { plan: R
 const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   grow: { flex: 1, minWidth: 0 },
-  notice: { flexDirection: 'row', alignItems: 'center', gap: 14, borderWidth: 1, borderStyle: 'dashed', borderRadius: readerShape.lg, padding: 16 },
-  days: { minWidth: 48, borderEndWidth: StyleSheet.hairlineWidth, paddingEnd: 14 },
-  list: { borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card, overflow: 'hidden' },
-  cardBody: { padding: 16, gap: 10 },
-  icon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.control },
-  action: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, minHeight: 48, paddingHorizontal: 10, paddingVertical: 8, borderRadius: readerShape.control },
+  notice: { flexDirection: 'row', alignItems: 'center', gap: 14, borderWidth: 1, borderRadius: readerShape.card, padding: 14 },
+  list: { borderWidth: 1, borderRadius: readerShape.card, overflow: 'hidden' },
+  cardBody: { paddingHorizontal: 14, paddingVertical: 12, gap: 10 },
+  warn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   backdrop: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 },
-  dialog: { width: '100%', maxWidth: Math.min(readerLayout.maxWidth, 512), maxHeight: '90%', borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.lg, overflow: 'hidden' },
+  dialog: { width: '100%', maxWidth: Math.min(readerLayout.maxWidth, 512), maxHeight: '90%', borderWidth: 1, borderRadius: readerShape.card, overflow: 'hidden' },
 });

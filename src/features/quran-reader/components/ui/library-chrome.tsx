@@ -1,18 +1,19 @@
-import { useState, type PropsWithChildren } from 'react';
-import { Platform, Pressable, StyleSheet, TextInput, View, type ViewStyle } from 'react-native';
+import { useState, type PropsWithChildren, type ReactNode } from 'react';
+import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import Svg, { Line } from 'react-native-svg';
 import { ArabicText as Text } from '@/components/arabic-text';
 import type { ReaderPalette } from '../../theme';
-import { fieldElevation, readerLayout, readerShape } from '../../design';
-import { Button, Empty, IconTile, Tabs } from '@/components/ui';
+import { fieldElevation, readerLayout, readerShape, withAlpha } from '../../design';
+import { Empty, Tabs } from '@/components/ui';
+import { PageHeader } from '@/components/craft/page';
+import { BrushStroke } from '@/components/craft/marks';
+import type { Motif } from '@/components/craft/art';
 import { ReaderIcon, type ReaderIconName } from './reader-chrome';
 import { t } from '@/i18n';
 
-export function LibraryHeader({ title, subtitle, icon, palette: p, onBack }: { title: string; subtitle: string; icon: ReaderIconName; palette: ReaderPalette; onBack: () => void }) {
-  return <View style={[l.header, { borderColor: p.border }]}>
-    <Button icon="back" label={t('common.backToReading')} onPress={onBack} palette={p} variant="outline" />
-    <View style={l.grow}><Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 24, fontWeight: '600' }}>{title}</Text><Text style={{ color: p.mutedForeground, fontSize: 14 }}>{subtitle}</Text></View>
-    <IconTile name={icon} palette={p} />
-  </View>;
+/** A library page's header: the way back to the mushaf, then the page's title in Naskh. */
+export function LibraryHeader({ title, subtitle, palette: p, onBack, actions }: { title: string; subtitle: string; icon?: ReaderIconName; palette: ReaderPalette; onBack: () => void; actions?: ReactNode }) {
+  return <PageHeader back={{ label: t('common.backToReading'), text: t('common.mushaf'), onPress: onBack }} actions={actions} title={title} subtitle={subtitle} palette={p} />;
 }
 
 /** Input with a leading search icon: `input` border, `radius-md`, shadow-xs; focus turns the border `ring`. */
@@ -33,33 +34,54 @@ export function LibraryTabs<T extends string>({ options, value, onChange, label,
   return <Tabs options={options} value={value} onChange={onChange} label={label} palette={p} />;
 }
 
-export function LibraryEmpty({ title, description, icon, palette: p, children }: PropsWithChildren<{ title: string; description: string; icon: ReaderIconName; palette: ReaderPalette }>) {
-  return <Empty icon={icon} title={title} description={description} palette={p}>{children}</Empty>;
+/**
+ * Tabs written as words in Naskh, the chosen one underlined with the brushed gold stroke, as the
+ * home screen's sections and the lawh's two kinds of session.
+ */
+export function WordTabs<T extends string>({ options, value, onChange, label, palette: p }: {
+  options: readonly { value: T; label: string }[]; value: T; onChange: (value: T) => void; label: string; palette: ReaderPalette;
+}) {
+  return <View accessibilityRole="tablist" accessibilityLabel={label} style={l.words}>
+    {options.map((option) => {
+      const on = option.value === value;
+      return <Pressable key={option.value} accessibilityRole="tab" accessibilityLabel={option.label} accessibilityState={{ selected: on }} aria-selected={on}
+        onPress={() => onChange(option.value)} hitSlop={{ top: 4, bottom: 4, left: 10, right: 10 }} style={({ pressed }) => [l.word, { opacity: pressed && !on ? 0.6 : 1 }]}>
+        <Text numberOfLines={1} style={{ color: on ? p.foreground : p.mutedForeground, fontSize: 18, lineHeight: 31, fontFamily: on ? 'ReaderNaskhBold' : 'ReaderNaskhSemibold' }}>{option.label}</Text>
+        <BrushStroke on={on} width={44} color={p.ornament} />
+      </Pressable>;
+    })}
+  </View>;
 }
 
-/** Rows of a list share one bordered container: every row draws its sides and
- * bottom hairline (the separator), the first adds the top edge, and the ends
- * carry the container's corners. Works inside a virtualised list. */
-export function listRowFrame(index: number, count: number): ViewStyle {
-  const first = index === 0, last = index === count - 1, r = readerShape.card;
-  return {
-    borderWidth: StyleSheet.hairlineWidth, borderTopWidth: first ? StyleSheet.hairlineWidth : 0, overflow: 'hidden',
-    borderTopLeftRadius: first ? r : 0, borderTopRightRadius: first ? r : 0, borderBottomLeftRadius: last ? r : 0, borderBottomRightRadius: last ? r : 0,
-  };
+export function LibraryEmpty({ title, description, icon, motif, palette: p, children }: PropsWithChildren<{ title: string; description: string; icon: ReaderIconName; motif?: Motif; palette: ReaderPalette }>) {
+  return <Empty icon={icon} title={title} description={description} motif={motif} palette={p}>{children}</Empty>;
+}
+
+/**
+ * The dotted line that leads the eye from a name to its page, as in the index at the end of a
+ * printed mushaf. It takes the room left between them.
+ */
+export function Leader({ palette: p }: { palette: ReaderPalette }) {
+  return <View aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={l.leader}>
+    <Svg width="100%" height={4}>
+      <Line x1="2" y1="2" x2="100%" y2="2" stroke={withAlpha(p.ornament, 0.55)} strokeWidth={1.6} strokeDasharray="0.1 5" strokeLinecap="round" />
+    </Svg>
+  </View>;
 }
 
 export const libraryStyles = StyleSheet.create({
   root: { flex: 1 },
-  filters: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: readerLayout.gutter, paddingTop: 16, gap: 10 },
+  filters: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: readerLayout.gutter, paddingTop: 6, gap: 12 },
   list: { flex: 1, width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center' },
-  content: { padding: readerLayout.gutter, paddingTop: 14, paddingBottom: 32 },
-  results: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14 },
+  content: { padding: readerLayout.gutter, paddingTop: 14, paddingBottom: 40 },
+  results: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 10 },
   status: { alignItems: 'center', gap: 14, paddingVertical: 32 },
 });
 const l = StyleSheet.create({
-  header: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: StyleSheet.hairlineWidth },
-  grow: { flex: 1, minWidth: 0 },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, borderWidth: 1, borderRadius: readerShape.control },
   input: { flex: 1, minWidth: 0, minHeight: 44, paddingVertical: 8, fontFamily: 'UiSans', fontSize: 16, writingDirection: 'rtl', textAlign: Platform.OS === 'android' ? 'left' : 'right', ...Platform.select({ native: { direction: 'rtl' as const }, web: { outlineStyle: 'solid', outlineWidth: 0 } }) },
   clear: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  words: { flexDirection: 'row', alignItems: 'flex-end', gap: 28 },
+  word: { alignItems: 'center', minHeight: 44, justifyContent: 'flex-end' },
+  leader: { flex: 1, minWidth: 16, height: 4, marginHorizontal: 6 },
 });

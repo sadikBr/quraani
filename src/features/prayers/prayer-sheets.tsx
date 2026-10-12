@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
+import { RowGroup, Row } from '@/components/craft/page';
 import { GestureDetector } from '@/components/swipe-to-close';
 import { Alert, Button } from '@/components/ui';
-import { readerShape } from '@/features/quran-reader/design';
+import { withAlpha } from '@/features/quran-reader/design';
 import { ReaderIcon } from '@/features/quran-reader/components/ui/reader-chrome';
 import { LibrarySearch } from '@/features/quran-reader/components/ui/library-chrome';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
@@ -16,9 +17,9 @@ import { cityName, countryName, placeName } from './place';
 import { playPreview, stopPreview, usePreview } from './preview';
 import { usePrayers } from './provider';
 import { ADJUSTMENT_LIMIT, TAKBIRS, VOICES, type AlertKind } from './settings';
-import { PrayerSheet, SheetOption, sheetStyles } from './sheet';
-import { effectiveAlert, signedMinutes } from './format';
-import { METHOD_IDS, PRAYERS, type PrayerId } from './times';
+import { PrayerSheet, SheetListHeading, SheetOption, sheetStyles, SunMark } from './sheet';
+import { alertIcons, effectiveAlert, signedMinutes } from './format';
+import { dayOf, dayTimes, METHOD_IDS, PRAYERS, type PrayerId } from './times';
 
 /** Finds the phone's position and makes it the place; `message` explains a failure. */
 export function useLocate(onDone?: () => void) {
@@ -39,6 +40,10 @@ export function useLocate(onDone?: () => void) {
   return { busy, message, run };
 }
 
+/**
+ * The place: the phone's position at the top (as a row, with the place it found), the search,
+ * then the bundled cities, Morocco's first.
+ */
 export function LocationSheet({ onClose }: { onClose: () => void }) {
   const { palette: p } = useReadingPreferences();
   const { state, update } = usePrayers();
@@ -54,23 +59,29 @@ export function LocationSheet({ onClose }: { onClose: () => void }) {
     onClose();
   };
   const selected = state.location?.source === 'city' ? state.location.city : undefined;
+  const gps = state.location?.source === 'gps' ? state.location : null;
   return <PrayerSheet tall title={t('prayers.location.sheetTitle')} subtitle={t('prayers.location.sheetSubtitle')} onClose={onClose}
-    header={<View style={{ gap: 10 }}>
-      <Button palette={p} variant="outline" icon="locate" block disabled={locating.busy} onPress={() => void locating.run()}>
-        {locating.busy ? t('prayers.location.locating') : t('prayers.location.useMine')}
-      </Button>
-      {state.location?.source === 'gps' && !locating.busy && <Text style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>{t('prayers.location.gpsDetail', { place: placeName(state.location) })}</Text>}
+    header={<View style={{ gap: 12 }}>
+      <RowGroup palette={p}>
+        <Row palette={p} icon="locate" title={locating.busy ? t('prayers.location.locating') : t('prayers.location.useMine')} disabled={locating.busy}
+          detail={gps && !locating.busy ? t('prayers.location.gpsDetail', { place: placeName(gps) }) : undefined}
+          trailing={gps && !locating.busy ? <ReaderIcon name="done" color={p.primary} size={18} /> : undefined} chevron={false}
+          onPress={() => void locating.run()} />
+      </RowGroup>
       {!!locating.message && <Alert variant="destructive" palette={p}>{locating.message}</Alert>}
       <LibrarySearch palette={p} value={query} onChange={setQuery} label={t('prayers.location.searchLabel')} placeholder={t('prayers.location.searchPlaceholder')} />
     </View>}
     body={(swipe) => <GestureDetector gesture={swipe.scrollGesture}><FlatList {...swipe.scrollProps} data={cities} keyExtractor={(city) => city.id} extraData={selected}
       keyboardShouldPersistTaps="handled" initialNumToRender={16} windowSize={7} contentContainerStyle={sheetStyles.list}
       accessibilityRole="radiogroup" accessibilityLabel={t('prayers.location.sheetTitle')}
-      ListEmptyComponent={<Text style={{ color: p.mutedForeground, textAlign: 'center', padding: 16 }}>{t('prayers.location.empty')}</Text>}
+      ListEmptyComponent={<View style={s.empty}>
+        <ReaderIcon name="map-pin" color={p.ornament} size={22} />
+        <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22, textAlign: 'center' }}>{t('prayers.location.empty')}</Text>
+      </View>}
       renderItem={({ item, index }) => {
         const section = index === 0 || cities[index - 1].country === 'MA' !== (item.country === 'MA');
         return <View>
-          {section && <Text accessibilityRole="header" style={[s.section, { color: p.mutedForeground }]}>{item.country === 'MA' ? t('prayers.location.morocco') : t('prayers.location.others')}</Text>}
+          {section && <SheetListHeading title={item.country === 'MA' ? t('prayers.location.morocco') : t('prayers.location.others')} />}
           <SheetOption title={cityName(item.id)} detail={item.country === 'MA' ? undefined : countryName(item.id)} checked={item.id === selected}
             first={section} last={index === cities.length - 1 || (cities[index + 1].country === 'MA') !== (item.country === 'MA')} onPress={() => choose(item)} />
         </View>;
@@ -79,6 +90,7 @@ export function LocationSheet({ onClose }: { onClose: () => void }) {
 
 const ALERT_ORDER: AlertKind[] = ['off', 'notify', 'takbir', 'full'];
 
+/** A prayer's alert: nothing, a notification, the takbir or the whole athan, each with its mark. */
 export function AlertSheet({ prayer, onClose }: { prayer: PrayerId; onClose: () => void }) {
   const { state, setAlert, alertIssue } = usePrayers();
   const { palette: p } = useReadingPreferences();
@@ -91,21 +103,25 @@ export function AlertSheet({ prayer, onClose }: { prayer: PrayerId; onClose: () 
     if (await setAlert(prayer, kind)) onClose(); else setFailed(true);
   };
   return <PrayerSheet title={t('prayers.alerts.sheetTitle', { prayer: t(`prayers.prayerOf.${prayer}`) })} onClose={onClose}>
-    {!state.enabled && <Alert palette={p}>{t('prayers.alerts.offNote')}</Alert>}
+    {!state.enabled && <Alert palette={p} icon="bell-off">{t('prayers.alerts.offNote')}</Alert>}
     <View accessibilityRole="radiogroup">
       {kinds.map((kind, i) => <SheetOption key={kind} title={t(`prayers.alerts.kinds.${kind}`)} checked={current === kind} first={i === 0} last={i === kinds.length - 1}
-        detail={kind === 'full' && !fullAthanSupported ? t('prayers.alerts.details.fullFallback') : t(`prayers.alerts.details.${kind}`)} onPress={() => void choose(kind)} />)}
+        detail={kind === 'full' && !fullAthanSupported ? t('prayers.alerts.details.fullFallback') : t(`prayers.alerts.details.${kind}`)} onPress={() => void choose(kind)}
+        trailing={<View style={s.kind}><ReaderIcon name={alertIcons[kind]} color={current === kind ? p.ornament : p.mutedForeground} size={19} /></View>} />)}
     </View>
     {failed && <Alert variant="destructive" palette={p}>{alertIssue === 'permission' ? t('prayers.alerts.permissionDenied') : t('prayers.alerts.unavailable')}</Alert>}
   </PrayerSheet>;
 }
 
-/** A choice with a button to listen to it. */
+/** A button to listen to a choice: a ring with the play mark, filled while it plays. */
 function ListenButton({ name, playing, onPress }: { name: string; playing: boolean; onPress: () => void }) {
   const { palette: p } = useReadingPreferences();
   return <Pressable accessibilityRole="button" accessibilityLabel={playing ? t('prayers.voices.stopLabel', { voice: name }) : t('prayers.voices.playLabel', { voice: name })}
-    onPress={onPress} hitSlop={4} style={({ pressed }) => [s.play, { borderColor: p.input, backgroundColor: pressed ? p.accent : p.background }]}>
-    <ReaderIcon name={playing ? 'stop' : 'play'} color={p.primary} size={18} />
+    onPress={onPress} hitSlop={4} style={({ pressed }) => [s.play, {
+      borderColor: playing ? p.primary : withAlpha(p.ornament, 0.6),
+      backgroundColor: playing ? p.primary : pressed ? withAlpha(p.ornament, 0.14) : withAlpha(p.ornament, 0.06),
+    }]}>
+    <ReaderIcon name={playing ? 'stop' : 'play'} color={playing ? p.primaryForeground : p.ornament} size={16} />
   </Pressable>;
 }
 
@@ -114,7 +130,7 @@ export function VoiceSheet({ onClose }: { onClose: () => void }) {
   const { state, update } = usePrayers();
   const preview = usePreview();
   const close = () => { stopPreview(); onClose(); };
-  return <PrayerSheet tall title={t('prayers.voices.title')} subtitle={t('prayers.voices.subtitle')} onClose={close}>
+  return <PrayerSheet title={t('prayers.voices.title')} subtitle={t('prayers.voices.subtitle')} onClose={close}>
     <View accessibilityRole="radiogroup">
       {VOICES.map((voice, i) => {
         const name = t(`prayers.voices.${voice}.name`), key = `athan:${voice}` as const, playing = preview.playing === key;
@@ -132,7 +148,7 @@ export function TakbirSheet({ onClose }: { onClose: () => void }) {
   const { state, update } = usePrayers();
   const preview = usePreview();
   const close = () => { stopPreview(); onClose(); };
-  return <PrayerSheet tall title={t('prayers.takbirs.title')} subtitle={t('prayers.takbirs.subtitle')} onClose={close}>
+  return <PrayerSheet title={t('prayers.takbirs.title')} subtitle={t('prayers.takbirs.subtitle')} onClose={close}>
     <View accessibilityRole="radiogroup">
       {TAKBIRS.map((takbir, i) => {
         const name = t(`prayers.takbirs.${takbir}.name`), key = `takbir:${takbir}` as const, playing = preview.playing === key;
@@ -155,32 +171,39 @@ export function MethodSheet({ onClose }: { onClose: () => void }) {
   </PrayerSheet>;
 }
 
+/** Each time a few minutes earlier or later, to match one's mosque: the prayers as rows with a stepper. */
 export function AdjustmentsSheet({ onClose }: { onClose: () => void }) {
   const { palette: p } = useReadingPreferences();
   const { state, update } = usePrayers();
   const set = (prayer: PrayerId, minutes: number) => update({ adjustments: { ...state.adjustments, [prayer]: Math.max(-ADJUSTMENT_LIMIT, Math.min(ADJUSTMENT_LIMIT, minutes)) } });
   const changed = PRAYERS.some((prayer) => state.adjustments[prayer]);
+  // The sun's place at each time, at the chosen place (or Mecca's, before one is chosen).
+  const times = dayTimes(state.location ?? MECCA, dayOf(new Date()), state);
   return <PrayerSheet title={t('prayers.calculation.adjustmentsTitle')} subtitle={t('prayers.calculation.adjustmentsSubtitle')} onClose={onClose}>
-    <View style={[s.list, { borderColor: p.border, backgroundColor: p.card }]}>
-      {PRAYERS.map((prayer, i) => {
+    <RowGroup palette={p}>
+      {PRAYERS.map((prayer) => {
         const value = state.adjustments[prayer], name = t(`prayers.names.${prayer}`);
-        return <View key={prayer} style={[s.stepper, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderColor: p.border }]}>
-          <Text style={{ flex: 1, color: p.foreground, fontSize: 16, fontWeight: '500' }}>{name}</Text>
+        return <View key={prayer} style={s.stepper}>
+          <SunMark times={times} prayer={prayer} palette={p} tone={value ? p.ornament : p.mutedForeground} />
+          <Text style={{ flex: 1, color: p.foreground, fontSize: 16, fontWeight: '600' }}>{name}</Text>
           <Button size="sm" variant="outline" palette={p} icon="minus" label={t('prayers.calculation.earlier', { prayer: name })} disabled={value <= -ADJUSTMENT_LIMIT} onPress={() => set(prayer, value - 1)} />
-          <Text style={{ width: 64, color: value ? p.primary : p.mutedForeground, fontSize: 15, fontWeight: '600', textAlign: 'center' }}>
+          <Text style={{ width: 58, color: value ? p.primary : p.mutedForeground, fontSize: 15, fontWeight: value ? '700' : '500', textAlign: 'center' }}>
             {t('prayers.calculation.minutes', { minutes: signedMinutes(value) })}
           </Text>
           <Button size="sm" variant="outline" palette={p} icon="plus" label={t('prayers.calculation.later', { prayer: name })} disabled={value >= ADJUSTMENT_LIMIT} onPress={() => set(prayer, value + 1)} />
         </View>;
       })}
-    </View>
+    </RowGroup>
     {changed && <Button variant="ghost" palette={p} icon="restore" onPress={() => update({ adjustments: { fajr: 0, sunrise: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 } })}>{t('prayers.calculation.reset')}</Button>}
   </PrayerSheet>;
 }
 
+/** Where the sun's marks are drawn for before a place is chosen. */
+export const MECCA = { latitude: 21.4225, longitude: 39.8262 };
+
 const s = StyleSheet.create({
-  section: { fontSize: 13, fontWeight: '600', paddingTop: 12, paddingBottom: 8 },
-  play: { width: 40, height: 40, borderRadius: readerShape.control, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  list: { borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card, overflow: 'hidden' },
-  stepper: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 8, minHeight: 56 },
+  play: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  kind: { width: 36, alignItems: 'center' },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 10, minHeight: 60 },
+  empty: { alignItems: 'center', gap: 10, paddingVertical: 32, paddingHorizontal: 24 },
 });

@@ -10,6 +10,8 @@ export default {
   today: 'اليوم',
   settings: 'الإعدادات',
   backToReading: 'العودة إلى المصحف',
+  /** The way back to the mushaf, written on the button at the top of a page. */
+  mushaf: 'المصحف',
   back: 'رجوع',
   clearSearch: 'مسح البحث',
   checkConnection: 'تحقّق من اتصالك بالإنترنت ثم أعد المحاولة.',

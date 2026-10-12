@@ -2,13 +2,13 @@ import { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { IconTile } from '@/components/ui';
-
-
+import { Medallion } from '@/components/craft/marks';
+import { Row, RowGroup, Section } from '@/components/craft/page';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { ReaderButton } from '../quran-reader/components/reading/reader-button';
 import { usePlans } from './provider';
-import { DetailAction, DetailScreen, PlanSettingsSheet, ProgressHero, ReadingBounds, d } from './plan-detail-components';
+import { DetailAction, DetailScreen, PlanSettingsSheet, PortionHeading, ProgressHero, ReadingBounds, d } from './plan-detail-components';
 import { shortDate } from './presentation';
 import { t } from '@/i18n';
 import { PlanSchedule } from './plan-schedule';
@@ -24,7 +24,7 @@ import { RevisionDetail } from './revision-detail-screen';
 import { saveWithReminder } from './save-with-reminder';
 import { savedReminderNotice, type ReminderIssue } from './reminder-errors';
 import { DuplicateGoalError } from './goal-limit';
-import { Copy, PlanCard, PlanField, PlanLoading, PlanNotice, PlanScreen, PlanSwitch, planStyles as s } from './components';
+import { Copy, PlanCard, PlanField, PlanLoading, PlanNotice, PlanScreen, SwitchRow, planStyles as s } from './components';
 import { archiveDeletionDate, restoreArchivedGoal } from './archive';
 import { DeleteArchivedGoalDialog } from './archive-components';
 
@@ -105,22 +105,18 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
     if (conflictId) { setEditing(false); router.replace({ pathname: '/plans/[id]', params: { id: conflictId } }); }
   };
   const partial = !!next && next.start > plan.cycle.sessions[next.slot].start;
+  const clock = `${String(plan.reminder.hour).padStart(2, '0')}:${String(plan.reminder.minute).padStart(2, '0')}`;
   return <DetailScreen plan={plan} onBack={() => router.dismissTo('/plans')} onSettings={openSettings}>
     <PlanNotice message={message || mismatch || error} retry={error ? retry : undefined} />
     {!!conflictId && !editing && <DetailAction label={t('goals.viewCurrent')} onPress={openConflict} />}
     <PlanNotice message={reminderError} />
-    <ProgressHero plan={plan} />
+    <ProgressHero plan={plan} index={index && !mismatch ? index : undefined} />
     {!index && !error && <PlanLoading />}
     {index && !mismatch && next && <PlanCard prominent>
-      <View style={d.row}>
-        <IconTile name="book" size={36} />
-        <View style={d.grow}>
-          <Text accessibilityRole="header" style={{ color: next.due ? palette.primary : palette.mutedForeground, fontSize: 15, fontWeight: '600' }}>{next.due ? next.date < today ? t('khatma.detail.next.overdue') : t('khatma.detail.next.today') : t('khatma.detail.next.upcoming')}</Text>
-        </View>
-        <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('khatma.detail.next.number', { number: next.slot + 1 })}</Text>
-      </View>
-      <View style={{ gap: 4 }}>
-        <Text style={{ color: palette.foreground, fontSize: 24, fontWeight: '600', lineHeight: 36 }}>{rangeLabel(index, next.start, next.end)}</Text>
+      <PortionHeading due={next.due} title={next.due ? next.date < today ? t('khatma.detail.next.overdue') : t('khatma.detail.next.today') : t('khatma.detail.next.upcoming')}
+        aside={<Medallion value={next.slot + 1} size={42} palette={palette} current={next.due} label={t('khatma.detail.next.number', { number: next.slot + 1 })} />} />
+      <View style={{ gap: 2, marginTop: -8 }}>
+        <Text style={{ color: palette.foreground, fontSize: 26, lineHeight: 42, fontFamily: 'ReaderNaskhBold' }}>{rangeLabel(index, next.start, next.end)}</Text>
         <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{shortDate(next.date)}{partial ? ` · ${t('khatma.detail.next.resume')}` : ''}</Text>
       </View>
       <ReadingBounds index={index} start={next.start} end={next.end} />
@@ -137,35 +133,43 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
       </View>}
     </PlanCard>}
     {plan.status !== 'active' && <PlanCard>
-      <View style={d.row}><IconTile name={plan.status === 'completed' ? 'check' : 'bookmark'} />
+      <View style={[d.row, { gap: 12 }]}><IconTile name={plan.status === 'completed' ? 'check' : plan.status === 'paused' ? 'pause' : 'archive'} />
         <View style={d.grow}><Copy title>{plan.status === 'completed' ? t('khatma.detail.status.completedTitle') : plan.status === 'paused' ? t('khatma.detail.status.pausedTitle') : t('goals.archived.title')}</Copy></View></View>
       <Copy muted>{plan.status === 'completed' ? plan.repeat ? t('khatma.detail.status.completedRepeat') : t('khatma.detail.status.completedOnce') : plan.status === 'paused' ? t('khatma.detail.status.paused') : deletionDate ? t('khatma.detail.status.archivedUntil', { date: shortDate(deletionDate) }) : t('khatma.detail.status.archived')}</Copy>
       {plan.status === 'paused' && <DetailAction primary label={t('goals.actions.resume')} icon="book" disabled={busy} onPress={() => void mutate(p => setPlanPaused(p, false, today))} />}
       {plan.status === 'archived' && <><DetailAction primary label={t('goals.actions.restore')} icon="restore" disabled={busy} onPress={() => void archive()} />
         <DetailAction destructive label={t('goals.actions.delete')} icon="trash" disabled={busy} onPress={() => setDeleting(true)} /></>}
     </PlanCard>}
-    {plan.cycle.progress.length > 0 && plan.status !== 'archived' && <DetailAction label={t('khatma.detail.undo')} disabled={busy} onPress={() => { const count = plan.cycle.progress.length; void mutate(p => p.cycle.progress.length === count ? undoProgress(p) : p); }} />}
+    {plan.cycle.progress.length > 0 && plan.status !== 'archived' && <DetailAction icon="undo" label={t('khatma.detail.undo')} disabled={busy} onPress={() => { const count = plan.cycle.progress.length; void mutate(p => p.cycle.progress.length === count ? undoProgress(p) : p); }} />}
     {index && !mismatch && <PlanSchedule plan={plan} index={index} today={today} />}
-    <View style={{ gap: 4, paddingHorizontal: 4 }}>
-      <Text style={{ color: palette.mutedForeground, fontSize: 13, lineHeight: 22 }}>{plan.goal.type === 'khatma' ? t(`khatma.detail.info.dividedBy.${plan.unit}`) : t(`khatma.detail.info.dailyAmount.${plan.unit}`, { count: plan.goal.amount })} · {plan.repeat ? t('khatma.detail.info.repeats') : t('khatma.detail.info.once')}</Text>
-      <Text style={{ color: palette.mutedForeground, fontSize: 13, lineHeight: 22 }}>{t('khatma.detail.info.cycleStart', { date: dateLabel(plan.cycle.sessions[0].date) })}{plan.reminder.enabled ? ` · ${t('khatma.detail.info.reminderAt', { time: `${String(plan.reminder.hour).padStart(2, '0')}:${String(plan.reminder.minute).padStart(2, '0')}` })}` : ` · ${t('khatma.detail.info.reminderOff')}`}</Text>
-    </View>
-    {!!plan.history.length && <PlanCard><Copy title>{t('khatma.detail.history.title')}</Copy>
-      <View>{plan.history.map((h, i) => <View key={h.number} style={{ paddingVertical: 10, borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderColor: palette.border }}><Copy>{t('khatma.detail.history.cycle', { number: h.number, date: dateLabel(h.completedOn) })}</Copy></View>)}</View>
-    </PlanCard>}
+    <Section title={t('plans.detail.settings')} palette={palette}>
+      <RowGroup palette={palette}>
+        <Row icon="lines" palette={palette} title={plan.goal.type === 'khatma' ? t(`khatma.detail.info.dividedBy.${plan.unit}`) : t(`khatma.detail.info.dailyAmount.${plan.unit}`, { count: plan.goal.amount })} />
+        <Row icon="loop" palette={palette} title={plan.repeat ? t('khatma.detail.info.repeats') : t('khatma.detail.info.once')} />
+        <Row icon="calendar" palette={palette} title={t('khatma.detail.info.cycleStart', { date: dateLabel(plan.cycle.sessions[0].date) })} />
+        <Row icon={plan.reminder.enabled ? 'bell' : 'bell-off'} palette={palette} title={plan.reminder.enabled ? t('khatma.detail.info.reminderAt', { time: clock }) : t('khatma.detail.info.reminderOff')} />
+      </RowGroup>
+    </Section>
+    {!!plan.history.length && <Section title={t('khatma.detail.history.title')} palette={palette}>
+      <RowGroup palette={palette}>{plan.history.map(h => <Row key={h.number} palette={palette} leading={<Medallion value={h.number} size={36} palette={palette} current />}
+        title={t('khatma.detail.history.cycle', { number: h.number, date: dateLabel(h.completedOn) })} />)}</RowGroup>
+    </Section>}
     {editing && <PlanSettingsSheet onClose={() => { if (!busy) setEditing(false); }}>
       <PlanNotice message={message} />
       {!!conflictId && <DetailAction label={t('goals.viewCurrent')} onPress={openConflict} />}
       <PlanField label={t('goals.name')} value={name} onChange={setName} />
-      <PlanSwitch label={t('khatma.repeat')} checked={repeat} onChange={setRepeat} detail={t('khatma.detail.settings.repeatDetail')} />
-      <PlanSwitch label={t('khatma.detail.settings.reminder')} checked={reminder} onChange={setReminder} disabled={!remindersSupported} detail={!remindersSupported ? t('goals.reminder.changeOnPhone') : t('khatma.detail.settings.reminderDetail')} />
+      <RowGroup palette={palette}>
+        <SwitchRow icon="loop" label={t('khatma.repeat')} checked={repeat} onChange={setRepeat} detail={t('khatma.detail.settings.repeatDetail')} />
+        <SwitchRow icon="bell" label={t('khatma.detail.settings.reminder')} checked={reminder} onChange={setReminder} disabled={!remindersSupported} detail={!remindersSupported ? t('goals.reminder.changeOnPhone') : t('khatma.detail.settings.reminderDetail')} />
+      </RowGroup>
       {reminder && <PlanDateField label={t('goals.reminder.time')} value={time} onChange={setTime} mode="time" />}
       <ReaderButton palette={palette} selected disabled={busy} onPress={() => void saveSettings()}>{t('goals.actions.saveSettings')}</ReaderButton>
-      <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderColor: palette.border, paddingTop: 12, gap: 4 }}>
-        {(plan.status === 'active' || plan.status === 'paused') && <DetailAction label={plan.status === 'active' ? t('goals.actions.pause') : t('goals.actions.resume')} disabled={busy} onPress={() => { const pause = plan.status === 'active'; void mutate(p => setPlanPaused(p, pause, today)).then(saved => { if (saved) setEditing(false); }); }} />}
-        <DetailAction label={plan.status === 'archived' ? t('goals.actions.restore') : t('goals.actions.archive')} disabled={busy} onPress={() => void archive().then(saved => { if (saved) setEditing(false); })} />
-        {plan.status !== 'archived' && <Copy muted>{t('khatma.detail.settings.deletionNote')}</Copy>}
-      </View>
+      <RowGroup palette={palette}>
+        {(plan.status === 'active' || plan.status === 'paused') && <Row icon={plan.status === 'active' ? 'pause' : 'play'} palette={palette} chevron={false} disabled={busy} title={plan.status === 'active' ? t('goals.actions.pause') : t('goals.actions.resume')}
+          onPress={() => { const pause = plan.status === 'active'; void mutate(p => setPlanPaused(p, pause, today)).then(saved => { if (saved) setEditing(false); }); }} />}
+        <Row icon={plan.status === 'archived' ? 'restore' : 'archive'} palette={palette} chevron={false} disabled={busy} title={plan.status === 'archived' ? t('goals.actions.restore') : t('goals.actions.archive')}
+          detail={plan.status !== 'archived' ? t('khatma.detail.settings.deletionNote') : undefined} onPress={() => void archive().then(saved => { if (saved) setEditing(false); })} />
+      </RowGroup>
     </PlanSettingsSheet>}
     {deleting && <DeleteArchivedGoalDialog plan={plan} onClose={() => setDeleting(false)} onDeleted={() => router.replace('/plans')} />}
   </DetailScreen>;

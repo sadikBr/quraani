@@ -5,11 +5,15 @@ import { loadTajweedSurah } from '../services/tajweed-service';
 import type { TajweedSurah } from '../utils/tajweed';
 interface Result { mushafId: number; numbers: string; data: Record<number, TajweedSurah>; error: boolean }
 export function useTajweed(page: QuranPage, quran: Quran, enabled: boolean) {
-  const numbers = [...new Set(page.ayahs.map((a) => a.surahNumber))].join(',');
-  const [result, setResult] = useState<Result>({ mushafId: quran.id, numbers, data: {}, error: false });
+  return useTajweedSurahs(page.ayahs.map((a) => a.surahNumber), quran, enabled);
+}
+/** The tajweed colours of these surahs of `quran` (none while it loads), by surah number. */
+export function useTajweedSurahs(surahs: readonly number[], quran: Quran | undefined, enabled: boolean) {
+  const numbers = [...new Set(surahs)].join(',');
+  const [result, setResult] = useState<Result>({ mushafId: quran?.id ?? 0, numbers, data: {}, error: false });
   const [retry, setRetry] = useState(0);
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !quran) return;
     let active = true;
     void Promise.all(numbers.split(',').map(async (n) => {
       const surah = quran.surahs.find((s) => s.number === Number(n))!;
@@ -19,7 +23,7 @@ export function useTajweed(page: QuranPage, quran: Quran, enabled: boolean) {
     return () => { active = false; };
   }, [enabled, quran, numbers, retry]);
   // A result (or error) belongs to the edition and surahs it was loaded for.
-  const matches = enabled && result.mushafId === quran.id && result.numbers === numbers;
+  const matches = enabled && !!quran && result.mushafId === quran.id && result.numbers === numbers;
   return { data: matches ? result.data : {}, error: matches && result.error,
-    retry: () => { setResult({ mushafId: quran.id, numbers, data: {}, error: false }); setRetry((n) => n + 1); } };
+    retry: () => { setResult({ mushafId: quran?.id ?? 0, numbers, data: {}, error: false }); setRetry((n) => n + 1); } };
 }

@@ -39,8 +39,6 @@ export default {
     in: 'بعد',
     /** Spoken: «العصر الساعة 15:33، بعد 2:14:05». */
     spoken: '{{prayer}} الساعة {{time}}، بعد {{countdown}}',
-    /** At the start of the bar from the time we are in to the next: «العصر 15:33». */
-    since: '{{prayer}} {{time}}',
   },
   /** Browsing the times of other days, a week at a time. */
   week: {

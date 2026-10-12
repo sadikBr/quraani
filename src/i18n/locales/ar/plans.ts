@@ -80,18 +80,8 @@ export default {
     from: 'من',
     to: 'إلى',
     ayah: 'الآية {{ayah, number}}',
-    ayahs: 'الآيات {{first, number}} – {{last, number}}',
-    ayahCount_zero: '{{count, number}} آية',
-    ayahCount_one: 'آية واحدة',
-    ayahCount_two: 'آيتان',
-    ayahCount_few: '{{count, number}} آيات',
-    ayahCount_many: '{{count, number}} آية',
-    ayahCount_other: '{{count, number}} آية',
-    page: 'الصفحة {{page, number}}',
-    pages: 'الصفحات {{first, number}}–{{last, number}}',
   },
   list: {
-    mushaf: 'المصحف',
     createLabel: 'إنشاء هدف جديد',
     title: 'أهدافك القرآنية',
     subtitle: 'قراءة وحفظ ومراجعة، في مواعيد تناسبك.',
@@ -160,6 +150,8 @@ export default {
     },
     /** Under a goal type that already has a goal in progress. */
     continueGoal: 'تابع {{name}}',
+    /** Section title over the memorization and revision goals. */
+    memory: 'الحفظ والمراجعة',
     memorization: {
       continueLabel: 'متابعة هدف الحفظ',
       createLabel: 'إنشاء هدف حفظ القرآن',

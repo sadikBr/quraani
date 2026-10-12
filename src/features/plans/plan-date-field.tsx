@@ -16,7 +16,7 @@ export function PlanDateField({ label, value, onChange, mode, minimum }: PlanDat
   const { palette: p, dark } = useReadingPreferences();
   const [open, setOpen] = useState(false);
   const date = new Date(mode === 'date' ? `${value}T12:00:00` : `${localDate()}T${value}:00`);
-  return <View style={{ gap: 8 }}><Text style={{ color: p.foreground, fontSize: 14, fontWeight: '500' }}>{label}</Text>
+  return <View style={{ gap: 8 }}><Text style={{ color: p.foreground, fontSize: 14, fontWeight: '600' }}>{label}</Text>
     <Pressable accessibilityRole="button" accessibilityLabel={t('plans.dateField.label', { label, value: mode === 'date' ? dateLabel(value) : value })} onPress={() => setOpen(true)}
       style={({ pressed }) => [{ minHeight: 44, borderWidth: 1, borderColor: open ? p.ring : p.input, borderRadius: readerShape.control, backgroundColor: pressed ? p.accent : p.background,
         flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12 }, readerElevation(1, p)]}>

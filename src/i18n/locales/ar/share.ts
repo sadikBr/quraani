@@ -5,7 +5,8 @@ export default {
   preparing: 'جارٍ تجهيز البطاقة',
   notFound: 'لم نعثر على هذه الآية.',
   loadError: 'تعذّر تجهيز البطاقة. أعد المحاولة.',
-  format: { status: 'حالة واتساب · 9:16', square: 'منشور مربع · 1:1' },
+  /** `title` heads the choice of the image's shape. */
+  format: { title: 'شكل البطاقة', status: 'حالة واتساب · 9:16', square: 'منشور مربع · 1:1' },
   preview: { title: 'معاينة البطاقة', extended: 'طالت البطاقة لتتسع للنص كاملًا.' },
   /** `app`: the swatch that follows the app's current theme; the other swatches are named in reader.ayahCard.themes. */
   color: { title: 'لون البطاقة', app: 'مظهر التطبيق' },

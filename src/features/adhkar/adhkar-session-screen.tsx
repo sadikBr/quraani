@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Vibration, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, ClipPath, Defs, G, Path } from 'react-native-svg';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { createPager, useRecentre } from '@/components/pager';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { Alert, Button } from '@/components/ui';
+import { khatam, Pattern } from '@/components/craft/art';
+import { Medallion } from '@/components/craft/marks';
+import { ArchPanel } from '@/components/craft/panels';
 import type { ReaderPalette } from '@/features/quran-reader/theme';
 import { readerElevation, readerLayout, readerShape, withAlpha } from '@/features/quran-reader/design';
 import { ReaderIcon, type ReaderIconName } from '@/features/quran-reader/components/ui/reader-chrome';
@@ -14,12 +17,13 @@ import { useReadingPreferences } from '@/features/quran-reader/state/reading-pre
 import { useReaderContent } from '@/features/quran-reader/hooks/use-reader-content';
 import { useQuranFont } from '@/features/quran-reader/hooks/use-quran-font';
 import type { Quran } from '@/lib/quranpedia/types';
-import { formatNumber, t } from '@/i18n';
+import { formatList, formatNumber, t } from '@/i18n';
 import { collectionIcons, collections, isCollectionId, type CollectionId, type Dhikr } from './content';
 import { collectionProgress, countsOn, nextUnfinished, TEXT_SCALES } from './progress';
 import { useAdhkar } from './provider';
 import { dismissClipError, stopClip, toggleClip, useClip } from './audio';
 import { AdhkarIndexSheet } from './adhkar-index-sheet';
+import { CentredBeads, collectionMotifs } from './adhkar-screen';
 import { DhikrText } from './dhikr-text';
 import { QuranDhikr } from './dhikr-quran';
 import { quranReadings, readingLength, resolveReading } from './quran';
@@ -30,6 +34,8 @@ interface Mushaf { quran: Quran; fontFamily: string; display: (text: string) => 
 const nativeDriver = Platform.OS !== 'web';
 /** A short tick for each count and a firmer one when a dhikr is done (Android; iOS ignores lengths). */
 const buzz = (done: boolean) => { if (Platform.OS === 'android') Vibration.vibrate(done ? 40 : 12); };
+/** How high the window's arch rises over its panel. */
+const RISE = 52;
 
 /** Says the adhkar of one collection, one dhikr per page, with a counter. */
 export function AdhkarSessionScreen() {
@@ -44,6 +50,11 @@ function MissingCollection() {
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }} />;
 }
 
+/**
+ * A collection being said: its name and the string of its adhkar at the top (a bead each, filled
+ * once said), each dhikr in an arched window with its number in a star at the arch's crown, and
+ * under it the counter, a ring of beads round a large button that fill as it is pressed.
+ */
 function Session({ id }: { id: CollectionId }) {
   const { palette: p } = useReadingPreferences();
   const { state, today, step, reset, setTextSize } = useAdhkar();
@@ -104,19 +115,20 @@ function Session({ id }: { id: CollectionId }) {
   // The pager's gesture needs a gesture root; the app's stack screens have none of their own.
   return <GestureHandlerRootView style={{ flex: 1 }}><SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <View style={s.header}>
-      <View style={s.navigation}>
-        <Button variant="outline" icon="back" label={t('adhkar.session.back')} onPress={() => router.canGoBack() ? router.back() : router.replace('/adhkar')} />
+      <View style={s.bar}>
+        <Button variant="outline" icon="back" palette={p} label={t('adhkar.session.back')} onPress={() => router.canGoBack() ? router.back() : router.replace('/adhkar')} />
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text accessibilityRole="header" numberOfLines={1} style={{ color: p.foreground, fontSize: 19, fontWeight: '600' }}>{title}</Text>
-          <Text style={{ color: progress.complete ? p.primary : p.mutedForeground, fontSize: 13 }}>
+          <Text accessibilityRole="header" numberOfLines={1} style={{ color: p.foreground, fontSize: 21, lineHeight: 34, fontFamily: 'ReaderNaskhBold' }}>{title}</Text>
+          <Text numberOfLines={1} style={{ color: progress.complete ? p.ornament : p.mutedForeground, fontSize: 12, lineHeight: 18 }}>
             {progress.complete ? t('adhkar.completed') : t('adhkar.progress', { done: progress.done, total: progress.total })}
           </Text>
         </View>
         <TextSizeButton open={sizing} palette={p} onPress={() => setSizing((open) => !open)} />
-        <Button variant="outline" icon="index" label={t('adhkar.session.index')} onPress={() => setIndexOpen(true)} />
+        <Button variant="outline" icon="index" palette={p} label={t('adhkar.session.index')} onPress={() => setIndexOpen(true)} />
       </View>
       {sizing && <TextSizeBar step={state.textSize} palette={p} onChange={setTextSize} />}
-      <Segments items={items} counts={counts} current={index} palette={p} onSelect={jump} />
+      <Thread items={items} counts={counts} current={index} palette={p} onSelect={jump}
+        onPrevious={index > 0 ? () => pager.go(index - 1) : undefined} onNext={index < last ? () => pager.go(index + 1) : undefined} />
     </View>
     {clip.error && <View style={s.notice}><Alert variant="destructive" palette={p} action={<Button variant="outline" size="sm" palette={p} onPress={dismissClipError}>{t('common.close')}</Button>}>{t('adhkar.audio.error')}</Alert></View>}
     <GestureDetector gesture={pager.pan}>
@@ -127,9 +139,8 @@ function Session({ id }: { id: CollectionId }) {
             {...(Platform.OS === 'web' && offset ? { 'aria-hidden': true, inert: true } : {})}
             style={[StyleSheet.absoluteFill, { transform: [{ translateX: Animated.add(translation, -offset * (width || 360)) }] }]}>
             {page < last
-              ? <DhikrPage dhikr={items[page]} position={page + 1} total={items.length} said={counts[items[page].key] ?? 0} palette={p} scale={scale} mushaf={mushaf}
-                onPrevious={page > 0 ? () => pager.go(page - 1) : undefined} onNext={() => pager.go(page + 1)} />
-              : <ClosingPage id={id} title={title} left={items.length - progress.done} palette={p}
+              ? <DhikrPage dhikr={items[page]} position={page + 1} total={items.length} said={counts[items[page].key] ?? 0} palette={p} scale={scale} mushaf={mushaf} />
+              : <ClosingPage id={id} title={title} left={items.length - progress.done} total={items.length} palette={p}
                 onRemaining={() => { const first = nextUnfinished(id, counts); if (first >= 0) jump(first); }} onPrevious={() => pager.go(last - 1)} />}
           </Animated.View>;
         })}
@@ -144,17 +155,33 @@ function Session({ id }: { id: CollectionId }) {
   </SafeAreaView></GestureHandlerRootView>;
 }
 
-/** One mark per dhikr: said, partly said, still to say, and the one shown. Tapping one opens it. */
-function Segments({ items, counts, current, palette: p, onSelect }: { items: Dhikr[]; counts: Record<string, number>; current: number; palette: ReaderPalette; onSelect: (index: number) => void }) {
-  return <View style={s.segments} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" {...(Platform.OS === 'web' ? { 'aria-hidden': true } : {})}>
-    {items.map((d, i) => {
-      const said = counts[d.key] ?? 0;
-      const finished = said >= d.count;
-      return <Pressable key={d.key} onPress={() => onSelect(i)} hitSlop={{ top: 10, bottom: 10 }} style={s.segmentHit}>
-        <View style={[s.segment, { backgroundColor: finished ? p.primary : said ? withAlpha(p.primary, 0.45) : p.muted },
-          i === current && { height: 6, backgroundColor: finished ? p.primary : p.ornament }]} />
-      </Pressable>;
-    })}
+/**
+ * The collection as a string of beads, a bead a dhikr: said, partly said, still to say, and the
+ * one shown, larger, with a halo. Tapping a bead opens its dhikr; the arrows at either end turn
+ * to the previous and the next.
+ */
+function Thread({ items, counts, current, palette: p, onSelect, onPrevious, onNext }: {
+  items: Dhikr[]; counts: Record<string, number>; current: number; palette: ReaderPalette; onSelect: (index: number) => void; onPrevious?: () => void; onNext?: () => void;
+}) {
+  return <View style={s.thread}>
+    <PageArrow label={t('adhkar.session.previous')} reversed onPress={onPrevious} palette={p} />
+    <View style={s.beads} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" {...(Platform.OS === 'web' ? { 'aria-hidden': true } : {})}>
+      <View style={[s.string, { backgroundColor: withAlpha(p.ornament, 0.4) }]} />
+      {items.map((d, i) => {
+        const said = counts[d.key] ?? 0;
+        const finished = said >= d.count;
+        const here = i === current;
+        const size = here ? 13 : 9;
+        return <Pressable key={d.key} onPress={() => onSelect(i)} hitSlop={{ top: 8, bottom: 8 }} style={s.beadHit}>
+          <View style={[s.halo, here && { backgroundColor: withAlpha(p.ornament, 0.2) }]}>
+            <View style={{ width: size, height: size, borderRadius: size / 2, borderWidth: here && !finished ? 2 : 1,
+              borderColor: finished || said ? p.ornament : withAlpha(p.ornament, here ? 1 : 0.6),
+              backgroundColor: finished ? p.ornament : said ? withAlpha(p.ornament, 0.45) : p.background }} />
+          </View>
+        </Pressable>;
+      })}
+    </View>
+    <PageArrow label={t('adhkar.session.next')} onPress={onNext} palette={p} />
   </View>;
 }
 
@@ -163,59 +190,63 @@ const fontSize = (text: string) => text.length < 40 ? 32 : text.length < 110 ? 2
 /** The same for Quran passages in the mushaf's font, which looks smaller at a given size. */
 const quranFontSize = (length: number) => length < 110 ? 30 : length < 260 ? 27 : length < 600 ? 25 : 22;
 
-function DhikrPage({ dhikr, position, total, said, palette: p, scale, mushaf, onPrevious, onNext }: {
+/**
+ * One dhikr in an arched window: its number in a star at the crown (filled once it is said), the
+ * dhikr in Naskh (a Quran passage as in the mushaf), the surahs it asks to read, and the book's
+ * note on it, quietly, at the foot.
+ */
+function DhikrPage({ dhikr, position, total, said, palette: p, scale, mushaf }: {
   dhikr: Dhikr; position: number; total: number; said: number; palette: ReaderPalette;
   /** The chosen text size, as a share of the usual one. */
   scale: number;
   mushaf: Mushaf | null;
-  onPrevious?: () => void; onNext: () => void;
 }) {
   const done = said >= dhikr.count;
   const size = Math.round(fontSize(dhikr.text) * scale);
   const reading = quranReadings[dhikr.key];
   const passages = useMemo(() => reading && mushaf ? resolveReading(mushaf.quran, reading) : null, [reading, mushaf]);
+  const where = t('adhkar.session.position', { position, total });
   return <View style={s.page}>
-    <View style={[s.card, { backgroundColor: p.card, borderColor: done ? withAlpha(p.primary, 0.35) : p.border }, readerElevation(2, p)]}>
-      <View style={s.cardHead}>
-        <PageArrow label={t('adhkar.session.previous')} reversed onPress={onPrevious} palette={p} />
-        <View style={{ flex: 1, alignItems: 'center' }}>
-          <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('adhkar.session.position', { position, total })}</Text>
-          {done && <View style={s.doneTag}><ReaderIcon name="done" color={p.primary} size={13} /><Text style={{ color: p.primary, fontSize: 12, fontWeight: '600' }}>{t('adhkar.session.done')}</Text></View>}
-        </View>
-        <PageArrow label={t('adhkar.session.next')} onPress={onNext} palette={p} />
+    <ArchPanel palette={p} rise={RISE} tone={done ? withAlpha(p.ornament, 0.85) : undefined} style={{ flex: 1 }} contentStyle={s.panel}>
+      <View style={s.crown}>
+        <Medallion value={position} size={46} palette={p} current={done} label={done ? formatList([where, t('adhkar.session.done')]) : where} />
       </View>
-      {!!dhikr.note && <View style={[s.note, { backgroundColor: p.muted }]}>
-        <ReaderIcon name="info" color={p.mutedForeground} size={14} />
-        <Text style={{ flex: 1, color: p.mutedForeground, fontSize: 13 }}>{dhikr.note}</Text>
-      </View>}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={s.textArea} showsVerticalScrollIndicator={false}>
         {reading && passages && mushaf
           ? <QuranDhikr reading={reading} passages={passages} quran={mushaf.quran} fontFamily={mushaf.fontFamily} display={mushaf.display} size={Math.round(quranFontSize(readingLength(passages)) * scale)} palette={p} />
           : <DhikrText text={dhikr.text} size={size} color={p.foreground} ornament={p.ornament} justified={{ hiddenColor: p.card }} />}
         {!!dhikr.surahs?.length && <View style={s.surahs}>{dhikr.surahs.map((surah) => <SurahButton key={surah} surah={surah} palette={p} />)}</View>}
+        {!!dhikr.note && <View style={s.note}>
+          <Svg width={12} height={12} aria-hidden><Path d={khatam(6, 6, 3.4)} fill={withAlpha(p.ornament, 0.15)} stroke={withAlpha(p.ornament, 0.8)} strokeWidth={1} /></Svg>
+          <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 21, textAlign: 'center' }}>{dhikr.note}</Text>
+        </View>}
       </ScrollView>
-    </View>
+    </ArchPanel>
   </View>;
 }
 
 /** Opens the text size bar: a small and a large letter. */
 function TextSizeButton({ open, palette: p, onPress }: { open: boolean; palette: ReaderPalette; onPress: () => void }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={t('adhkar.session.textSize')} accessibilityState={{ expanded: open }} aria-expanded={open} onPress={onPress} hitSlop={4}
-    style={({ pressed }) => [s.sizeButton, { borderColor: open ? p.primary : p.input, backgroundColor: pressed ? p.accent : open ? p.secondary : p.background }, readerElevation(1, p)]}>
-    <Text style={{ color: p.foreground, fontSize: 13, lineHeight: 20 }}>{t('adhkar.session.textSizeGlyph')}</Text>
-    <Text style={{ color: p.foreground, fontSize: 19, lineHeight: 26, fontWeight: '600' }}>{t('adhkar.session.textSizeGlyph')}</Text>
+    style={({ pressed }) => [s.sizeButton, { borderColor: open ? p.ornament : p.input, backgroundColor: pressed ? p.accent : open ? withAlpha(p.ornament, 0.12) : p.background }, readerElevation(1, p)]}>
+    <Text style={{ color: p.foreground, fontSize: 13, lineHeight: 22, fontFamily: 'ReaderNaskhBold' }}>{t('adhkar.session.textSizeGlyph')}</Text>
+    <Text style={{ color: p.foreground, fontSize: 19, lineHeight: 30, fontFamily: 'ReaderNaskhBold' }}>{t('adhkar.session.textSizeGlyph')}</Text>
   </Pressable>;
 }
 
-/** Smaller and larger, with the steps between them; the card behind changes at once. */
+/** Smaller and larger, with the steps between them as beads that grow; the window behind changes at once. */
 function TextSizeBar({ step, palette: p, onChange }: { step: number; palette: ReaderPalette; onChange: (step: number) => void }) {
   const last = TEXT_SCALES.length - 1;
-  return <View style={[s.sizeBar, { backgroundColor: p.muted }]}>
+  return <View style={[s.sizeBar, { backgroundColor: withAlpha(p.ornament, 0.07), borderColor: withAlpha(p.ornament, 0.3) }]}>
     <Button size="sm" variant="outline" palette={p} icon="minus" label={t('adhkar.session.smaller')} disabled={step <= 0} onPress={() => onChange(step - 1)} />
     <View accessible accessibilityLabel={t('adhkar.session.textSizeValue', { step: step + 1, total: last + 1 })} style={s.sizeMiddle}>
-      <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('adhkar.session.textSize')}</Text>
+      <Text style={{ color: p.mutedForeground, fontSize: 12 }}>{t('adhkar.session.textSize')}</Text>
       <View style={s.sizeSteps}>
-        {TEXT_SCALES.map((_, i) => <View key={i} style={[s.sizeStep, { height: 6 + i * 2, backgroundColor: i <= step ? p.primary : p.border }]} />)}
+        <View style={[s.sizeString, { backgroundColor: withAlpha(p.ornament, 0.4) }]} />
+        {TEXT_SCALES.map((_, i) => {
+          const size = 6 + i * 2;
+          return <View key={i} style={{ width: size, height: size, borderRadius: size / 2, borderWidth: 1, borderColor: p.ornament, backgroundColor: i <= step ? p.ornament : p.background }} />;
+        })}
       </View>
     </View>
     <Button size="sm" variant="outline" palette={p} icon="plus" label={t('adhkar.session.larger')} disabled={step >= last} onPress={() => onChange(step + 1)} />
@@ -223,35 +254,84 @@ function TextSizeBar({ step, palette: p, onChange }: { step: number; palette: Re
 }
 
 function PageArrow({ label, onPress, reversed = false, palette: p }: { label: string; onPress?: () => void; reversed?: boolean; palette: ReaderPalette }) {
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={!onPress} onPress={onPress} hitSlop={6}
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: !onPress }} disabled={!onPress} onPress={onPress} hitSlop={6}
     style={({ pressed }) => [s.arrow, { opacity: onPress ? 1 : 0.25, backgroundColor: pressed ? p.accent : 'transparent' }]}>
     <View style={reversed ? { transform: [{ rotate: '180deg' }] } : undefined}><ReaderIcon name="chevron" color={p.mutedForeground} size={18} /></View>
   </Pressable>;
 }
 
-function ClosingPage({ id, title, left, palette: p, onRemaining, onPrevious }: {
-  id: CollectionId; title: string; left: number; palette: ReaderPalette; onRemaining: () => void; onPrevious: () => void;
+/**
+ * The collection's pattern in a roundel, round a medallion holding a check once all is said (or
+ * the collection's mark), for the closing page.
+ */
+function ClosingFigure({ id, complete, palette: p }: { id: CollectionId; complete: boolean; palette: ReaderPalette }) {
+  const size = 156, c = size / 2;
+  const clip = `roundel${useId().replace(/[^\w-]/g, '')}`;
+  return <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+    <Svg width={size} height={size} style={StyleSheet.absoluteFill} aria-hidden>
+      <Defs><ClipPath id={clip}><Circle cx={c} cy={c} r={c - 2} /></ClipPath></Defs>
+      <G clipPath={`url(#${clip})`}>
+        <Pattern motif={collectionMotifs[id]} w={size} h={size} rise={c} focus={c} color={withAlpha(p.ornament, 0.4)} />
+      </G>
+      <Circle cx={c} cy={c} r={c - 2} fill="none" stroke={withAlpha(p.ornament, 0.55)} strokeWidth={1} />
+      <Circle cx={c} cy={c} r={34} fill={complete ? p.ornament : p.card} stroke={p.ornament} strokeWidth={1.25} />
+      <Circle cx={c} cy={c} r={29} fill="none" stroke={complete ? withAlpha(p.card, 0.6) : withAlpha(p.ornament, 0.5)} strokeWidth={1} strokeDasharray="1 4" strokeLinecap="round" />
+    </Svg>
+    <ReaderIcon name={complete ? 'check' : collectionIcons[id]} color={complete ? p.card : p.ornament} size={28} />
+  </View>;
+}
+
+function ClosingPage({ id, title, left, total, palette: p, onRemaining, onPrevious }: {
+  id: CollectionId; title: string; left: number; total: number; palette: ReaderPalette; onRemaining: () => void; onPrevious: () => void;
 }) {
   const complete = left === 0;
   return <View style={s.page}>
-    <View style={[s.card, s.closing, { backgroundColor: p.card, borderColor: p.border }, readerElevation(2, p)]}>
-      <View style={[s.closingIcon, { backgroundColor: complete ? p.primary : p.secondary }]}>
-        <ReaderIcon name={complete ? 'check' : collectionIcons[id]} color={complete ? p.primaryForeground : p.primary} size={30} />
-      </View>
-      <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 22, fontWeight: '600', textAlign: 'center' }}>
+    <ArchPanel palette={p} rise={RISE} tone={complete ? withAlpha(p.ornament, 0.85) : undefined} style={{ flex: 1 }} contentStyle={[s.panel, s.closing]}>
+      <ClosingFigure id={id} complete={complete} palette={p} />
+      <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 24, lineHeight: 40, fontFamily: 'ReaderNaskhBold', textAlign: 'center', marginTop: 6 }}>
         {complete ? t('adhkar.session.finishedTitle') : t('adhkar.session.left', { count: left })}
       </Text>
-      <Text style={{ color: p.mutedForeground, fontSize: 15, textAlign: 'center' }}>{complete ? t('adhkar.session.finishedDetail', { title }) : t('adhkar.session.leftDetail')}</Text>
-      <View style={{ alignSelf: 'stretch', gap: 8, marginTop: 8 }}>
+      <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22, textAlign: 'center' }}>{complete ? t('adhkar.session.finishedDetail', { title }) : t('adhkar.session.leftDetail')}</Text>
+      <View style={{ alignSelf: 'stretch', marginVertical: 8 }}><CentredBeads count={total} done={total - left} size={8} max={240} palette={p} /></View>
+      <View style={{ alignSelf: 'stretch', gap: 8, maxWidth: 360, width: '100%' }}>
         {complete ? <Button palette={p} block onPress={() => router.canGoBack() ? router.back() : router.replace('/adhkar')}>{t('adhkar.session.back')}</Button>
           : <Button palette={p} block onPress={onRemaining}>{t('adhkar.session.goToRemaining')}</Button>}
         <Button variant="ghost" palette={p} block onPress={onPrevious}>{t('adhkar.session.previous')}</Button>
       </View>
-    </View>
+    </ArchPanel>
   </View>;
 }
 
-/** The counter ring between undo and listen: the ring fills as the dhikr is said. */
+/** Beads round the counter: one a time the dhikr is said, past this many they stand for equal shares. */
+const RING_BEADS = 33;
+const RING = 140;
+
+/**
+ * The counter's ring: a thread with a bead for each time the dhikr is said, filled as it is
+ * counted (from the crown, leftwards, as the reading goes), round a face like a medallion, filled
+ * in gold with a check once the dhikr is said, as its star is.
+ */
+function CounterRing({ count, said, done, pressed, palette: p }: { count: number; said: number; done: boolean; pressed: boolean; palette: ReaderPalette }) {
+  const c = RING / 2, thread = c - 9, face = thread - 14;
+  const beads = Math.min(count, RING_BEADS);
+  const filled = count <= RING_BEADS ? Math.min(said, count) : Math.round((Math.min(said, count) / count) * beads);
+  const spacing = (2 * Math.PI * thread) / beads;
+  const r = Math.min(6.5, spacing * 0.36);
+  return <Svg width={RING} height={RING} style={StyleSheet.absoluteFill} aria-hidden>
+    <Circle cx={c} cy={c} r={thread} fill="none" stroke={withAlpha(p.ornament, 0.4)} strokeWidth={1} />
+    <Circle cx={c} cy={c} r={face} fill={done ? p.ornament : pressed ? p.accent : p.card} stroke={done ? p.ornament : withAlpha(p.ornament, 0.7)} strokeWidth={1.25} />
+    {!done && <Circle cx={c} cy={c} r={face - 5} fill="none" stroke={withAlpha(p.ornament, 0.4)} strokeWidth={1} strokeDasharray="1 4" strokeLinecap="round" />}
+    {Array.from({ length: beads }, (_, i) => {
+      // From the crown, anticlockwise: leftwards across the top, as the reading goes.
+      const a = -Math.PI / 2 - (i / beads) * 2 * Math.PI;
+      const on = i < filled;
+      return <Circle key={i} cx={c + thread * Math.cos(a)} cy={c + thread * Math.sin(a)} r={r}
+        fill={on ? p.ornament : p.background} stroke={on ? p.ornament : withAlpha(p.ornament, 0.6)} strokeWidth={1.1} />;
+    })}
+  </Svg>;
+}
+
+/** The counter between listening and undoing: a large button in a ring of beads that fill as the dhikr is said. */
 function Controls({ dhikr, said, palette: p, hint, playing, loading, onCount, onUndo }: {
   dhikr: Dhikr; said: number; palette: ReaderPalette; hint: boolean; playing: boolean; loading: boolean; onCount: () => void; onUndo: () => void;
 }) {
@@ -261,12 +341,11 @@ function Controls({ dhikr, said, palette: p, hint, playing, loading, onCount, on
   const press = () => {
     if (done) return;
     Animated.sequence([
-      Animated.timing(scale, { toValue: 0.92, duration: 60, useNativeDriver: nativeDriver }),
+      Animated.timing(scale, { toValue: 0.94, duration: 60, useNativeDriver: nativeDriver }),
       Animated.spring(scale, { toValue: 1, speed: 30, bounciness: 8, useNativeDriver: nativeDriver }),
     ]).start();
     onCount();
   };
-  const size = 112, stroke = 6, radius = (size - stroke) / 2, circumference = 2 * Math.PI * radius;
   const state = done ? t('adhkar.session.done') : t('adhkar.session.remaining', { remaining, count: dhikr.count });
   return <View style={s.controls}>
     <View style={s.controlRow}>
@@ -277,23 +356,18 @@ function Controls({ dhikr, said, palette: p, hint, playing, loading, onCount, on
       <Pressable accessibilityRole="button" accessibilityLabel={t('adhkar.session.countLabel', { state })} accessibilityHint={done ? undefined : t('adhkar.session.countHint')}
         accessibilityState={{ disabled: done }} accessibilityActions={[{ name: 'decrement', label: t('adhkar.session.undo') }]}
         onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === 'decrement') onUndo(); }}
-        onPress={press} onLongPress={onUndo} delayLongPress={500}>
-        {({ pressed }) => <Animated.View style={[s.ring, { width: size, height: size, transform: [{ scale }] }]}>
-          <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
-            <Circle cx={size / 2} cy={size / 2} r={radius} stroke={withAlpha(p.primary, 0.14)} strokeWidth={stroke} fill={done ? p.primary : pressed ? p.accent : p.card} />
-            {!done && said > 0 && <Circle cx={size / 2} cy={size / 2} r={radius} stroke={p.primary} strokeWidth={stroke} fill="none" strokeLinecap="round"
-              strokeDasharray={`${circumference} ${circumference}`} strokeDashoffset={circumference * (1 - said / dhikr.count)}
-              transform={`rotate(-90 ${size / 2} ${size / 2})`} />}
-          </Svg>
-          {done ? <ReaderIcon name="check" color={p.primaryForeground} size={40} /> : <>
-            <Text style={{ color: p.foreground, fontSize: remaining >= 100 ? 30 : 36, fontWeight: '600', lineHeight: 44 }}>{formatNumber(remaining)}</Text>
-            {dhikr.count > 1 && <Text style={{ color: p.mutedForeground, fontSize: 12, lineHeight: 16 }}>{t('adhkar.session.of', { count: dhikr.count })}</Text>}
+        onPress={press} onLongPress={onUndo} delayLongPress={500} style={s.counter}>
+        {({ pressed }) => <Animated.View style={[s.ring, { transform: [{ scale }] }]}>
+          <CounterRing count={dhikr.count} said={said} done={done} pressed={pressed} palette={p} />
+          {done ? <ReaderIcon name="check" color={p.card} size={38} /> : <>
+            <Text style={{ color: p.foreground, fontSize: remaining >= 100 ? 30 : 38, lineHeight: remaining >= 100 ? 46 : 56, fontFamily: 'ReaderNaskhBold', textAlign: 'center' }}>{formatNumber(remaining)}</Text>
+            {dhikr.count > 1 && <Text style={{ color: p.mutedForeground, fontSize: 11, lineHeight: 14, marginTop: -6 }}>{t('adhkar.session.of', { count: dhikr.count })}</Text>}
           </>}
         </Animated.View>}
       </Pressable>
       <RoundButton icon="minus" label={t('adhkar.session.undo')} disabled={said === 0} onPress={onUndo} palette={p} />
     </View>
-    <Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center', minHeight: 20 }}>{hint ? t('adhkar.session.hint') : t('adhkar.times', { count: dhikr.count })}</Text>
+    <Text style={{ color: p.mutedForeground, fontSize: 12, lineHeight: 18, textAlign: 'center', minHeight: 18 }}>{hint ? t('adhkar.session.hint') : t('adhkar.times', { count: dhikr.count })}</Text>
   </View>;
 }
 
@@ -301,8 +375,8 @@ function RoundButton({ icon, label, onPress, palette: p, disabled = false, selec
   icon: ReaderIconName; label: string; onPress: () => void; palette: ReaderPalette; disabled?: boolean; selected?: boolean; loading?: boolean;
 }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled, selected }} disabled={disabled} onPress={onPress} hitSlop={8}
-    style={({ pressed }) => [s.round, { opacity: disabled ? 0.35 : 1, borderColor: selected ? p.primary : p.input, backgroundColor: pressed ? p.accent : selected ? p.secondary : p.background }, !disabled && readerElevation(1, p)]}>
-    {loading ? <ActivityIndicator size="small" color={p.primary} /> : <ReaderIcon name={icon} color={selected ? p.primary : p.foreground} size={20} />}
+    style={({ pressed }) => [s.round, { opacity: disabled ? 0.35 : 1, borderColor: selected ? p.ornament : p.input, backgroundColor: pressed ? p.accent : selected ? withAlpha(p.ornament, 0.12) : p.background }, !disabled && readerElevation(1, p)]}>
+    {loading ? <ActivityIndicator size="small" color={p.ornament} /> : <ReaderIcon name={icon} color={selected ? p.ornament : p.foreground} size={20} />}
   </Pressable>;
 }
 
@@ -312,40 +386,41 @@ function SurahButton({ surah, palette: p }: { surah: number; palette: ReaderPale
   if (!name) return null;
   return <Pressable accessibilityRole="link" accessibilityLabel={t('adhkar.session.readSurah', { surah: name })} hitSlop={6}
     onPress={() => router.push({ pathname: '/', params: { surah: String(surah) } })}
-    style={({ pressed }) => [s.surah, { backgroundColor: pressed ? p.accent : 'transparent', borderColor: p.input }]}>
-    <ReaderIcon name="book" color={p.foreground} size={14} />
+    style={({ pressed }) => [s.surah, { backgroundColor: pressed ? withAlpha(p.ornament, 0.1) : 'transparent', borderColor: withAlpha(p.ornament, 0.6) }]}>
+    <ReaderIcon name="book" color={p.ornament} size={14} />
     <Text style={{ color: p.foreground, fontSize: 13, fontWeight: '500' }}>{name}</Text>
   </Pressable>;
 }
 
 const s = StyleSheet.create({
-  header: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 8, gap: 12 },
-  navigation: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  header: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 8, gap: 6 },
+  bar: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 52 },
   sizeButton: { height: 40, minWidth: 40, paddingHorizontal: 6, borderRadius: readerShape.control, borderWidth: 1, flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 1 },
-  sizeBar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 10, paddingVertical: 8, borderRadius: readerShape.lg },
+  sizeBar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 10, paddingVertical: 8, borderRadius: readerShape.lg, borderWidth: StyleSheet.hairlineWidth },
   sizeMiddle: { flex: 1, alignItems: 'center', gap: 4 },
-  sizeSteps: { flexDirection: 'row', alignItems: 'flex-end', gap: 5, height: 18 },
-  sizeStep: { width: 6, borderRadius: 3 },
-  segments: { flexDirection: 'row', alignItems: 'center', gap: 3, height: 10 },
-  segmentHit: { flex: 1, height: 10, justifyContent: 'center' },
-  segment: { height: 4, borderRadius: readerShape.pill },
+  sizeSteps: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 20 },
+  sizeString: { position: 'absolute', left: 4, right: 4, top: 10, height: 1 },
+  thread: { flexDirection: 'row', alignItems: 'center', gap: 2, marginHorizontal: -8 },
+  beads: { flex: 1, flexDirection: 'row', alignItems: 'center', height: 32 },
+  string: { position: 'absolute', left: 0, right: 0, top: 16, height: 1 },
+  beadHit: { flex: 1, height: 32, alignItems: 'center', justifyContent: 'center' },
+  halo: { width: 23, height: 23, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   notice: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 10 },
   pager: { flex: 1, overflow: 'hidden', width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center' },
-  page: { flex: 1, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6 },
-  card: { flex: 1, borderWidth: 1, borderRadius: readerShape.card, paddingHorizontal: 18, paddingTop: 8, paddingBottom: 6, gap: 8 },
-  cardHead: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 },
+  page: { flex: 1, paddingHorizontal: 16, paddingTop: 6, paddingBottom: 4 },
+  panel: { flex: 1, paddingTop: 12, paddingHorizontal: 18, paddingBottom: 10, gap: 4 },
+  crown: { alignItems: 'center' },
   arrow: { width: 40, height: 40, borderRadius: readerShape.pill, alignItems: 'center', justifyContent: 'center' },
-  doneTag: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  note: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: readerShape.control },
   textArea: { flexGrow: 1, justifyContent: 'center', paddingVertical: 10, gap: 16 },
   surahs: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
   surah: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 12, borderRadius: readerShape.pill, borderWidth: 1 },
-  closing: { alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 24 },
-  closingIcon: { width: 64, height: 64, borderRadius: readerShape.pill, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
-  controls: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 6, paddingBottom: 10, gap: 6 },
+  note: { alignItems: 'center', gap: 6, paddingHorizontal: 8, marginTop: 4 },
+  closing: { alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 24, paddingBottom: 24 },
+  controls: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 10, gap: 4 },
   controlRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 28 },
-  controlsSpacer: { height: 150 },
-  ring: { alignItems: 'center', justifyContent: 'center' },
+  controlsSpacer: { height: 170 },
+  counter: { width: RING, height: RING },
+  ring: { width: RING, height: RING, alignItems: 'center', justifyContent: 'center' },
   round: { width: 52, height: 52, borderRadius: readerShape.pill, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   roundSpacer: { width: 52, height: 52 },
 });

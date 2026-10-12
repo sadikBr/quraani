@@ -180,7 +180,8 @@ export default {
       /** The portion ends in another surah: "حتى الآية ٥ من سورة البقرة". {{surah}} is the surah name. */
       until: 'حتى الآية {{ayah, number}} من {{surah}}',
       stats: { ayahs: 'الآيات', words: 'الكلمات', page: 'الصفحة' },
-      pageRange: '{{from, number}}–{{to, number}}',
+      /** First and last page, kept left to right inside an isolate. */
+      pageRange: '⁦{{from, number}}–{{to, number}}⁩',
       /** The next portion is made of several separate segments (shown from 2). */
       segments_zero: 'يضم هذا الورد {{count, number}} مقطع، ويُفتح كل مقطع وحده.',
       segments_one: 'يضم هذا الورد مقطعًا واحدًا.',

@@ -11,6 +11,7 @@ import { useReadingPreferences } from '@/features/quran-reader/state/reading-pre
 import { readerElevation, readerShape, withAlpha } from '@/features/quran-reader/design';
 import type { ReaderPalette } from '@/features/quran-reader/theme';
 import { ReaderIcon, type ReaderIconName } from '@/features/quran-reader/components/ui/reader-icon';
+import { Niche, type Motif } from '@/components/craft/art';
 
 /** Components inside the reader receive the palette explicitly; elsewhere it comes from the provider. */
 export function usePalette(palette?: ReaderPalette) {
@@ -81,10 +82,11 @@ export function CardHeader({ title, description, icon, action, palette }: { titl
   </View>;
 }
 
-/** The 40px muted icon tile used by Empty, list rows and card headers. */
+/** The 40px icon tile used by list rows and card headers: the icon in the theme's gold on a wash of it (or in `tone`). */
 export function IconTile({ name, palette, size = 40, tone }: { name: ReaderIconName; palette?: ReaderPalette; size?: number; tone?: string }) {
   const p = usePalette(palette);
-  return <View style={[ui.tile, { width: size, height: size, backgroundColor: p.muted }]}><ReaderIcon name={name} color={tone ?? p.foreground} size={size >= 40 ? 20 : 16} /></View>;
+  const color = tone ?? p.ornament;
+  return <View style={[ui.tile, { width: size, height: size, backgroundColor: withAlpha(color, 0.12) }]}><ReaderIcon name={name} color={color} size={size >= 40 ? 20 : 16} /></View>;
 }
 
 export type BadgeVariant = 'default' | 'secondary' | 'outline' | 'destructive' | 'success';
@@ -151,14 +153,14 @@ export function Alert({ title, children, variant = 'default', icon, palette, act
   </View>;
 }
 
-/** Placeholder for an empty list: dashed border, 40px muted icon tile, one action. */
-export function Empty({ icon, title, description, children, palette }: PropsWithChildren<{ icon: ReaderIconName; title: string; description: string; palette?: ReaderPalette }>) {
+/** Placeholder for an empty list: an empty niche with the icon in it, a title in Naskh, one action. */
+export function Empty({ icon, title, description, children, palette, motif }: PropsWithChildren<{ icon: ReaderIconName; title: string; description: string; palette?: ReaderPalette; motif?: Motif }>) {
   const p = usePalette(palette);
-  return <View style={[ui.empty, { borderColor: p.border }]}>
-    <IconTile name={icon} palette={p} />
-    <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600', textAlign: 'center', marginTop: 4 }}>{title}</Text>
+  return <View style={ui.empty}>
+    <Niche palette={p} motif={motif}><ReaderIcon name={icon} color={p.ornament} size={22} /></Niche>
+    <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 20, lineHeight: 34, fontFamily: 'ReaderNaskhBold', textAlign: 'center', marginTop: 6 }}>{title}</Text>
     <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22, textAlign: 'center', maxWidth: 320 }}>{description}</Text>
-    {children && <View style={{ alignSelf: 'stretch', marginTop: 8, gap: 8 }}>{children}</View>}
+    {children && <View style={{ alignSelf: 'stretch', marginTop: 10, gap: 8 }}>{children}</View>}
   </View>;
 }
 
@@ -208,7 +210,7 @@ export const ui = StyleSheet.create({
   track: { width: 44, height: 24, borderRadius: readerShape.pill, padding: 2, justifyContent: 'center', ...Platform.select({ native: { direction: 'ltr' as const } }) },
   thumb: { width: 20, height: 20, borderRadius: readerShape.pill },
   alert: { borderWidth: 1, borderRadius: readerShape.lg, paddingHorizontal: 16, paddingVertical: 12, gap: 10 },
-  empty: { alignItems: 'center', gap: 8, padding: 24, borderWidth: 1, borderStyle: 'dashed', borderRadius: readerShape.lg },
+  empty: { alignItems: 'center', gap: 6, paddingHorizontal: 24, paddingVertical: 28 },
   tabs: { flexDirection: 'row', padding: 3, gap: 3, borderRadius: readerShape.lg },
   trigger: { flex: 1, minWidth: 0, minHeight: 38, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8, borderRadius: readerShape.control, borderWidth: StyleSheet.hairlineWidth },
   chip: { minHeight: 40, paddingHorizontal: 14, justifyContent: 'center', borderRadius: readerShape.control, borderWidth: 1 },

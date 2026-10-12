@@ -161,8 +161,6 @@ export default {
     destination: 'وجهتك',
     destinationSession: 'وجهتك في الورد',
     chooseDestination: 'اختر موضعًا للانتقال',
-    /** Small caption above the destination page number. */
-    page: 'صفحة',
   },
   actions: {
     close: 'إغلاق إجراءات الآية',

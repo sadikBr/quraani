@@ -3,12 +3,13 @@ import { AccessibilityInfo, ActivityIndicator, FlatList, KeyboardAvoidingView, M
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedSafeAreaView, GestureDetector, GestureHandlerRootView, useSwipeToClose } from '@/components/swipe-to-close';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { CheckMark } from '@/components/ui';
+import { Medallion } from '@/components/craft/marks';
+import { SheetGrabber, SheetTitle } from '@/components/craft/page';
 import type { Reciter } from '@/lib/quranpedia/reciters';
 import type { Quran } from '@/lib/quranpedia/types';
 import type { ReaderPalette } from '@/features/quran-reader/theme';
 import type { ListeningMode } from '@/features/quran-reader/state/reading-preferences';
-import { readerLayout, readerShape } from '@/features/quran-reader/design';
+import { readerElevation, readerLayout, readerShape, withAlpha } from '@/features/quran-reader/design';
 import { ReaderIcon } from '@/features/quran-reader/components/ui/reader-chrome';
 import { LibrarySearch } from '@/features/quran-reader/components/ui/library-chrome';
 import { normalizeArabicSearch } from '@/features/quran-reader/utils/search';
@@ -30,8 +31,38 @@ export function reciterDetail(reciter: Reciter, listening: ListeningMode = 'ayah
 }
 
 /**
+ * The first letter of a reciter's name, which stands for him on his star («عمر القزابري» → «ع»;
+ * the article is passed over: «العيون الكوشي» → «ع»). An alef alone is a bare stroke that reads
+ * as a mark rather than a letter, so a name that starts with one keeps its second letter too
+ * («إبراهيم» → «إب»).
+ */
+export function reciterInitial(name: string) {
+  const first = name.trim().split(/\s+/)[0] ?? '';
+  // eslint-disable-next-line no-restricted-syntax -- matching the article of a name, not interface text
+  const word = first.length > 3 && first.startsWith('ال') ? first.slice(2) : first;
+  // eslint-disable-next-line no-restricted-syntax -- the forms of the letter alef, not interface text
+  return 'اأإآ'.includes(word.charAt(0)) ? word.slice(0, 2) : word.charAt(0);
+}
+
+/**
+ * A reciter's star: his initial on the eight-pointed star, filled when he is the one chosen. The
+ * letter is drawn larger than a number would be, so that a hamza or a dot reads at a glance.
+ */
+export function ReciterStar({ name, size = 44, current = false, palette: p }: { name: string; size?: number; current?: boolean; palette: ReaderPalette }) {
+  const initial = reciterInitial(name);
+  return <View aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ width: size, height: size }}>
+    <Medallion value="" size={size} palette={p} current={current} />
+    <View style={[StyleSheet.absoluteFill, styles.initial]}>
+      <Text style={{ color: current ? p.card : p.foreground, fontSize: Math.round(size * (initial.length > 1 ? 0.32 : 0.4)), lineHeight: Math.round(size * 0.66), fontFamily: 'ReaderNaskhBold', textAlign: 'center' }}>{initial}</Text>
+    </View>
+  </View>;
+}
+
+/**
  * Choosing a reciter: each one can be heard first (a short sample from the opening of Al-Fatiha),
  * then chosen. A sample stops when another plays, when one is chosen, or when the sheet closes.
+ * Each reciter is a row on one card, his initial on the eight-pointed star; the chosen one's star
+ * is filled.
  */
 export function ReciterSheet({ reciters, selected, subtitle, quran, listening = 'ayah', palette: p, onSelect, onClose: dismiss }: {
   reciters: Reciter[]; selected: number | undefined; subtitle: string; quran: Quran; listening?: ListeningMode; palette: ReaderPalette;
@@ -58,25 +89,16 @@ export function ReciterSheet({ reciters, selected, subtitle, quran, listening = 
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: p.overlay }}>
       <KeyboardAvoidingView style={styles.frame} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <GestureDetector gesture={swipe.gesture}><AnimatedSafeAreaView edges={['bottom']} accessibilityViewIsModal onLayout={swipe.onSheetLayout} onAccessibilityEscape={onClose}
-          style={[styles.sheet, { backgroundColor: p.background, borderColor: p.border }, swipe.sheetStyle]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
-          <View style={[styles.grabber, { backgroundColor: p.border }]} />
+          style={[styles.sheet, { backgroundColor: p.background, borderColor: p.border }, readerElevation(4, p), swipe.sheetStyle]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
+          <SheetGrabber palette={p} />
           <View onLayout={swipe.onHeaderLayout} style={styles.header}>
-            <View style={styles.headingRow}>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('recitation.reciterSheet.title')}</Text>
-                <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{subtitle}</Text>
-              </View>
-              <Pressable ref={close} accessibilityRole="button" accessibilityLabel={t('recitation.reciterSheet.close')} onPress={onClose} hitSlop={4}
-                style={({ pressed }) => [styles.close, { backgroundColor: pressed ? p.accent : 'transparent' }]}>
-                <ReaderIcon name="close" color={p.mutedForeground} size={18} />
-              </Pressable>
-            </View>
+            <SheetTitle title={t('recitation.reciterSheet.title')} subtitle={subtitle} palette={p} onClose={onClose} closeLabel={t('recitation.reciterSheet.close')} closeRef={close} />
             {reciters.length > 6 && <LibrarySearch palette={p} value={query} onChange={setQuery} label={t('recitation.reciterSheet.searchLabel')} placeholder={t('recitation.reciterSheet.searchPlaceholder')} />}
           </View>
           <GestureDetector gesture={swipe.scrollGesture}><FlatList {...swipe.scrollProps} data={filtered} keyExtractor={(item) => String(item.id)} extraData={selected}
             keyboardShouldPersistTaps="handled" initialNumToRender={14} windowSize={7} contentContainerStyle={styles.list}
             accessibilityRole="radiogroup" accessibilityLabel={t('recitation.reciterSheet.title')}
-            ListEmptyComponent={<Text style={{ color: p.mutedForeground, textAlign: 'center', padding: 16 }}>{t('recitation.reciterSheet.empty')}</Text>}
+            ListEmptyComponent={<Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22, textAlign: 'center', padding: 20 }}>{t('recitation.reciterSheet.empty')}</Text>}
             renderItem={({ item, index }) => <ReciterRow reciter={item} listening={listening} checked={item.id === selected} first={index === 0} last={index === filtered.length - 1} palette={p}
               sample={sample.reciter === item.id ? (sample.loading ? 'loading' : 'playing') : sample.failed === item.id ? 'failed' : null}
               onListen={() => listen(item)} onPress={() => { stopSample(); onSelect(item); }} />} /></GestureDetector>
@@ -94,24 +116,25 @@ function ReciterRow({ reciter, listening, checked, first, last, sample, palette:
 }) {
   const saved = useDownload(reciter.id).surahs.length > 0;
   const heard = sample === 'loading' || sample === 'playing';
-  return <View style={[styles.row, { borderColor: p.border, backgroundColor: checked ? p.accent : p.card, borderBottomWidth: last ? StyleSheet.hairlineWidth : 0 }, first && styles.rowFirst, last && styles.rowLast]}>
+  return <View style={[styles.row, { borderColor: p.border, backgroundColor: checked ? withAlpha(p.ornament, 0.08) : p.card }, first && styles.rowFirst, last && styles.rowLast]}>
+    {!first && <View style={[styles.separator, { backgroundColor: p.border }]} />}
     <Pressable accessibilityRole="radio" accessibilityLabel={reciter.name} accessibilityHint={reciterDetail(reciter, listening)} accessibilityState={{ checked }} aria-checked={checked} onPress={onPress}
       style={({ pressed }) => [styles.choose, { opacity: pressed ? 0.7 : 1 }]}>
-      <CheckMark checked={checked} palette={p} radio />
+      <ReciterStar name={reciter.name} size={44} palette={p} current={checked} />
       <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-        <Text style={{ color: p.foreground, fontSize: 16, fontWeight: checked ? '600' : '500' }}>{reciter.name}</Text>
-        <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{reciterDetail(reciter, listening)}</Text>
+        <Text style={{ color: p.foreground, fontSize: 16, lineHeight: 24, fontWeight: checked ? '700' : '600' }}>{reciter.name}</Text>
+        <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 20 }}>{reciterDetail(reciter, listening)}</Text>
         {saved && <View style={styles.saved}>
-          <ReaderIcon name="download" color={p.primary} size={12} />
-          <Text style={{ color: p.primary, fontSize: 12, fontWeight: '500' }}>{t('recitation.reciterSheet.onDevice')}</Text>
+          <ReaderIcon name="download" color={p.ornament} size={12} />
+          <Text style={{ color: p.ornament, fontSize: 12, lineHeight: 18, fontWeight: '600' }}>{t('recitation.reciterSheet.onDevice')}</Text>
         </View>}
-        {sample === 'failed' && <Text accessibilityLiveRegion="polite" style={{ color: p.destructive, fontSize: 12 }}>{t('recitation.reciterSheet.sampleFailed')}</Text>}
+        {sample === 'failed' && <Text accessibilityLiveRegion="polite" style={{ color: p.destructive, fontSize: 12, lineHeight: 18 }}>{t('recitation.reciterSheet.sampleFailed')}</Text>}
       </View>
     </Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={t(heard ? 'recitation.reciterSheet.sampleStop' : 'recitation.reciterSheet.sample', { name: reciter.name })}
       accessibilityState={{ busy: sample === 'loading' }} onPress={onListen} hitSlop={4}
-      style={({ pressed }) => [styles.listen, { borderColor: heard ? p.primary : p.input, backgroundColor: pressed ? p.accent : heard ? p.secondary : p.background }]}>
-      {sample === 'loading' ? <ActivityIndicator size="small" color={p.primary} /> : <ReaderIcon name={heard ? 'stop' : 'play'} color={p.primary} size={18} />}
+      style={({ pressed }) => [styles.listen, { borderColor: heard ? p.primary : withAlpha(p.ornament, 0.55), backgroundColor: heard ? p.primary : pressed ? p.accent : p.background }]}>
+      {sample === 'loading' ? <ActivityIndicator size="small" color={p.primaryForeground} /> : <ReaderIcon name={heard ? 'stop' : 'play'} color={heard ? p.primaryForeground : p.foreground} size={17} />}
     </Pressable>
   </View>;
 }
@@ -119,16 +142,14 @@ function ReciterRow({ reciter, listening, checked, first, last, sample, palette:
 const styles = StyleSheet.create({
   frame: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
   sheet: { height: '88%', width: '100%', maxWidth: readerLayout.maxWidth, borderTopLeftRadius: readerShape.sheet, borderTopRightRadius: readerShape.sheet, borderWidth: StyleSheet.hairlineWidth, borderBottomWidth: 0 },
-  grabber: { alignSelf: 'center', width: 40, height: 4, borderRadius: readerShape.pill, marginTop: 10 },
-  header: { padding: 16, paddingTop: 8, gap: 12 },
-  headingRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  close: { width: 40, height: 40, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
-  list: { paddingHorizontal: 16, paddingBottom: 16 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingStart: 16, paddingEnd: 12, minHeight: 64,
-    borderTopWidth: StyleSheet.hairlineWidth, borderStartWidth: StyleSheet.hairlineWidth, borderEndWidth: StyleSheet.hairlineWidth },
-  choose: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12 },
+  header: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 14, gap: 12 },
+  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingStart: 14, paddingEnd: 12, minHeight: 72, borderStartWidth: StyleSheet.hairlineWidth, borderEndWidth: StyleSheet.hairlineWidth },
+  separator: { position: 'absolute', top: 0, start: 70, end: 0, height: StyleSheet.hairlineWidth },
+  choose: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
   listen: { width: 40, height: 40, borderRadius: readerShape.pill, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  rowFirst: { borderTopStartRadius: readerShape.card, borderTopEndRadius: readerShape.card },
-  rowLast: { borderBottomStartRadius: readerShape.card, borderBottomEndRadius: readerShape.card },
+  rowFirst: { borderTopWidth: StyleSheet.hairlineWidth, borderTopStartRadius: readerShape.card, borderTopEndRadius: readerShape.card },
+  rowLast: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomStartRadius: readerShape.card, borderBottomEndRadius: readerShape.card },
   saved: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  initial: { alignItems: 'center', justifyContent: 'center' },
 });

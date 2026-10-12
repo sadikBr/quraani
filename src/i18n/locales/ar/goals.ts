@@ -1,7 +1,6 @@
 /** Text shared by every goal type (khatma, wird, recurring, memorization, revision). */
 export default {
   newGoal: 'هدف جديد',
-  goals: 'الأهداف',
   name: 'اسم الهدف',
   setup: 'الإعداد',
   /** On a button while a goal or progress is being saved; avoids «الحفظ», which reads as memorizing. */

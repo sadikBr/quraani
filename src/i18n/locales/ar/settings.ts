@@ -7,9 +7,8 @@ export default {
     appearance: { title: 'ألوان تريح عينك', detail: 'اختر مظهرًا يرافقك في كل صفحة.' },
     prayers: { title: 'صلاتك في وقتها', detail: 'اختر كيف ينبّهك التطبيق لكل صلاة، وطريقة حساب المواقيت.' },
   },
-  /** The reading tab's two groups: what is read, then how the Quran text looks. */
+  /** The reading tab's last section: how the Quran text looks. */
   groups: {
-    mushaf: 'المصحف',
     text: {
       title: 'النص القرآني',
       detail: 'في وضع النص، والأذكار، والبحث. كل تغيير يظهر في المعاينة.',

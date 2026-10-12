@@ -3,7 +3,9 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop } from 'react-native-svg';
 import { router } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { readerElevation, readerShape } from '@/features/quran-reader/design';
+import { readerShape, withAlpha } from '@/features/quran-reader/design';
+import { ArchPanel } from '@/components/craft/panels';
+import { BrushStroke } from '@/components/craft/marks';
 import { ReaderIcon } from '@/features/quran-reader/components/ui/reader-chrome';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
 import type { ReaderPalette } from '@/features/quran-reader/theme';
@@ -77,9 +79,9 @@ function SunPath({ times, now, today, next, width, p }: { times: DayTimes; now: 
 }
 
 /**
- * The home screen's first card: the next prayer and the time left, the day drawn as the sun's
- * path, and the day's six times. After Isha it shows the next day. It opens the prayer times
- * (`onOpen`: the home screen's prayer tab).
+ * The home screen's first card, the day seen through an arched window: the next prayer and the
+ * time left, the day drawn as the sun's path, and the day's six times. After Isha it shows the
+ * next day. It opens the prayer times (`onOpen`: the home screen's prayer tab).
  */
 export function PrayerHomeCard({ onOpen }: { onOpen?: () => void }) {
   const { palette: p } = useReadingPreferences();
@@ -91,12 +93,13 @@ export function PrayerHomeCard({ onOpen }: { onOpen?: () => void }) {
   const location = state.location;
   const next = location ? prayerWindow(location, nowDate, state).next : undefined;
   if (!location || !next) {
-    return <Pressable accessibilityRole="button" accessibilityLabel={t('prayers.home.setupLabel')} onPress={open}
-      style={({ pressed }) => [s.card, { backgroundColor: pressed ? p.accent : p.card, borderColor: p.border }, readerElevation(2, p)]}>
-      <View style={s.setupIcon}><ReaderIcon name="mosque" color={p.primary} size={22} /></View>
-      <Text style={{ color: p.foreground, fontSize: 18, fontWeight: '600' }}>{t('prayers.home.setupTitle')}</Text>
-      <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22 }}>{t('prayers.home.setup')}</Text>
-      <View style={s.setupAction}><ReaderIcon name="map-pin" color={p.primary} size={16} /><Text style={{ color: p.primary, fontSize: 15, fontWeight: '600' }}>{t('prayers.home.setupAction')}</Text></View>
+    return <Pressable accessibilityRole="button" accessibilityLabel={t('prayers.home.setupLabel')} onPress={open} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
+      <ArchPanel palette={p} contentStyle={s.setup}>
+        <View style={[s.setupIcon, { backgroundColor: withAlpha(p.ornament, 0.12), borderColor: withAlpha(p.ornament, 0.5) }]}><ReaderIcon name="mosque" color={p.ornament} size={24} /></View>
+        <Text style={{ color: p.foreground, fontSize: 22, lineHeight: 36, fontFamily: 'ReaderNaskhBold', textAlign: 'center' }}>{t('prayers.home.setupTitle')}</Text>
+        <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22, textAlign: 'center', maxWidth: 300 }}>{t('prayers.home.setup')}</Text>
+        <View style={[s.setupAction, { borderColor: p.primary }]}><ReaderIcon name="map-pin" color={p.primary} size={16} /><Text style={{ color: p.primary, fontSize: 15, fontWeight: '600' }}>{t('prayers.home.setupAction')}</Text></View>
+      </ArchPanel>
     </Pressable>;
   }
   const now = nowDate.getTime();
@@ -105,48 +108,46 @@ export function PrayerHomeCard({ onOpen }: { onOpen?: () => void }) {
   const name = t(`prayers.names.${next.prayer}`), time = clock(next.at), left = countdown(nowDate, next.at, false), place = placeName(location);
   const hijri = hijriLabel(next.day, state.hijriOffset);
   return <Pressable accessibilityRole="link" accessibilityLabel={t('prayers.home.label', { prayer: name, time, countdown: left, place })} onPress={open}
-    style={({ pressed }) => [s.card, { backgroundColor: pressed ? p.accent : p.card, borderColor: p.border }, readerElevation(2, p)]}>
-    <View style={s.meta}>
-      <Text numberOfLines={1} style={{ flexShrink: 1, color: p.mutedForeground, fontSize: 13 }}>{today ? hijri : t('prayers.home.tomorrow', { date: hijri })}</Text>
+    style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
+    <ArchPanel palette={p} contentStyle={{ gap: 2, paddingHorizontal: 16 }}>
+      <Text numberOfLines={1} style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>{today ? hijri : t('prayers.home.tomorrow', { date: hijri })}</Text>
+      <View style={s.next}>
+        <Text style={{ color: p.foreground, fontSize: 30, lineHeight: 50, fontFamily: 'ReaderNaskhBold' }}>{name}</Text>
+        <Text style={{ color: p.foreground, fontSize: 30, lineHeight: 50, fontFamily: 'ReaderNaskhBold' }}>{time}</Text>
+      </View>
+      <View style={s.left}>
+        <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('prayers.next.in')}</Text>
+        <Text style={{ color: p.primary, fontSize: 18, fontWeight: '700' }}>{left}</Text>
+      </View>
+      <View onLayout={(e) => setWidth(Math.round(e.nativeEvent.layout.width))} style={{ marginHorizontal: -4, marginTop: 4 }}>
+        <SunPath times={times} now={now} today={today} next={next.prayer} width={width} p={p} />
+      </View>
+      <View style={s.times}>
+        {PRAYERS.map((prayer) => {
+          const at = times[prayer], valid = Number.isFinite(at.getTime());
+          const isNext = prayer === next.prayer, done = today && valid && at.getTime() <= now;
+          return <View key={prayer} style={s.time}>
+            <Text numberOfLines={1} style={{ color: isNext ? p.foreground : p.mutedForeground, fontSize: 12, fontWeight: isNext ? '700' : '400' }}>{t(`prayers.names.${prayer}`)}</Text>
+            <Text numberOfLines={1} style={{ color: isNext ? p.primary : done ? p.mutedForeground : p.foreground, fontSize: 15, fontWeight: isNext ? '700' : '500' }}>{valid ? clock(at) : '—'}</Text>
+            <BrushStroke on={isNext} width={30} color={p.ornament} />
+          </View>;
+        })}
+      </View>
       <View style={s.place}>
         <ReaderIcon name="map-pin" color={p.mutedForeground} size={13} />
-        <Text numberOfLines={1} style={{ flexShrink: 1, color: p.mutedForeground, fontSize: 13 }}>{place}</Text>
+        <Text numberOfLines={1} style={{ flexShrink: 1, color: p.mutedForeground, fontSize: 12 }}>{place}</Text>
       </View>
-    </View>
-    <View style={s.next}>
-      <View style={s.nextName}>
-        <Text style={{ color: p.foreground, fontSize: 28, lineHeight: 38, fontWeight: '600' }}>{name}</Text>
-        <Text style={{ color: p.foreground, fontSize: 28, lineHeight: 38, fontWeight: '500' }}>{time}</Text>
-      </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <Text style={{ color: p.mutedForeground, fontSize: 12 }}>{t('prayers.next.in')}</Text>
-        <Text style={{ color: p.primary, fontSize: 22, lineHeight: 28, fontWeight: '600' }}>{left}</Text>
-      </View>
-    </View>
-    <View onLayout={(e) => setWidth(Math.round(e.nativeEvent.layout.width))} style={{ marginHorizontal: -6 }}>
-      <SunPath times={times} now={now} today={today} next={next.prayer} width={width} p={p} />
-    </View>
-    <View style={s.times}>
-      {PRAYERS.map((prayer) => {
-        const at = times[prayer], valid = Number.isFinite(at.getTime());
-        const isNext = prayer === next.prayer, done = today && valid && at.getTime() <= now;
-        return <View key={prayer} style={s.time}>
-          <Text numberOfLines={1} style={{ color: isNext ? p.primary : p.mutedForeground, fontSize: 12, fontWeight: isNext ? '600' : '400' }}>{t(`prayers.names.${prayer}`)}</Text>
-          <Text numberOfLines={1} style={{ color: isNext ? p.primary : done ? p.mutedForeground : p.foreground, fontSize: 15, fontWeight: isNext ? '700' : '500' }}>{valid ? clock(at) : '—'}</Text>
-        </View>;
-      })}
-    </View>
+    </ArchPanel>
   </Pressable>;
 }
 
 const s = StyleSheet.create({
-  card: { borderRadius: readerShape.card, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 18, paddingTop: 16, paddingBottom: 18, gap: 4 },
-  meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  place: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
-  next: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, marginTop: 6 },
-  nextName: { flexDirection: 'row', alignItems: 'baseline', gap: 10, flexShrink: 1 },
-  times: { flexDirection: 'row', marginTop: 2 },
-  time: { flex: 1, alignItems: 'center', gap: 2 },
-  setupIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
-  setupAction: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
+  next: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 12 },
+  left: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 6, marginTop: -4 },
+  place: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 6 },
+  times: { flexDirection: 'row', marginTop: 4 },
+  time: { flex: 1, alignItems: 'center', gap: 1 },
+  setup: { alignItems: 'center', gap: 6, paddingBottom: 24 },
+  setupIcon: { width: 52, height: 52, borderRadius: 26, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+  setupAction: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, paddingHorizontal: 16, height: 40, borderRadius: readerShape.pill, borderWidth: 1 },
 });

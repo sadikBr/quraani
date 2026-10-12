@@ -206,6 +206,8 @@ export default {
       words: 'الكلمات',
       page: 'الصفحة',
       pages: 'الصفحات',
+      /** First and last page, kept left to right inside an isolate. */
+      pageRange: '⁦{{from, number}}–{{to, number}}⁩',
     },
     actions: {
       start: 'ابدأ المراجعة',
