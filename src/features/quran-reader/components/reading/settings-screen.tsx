@@ -13,6 +13,7 @@ import { ReaderSettings } from './reader-settings';
 import { IconButton, ReaderIcon, type ReaderIconName } from '../ui/reader-chrome';
 import { QuranniLogo } from '../ui/quranni-logo';
 import { WarshTajweedLegend } from './warsh-tajweed-legend';
+import { WarshScriptCard } from './warsh-script-card';
 import { ReadingLayoutPreview, SettingsCard, SettingsCardHeading, SettingsSelection, SettingsToggle } from './settings-ui';
 import { readerLayout, readerShape } from '../../design';
 import { RecitationSettings } from '@/features/recitation/recitation-settings';
@@ -98,6 +99,7 @@ function SettingsPage({ tab }: { tab: SettingsTab }) {
           <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{textLayout === 'ayah' ? t('settings.textLayout.ayahDetail') : t('settings.textLayout.flowingDetail')}</Text>
         </View> : <Text style={{ color: palette.mutedForeground, fontSize: 13 }}>{t('settings.mode.pageNote')}</Text>}
       </SettingsCard>
+      {riwayah === 'warsh' && <WarshScriptCard palette={palette} />}
       <SettingsCard palette={palette}>
         <Pressable accessibilityRole="switch" accessibilityState={{ checked: tajweed }} aria-checked={tajweed} accessibilityLabel={t('settings.tajweed.title')}
           onPress={() => update({ tajweed: !tajweed })} style={({ pressed }) => [styles.tajweed, { opacity: pressed ? 0.65 : 1 }]}>

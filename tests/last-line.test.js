@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { createElement as h } from 'react';
+import { createElement as h, isValidElement } from 'react';
 import { splitLastLine, textOf } from '../src/components/last-line';
 
 // Stands for React Native's Text, the host span.
@@ -49,5 +49,35 @@ describe('justified text with a centred last line', () => {
     // Nothing of the paragraph is left visible: every run is hidden.
     expect(show(main).replace(/\[[^\]]*\]/g, '')).toBe('');
     expect(textOf(main)).toBe(all);
+  });
+
+  /** What React would warn about: spans in a list (every list here is a new one) without a key, or sharing one. */
+  function keyProblems(node, problems = []) {
+    if (Array.isArray(node)) {
+      const keys = node.filter(isValidElement).map((child) => child.key);
+      if (keys.some((key) => key === null)) problems.push(`missing key in “${textOf(node)}”`);
+      if (new Set(keys).size !== keys.length) problems.push(`repeated key in “${textOf(node)}”`);
+      node.forEach((child) => keyProblems(child, problems));
+    } else if (isValidElement(node)) keyProblems(node.props.children, problems);
+    return problems;
+  }
+
+  test('every span in the pieces has a key of its own (the ayah numbers have none)', () => {
+    const shapes = [
+      ayahs,
+      // The reader's ayah layout: the text, then its number's span.
+      ['الرحمن الرحيم', h(Text, { style: { color: 'gold' } }, ' ', '٢')],
+      // A single span, keyed or not, so both halves hold the same span.
+      h(Text, { key: 'x' }, 'كلمات ', h(Text, null, '١'), ' أخرى'),
+      h(Text, null, 'كلمات ', h(Text, null, '١'), ' أخرى'),
+    ];
+    for (const children of shapes) {
+      const length = textOf(children).length;
+      for (const at of [0, 4, Math.floor(length / 2), length - 2]) {
+        const { main, line } = splitLastLine(children, at, hidden, Text);
+        expect(keyProblems(main)).toEqual([]);
+        expect(keyProblems(line)).toEqual([]);
+      }
+    }
   });
 });

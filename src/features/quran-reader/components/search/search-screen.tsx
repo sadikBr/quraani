@@ -87,7 +87,7 @@ export function SearchScreen({ saved = false }: { saved?: boolean }) {
         </LibraryEmpty>}
       ListFooterComponent={available && !saved && matches.items.length > 0 && matches.items.length < matches.total ? <View style={s.more}><ReaderButton palette={p} onPress={() => setLimit(value => Math.min(value + 50, matches.total))}>{t('library.search.showMore')}</ReaderButton></View> : null}
       onEndReachedThreshold={0.5} onEndReached={() => { if (!saved && !searching && limit < matches.total) setLimit(value => Math.min(value + 50, matches.total)); }}
-      renderItem={({ item, index }) => <AyahResultCard item={item} index={index} count={matches.items.length} palette={p} fontFamily={font.fontFamily} bookmarked={bookmarkSet.has(ayahKey(item.reference))} saved={saved} canSave={ready} onOpen={() => open(item)} onSave={() => save(item)} />} />
+      renderItem={({ item, index }) => <AyahResultCard item={item} index={index} count={matches.items.length} palette={p} fontFamily={font.fontFamily} display={font.display} bookmarked={bookmarkSet.has(ayahKey(item.reference))} saved={saved} canSave={ready} onOpen={() => open(item)} onSave={() => save(item)} />} />
   </SafeAreaView>;
 }
 const s = StyleSheet.create({

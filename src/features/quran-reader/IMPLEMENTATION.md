@@ -26,6 +26,19 @@ the bridge without reloading the document; hidden words retain their layout but
 are also hidden from accessibility. A color load failure leaves complete plain
 text available and offers retry.
 
+### Warsh letter style — 2026-10-12
+
+Quranpedia has one Warsh font (V21, Maghribi: ق with one dot above, ف with one
+below). Settings → القراءة offers `warshScript: maghribi | mashriqi` for Warsh;
+**مشرقي** draws the same Warsh text in the Hafs V22 font (Madinah letters). The
+Warsh text spells ق/ف with the standard letters, so the font alone decides the
+dots. V22 covers every Warsh character but U+0622 (drawn as U+0627 U+0653) and
+U+06D2 (drawn as U+0649); `utils/quran-script.ts` maps them for display only,
+per piece after tajweed slicing, so the corpus, offsets, search and copying are
+unchanged. Ayah markers sit at the same codepoints in both fonts. It applies to
+the text layouts, tajweed text, practice, search results, share cards and the
+adhkar's Quran passages; printed Warsh pages stay as printed.
+
 Warsh colors apply to both text layouts, practice and the live preview. The user
 chose to leave printed Warsh pages unchanged. Its separately generated **al-Azraq**
 annotations are bundled offline, checked against all 6,214 original ayahs and
@@ -273,7 +286,7 @@ endpoint is not required for this cache strategy.
 
 - `services/reader-service.ts`: persistent client and default-edition loader.
 - `hooks/use-reader-content.ts`: loading, error, stale data, and manual refresh.
-- `hooks/use-quran-font.ts`: bundled Warsh font readiness.
+- `hooks/use-quran-font.ts`: bundled font readiness and the script (font and display mapping) for the chosen riwayah.
 - `state/reader-state.ts`: reversible selection and hide/reveal behavior.
 - `utils/search.ts`: local Quran and surah-name search.
 

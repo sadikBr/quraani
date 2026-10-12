@@ -13,6 +13,8 @@ import { ArabicText } from '@/components/arabic-text';
 import { ReaderButton } from './reader-button';
 import { readerTextLineHeight } from '../../utils/reader-typography';
 import { tajweedTextUpdate, withTajweedTextStyleBridge } from './tajweed-bridge';
+import { useReadingPreferences } from '../../state/reading-preferences-provider';
+import { quranScriptForMushaf } from '../../utils/quran-script';
 import { t } from '@/i18n';
 
 // The document is generated once at this size; the reader's size and spacing
@@ -29,23 +31,26 @@ interface Props {
 export const TajweedTextSection = memo(function TajweedTextSection({ ayahs, pageNumber, layout, fontSize, spacious, palette, dark, runs, selectedAyah, visibleWords, preview = false, onTap, onSelect, onOffset, onNavigate }: Props) {
   const mushafId = ayahs[0].mushafId;
   const edition = editionForMushaf(mushafId);
+  // The font follows the chosen letters (the Warsh text can be drawn with the Madinah font).
+  const { preferences: { warshScript } } = useReadingPreferences();
+  const { fontMushafId, display } = quranScriptForMushaf(mushafId, warshScript);
   const [loadedFont, setFont] = useState<{ mushafId: number; uri: string }>();
-  const font = loadedFont?.mushafId === mushafId ? loadedFont.uri : undefined;
+  const font = loadedFont?.mushafId === fontMushafId ? loadedFont.uri : undefined;
   const [height, setHeight] = useState(() => preview ? readerTextLineHeight(fontSize, spacious) * 3 : 600);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let active = true;
     setError(false);
-    void loadQuranDocumentFont(mushafId).then((uri) => { if (active) setFont({ mushafId, uri }); }).catch(() => { if (active) setError(true); });
+    void loadQuranDocumentFont(fontMushafId).then((uri) => { if (active) setFont({ mushafId: fontMushafId, uri }); }).catch(() => { if (active) setError(true); });
     return () => { active = false; };
-  }, [attempt, mushafId]);
-  const html = useMemo(() => font ? withTajweedTextStyleBridge(tajweedTextDocument(ayahs, layout, font, DOCUMENT_FONT_SIZE, false, palette, preview)) : '', [ayahs, layout, font, palette, preview]);
-  const ayahState = useMemo(() => tajweedTextState(ayahs, runs, dark, palette, selectedAyah, visibleWords), [ayahs, runs, dark, palette, selectedAyah, visibleWords]);
+  }, [attempt, fontMushafId]);
+  const html = useMemo(() => font ? withTajweedTextStyleBridge(tajweedTextDocument(ayahs, layout, font, DOCUMENT_FONT_SIZE, false, palette, preview, display)) : '', [ayahs, layout, font, palette, preview, display]);
+  const ayahState = useMemo(() => tajweedTextState(ayahs, runs, dark, palette, selectedAyah, visibleWords, display), [ayahs, runs, dark, palette, selectedAyah, visibleWords, display]);
   const update = useMemo(() => tajweedTextUpdate(ayahState, { fontSize, lineHeight: readerTextLineHeight(fontSize, spacious) }), [ayahState, fontSize, spacious]);
   if (error) return <View style={{ padding: 24, gap: 12 }}><ArabicText style={{ color: palette.mutedForeground }}>{t('reader.tajweed.textError')}</ArabicText><ReaderButton palette={palette} onPress={() => { setError(false); setAttempt((n) => n + 1); }}>{t('common.retry')}</ReaderButton></View>;
   if (!font) return <ActivityIndicator color={palette.primary} accessibilityLabel={t('reader.tajweed.fontLoading')} style={{ marginVertical: 40 }} />;
-  return <TajweedSurface key={`${mushafId}:${attempt}`} title={preview ? t('reader.tajweed.previewTitle', { riwayah: edition.name }) : t('reader.tajweed.textTitle', { riwayah: edition.name, page: pageNumber, surah: ayahs[0].surahNumber })} pageNumber={pageNumber} html={html} update={update} height={height} onError={() => setError(true)} onMessage={(raw) => {
+  return <TajweedSurface key={`${mushafId}:${fontMushafId}:${attempt}`} title={preview ? t('reader.tajweed.previewTitle', { riwayah: edition.name }) : t('reader.tajweed.textTitle', { riwayah: edition.name, page: pageNumber, surah: ayahs[0].surahNumber })} pageNumber={pageNumber} html={html} update={update} height={height} onError={() => setError(true)} onMessage={(raw) => {
     try {
       const message = JSON.parse(raw);
       if (message.source !== 'quranni-tajweed-text') return;

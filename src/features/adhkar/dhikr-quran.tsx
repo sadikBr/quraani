@@ -14,8 +14,10 @@ import type { QuranReading, ResolvedPassage } from './quran';
  * openings but smaller, since one card can hold three surahs. What is said before it is set as a
  * dhikr.
  */
-export function QuranDhikr({ reading, passages, quran, fontFamily, size, palette: p }: {
+export function QuranDhikr({ reading, passages, quran, fontFamily, display, size, palette: p }: {
   reading: QuranReading; passages: ResolvedPassage[]; quran: Quran; fontFamily: string; size: number; palette: ReaderPalette;
+  /** The text as the font draws it (see `quranScript`). */
+  display: (text: string) => string;
 }) {
   const [width, setWidth] = useState(Infinity);
   const opening = openingTypography(size * 0.62, width);
@@ -31,7 +33,7 @@ export function QuranDhikr({ reading, passages, quran, fontFamily, size, palette
       <JustifiedText accessibilityLabel={ayahs.map((a) => a.text).join(' ')} hiddenColor={p.card}
         style={{ fontFamily, fontSize: size, lineHeight: readerTextLineHeight(size, false), color: p.foreground, fontWeight: '400', writingDirection: 'rtl', includeFontPadding: true }}>
         {ayahs.map((ayah) => <Text key={ayah.ayahNumber}>
-          {ayah.text}{'\u00A0'}<Text style={{ color: p.ornament }}>{ayah.marker}</Text>{' '}
+          {display(ayah.text)}{'\u00A0'}<Text style={{ color: p.ornament }}>{ayah.marker}</Text>{' '}
         </Text>)}
       </JustifiedText>
     </View>)}

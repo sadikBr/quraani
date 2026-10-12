@@ -74,8 +74,8 @@ function SessionPages({ session }: { session: PracticeSession }) {
   const { palette: p, preferences } = useReadingPreferences();
   const { grade, begin } = usePractice();
   const { index, quran, error, retry } = usePracticeContent(session.riwayah);
-  useQuranFont();
-  const fontFamily = RIWAYAT[session.riwayah].fontFamily;
+  // The session's riwayah, drawn in the letters chosen for reading.
+  const { fontFamily, display } = useQuranFont(session.riwayah);
   const { places, grades } = session;
   const last = places.length;
   const [position, setPosition] = useState(0);
@@ -162,7 +162,7 @@ function SessionPages({ session }: { session: PracticeSession }) {
             style={[StyleSheet.absoluteFill, { transform: [{ translateX: Animated.add(translation, -offset * (width || 360)) }] }]}>
             {page < last
               ? <PlacePage index={index} place={places[page]} position={page} total={last} revealed={revealed[page]} complete={revealed[page] >= (words[page]?.total ?? 0)} helped={helped[page]}
-                hinted={hinted[page]} grade={grades[page]} reach={session.options.reach} riwayah={session.riwayah} fontFamily={fontFamily} palette={p}
+                hinted={hinted[page]} grade={grades[page]} reach={session.options.reach} riwayah={session.riwayah} fontFamily={fontFamily} display={display} palette={p}
                 playing={owns && listening!.position === page && recitation.status !== 'paused'} canListen={!!quran}
                 onHint={() => setHinted(hinted.map((x, i) => i === page ? true : x))} onListen={listen}
                 onPrevious={page > 0 ? () => pager.go(page - 1) : undefined} onNext={() => pager.go(page + 1)} />
@@ -186,9 +186,9 @@ function Segments({ grades, current, palette: p, onSelect }: { grades: (Grade | 
   </View>;
 }
 
-function PlacePage({ index, place, position, total, revealed, complete, helped, hinted, grade, reach, riwayah, fontFamily, palette: p, playing, canListen, onHint, onListen, onPrevious, onNext }: {
+function PlacePage({ index, place, position, total, revealed, complete, helped, hinted, grade, reach, riwayah, fontFamily, display, palette: p, playing, canListen, onHint, onListen, onPrevious, onNext }: {
   index: PlanIndex; place: PracticePlace; position: number; total: number; revealed: number; complete: boolean; helped: boolean; hinted: boolean; grade: Grade | null;
-  reach: Reach; riwayah: Riwayah; fontFamily: string; palette: ReaderPalette;
+  reach: Reach; riwayah: Riwayah; fontFamily: string; display: (text: string) => string; palette: ReaderPalette;
   playing: boolean; canListen: boolean; onHint: () => void; onListen: () => void; onPrevious?: () => void; onNext: () => void;
 }) {
   const scroll = useRef<ScrollView>(null);
@@ -213,7 +213,7 @@ function PlacePage({ index, place, position, total, revealed, complete, helped, 
           if (!revealed) return;
           if (complete && !helped) scroll.current?.scrollTo({ y: 0, animated: true }); else scroll.current?.scrollToEnd({ animated: true });
         }}>
-        <PlaceText source={index} place={place} revealed={revealed} markers={showHint || revealed > 0} fontFamily={fontFamily} size={size} palette={p} />
+        <PlaceText source={index} place={place} revealed={revealed} markers={showHint || revealed > 0} fontFamily={fontFamily} display={display} size={size} palette={p} />
       </ScrollView>
       <View style={s.cardFoot}>
         {showHint ? <View style={{ alignItems: 'center', gap: 2 }}>

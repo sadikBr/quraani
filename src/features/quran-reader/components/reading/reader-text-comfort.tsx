@@ -67,7 +67,7 @@ export function ReaderTextComfort({ palette, fontSize, setFontSize, spacious, se
 function TextPreview({ palette, fontSize, spacious, textLayout }: { palette: ReaderPalette; fontSize: number; spacious: boolean; textLayout: ReaderTextLayout }) {
   const { preferences: { tajweed }, dark } = useReadingPreferences();
   const { content, loading, error, refresh } = useReaderContent();
-  const { loaded, error: fontError, fontFamily } = useQuranFont();
+  const { loaded, error: fontError, fontFamily, display } = useQuranFont();
   const surah = content?.data.quran.surahs.find((item) => item.number === 1);
   const ayahs = useMemo(() => surah?.ayahs.slice(0, 2), [surah]);
   const quranStyle = { color: palette.foreground, fontFamily, fontSize, lineHeight: readerTextLineHeight(fontSize, spacious), writingDirection: 'rtl' as const, includeFontPadding: true };
@@ -82,8 +82,8 @@ function TextPreview({ palette, fontSize, spacious, textLayout }: { palette: Rea
             bismillah={content?.data.quran.id === 4 ? content.data.quran.bismillah : undefined} />
           {tajweed && content ? <TajweedPreview key={content.data.quran.id} content={content.data} ayahs={ayahs} palette={palette} dark={dark} fontSize={fontSize} spacious={spacious} textLayout={textLayout} />
           // Justified as in the reader, with the last line centred.
-          : textLayout === 'flowing' ? <JustifiedText testID="reader-preview-ayah" style={quranStyle} hiddenColor={palette.card}>{ayahs.map((ayah) => <QuranText key={ayah.ayahNumber}>{ayah.text}<QuranText style={{ color: palette.ornament }}>{'\u00A0'}{ayah.marker} </QuranText></QuranText>)}</JustifiedText>
-          : <View>{ayahs.map((ayah) => <JustifiedText key={ayah.ayahNumber} testID="reader-preview-ayah" style={quranStyle} hiddenColor={palette.card}>{ayah.text}<QuranText style={{ color: palette.ornament }}>{'\u00A0'}{ayah.marker}</QuranText></JustifiedText>)}</View>}</View>}
+          : textLayout === 'flowing' ? <JustifiedText testID="reader-preview-ayah" style={quranStyle} hiddenColor={palette.card}>{ayahs.map((ayah) => <QuranText key={ayah.ayahNumber}>{display(ayah.text)}<QuranText style={{ color: palette.ornament }}>{'\u00A0'}{ayah.marker} </QuranText></QuranText>)}</JustifiedText>
+          : <View>{ayahs.map((ayah) => <JustifiedText key={ayah.ayahNumber} testID="reader-preview-ayah" style={quranStyle} hiddenColor={palette.card}>{display(ayah.text)}<QuranText style={{ color: palette.ornament }}>{'\u00A0'}{ayah.marker}</QuranText></JustifiedText>)}</View>}</View>}
     <Text style={[styles.caption, { color: palette.mutedForeground, borderColor: palette.border }]}>{t('common.riwayahOf', { riwayah: content ? editionForMushaf(content.data.quran.id).label : '…' })} · {textLayout === 'flowing' ? t('settings.textLayout.flowing') : t('settings.textLayout.ayah')}</Text>
   </View>;
 }

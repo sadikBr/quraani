@@ -3,6 +3,7 @@ import type { Riwayah } from '../riwayat';
 import { isReaderAppearance, READER_FONT_DEFAULT, type ReaderAppearance } from '../theme';
 import { snapReaderFontSize } from '../utils/reader-typography';
 import type { ReaderMode, ReaderTextLayout } from '../types/reader';
+import type { WarshScript } from '../utils/quran-script';
 import { createPersistedStore } from './persisted-store';
 
 /** How a recitation is heard: each ayah's own recording, or a whole surah recorded as one. */
@@ -26,6 +27,8 @@ export interface ReadingPreferences {
   surahReciters: Partial<Record<Riwayah, number>>;
   /** Times each whole surah is recited before the next one; 0 repeats until stopped. */
   surahRepeat: number;
+  /** How the Warsh text's letters are drawn (the printed pages stay as printed). */
+  warshScript: WarshScript;
 }
 
 /** Choices offered for repeating each ayah. */
@@ -33,7 +36,7 @@ export const REPEAT_CHOICES = [1, 2, 3, 5, 7, 10, 0] as const;
 
 export const defaultReadingPreferences: ReadingPreferences = {
   riwayah: 'warsh', tajweed: false, appearance: 'system', mode: 'page', textLayout: 'ayah', fontSize: READER_FONT_DEFAULT, spacious: false,
-  reciters: {}, repeat: 1, listening: 'ayah', surahReciters: {}, surahRepeat: 1,
+  reciters: {}, repeat: 1, listening: 'ayah', surahReciters: {}, surahRepeat: 1, warshScript: 'maghribi',
 };
 
 const reciterId = (value: unknown) => typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : undefined;
@@ -60,6 +63,7 @@ export function decodeReadingPreferences(raw: string | null): ReadingPreferences
       listening: value.listening === 'surah' ? 'surah' : 'ayah',
       surahReciters: reciterIds(value.surahReciters),
       surahRepeat: repeatCount(value.surahRepeat),
+      warshScript: value.warshScript === 'mashriqi' ? 'mashriqi' : 'maghribi',
     };
   } catch {
     return defaultReadingPreferences;

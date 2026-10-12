@@ -30,8 +30,10 @@ export function passageSize(source: PracticeSource, place: PracticePlace) {
  * lighter. Hidden words are not drawn: the text grows as it is revealed, ending in «…». Ayah
  * markers carry the ayah's number, so they stay hidden until the hint is shown or checking starts.
  */
-export function PlaceText({ source, place, revealed, markers, fontFamily, size, palette: p }: {
+export function PlaceText({ source, place, revealed, markers, fontFamily, display = (text) => text, size, palette: p }: {
   source: PracticeSource; place: PracticePlace; revealed: number; markers: boolean; fontFamily: string; size: number; palette: ReaderPalette;
+  /** The text as the font draws it (see `quranScript`). */
+  display?: (text: string) => string;
 }) {
   const { ayahs, total } = placeWords(source, place);
   const lineHeight = Math.round(size * 1.95);
@@ -52,10 +54,10 @@ export function PlaceText({ source, place, revealed, markers, fontFamily, size, 
   return <View style={{ gap: 10 }}>
     {!!context.length && <Text accessibilityLabel={context.map((a) => a.text).join(' ')}
       style={[quran, { fontSize: Math.round(size * 0.8), lineHeight: Math.round(size * 0.8 * 1.95), color: p.mutedForeground }]}>
-      {context.map((a, i) => <Text key={i}>{a.text}{markers && a.marker ? <Text style={{ color: p.ornament }}>{` ${a.marker} `}</Text> : ' '}</Text>)}
+      {context.map((a, i) => <Text key={i}>{display(a.text)}{markers && a.marker ? <Text style={{ color: p.ornament }}>{` ${a.marker} `}</Text> : ' '}</Text>)}
     </Text>}
     <Text accessibilityLabel={more ? formatList([spoken, t('practice.session.hidden')]) : spoken} style={[quran, { color: p.foreground }]}>
-      {pieces.map((x, i) => x.marker ? <Text key={i} style={{ color: p.ornament }}>{x.text}</Text> : <Text key={i}>{x.text}</Text>)}
+      {pieces.map((x, i) => x.marker ? <Text key={i} style={{ color: p.ornament }}>{x.text}</Text> : <Text key={i}>{display(x.text)}</Text>)}
       {more && <ArabicText style={{ color: p.mutedForeground, fontSize: Math.round(size * 0.8) }}>{' …'}</ArabicText>}
     </Text>
   </View>;

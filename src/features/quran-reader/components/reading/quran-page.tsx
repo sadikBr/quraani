@@ -1,5 +1,6 @@
 import { useReadingPreferences } from '../../state/reading-preferences-provider';
 import { useTajweed } from '../../hooks/use-tajweed';
+import { useQuranFont } from '../../hooks/use-quran-font';
 import { ReaderButton } from './reader-button';
 import { readerShape } from '../../design';
 import { ArabicText } from '@/components/arabic-text';
@@ -54,6 +55,8 @@ export const QuranPage = memo(function QuranPage({
 }: Props) {
     const { preferences: { tajweed }, dark } = useReadingPreferences();
     const coloring = useTajweed(page, quran, tajweed);
+    // The text as the chosen font draws it (the Warsh text in the Madinah letters, when chosen).
+    const { display } = useQuranFont();
     const pageRef = useRef<View>(null);
     const flowingRefs = useRef(new Map<string, { ayah: Ayah; node: Text }>());
     const measureWebAyah = (ayah: Ayah) => {
@@ -140,9 +143,9 @@ export const QuranPage = memo(function QuranPage({
                         const hidden = index >= revealed!;
                         return <Text key={index} style={{ color: hidden ? palette.card : palette.foreground, opacity: hidden ? 0 : 1 }}
                             accessibilityElementsHidden={hidden} importantForAccessibility={hidden ? 'no-hide-descendants' : 'auto'} aria-hidden={hidden}>
-                            {word}
+                            {display(word)}
                         </Text>;
-                    }) : ayah.text}
+                    }) : display(ayah.text)}
                 </AyahTextAction>
                 {"\u00A0"}
                 <AyahTextAction color={palette.ornament} onPress={() => onSelect(ayah)}

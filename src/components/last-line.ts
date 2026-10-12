@@ -1,4 +1,4 @@
-import { cloneElement, createElement, isValidElement, type ElementType, type ReactElement, type ReactNode } from 'react';
+import { Fragment, cloneElement, createElement, isValidElement, type ElementType, type ReactElement, type ReactNode } from 'react';
 
 /** For `JustifiedText`: nested text cut where its last line starts. No React Native here, so it can be tested. */
 
@@ -19,6 +19,8 @@ type Part = 'head' | 'tail' | 'hiddenTail';
  * The part of nested text before character `at` (`head`) or from it (`tail`), keeping every span
  * and cutting those across `at`. `hiddenTail` is the tail made invisible: each run takes the
  * `hidden` style, and spans of the host `Text` lose their background (a selected ayah's highlight).
+ * The pieces come back in new lists, so each span keeps its key or, lacking one (a span written
+ * beside text, such as an ayah's number), takes its place as its key.
  */
 function cut(node: ReactNode, start: number, at: number, part: Part, hidden: object, key: string, Text: ElementType): { out: ReactNode; end: number } {
   if (node === null || node === undefined || typeof node === 'boolean') return { out: null, end: start };
@@ -45,7 +47,7 @@ function cut(node: ReactNode, start: number, at: number, part: Part, hidden: obj
     if (part === 'head' ? start >= at : end <= at) return { out: null, end };
     const inner = cut(element.props.children, start, at, part, hidden, key, Text);
     const clear = part === 'hiddenTail' && element.type === Text ? { style: [element.props.style, NO_BACKGROUND] } : {};
-    return { out: cloneElement(element, clear, inner.out), end };
+    return { out: cloneElement(element, { ...clear, key: element.key ?? key }, inner.out), end };
   }
   return { out: null, end: start };
 }
@@ -55,8 +57,12 @@ function cut(node: ReactNode, start: number, at: number, part: Part, hidden: obj
  * line hidden (`main`, for the layout) and the line itself (`line`, drawn centred over it).
  */
 export function splitLastLine(children: ReactNode, at: number, hidden: object, Text: ElementType) {
+  // The two halves hold the same spans, so each half is a list of its own and their keys never meet.
   return {
-    main: [cut(children, 0, at, 'head', hidden, 'h', Text).out, cut(children, 0, at, 'hiddenTail', hidden, 't', Text).out],
+    main: [
+      createElement(Fragment, { key: 'h' }, cut(children, 0, at, 'head', hidden, 'h', Text).out),
+      createElement(Fragment, { key: 't' }, cut(children, 0, at, 'hiddenTail', hidden, 't', Text).out),
+    ],
     line: cut(children, 0, at, 'tail', hidden, 'c', Text).out,
   };
 }

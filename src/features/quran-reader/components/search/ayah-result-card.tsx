@@ -8,8 +8,10 @@ import { listRowFrame } from '../ui/library-chrome';
 import { t } from '@/i18n';
 
 /** One row of the results list; `index`/`count` let the row draw its share of the list's shared frame. */
-export function AyahResultCard({ item, palette: p, fontFamily, bookmarked, saved, canSave, onOpen, onSave, index = 0, count = 1 }: {
+export function AyahResultCard({ item, palette: p, fontFamily, display = (text) => text, bookmarked, saved, canSave, onOpen, onSave, index = 0, count = 1 }: {
   item: QuranSearchResult; palette: ReaderPalette; fontFamily: string; bookmarked: boolean; saved: boolean; canSave: boolean; onOpen: () => void; onSave: () => void;
+  /** The text as the font draws it (see `quranScript`). */
+  display?: (text: string) => string;
   index?: number; count?: number;
 }) {
   return <View style={[listRowFrame(index, count), { backgroundColor: p.card, borderColor: p.border }]}>
@@ -19,7 +21,7 @@ export function AyahResultCard({ item, palette: p, fontFamily, bookmarked, saved
         <Text accessibilityLabel={item.surahName} style={[calligraphyStyle(32), { color: p.ornament, flex: 1 }]}>{surahNameGlyph(item.reference.surahNumber)}</Text>
         <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('library.result.position', { ayah: item.reference.ayahNumber, page: item.pageNumber })}</Text>
       </View>
-      <QuranText numberOfLines={3} style={[s.ayah, { color: p.foreground, fontFamily }]}>{item.text}</QuranText>
+      <QuranText numberOfLines={3} style={[s.ayah, { color: p.foreground, fontFamily }]}>{display(item.text)}</QuranText>
     </Pressable>
     <View style={[s.footer, { borderColor: p.border }]}>
       <Pressable accessibilityRole="button" accessibilityLabel={bookmarked ? t('library.result.unsaveLabel', { surah: item.surahName, ayah: item.reference.ayahNumber }) : t('library.result.saveLabel', { surah: item.surahName, ayah: item.reference.ayahNumber })} accessibilityState={{ disabled: !canSave, selected: bookmarked }} aria-pressed={bookmarked} disabled={!canSave} onPress={onSave}

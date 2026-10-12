@@ -1,4 +1,3 @@
-import { editionForMushaf } from '../../riwayat';
 import type { Ref } from 'react';
 import { StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import type { Ayah } from '@/lib/quranpedia/types';
@@ -6,6 +5,8 @@ import { calligraphyStyle, openingTypography, surahNameGlyph } from '../../utils
 import { cardMinimumHeight, cardQuranFontSize, type AyahCardColors, type AyahCardFormat, type CardTranslation } from '../../utils/ayah-card';
 import { parallelAyahs } from '../../utils/ayah-actions';
 import { QuranniLogo } from '../ui/quranni-logo';
+import { useReadingPreferences } from '../../state/reading-preferences-provider';
+import { quranScriptForMushaf } from '../../utils/quran-script';
 import { formatList, t } from '@/i18n';
 
 /**
@@ -22,7 +23,9 @@ export function AyahShareCard({ ayah, surahName, colors, format, translation, sh
   const square = format === 'square';
   const fontSize = cardQuranFontSize(ayah.text, !!translation, format) * s;
   const titleSize = Math.min(openingTypography(fontSize).title, (width - (square ? 156 : 168) * s) / 3.5);
-  const edition = editionForMushaf(ayah.mushafId);
+  // The letters as chosen for reading (the Warsh text can be drawn with the Madinah font).
+  const { preferences: { warshScript } } = useReadingPreferences();
+  const script = quranScriptForMushaf(ayah.mushafId, warshScript);
   const corner = (position: { top?: number; bottom?: number; left?: number; right?: number }, rotate: string) =>
     <View pointerEvents="none" style={{ position: 'absolute', ...position, width: 18 * s, height: 18 * s, transform: [{ rotate }] }}>
       <View style={{ position: 'absolute', top: 0, left: 0, width: 18 * s, height: 1.5 * s, backgroundColor: colors.accent }} />
@@ -52,8 +55,8 @@ export function AyahShareCard({ ayah, surahName, colors, format, translation, sh
         </View>
       </View>
       <View style={{ flexGrow: 1, justifyContent: 'center', paddingVertical: (square ? 12 : 24) * s, gap: (square ? 14 : 22) * s }}>
-        <Text allowFontScaling={false} testID="share-card-quran" style={{ fontFamily: edition.fontFamily, fontSize, lineHeight: fontSize * (square ? 1.7 : 1.95), color: colors.text, writingDirection: 'rtl', textAlign: 'center', includeFontPadding: false }}>
-          {ayah.text}<Text style={{ color: colors.accent }}> {ayah.marker}</Text>
+        <Text allowFontScaling={false} testID="share-card-quran" style={{ fontFamily: script.fontFamily, fontSize, lineHeight: fontSize * (square ? 1.7 : 1.95), color: colors.text, writingDirection: 'rtl', textAlign: 'center', includeFontPadding: false }}>
+          {script.display(ayah.text)}<Text style={{ color: colors.accent }}> {ayah.marker}</Text>
         </Text>
         {translation && <View style={{ gap: 12 * s, alignItems: 'center' }}>
           <View style={{ width: 28 * s, height: s, backgroundColor: colors.accent }} />

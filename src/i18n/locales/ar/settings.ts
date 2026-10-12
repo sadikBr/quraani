@@ -30,6 +30,14 @@ export default {
     ayahDetail: 'تبدأ كل آية في سطر جديد.',
     flowingDetail: 'تتوالى الآيات متصلة، وتتكيّف السطور مع شاشتك.',
   },
+  /** Warsh only: the letters as in the Maghrib (the Warsh font) or the East (the Madinah mushaf's font). */
+  warshScript: {
+    title: 'شكل الحروف',
+    detail: 'كيف تُرسم حروف نص ورش في النص القرآني.',
+    maghribi: { label: 'مغاربي', detail: 'كمصاحف المغرب: القاف بنقطة فوقها، والفاء بنقطة تحتها.' },
+    mashriqi: { label: 'مشرقي', detail: 'بخط مصحف المدينة: القاف بنقطتين، والفاء بنقطة فوقها.' },
+    pagesNote: 'تبقى صفحات المصحف كما طُبعت؛ يتغيّر النص القرآني وألوان التجويد فيه، وآيات الأذكار.',
+  },
   tajweed: {
     title: 'ألوان التجويد',
     /** State of the tajweed colors (feminine: agrees with ألوان). */

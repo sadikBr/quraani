@@ -25,7 +25,7 @@ import { QuranDhikr } from './dhikr-quran';
 import { quranReadings, readingLength, resolveReading } from './quran';
 
 /** The mushaf in the chosen riwayah, and its font, for the Quran adhkar. */
-interface Mushaf { quran: Quran; fontFamily: string }
+interface Mushaf { quran: Quran; fontFamily: string; display: (text: string) => string }
 
 const nativeDriver = Platform.OS !== 'web';
 /** A short tick for each count and a firmer one when a dhikr is done (Android; iOS ignores lengths). */
@@ -52,7 +52,7 @@ function Session({ id }: { id: CollectionId }) {
   const { content } = useReaderContent();
   const font = useQuranFont();
   const quran = content?.data.quran;
-  const mushaf = useMemo(() => quran && font.loaded ? { quran, fontFamily: font.fontFamily } : null, [quran, font.loaded, font.fontFamily]);
+  const mushaf = useMemo(() => quran && font.loaded ? { quran, fontFamily: font.fontFamily, display: font.display } : null, [quran, font.loaded, font.fontFamily, font.display]);
   const scale = TEXT_SCALES[state.textSize] ?? 1;
   const [sizing, setSizing] = useState(false);
   const items = collections[id];
@@ -190,7 +190,7 @@ function DhikrPage({ dhikr, position, total, said, palette: p, scale, mushaf, on
       </View>}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={s.textArea} showsVerticalScrollIndicator={false}>
         {reading && passages && mushaf
-          ? <QuranDhikr reading={reading} passages={passages} quran={mushaf.quran} fontFamily={mushaf.fontFamily} size={Math.round(quranFontSize(readingLength(passages)) * scale)} palette={p} />
+          ? <QuranDhikr reading={reading} passages={passages} quran={mushaf.quran} fontFamily={mushaf.fontFamily} display={mushaf.display} size={Math.round(quranFontSize(readingLength(passages)) * scale)} palette={p} />
           : <DhikrText text={dhikr.text} size={size} color={p.foreground} ornament={p.ornament} justified={{ hiddenColor: p.card }} />}
         {!!dhikr.surahs?.length && <View style={s.surahs}>{dhikr.surahs.map((surah) => <SurahButton key={surah} surah={surah} palette={p} />)}</View>}
       </ScrollView>

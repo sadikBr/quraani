@@ -12,7 +12,8 @@ const escape = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&l
 /** The original Unicode string is never reshaped, normalized, or given joiners.
  * One browser text flow shapes across color spans, including combining marks.
  * React Native Android breaks that context between attributed-text fragments. */
-export function tajweedTextState(ayahs: readonly Ayah[], runs: TajweedSurah | undefined, dark: boolean, palette: ReaderPalette, selected: AyahReference | null, visibleWords?: ReadonlyMap<string, number>) {
+/** `display`: the text as the document's font draws it, applied to each piece after it is cut. */
+export function tajweedTextState(ayahs: readonly Ayah[], runs: TajweedSurah | undefined, dark: boolean, palette: ReaderPalette, selected: AyahReference | null, visibleWords?: ReadonlyMap<string, number>, display: (text: string) => string = (text) => text) {
   return JSON.stringify(ayahs.map((ayah) => {
     let offset = 0;
     return {
@@ -22,16 +23,16 @@ export function tajweedTextState(ayahs: readonly Ayah[], runs: TajweedSurah | un
       words: ayahWords(ayah.text).map((word) => {
         const start = offset; offset += word.length;
         return sliceTajweed(runs?.[ayah.ayahNumber], ayah.text, start, offset)
-          .map((run) => `<span style="color:${tajweedColor(run.rule, dark, palette.foreground)}">${escape(run.text)}</span>`).join('');
+          .map((run) => `<span style="color:${tajweedColor(run.rule, dark, palette.foreground)}">${escape(display(run.text))}</span>`).join('');
       }),
     };
   }));
 }
 
-export function tajweedTextDocument(ayahs: readonly Ayah[], layout: ReaderTextLayout, font: string, fontSize: number, spacious: boolean, palette: ReaderPalette, preview = false) {
+export function tajweedTextDocument(ayahs: readonly Ayah[], layout: ReaderTextLayout, font: string, fontSize: number, spacious: boolean, palette: ReaderPalette, preview = false, display: (text: string) => string = (text) => text) {
   const interaction = preview ? '' : ' role="button" tabindex="0"';
   const rows = ayahs.map((ayah) => {
-    const words = ayahWords(ayah.text).map((word) => `<span class="word">${escape(word)}</span>`).join('');
+    const words = ayahWords(ayah.text).map((word) => `<span class="word">${escape(display(word))}</span>`).join('');
     const verse = `<span class="ayah" data-key="${ayahKey(ayah)}" data-surah="${ayah.surahNumber}" data-ayah="${ayah.ayahNumber}"><span class="verse"${interaction}>${words}</span>\u00a0<span class="marker"${interaction} aria-label="${escape(t(preview ? 'reader.tajweed.ayah' : 'reader.tajweed.ayahActions', { ayah: ayah.ayahNumber }))}">${escape(ayah.marker)}</span></span> `;
     return layout === 'flowing' ? verse : `<div class="row">${preview ? '' : `<div class="reference">${ayah.surahNumber}:${ayah.ayahNumber}</div>`}<div class="paragraph">${verse}</div></div>`;
   }).join('');
