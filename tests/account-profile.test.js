@@ -199,12 +199,11 @@ describe('the account\'s photos and devices, over the wire', () => {
     await api.uploadPhoto(`${USER}/x.jpg`, blob);
     expect(requests[0]).toMatchObject({ method: 'POST', headers: { Authorization: 'Bearer token', apikey: KEY, 'x-upsert': 'false', 'Content-Type': 'image/jpeg', 'cache-control': 'max-age=3600' } });
     expect(requests[0].body).toBe(blob);
-    // A file on the phone goes as a form: its cache setting first, then the file; the form sets its own type.
-    // (Outside React Native a form takes the file's description as text.)
-    await api.uploadPhoto(`${USER}/x.jpg`, { uri: 'file:///cache/photo.jpg', name: 'photo.jpg', type: 'image/jpeg', toString: () => 'file' });
-    expect(requests[1].headers['Content-Type']).toBeUndefined();
-    expect([...requests[1].body.keys()]).toEqual(['cacheControl', '']);
-    expect(requests[1].body.get('cacheControl')).toBe('3600');
+    // On a phone, the file's bytes, sent as they are (Expo's fetch can't send a form part that points at a file).
+    const bytes = new Uint8Array([0xff, 0xd8, 0xff]);
+    await api.uploadPhoto(`${USER}/x.jpg`, bytes);
+    expect(requests[1]).toMatchObject({ method: 'POST', headers: { 'Content-Type': 'image/jpeg', 'x-upsert': 'false' } });
+    expect(requests[1].body).toBe(bytes);
     expect(await api.photoLink(`${USER}/x.jpg`, 60)).toBe(`${URL}/storage/v1/object/sign/avatars/${USER}/x.jpg?token=abc`);
     expect(JSON.parse(requests[2].body)).toEqual({ expiresIn: 60 });
     await api.removePhotos([`${USER}/x.jpg`]);

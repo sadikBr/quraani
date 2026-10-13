@@ -7,12 +7,14 @@ import { ArchPanel } from '@/components/craft/panels';
 import { PageBar, PageTitle, page } from '@/components/craft/page';
 import { Alert, Button } from '@/components/ui';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
+import { withAlpha } from '@/features/quran-reader/design';
 import { CreationFooter } from '@/features/plans/goal-creation-components';
 import { t } from '@/i18n';
 import type { PhotoBody } from './api';
 import { Avatar } from './avatar';
 import { pickPhoto } from './photo-picker';
 import { initialOf, NAME_LIMIT } from './profile';
+import { AccountError } from './auth-client';
 import { useAccount } from './provider';
 import { Field } from './sign-in-screen';
 
@@ -31,6 +33,8 @@ export function ProfileScreen() {
   const [photo, choosePhoto] = useState<Choice | undefined>(undefined);
   const [busy, setBusy] = useState<'name' | 'photo' | undefined>(undefined);
   const [error, setError] = useState('');
+  // What went wrong, as the app was told it (English, for whoever looks into it).
+  const [reason, setReason] = useState('');
   // A save that ends after the user went back doesn't leave a second time.
   const here = useRef(true);
   useEffect(() => () => { here.current = false; }, []);
@@ -49,24 +53,29 @@ export function ProfileScreen() {
 
   const leave = () => { if (router.canGoBack()) router.back(); else router.replace('/account'); };
   const choose = async () => {
-    setError('');
+    setError(''); setReason('');
     try {
       const picked = await pickPhoto();
       if (picked) choosePhoto(picked);
-    } catch {
+    } catch (e) {
       setError(t('account.profile.photoUnreadable'));
+      setReason(e instanceof Error ? e.message : String(e));
     }
   };
   const submit = async () => {
-    setError('');
+    setError(''); setReason('');
     let step: 'name' | 'photo' = 'name';
     try {
       if (nameChanged) { setBusy(step); await setName(name ?? ''); }
       if (photo !== undefined) { setBusy(step = 'photo'); if (photo) await setPhoto(photo.body); else await removePhoto(); }
       if (here.current) leave();
-    } catch {
+    } catch (e) {
       // What was kept stays kept (the name goes first), so trying again sends only the rest.
-      if (here.current) setError(step === 'photo' ? t('account.profile.photoFailed') : t('account.profile.failed'));
+      if (!here.current) return;
+      const offline = e instanceof AccountError && e.kind === 'network';
+      setError(t(`account.profile.${step === 'photo' ? (offline ? 'photoFailed' : 'photoRefused') : (offline ? 'failed' : 'nameRefused')}`));
+      const message = e instanceof Error ? e.message : String(e);
+      setReason(e instanceof AccountError && message === e.kind ? '' : message);
     } finally {
       if (here.current) setBusy(undefined);
     }
@@ -101,7 +110,10 @@ export function ProfileScreen() {
           <Text style={{ color: p.foreground, fontSize: 14, fontWeight: '600' }}>{t('account.signIn.email')}</Text>
           <Text style={{ color: p.mutedForeground, fontSize: 15, lineHeight: 24 }}>{`⁦${email}⁩`}</Text>
         </View>
-        {!!error && <Alert variant="destructive" palette={p}>{error}</Alert>}
+        {!!error && <Alert variant="destructive" palette={p}>
+          <Text accessibilityRole="alert" style={{ color: withAlpha(p.destructive, 0.9), fontSize: 14, lineHeight: 22 }}>{error}</Text>
+          {!!reason && <Text selectable style={{ color: p.mutedForeground, fontSize: 12, lineHeight: 18, writingDirection: 'ltr', marginTop: 4 }}>{reason}</Text>}
+        </Alert>}
       </ScrollView>
       <CreationFooter>
         <Button size="lg" icon="check" palette={p} block disabled={!changed || !!busy} onPress={() => void submit()}>

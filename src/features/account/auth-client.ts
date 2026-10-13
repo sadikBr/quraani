@@ -54,8 +54,9 @@ export async function request(send: typeof fetch, url: string, init: RequestInit
   const timer = setTimeout(() => controller.abort(), timeout);
   try {
     return await send(url, { ...init, signal: controller.signal });
-  } catch {
-    throw new AccountError('network');
+  } catch (error) {
+    // Kept for the logs: not every failure to send is the connection's.
+    throw new AccountError('network', error instanceof Error ? error.message : String(error));
   } finally {
     clearTimeout(timer);
   }

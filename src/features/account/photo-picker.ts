@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as Manipulator from 'expo-image-manipulator';
+import { File } from 'expo-file-system';
 import type { PhotoBody } from './api';
 
 /** Profile photos are squares this many pixels wide (a few tens of KB as JPEG). */
@@ -20,6 +21,7 @@ export async function pickPhoto(): Promise<{ body: PhotoBody; preview: string } 
   context.resize(side > 0 ? { width: PHOTO_SIZE, height: PHOTO_SIZE } : { width: PHOTO_SIZE, height: null });
   const image = await context.renderAsync();
   const saved = await image.saveAsync({ format: Manipulator.SaveFormat.JPEG, compress: 0.82 });
-  // React Native sends a file in a form by its uri, name and type.
-  return { body: { uri: saved.uri, name: 'photo.jpg', type: 'image/jpeg' }, preview: saved.uri };
+  // Its bytes, sent as they are (see `uploadPhoto`).
+  const bytes = new Uint8Array(await new File(saved.uri).arrayBuffer());
+  return { body: bytes, preview: saved.uri };
 }

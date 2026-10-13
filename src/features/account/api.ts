@@ -10,8 +10,8 @@ interface Options {
   timeout?: number;
 }
 
-/** A photo to upload: a file on the phone (sent as a form), or the bytes themselves (web). */
-export type PhotoBody = Blob | { uri: string; name: string; type: string };
+/** A photo to upload, as JPEG bytes (read from the file on a phone; a Blob on the web). */
+export type PhotoBody = Blob | Uint8Array<ArrayBuffer>;
 /** How long a photo may be cached on the way (it never changes: a new photo has a new name). */
 const PHOTO_CACHE_SECONDS = 3600;
 /** The photos bucket (see supabase/migrations/…_profiles_and_devices.sql). */
@@ -66,17 +66,12 @@ export function createAccountApi({ url, apiKey, token, fetch: send = fetch, time
     /** Puts a photo (or none) in the profile; returns the one it replaced. */
     setProfilePhoto: (avatar: string | null) => rpc<string | null>('set_profile_photo', { p_avatar: avatar }),
     /** Puts a photo at `path` (in the user's folder) in the photos bucket. */
-    uploadPhoto(path: string, photo: PhotoBody) {
-      const target = `/storage/v1/object/${AVATARS}/${path}`;
-      if (photo instanceof Blob) {
-        return authed<unknown>(target, { method: 'POST', body: photo, headers: { 'x-upsert': 'false', 'cache-control': `max-age=${PHOTO_CACHE_SECONDS}`, 'Content-Type': 'image/jpeg' } });
-      }
-      // As Supabase's own client sends a file: its fields before it, the form sets its own type.
-      const form = new FormData();
-      form.append('cacheControl', String(PHOTO_CACHE_SECONDS));
-      form.append('', photo as unknown as Blob);
-      return authed<unknown>(target, { method: 'POST', body: form, headers: { 'x-upsert': 'false' } });
-    },
+    // The bytes themselves, not a form: Expo's fetch can't send a form part that points at a file
+    // on the phone (it fails before anything is sent).
+    uploadPhoto: (path: string, photo: PhotoBody) => authed<unknown>(`/storage/v1/object/${AVATARS}/${path}`, {
+      method: 'POST', body: photo,
+      headers: { 'x-upsert': 'false', 'cache-control': `max-age=${PHOTO_CACHE_SECONDS}`, 'Content-Type': 'image/jpeg' },
+    }),
     /** A link to a photo that works for `seconds` (the bucket is private). */
     async photoLink(path: string, seconds: number): Promise<string> {
       const json = await authed<{ signedURL?: string; signedUrl?: string }>(`/storage/v1/object/sign/${AVATARS}/${path}`, {
