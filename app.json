@@ -89,6 +89,14 @@
       "expo-asset",
       "./plugins/with-android-text-bounds",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "يفتح «قرآني» صورك لتختار منها صورة ملفك الشخصي.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-audio",
         {
           "microphonePermission": false,

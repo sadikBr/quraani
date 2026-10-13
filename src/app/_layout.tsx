@@ -13,6 +13,7 @@ import { AdhkarNotificationObserver, AdhkarProvider } from '@/features/adhkar/pr
 import { PracticeProvider } from '@/features/practice/provider';
 import { HalaqaNotificationObserver, HalaqatProvider } from '@/features/halaqat/provider';
 import { PrayerNotificationObserver, PrayersProvider } from '@/features/prayers/provider';
+import { AccountProvider } from '@/features/account/provider';
 import { readerThemes } from '@/features/quran-reader/theme';
 import { readerShape } from '@/features/quran-reader/design';
 import { localeInfo, t } from '@/i18n';
@@ -29,7 +30,11 @@ if (Platform.OS !== 'web') {
 export default function RootLayout() {
   return <>
     {Platform.OS === 'web' && <Head><title>{t('common.appName')}</title></Head>}
-    <ReadingPreferencesProvider><BookmarksProvider><PlansProvider><AdhkarProvider><PracticeProvider><HalaqatProvider><PrayersProvider><RootNavigator /></PrayersProvider></HalaqatProvider></PracticeProvider></AdhkarProvider></PlansProvider></BookmarksProvider></ReadingPreferencesProvider>
+    {/* The data providers stay put when the riwayah changes (sync writes into their stores); the
+        screens below the bookmarks start afresh with each riwayah. */}
+    <AccountProvider><ReadingPreferencesProvider><PlansProvider><AdhkarProvider><PracticeProvider><HalaqatProvider><PrayersProvider><BookmarksProvider>
+      <RootNavigator />
+    </BookmarksProvider></PrayersProvider></HalaqatProvider></PracticeProvider></AdhkarProvider></PlansProvider></ReadingPreferencesProvider></AccountProvider>
   </>;
 }
 

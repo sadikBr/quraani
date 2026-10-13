@@ -5,6 +5,8 @@ import { createPersistedStore } from '@/features/quran-reader/state/persisted-st
 import { usePlans } from '@/features/plans/provider';
 import { absent, activeStudents, applyHalaqat, decodeHalaqat, defaultHalaqatState, entryOf, HALAQAT_KEY, heard, type HalaqatChange, type HalaqatState } from './model';
 import { observeHalaqaNotifications, syncHalaqaReminders } from './notifications';
+import { registerHalaqat } from '@/features/account/registry';
+import { halaqatSource } from '@/features/account/sources';
 
 interface HalaqatContext {
   state: HalaqatState;
@@ -26,6 +28,7 @@ export function HalaqatProvider({ children }: PropsWithChildren) {
     storage: contentStorage, key: HALAQAT_KEY, fallback: defaultHalaqatState, decode: decodeHalaqat, apply: applyHalaqat,
   }));
   useEffect(() => store.start(), [store]);
+  useEffect(() => registerHalaqat(halaqatSource(store)), [store]);
   const { value: state, ready, error } = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   const [reminderError, setReminderError] = useState(false);
   // What the reminders depend on: each halaqa's name, days, time and reminder, whether it has

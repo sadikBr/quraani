@@ -84,5 +84,23 @@ export function createPersistedStore<T, C>({ storage, key, fallback, decode, app
       else read(); // A change while the read is failing retries it now.
       publish();
     },
+    /**
+     * Replaces the value at once from what it is now (a copy from the account, merged or whole):
+     * `next` returns the new value, or undefined to leave it. False when nothing changed, or the
+     * saved value hasn't been read yet. If `next` throws, nothing changes.
+     */
+    /** Whether everything changed so far is written (false when the last write failed). */
+    settled: () => writes.then(() => !writeError),
+    transform(next: (value: T) => T | undefined): boolean {
+      if (base === null) return false;
+      const value = next(current());
+      if (value === undefined) return false;
+      base = value; changes = [];
+      save();
+      publish();
+      return true;
+    },
   };
 }
+
+export type PersistedStore<T, C> = ReturnType<typeof createPersistedStore<T, C>>;

@@ -2,7 +2,9 @@ import { createContext, useContext, useEffect, useMemo, useState, useSyncExterna
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { contentStorage } from '../storage/content-storage';
 import { resolveReaderTheme } from '../theme';
-import { createReadingPreferencesStore, type ReadingPreferences } from './reading-preferences';
+import { createReadingPreferencesStore, decodeReadingPreferences, defaultReadingPreferences, READING_PREFERENCES_KEY, type ReadingPreferences } from './reading-preferences';
+import { registerDocument } from '@/features/account/registry';
+import { storeDocument } from '@/features/account/sources';
 
 const PreferencesContext = createContext<{
   preferences: ReadingPreferences;
@@ -14,6 +16,8 @@ export function ReadingPreferencesProvider({ children }: PropsWithChildren) {
   // saved until the stored preferences are read (retried in the background).
   const [store] = useState(() => createReadingPreferencesStore(contentStorage));
   useEffect(() => store.start(), [store]);
+  // The phone's own settings: they come from the account only to a new phone.
+  useEffect(() => registerDocument(storeDocument(store, READING_PREFERENCES_KEY, { decode: decodeReadingPreferences, fallback: defaultReadingPreferences, policy: 'restore' })), [store]);
   const { value: preferences, ready } = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   return <PreferencesContext.Provider value={{ preferences, update: store.update }}>
     {ready ? children : null}

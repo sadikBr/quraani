@@ -35,6 +35,7 @@ import { PracticeScreen } from '@/features/practice/practice-screen';
 import { HalaqatScreen } from '@/features/halaqat/halaqat-screen';
 import { useHalaqat } from '@/features/halaqat/provider';
 import { absent, activeStudents, entryOf, heard, nextMeeting, sessionOn, type Halaqa } from '@/features/halaqat/model';
+import { useAccount } from '@/features/account/provider';
 import { t } from '@/i18n';
 
 /** The home screen's sections, each a whole page; a new major feature is one more tab. */
@@ -60,6 +61,7 @@ export function HomeScreen() {
         <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 24, lineHeight: 38, fontFamily: 'ReaderNaskhBold' }}>{t('common.appName')}</Text>
         <Text numberOfLines={1} style={{ color: p.mutedForeground, fontSize: 13 }}>{shortDate(today)} · {t('common.riwayahOf', { riwayah: RIWAYAT[riwayah].label })}</Text>
       </View>
+      <AccountButton />
       <IconButton name="settings" label={t('common.settings')} palette={p} onPress={() => router.push('/settings')} />
     </View>
     <View style={[s.tabBar, { borderColor: p.border }]}>
@@ -78,6 +80,17 @@ export function HomeScreen() {
       {id === 'prayers' ? <PrayersScreen /> : id === 'goals' ? <PlansScreen /> : id === 'adhkar' ? <AdhkarScreen /> : id === 'halaqat' ? <HalaqatScreen /> : <PracticeScreen />}
     </Embedded>} />
   </SafeAreaView></GestureHandlerRootView>;
+}
+
+/** The account, with a gold dot when something there waits for the user (a choice between copies). */
+function AccountButton() {
+  const { palette: p } = useReadingPreferences();
+  const { sync } = useAccount();
+  const waiting = sync.conflicts.length > 0;
+  return <View>
+    <IconButton name="user" label={waiting ? t('account.needsYou') : t('account.open')} palette={p} onPress={() => router.push('/account')} />
+    {waiting && <View pointerEvents="none" style={[s.dot, { backgroundColor: p.ornament, borderColor: p.background }]} />}
+  </View>;
 }
 
 /**
@@ -255,6 +268,7 @@ function describePortion(plan: ReadingPlan, index: PlanIndex, start: number, end
 }
 
 const s = StyleSheet.create({
+  dot: { position: 'absolute', top: 2, end: 2, width: 10, height: 10, borderRadius: 5, borderWidth: 2 },
   header: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 2 },
   tabBar: { borderBottomWidth: StyleSheet.hairlineWidth },
   tabs: { paddingHorizontal: 16, gap: 24 },

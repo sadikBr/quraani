@@ -13,6 +13,8 @@ import { reminderFailureMessage } from './reminder-errors';
 import { currentGoal } from './goal-limit';
 import { maintainArchives } from './archive';
 import { t } from '@/i18n';
+import { registerDocument } from '@/features/account/registry';
+import { plansDocument } from '@/features/account/sources';
 
 interface PlansContextValue {
   plans: ReadingPlan[]; memorization: MemorizationRecord[]; ready: boolean; error: string; reminderError: string; today: string;
@@ -37,6 +39,12 @@ export function PlansProvider({ children }: PropsWithChildren) {
   const [clockRevision, setClockRevision] = useState(0);
   const clockKey = useRef(`${localDate()}:${new Date().getTimezoneOffset()}`);
   const repository = useRef(createPlansRepository(contentStorage));
+  // A copy from the account replaces what is kept: shown as it lands.
+  useEffect(() => repository.current.subscribe(() => {
+    const value = repository.current.plans();
+    if (value) { setPlans(value); setMemorization(repository.current.memorization()); }
+  }), []);
+  useEffect(() => registerDocument(plansDocument(repository.current)), []);
   useEffect(() => {
     let active = true;
     void repository.current.load().then(value => { if (active) { setPlans(value); setMemorization(repository.current.memorization()); setReady(true); setError(''); } })

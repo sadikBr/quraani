@@ -125,8 +125,39 @@ export function createPlansRepository(storage: CacheStorage, today: () => string
   let current: ReadingPlan[] | undefined;
   let memorization: MemorizationRecord[] = [];
   let queue: Promise<unknown> = Promise.resolve();
+  const listeners = new Set<() => void>();
+  // Told after every write that changed what is kept (and after loading).
+  const changed = () => listeners.forEach((listener) => listener());
+  let serialized: { plans: ReadingPlan[]; memorization: MemorizationRecord[]; raw: string } | undefined;
+  const serialize = () => {
+    if (!current) return undefined;
+    if (serialized?.plans !== current || serialized.memorization !== memorization) serialized = { plans: current, memorization, raw: JSON.stringify({ version: 1, plans: current, memorization }) };
+    return serialized.raw;
+  };
   return {
     memorization: () => memorization,
+    /** The goals as loaded and kept; undefined before loading. */
+    plans: () => current,
+    /** What is kept, serialized as it is saved; undefined before loading. */
+    raw: serialize,
+    subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
+    /**
+     * Puts another copy (the account's) in place of what is kept, if that is still `expected` (as
+     * `raw()` gave it); false when it changed meanwhile. Throws, changing nothing, when the copy
+     * doesn't check.
+     */
+    replace(raw: string, expected: string) {
+      const next = queue.then(async () => {
+        if (!current || serialize() !== expected) return false;
+        const plans = decodePlans(raw), memory = decodeMemorization(raw);
+        await storage.setItem(PLANS_KEY, raw);
+        current = plans; memorization = memory;
+        changed();
+        return true;
+      });
+      queue = next.catch(() => {});
+      return next;
+    },
     load() {
       const next = queue.then(async () => {
         const raw = await storage.getItem(PLANS_KEY);
@@ -136,6 +167,7 @@ export function createPlansRepository(storage: CacheStorage, today: () => string
         if (maintained !== loaded) await storage.setItem(PLANS_KEY, JSON.stringify({ version: 1, plans: maintained, memorization: memory }));
         current = maintained;
         memorization = memory;
+        changed();
         return current;
       });
       queue = next.catch(() => {});
@@ -151,6 +183,7 @@ export function createPlansRepository(storage: CacheStorage, today: () => string
         decodePlans(raw); decodeMemorization(raw);
         await storage.setItem(PLANS_KEY, raw);
         current = plans; memorization = memory;
+        changed();
         return current;
       });
       queue = next.catch(() => {});
@@ -179,6 +212,7 @@ export function createPlansRepository(storage: CacheStorage, today: () => string
         decodePlans(raw); decodeMemorization(raw);
         await storage.setItem(PLANS_KEY, raw);
         current = mirrored; memorization = memory;
+        changed();
         return current;
       });
       queue = next.catch(() => {});
@@ -199,6 +233,7 @@ export function createPlansRepository(storage: CacheStorage, today: () => string
         await storage.setItem(PLANS_KEY, raw);
         current = mirrored;
         memorization = memory;
+        changed();
         return current;
       });
       queue = next.catch(() => {});

@@ -6,6 +6,8 @@ import { usePlans } from '@/features/plans/provider';
 import type { CollectionId } from './content';
 import { ADHKAR_KEY, applyAdhkar, collectionProgress, decodeAdhkar, defaultAdhkarState, type AdhkarChange, type AdhkarState, type ReminderKind, type ReminderSetting } from './progress';
 import { observeAdhkarNotifications, syncAdhkarReminders } from './notifications';
+import { registerDocument } from '@/features/account/registry';
+import { storeDocument } from '@/features/account/sources';
 
 interface AdhkarContext {
   state: AdhkarState;
@@ -34,6 +36,7 @@ export function AdhkarProvider({ children }: PropsWithChildren) {
     storage: contentStorage, key: ADHKAR_KEY, fallback: defaultAdhkarState, decode: decodeAdhkar, apply: applyAdhkar,
   }));
   useEffect(() => store.start(), [store]);
+  useEffect(() => registerDocument(storeDocument(store, ADHKAR_KEY, { decode: decodeAdhkar, fallback: defaultAdhkarState })), [store]);
   const { value: state, ready, error } = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   const [reminderError, setReminderError] = useState(false);
   // Reschedule when reminders change, when a morning or evening is completed, and each new day.

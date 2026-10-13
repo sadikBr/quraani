@@ -5,6 +5,8 @@ import type { Riwayah } from '@/features/quran-reader/riwayat';
 import { usePlans } from '@/features/plans/provider';
 import { tally, type Grade, type PracticeOptions, type PracticePlace } from './engine';
 import { applyPractice, decodePractice, defaultPracticeState, PRACTICE_KEY, riwayahPractice, type PracticeChange, type PracticePick, type PracticeSettings, type PracticeState } from './progress';
+import { registerDocument } from '@/features/account/registry';
+import { storeDocument } from '@/features/account/sources';
 
 /** A session in progress. It lives only while the app runs; each grade is saved as it is given. */
 export interface PracticeSession {
@@ -60,6 +62,7 @@ export function PracticeProvider({ children }: PropsWithChildren) {
     storage: contentStorage, key: PRACTICE_KEY, fallback: defaultPracticeState, decode: decodePractice, apply: applyPractice,
   }));
   useEffect(() => store.start(), [store]);
+  useEffect(() => registerDocument(storeDocument(store, PRACTICE_KEY, { decode: decodePractice, fallback: defaultPracticeState })), [store]);
   const { value: state, ready, error } = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   const [session, setSession] = useState<PracticeSession | null>(null);
   const setSettings = useCallback((settings: PracticeSettings) => store.update({ type: 'settings', settings }), [store]);
