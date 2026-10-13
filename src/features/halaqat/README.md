@@ -23,7 +23,12 @@ each of their phones and no one else's.
   `joined_halaqa` gives it: its settings, its supervisors, their own participant and days, and
   every participant's name, photo and points), never another participant's days. It is read from
   the account, remembered on the phone (`halaqat:membership:v1:<user>`), and refreshed when the app
-  comes back; it is never edited there.
+  comes back; it is never edited there. A member chooses their own reminder before its sessions
+  there (`reminders` in the membership store, on that phone only; the supervisors' `reminder` is
+  theirs). What a member passes (a new portion heard, not to be repeated) joins their own
+  memorization record (`member-record.tsx`): once each, noted in the record itself
+  (`fromHalaqat`, by `recitationKey`) so a portion they take out stays out on every phone, and
+  only after the account's first sync of the start (the record may have changed elsewhere).
 - **Points** (`entryPoints`, `scoresOf`, `scoreboard.tsx`): present 2, late 1; a new portion
   excellent 6, good 4, fair 2; a revision 3, 2, 1; this month's and all of them. The account counts
   them the same way for members (`entry_points`); supervisors count them on the phone.
@@ -32,7 +37,8 @@ each of their phones and no one else's.
   at a set `time`, and then remind before each session (`reminder.before`, 0–120 minutes): local
   notifications like the adhkar's (`notifications.ts`, prefix `quranni-halaqa:`), scheduled about
   two weeks ahead from `halaqaReminderQueue`, skipping sessions where everyone is already heard or
-  away. Tapping one opens that day's session.
+  away; the halaqat the user is a member of are scheduled with them (`members`), skipping days
+  they were heard. Tapping one opens that day's session (for a member, their view of the halaqa).
 - **A participant** (`Student`) has a name, the order they memorize in (`backward`: from An-Nas back, as in the
   kuttab; `forward`: from Al-Fatiha on), what they had memorized before joining (`known`), and
   their first portions. A student who leaves keeps their history (`leftOn`) and can come back;

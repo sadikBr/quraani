@@ -3,27 +3,32 @@ import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { PageBar, PageTitle, RowGroup, Section, page } from '@/components/craft/page';
+import { PageBar, PageTitle, Row, RowGroup, Section, page } from '@/components/craft/page';
 import { Alert, Button, Chip } from '@/components/ui';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
 import { Segments } from '@/features/quran-reader/components/ui/reader-chrome';
 import { ReaderButton } from '@/features/quran-reader/components/reading/reader-button';
 import type { Riwayah } from '@/features/quran-reader/riwayat';
 import { usePlans } from '@/features/plans/provider';
-import { PlanField, SwitchRow } from '@/features/plans/components';
-import { PlanDateField } from '@/features/plans/plan-date-field';
-import { WeekdayPicker } from '@/features/plans/recurring-components';
+import { SwitchRow } from '@/features/plans/components';
+import { weekdaysLabel } from '@/features/plans/recurring';
 import { CreationFooter } from '@/features/plans/goal-creation-components';
 import { t } from '@/i18n';
 import { useHalaqat, useMembership } from './provider';
-import { NAME_LIMIT, newId, REMINDER_LEADS, type Clock, type ReminderLead } from './model';
+import { arrivalOf, clockText, NAME_LIMIT, newId, type Clock, type ReminderLead } from './model';
 import { HalaqaReminderError, remindersSupported, requestHalaqaReminders } from './notifications';
 import { ConfirmDialog } from './confirm-dialog';
-import { pastHalaqa } from './shared';
+import { halaqaFacts, pastHalaqa } from './shared';
+import { DayArcade, LeadTrack, NamePlate } from './form-parts';
+import { TimeField } from './time-field';
 
 const EVERY_DAY = [0, 1, 2, 3, 4, 5, 6];
 
-/** Making a halaqa, or changing one (`?id=`): its name, its riwayah, the days and time it meets, and a reminder before each session. */
+/**
+ * Making a halaqa, or changing one (`?id=`): its name on an arched plate (how it reads so far under
+ * it), its riwayah, its days as an arcade of seven arches, and on one card the time it meets and
+ * when its reminder comes, on a thread running up to the session.
+ */
 export function HalaqaFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { palette: p, preferences } = useReadingPreferences();
@@ -70,44 +75,43 @@ export function HalaqaFormScreen() {
       <PageBar back={back} palette={p} />
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 24 }]}>
         <PageTitle title={existing ? t('halaqat.form.editTitle') : t('halaqat.form.newTitle')} subtitle={t('halaqat.form.subtitle')} palette={p} />
-        <PlanField label={t('halaqat.form.name')} value={name} onChange={setName} placeholder={t('halaqat.form.namePlaceholder')} />
+        <NamePlate value={name} onChange={setName} palette={p} facts={halaqaFacts({ riwayah, weekdays: days, time })} />
         <Section title={t('halaqat.form.riwayah')} palette={p}>
           {locked ? <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 21 }}>{t('halaqat.form.riwayahLocked')}</Text>
             : <Segments palette={p} value={riwayah} onChange={setRiwayah} options={[{ value: 'warsh', label: t('common.riwayah.warsh.name') }, { value: 'hafs', label: t('common.riwayah.hafs.name') }]} />}
         </Section>
-        <Section title={t('halaqat.form.days')} palette={p}>
-          <View style={[s.panel, { backgroundColor: p.card, borderColor: p.border }]}>
-            <WeekdayPicker days={days} onChange={setDays} quickOptions={[{ label: t('common.weekdays.everyDay'), value: EVERY_DAY }]} emptyLabel={t('halaqat.list.noDays')} />
-          </View>
-          <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 21 }}>{t('halaqat.form.daysHint')}</Text>
+        <Section title={t('halaqat.form.days')} palette={p}
+          action={<Chip soft palette={p} label={t('common.weekdays.everyDay')} selected={days.length === 7} onPress={() => setDays(days.length === 7 ? [] : EVERY_DAY)} />}>
+          <DayArcade days={days} onChange={setDays} palette={p} />
+          <Text accessibilityLiveRegion="polite" style={{ color: days.length ? p.foreground : p.mutedForeground, fontSize: 14, fontWeight: '600', textAlign: 'center' }}>
+            {days.length ? weekdaysLabel(days) : t('halaqat.list.noDays')}
+          </Text>
+          <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 21, textAlign: 'center', marginTop: -6 }}>{t('halaqat.form.daysHint')}</Text>
         </Section>
         <Section title={t('halaqat.reminders.title')} palette={p}>
           <RowGroup palette={p}>
-            <SwitchRow icon="clock" label={t('halaqat.reminders.timeSwitch')} detail={time ? undefined : t('halaqat.reminders.timeDetail')} checked={!!time}
-              onChange={(on) => { setTime(on ? { hour: 17, minute: 0 } : undefined); if (!on) setLead(undefined); }} />
-            {time && <View key="time" style={s.inset}>
-              <PlanDateField label={t('halaqat.reminders.time')} mode="time" value={clockText(time)}
-                onChange={(value) => { const [hour, minute] = value.split(':').map(Number); setTime({ hour, minute }); }} />
-            </View>}
+            <Row key="time" icon="clock" palette={p} title={t('halaqat.reminders.time')} detail={time ? undefined : t('halaqat.form.noTime')}
+              trailing={time ? <View style={s.time}>
+                <TimeField label={t('halaqat.reminders.time')} value={clockText(time)} onChange={(value) => { const [hour, minute] = value.split(':').map(Number); setTime({ hour, minute }); }} />
+                <Button size="sm" variant="ghost" icon="close" palette={p} label={t('halaqat.form.clearTime')} onPress={() => { setTime(undefined); setLead(undefined); }} />
+              </View> : <Button size="sm" variant="outline" icon="plus" palette={p} onPress={() => setTime({ hour: 17, minute: 0 })}>{t('halaqat.form.setTime')}</Button>} />
             {time && <SwitchRow key="remind" icon="bell" label={t('halaqat.reminders.remind')} detail={remindersSupported ? t('halaqat.reminders.remindDetail') : t('halaqat.reminders.phoneOnly')}
               checked={lead !== undefined} disabled={!remindersSupported} onChange={(on) => void remind(on)} />}
-            {time && lead !== undefined && <View key="lead" style={[s.inset, { gap: 8 }]}>
+            {time && lead !== undefined && <View key="lead" style={s.lead}>
               <Text style={{ color: p.mutedForeground, fontSize: 13, fontWeight: '600' }}>{t('halaqat.reminders.lead')}</Text>
-              <View accessibilityRole="radiogroup" accessibilityLabel={t('halaqat.reminders.lead')} style={s.leads}>
-                {REMINDER_LEADS.map((value) => <Chip key={value} accessibilityRole="radio" palette={p} label={t(`halaqat.reminders.leads.${value}`)} selected={lead === value} onPress={() => setLead(value)} />)}
-              </View>
-              {!days.length && <Text style={{ color: p.warning, fontSize: 13 }}>{t('halaqat.reminders.needsDays')}</Text>}
+              <LeadTrack value={lead} onChange={setLead} palette={p} />
+              <Text style={{ color: days.length ? p.foreground : p.warning, fontSize: 13, lineHeight: 21, textAlign: 'center' }}>
+                {days.length ? t('halaqat.reminders.arrives', { time: clockText(arrivalOf(time, lead)) }) : t('halaqat.reminders.needsDays')}
+              </Text>
             </View>}
           </RowGroup>
           {!!message && <Alert variant="destructive" palette={p}>{message}</Alert>}
         </Section>
-        {existing && owner && <Section title={t('halaqat.form.deleteTitle')} palette={p}>
-          <Button variant="outline" icon="trash" tone={p.destructive} palette={p} onPress={() => setDeleting(true)} block>{t('halaqat.form.delete')}</Button>
-        </Section>}
-        {existing && !owner && <Section title={t('halaqat.sharing.leave')} palette={p}>
-          <Button variant="outline" icon="log-out" tone={p.destructive} palette={p} onPress={() => { setLeaveFailed(false); setLeaving(true); }} block>{t('halaqat.sharing.leave')}</Button>
+        {existing && owner && <Button variant="ghost" icon="trash" tone={p.destructive} palette={p} onPress={() => setDeleting(true)}>{t('halaqat.form.delete')}</Button>}
+        {existing && !owner && <View style={{ gap: 8 }}>
+          <Button variant="ghost" icon="log-out" tone={p.destructive} palette={p} onPress={() => { setLeaveFailed(false); setLeaving(true); }}>{t('halaqat.sharing.leave')}</Button>
           {leaveFailed && <Alert variant="destructive" palette={p}>{t('halaqat.sharing.leaveFailed')}</Alert>}
-        </Section>}
+        </View>}
       </ScrollView>
       <CreationFooter>
         {!valid && <Text style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>{t('halaqat.form.nameNeeded')}</Text>}
@@ -123,10 +127,7 @@ export function HalaqaFormScreen() {
   </SafeAreaView>;
 }
 
-const clockText = (time: Clock) => `${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`;
-
 const s = StyleSheet.create({
-  panel: { borderWidth: 1, borderRadius: 14, padding: 16 },
-  inset: { paddingHorizontal: 14, paddingBottom: 14 },
-  leads: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  time: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  lead: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 16, gap: 10 },
 });

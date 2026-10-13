@@ -307,28 +307,40 @@ export const monthStart = (date: string) => `${date.slice(0, 8)}01`;
 export const HALAQA_REMINDER_PREFIX = 'quranni-halaqa:';
 /** How many reminders are scheduled at most, all halaqat together (a phone keeps a limited number). */
 const REMINDER_LIMIT = 24;
-export interface HalaqaReminder { id: string; halaqa: string; name: string; date: Date; day: string; time: Clock; before: ReminderLead }
+export interface HalaqaReminder {
+  id: string; halaqa: string; name: string; date: Date; day: string; time: Clock; before: ReminderLead;
+  /** About a halaqa the user is a member of (opened as they see it, and worded for them). */
+  member?: boolean;
+}
+/** A halaqa the user is a member of, and the reminder they chose for it on their phone. */
+export interface MemberReminder { halaqa: Halaqa; before: ReminderLead }
 const localDay = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 /**
  * The reminders to schedule for the coming days: one before each session of a halaqa with a
  * reminder, on its days, in local time; none for a halaqa without participants, nor for a session
- * whose every participant has already been heard or marked away.
+ * whose every participant has already been heard or marked away. The halaqat the user is a member
+ * of (`members`) are reminded as they chose on their phone, and a session where they have been
+ * heard (or marked away) is done for them.
  */
-export function halaqaReminderQueue(state: HalaqatState, now: Date, days = 14): HalaqaReminder[] {
+export function halaqaReminderQueue(state: HalaqatState, now: Date, days = 14, members: MemberReminder[] = []): HalaqaReminder[] {
   const reminders: HalaqaReminder[] = [];
-  for (const halaqa of state.halaqat) {
-    const { time, reminder } = halaqa;
+  const sources = [
+    ...state.halaqat.map((halaqa) => ({ halaqa, before: halaqa.reminder?.before, member: false })),
+    ...members.map(({ halaqa, before }) => ({ halaqa, before, member: true })),
+  ];
+  for (const { halaqa, before, member } of sources) {
+    const { time } = halaqa;
     const students = activeStudents(halaqa);
-    if (!time || !reminder || !halaqa.weekdays.length || !students.length) continue;
+    if (!time || before === undefined || !halaqa.weekdays.length || !students.length) continue;
     for (let offset = 0; offset < days; offset++) {
       const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, time.hour, time.minute);
       if (!halaqa.weekdays.includes(start.getDay())) continue;
-      const date = new Date(start.getTime() - reminder.before * 60_000);
+      const date = new Date(start.getTime() - before * 60_000);
       if (date.getTime() <= now.getTime()) continue;
       const day = localDay(start), session = sessionOn(halaqa, day);
       if (session && students.every((s) => heard(entryOf(session, s.id)) || absent(entryOf(session, s.id)))) continue;
       const clock = `${String(time.hour).padStart(2, '0')}${String(time.minute).padStart(2, '0')}`;
-      reminders.push({ id: `${HALAQA_REMINDER_PREFIX}${halaqa.id}:${day}:${clock}:${reminder.before}`, halaqa: halaqa.id, name: halaqa.name, date, day, time, before: reminder.before });
+      reminders.push({ id: `${HALAQA_REMINDER_PREFIX}${halaqa.id}:${day}:${clock}:${before}`, halaqa: halaqa.id, name: halaqa.name, date, day, time, before, ...(member ? { member: true } : {}) });
     }
   }
   return reminders.sort((a, b) => a.date.getTime() - b.date.getTime() || a.id.localeCompare(b.id)).slice(0, REMINDER_LIMIT);
@@ -444,4 +456,12 @@ export function decodeHalaqat(raw: string | null): HalaqatState {
     }
   }
   return saved;
+}
+
+/** A time as it is written: «17:30». */
+export const clockText = (time: Clock) => `${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`;
+/** When a reminder `lead` minutes before `time` comes (the evening before, for a session just after midnight). */
+export function arrivalOf(time: Clock, lead: number): Clock {
+  const minutes = (((time.hour * 60 + time.minute - lead) % 1440) + 1440) % 1440;
+  return { hour: Math.floor(minutes / 60), minute: minutes % 60 };
 }

@@ -13,6 +13,7 @@ import { PlansProvider, PlanNotificationObserver } from '@/features/plans/provid
 import { AdhkarNotificationObserver, AdhkarProvider } from '@/features/adhkar/provider';
 import { PracticeProvider } from '@/features/practice/provider';
 import { HalaqaNotificationObserver, HalaqatProvider } from '@/features/halaqat/provider';
+import { MemberRecordObserver } from '@/features/halaqat/member-record';
 import { PrayerNotificationObserver, PrayersProvider } from '@/features/prayers/provider';
 import { AccountProvider } from '@/features/account/provider';
 import { readerThemes } from '@/features/quran-reader/theme';
@@ -70,6 +71,7 @@ function RootNavigator() {
           <PlanNotificationObserver />
           <AdhkarNotificationObserver />
           <HalaqaNotificationObserver />
+          <MemberRecordObserver />
           <PrayerNotificationObserver />
         </ThemeProvider>
       </View>

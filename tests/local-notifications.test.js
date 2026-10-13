@@ -118,7 +118,7 @@ for (const os of ['android', 'ios']) for (const expoGo of [true, false]) {
     stop();
     expect(phone.listeners.get('onDidReceiveNotificationResponse').size).toBe(0);
     phone.deny();
-    await expect(api.requestPlanReminders()).rejects.toThrow('لم يُسمح بالإشعارات');
+    await expect(api.requestPlanReminders()).rejects.toThrow('الإشعارات غير مفعّلة');
   });
 }
 

@@ -21,7 +21,8 @@ interface PlansContextValue {
   commit: (change: (plans: ReadingPlan[]) => ReadingPlan[]) => Promise<void>;
   relink: (index: PlanIndex) => Promise<void>;
   /** Adds passages memorized elsewhere (a halaqa) to the user's memorization record. */
-  remember: (index: PlanIndex, riwayah: Riwayah, spans: AyahSpan[]) => Promise<void>;
+  /** Adds passages memorized in a halaqa to the record (`taken`: the recitations they came from, noted once). */
+  remember: (index: PlanIndex, riwayah: Riwayah, spans: AyahSpan[], taken?: string[]) => Promise<void>;
   retry: () => void;
 }
 const Context = createContext<PlansContextValue | null>(null);
@@ -61,8 +62,8 @@ export function PlansProvider({ children }: PropsWithChildren) {
     setPlans(value);
     setMemorization(repository.current.memorization());
   }, []);
-  const remember = useCallback(async (index: PlanIndex, riwayah: Riwayah, spans: AyahSpan[]) => {
-    const value = await repository.current.remember(index, riwayah, spans);
+  const remember = useCallback(async (index: PlanIndex, riwayah: Riwayah, spans: AyahSpan[], taken?: string[]) => {
+    const value = await repository.current.remember(index, riwayah, spans, taken);
     setPlans(value);
     setMemorization(repository.current.memorization());
   }, []);

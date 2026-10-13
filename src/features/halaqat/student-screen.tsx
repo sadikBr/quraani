@@ -121,6 +121,7 @@ export function StudentRecord({ halaqa, student, index, shape, editable = false,
             </View>
           </View>
           <Progress value={memorized / totalAyahs(shape)} palette={p} label={memorizedText} />
+          {self && <Text style={{ color: p.mutedForeground, fontSize: 12, lineHeight: 19 }}>{t('halaqat.sharing.takenIn')}</Text>}
         </View>
         <View style={[s.body, s.split, { borderColor: p.border }]}>
           <Text style={{ color: p.mutedForeground, fontSize: 12, fontWeight: '600' }}>{t('halaqat.student.attendance', { count: history.length })}</Text>

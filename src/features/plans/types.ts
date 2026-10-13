@@ -55,6 +55,12 @@ export interface MemorizationRecord {
   corpus: string;
   totalAyahs: number;
   ranges: AyahSpan[];
+  /**
+   * The recitations passed in halaqat the user is a member of that came into this record, each
+   * once (a portion taken out afterwards stays out): kept with the record, so they travel with it
+   * from one phone to another.
+   */
+  fromHalaqat?: string[];
 }
 export interface MemorizationSession { date: string; ranges: AyahSpan[] }
 export interface MemorizationPlan extends PlanBase {

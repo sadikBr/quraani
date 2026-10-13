@@ -66,6 +66,11 @@ export default {
     deleteConfirmTitle: 'حذف الحلقة نهائيًا؟',
     deleteConfirmBody: 'ستُحذف «{{name}}» وبيانات المشاركين فيها وجميع سجلات الحضور والتسميع نهائيًا. لن يتأثر محفوظك في التطبيق.',
     nameNeeded: 'اكتب اسم الحلقة للمتابعة.',
+    /** Under each day's letter, in the arcade of days. */
+    dayNames: { 0: 'أحد', 1: 'اثنين', 2: 'ثلاثاء', 3: 'أربعاء', 4: 'خميس', 5: 'جمعة', 6: 'سبت' },
+    noTime: 'دون وقت محدد',
+    setTime: 'تحديد',
+    clearTime: 'إزالة وقت الحلقة',
     create: 'إنشاء الحلقة',
     saveChanges: 'حفظ التغييرات',
   },
@@ -284,7 +289,6 @@ export default {
   /** A notification before each session, on the halaqa's days, at its time. */
   reminders: {
     title: 'الوقت والتذكير',
-    timeSwitch: 'للحلقة وقت محدد',
     timeDetail: 'تبدأ الحصص في هذا الوقت خلال أيام الحلقة المحددة.',
     time: 'وقت الحلقة',
     remind: 'التذكير قبل الحصة',
@@ -292,6 +296,9 @@ export default {
     needsDays: 'اختر أيام الحلقة ليصلك التذكير.',
     lead: 'وقت التنبيه',
     leads: { 0: 'عند بدايتها', 15: 'قبلها بربع ساعة', 30: 'قبلها بنصف ساعة', 60: 'قبلها بساعة', 120: 'قبلها بساعتين' },
+    /** Under each bead of the thread running up to the session. */
+    short: { 0: 'عند بدايتها', 15: 'ربع ساعة', 30: 'نصف ساعة', 60: 'ساعة', 120: 'ساعتان' },
+    arrives: 'يصلك الإشعار الساعة ⁦{{time}}⁩ من أيامها.',
     phoneOnly: 'التذكير متوفر في تطبيق الهاتف.',
     permissionDenied: 'الإشعارات غير مفعّلة. يمكنك تفعيلها من إعدادات الهاتف.',
     unavailable: 'تعذّر تفعيل التذكير على هذا الجهاز.',
@@ -309,6 +316,9 @@ export default {
       title120: 'حصة {{name}} بعد ساعتين',
       body: 'تبدأ الساعة ⁦{{time}}⁩. افتحها لتسجيل الحضور والتسميع.',
       bodyNow: 'افتحها لتسجيل الحضور والتسميع.',
+      /** To a member of the halaqa, on their own phone. */
+      bodyMember: 'تبدأ الساعة ⁦{{time}}⁩. راجع لوحك قبلها.',
+      bodyMemberNow: 'وفّقك الله في تسميعك.',
     },
   },
   /**
@@ -318,6 +328,12 @@ export default {
    * («لوحة النقاط»).
    */
   sharing: {
+    /** A member's own reminder, on their view of the halaqa. */
+    reminderDetail: 'إشعار على هاتفك قبل كل حصة من حصصها.',
+    reminderNoTime: 'لم يحدّد المشرف وقتًا للحلقة بعد، فلا تذكير لها.',
+    reminderNoDays: 'لم يحدّد المشرف أيام الحلقة بعد، فلا تذكير لها.',
+    /** Under a member's memorized count: what they pass in the halaqa joins their own record. */
+    takenIn: 'ما تجتازه من لوحك في الحلقة يُضاف إلى محفوظك في التطبيق.',
     /** Under the member's points in their ring. */
     myPointsShort: 'نقاط الشهر',
     /** The ring on the members' door, read out. */

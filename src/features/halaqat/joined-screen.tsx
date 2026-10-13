@@ -3,17 +3,20 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { artColors } from '@/components/craft/art';
-import { PageBar, Section, page } from '@/components/craft/page';
+import { PageBar, RowGroup, Section, page } from '@/components/craft/page';
 import { Alert, Button } from '@/components/ui';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
 import { IconButton } from '@/features/quran-reader/components/ui/reader-chrome';
 import { usePlans } from '@/features/plans/provider';
 import { weekdayDateLabel } from '@/features/plans/presentation';
+import { SwitchRow } from '@/features/plans/components';
 import { PersonPhoto } from '@/features/account/avatar';
 import { initialOf } from '@/features/account/profile';
 import { formatList, formatNumber, t } from '@/i18n';
 import { ConfirmDialog } from './confirm-dialog';
-import { currentAssignment, nextMeeting } from './model';
+import { arrivalOf, clockText, currentAssignment, nextMeeting } from './model';
+import { LeadTrack } from './form-parts';
+import { HalaqaReminderError, remindersSupported, requestHalaqaReminders } from './notifications';
 import { photoOf, type JoinedHalaqa } from './membership';
 import { useMembership } from './provider';
 import { DoorPill, HalaqaDoor, RingCount, type Seat } from './ring';
@@ -63,6 +66,8 @@ export function JoinedHalaqaScreen({ joined }: { joined: JoinedHalaqa }) {
           text={meets === today ? t('halaqat.list.meetsToday') : t('halaqat.list.nextMeeting', { date: weekdayDateLabel(meets) })} />}
       </HalaqaDoor>
 
+      <MemberReminderCard halaqa={halaqa} />
+
       {error ? <Alert variant="destructive" palette={p} action={<Button variant="outline" size="sm" palette={p} icon="restore" onPress={retry}>{t('common.retry')}</Button>}>{error}</Alert>
         : !index || !shape ? <ActivityIndicator color={p.mutedForeground} style={{ marginVertical: 24 }} /> : <>
           <Section title={t('halaqat.sharing.myLawh')} palette={p}>
@@ -88,7 +93,46 @@ export function JoinedHalaqaScreen({ joined }: { joined: JoinedHalaqa }) {
   </SafeAreaView>;
 }
 
+/**
+ * A member's own reminder before the halaqa's sessions, on this phone: off, or when it comes, on
+ * the thread running up to the session. It needs the halaqa's days and time, which its
+ * supervisors set.
+ */
+function MemberReminderCard({ halaqa }: { halaqa: JoinedHalaqa['halaqa'] }) {
+  const { palette: p } = useReadingPreferences();
+  const { reminderOf, setReminder } = useMembership();
+  const [message, setMessage] = useState('');
+  const lead = reminderOf(halaqa.id);
+  const { time } = halaqa;
+  const turn = async (on: boolean) => {
+    setMessage('');
+    if (!on) { await setReminder(halaqa.id, undefined); return; }
+    try { await requestHalaqaReminders(); } catch (e) {
+      setMessage(e instanceof HalaqaReminderError ? e.message : t('halaqat.reminders.unavailable'));
+      return;
+    }
+    // As its supervisor reminds themselves, to begin with.
+    await setReminder(halaqa.id, halaqa.reminder?.before ?? 60);
+  };
+  const detail = !time ? t('halaqat.sharing.reminderNoTime') : !remindersSupported ? t('halaqat.reminders.phoneOnly') : t('halaqat.sharing.reminderDetail');
+  return <View style={{ gap: 8 }}>
+    <RowGroup palette={p}>
+      <SwitchRow key="remind" icon="bell" label={t('halaqat.reminders.remind')} detail={detail} checked={!!time && lead !== undefined}
+        disabled={!time || !remindersSupported} onChange={(on) => void turn(on)} />
+      {time && lead !== undefined && <View key="lead" style={s.lead}>
+        <Text style={{ color: p.mutedForeground, fontSize: 13, fontWeight: '600' }}>{t('halaqat.reminders.lead')}</Text>
+        <LeadTrack value={lead} onChange={(next) => void setReminder(halaqa.id, next)} palette={p} />
+        <Text style={{ color: halaqa.weekdays.length ? p.foreground : p.warning, fontSize: 13, lineHeight: 21, textAlign: 'center' }}>
+          {halaqa.weekdays.length ? t('halaqat.reminders.arrives', { time: clockText(arrivalOf(time, lead)) }) : t('halaqat.sharing.reminderNoDays')}
+        </Text>
+      </View>}
+    </RowGroup>
+    {!!message && <Alert variant="destructive" palette={p}>{message}</Alert>}
+  </View>;
+}
+
 const s = StyleSheet.create({
+  lead: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 16, gap: 10 },
   teachers: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 },
   faces: { flexDirection: 'row', alignItems: 'center' },
   face: { borderWidth: 1.5, borderRadius: 16 },

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { MemoryCacheStorage } from '../src/lib/quranpedia/cache';
 import { clampName, entryPoints, monthStart, scoresOf } from '../src/features/halaqat/model';
-import { createMembershipStore, joinedFrom, membershipKey, photoOf } from '../src/features/halaqat/membership';
+import { createMembershipStore, joinedFrom, membershipKey, passedRecitations, photoOf, recitationKey } from '../src/features/halaqat/membership';
 
 const p = (fs, fa, ts, ta) => ({ from: { surah: fs, ayah: fa }, to: { surah: ts, ayah: ta } });
 const student = (id, extra = {}) => ({ id, name: id, joinedOn: '2026-10-01', direction: 'backward', known: [], ...extra });
@@ -133,5 +133,61 @@ describe('a halaqa as a member sees it', () => {
     await second;
     expect(calls).toBe(2);
     expect(store.getState().joined).toEqual([]);
+  });
+});
+
+describe('a member\'s own reminders and record', () => {
+  const api = (listed) => ({
+    async halaqaVersions() { return listed().map((id) => ({ id, revision: 1, version: 7, deleted: false, role: 'member', owner: false })); },
+    async joinedHalaqa(id) { return view({ id }); },
+    async halaqaPeople() { return []; },
+    async photoLinks() { return {}; },
+  });
+
+  test('the reminder they chose is kept on the phone, and goes with the halaqa', async () => {
+    const storage = new MemoryCacheStorage();
+    let listed = ['halaqa-mosque', 'halaqa-home'];
+    const store = createMembershipStore({ user: USER, api: api(() => listed), storage, now: () => 1_000 });
+    await store.refresh('2026-10-13');
+    await store.setReminder('halaqa-mosque', 30);
+    await store.setReminder('halaqa-home', 0);
+    expect(store.getState().reminders).toEqual({ 'halaqa-mosque': 30, 'halaqa-home': 0 });
+    await store.setReminder('halaqa-home', undefined);
+    expect(store.getState().reminders).toEqual({ 'halaqa-mosque': 30 });
+    // Read back on the phone; a lead the app doesn't know is left out.
+    const saved = JSON.parse(await storage.getItem(membershipKey(USER)));
+    await storage.setItem(membershipKey(USER), JSON.stringify({ ...saved, reminders: { ...saved.reminders, 'halaqa-home': 45 } }));
+    const again = createMembershipStore({ user: USER, api: api(() => listed), storage, now: () => 1_000 });
+    await again.read();
+    expect(again.getState().reminders).toEqual({ 'halaqa-mosque': 30 });
+    // Taken out of the halaqa (the account no longer lists it), or left: its reminder goes too.
+    listed = ['halaqa-home'];
+    await again.refresh('2026-10-13');
+    expect(again.getState().reminders).toEqual({});
+    await again.setReminder('halaqa-home', 60);
+    await again.forget('halaqa-home');
+    expect(JSON.parse(await storage.getItem(membershipKey(USER))).reminders).toEqual({});
+  });
+
+  test('what they pass is what their record hasn\'t taken in yet; a portion changed afterwards counts anew', () => {
+    const entry = (session, date, recitations, studentId = 'student-me') => ({ id: session, date, entries: [{ student: studentId, attendance: 'present', recitations }] });
+    const joined = joinedFrom(view(), '2026-10-01');
+    joined.halaqa.sessions = [
+      entry('session-1', '2026-10-05', [recitation('new', 'good'), { ...recitation('revision', 'excellent'), portion: p(112, 1, 114, 6) }]),
+      entry('session-2', '2026-10-07', [{ ...recitation('new', 'repeat'), portion: p(67, 11, 67, 20) }]),
+      entry('session-3', '2026-10-12', [{ ...recitation('new', 'fair'), portion: p(67, 11, 67, 20) }]),
+      entry('session-4', '2026-10-12', [recitation('new', 'excellent')], 'student-other'),
+    ];
+    const none = () => new Set();
+    // New portions heard and not to be repeated; their revision and someone else's left out.
+    expect(passedRecitations([joined], none).map((r) => [r.riwayah, r.key])).toEqual([
+      ['warsh', 'halaqa-mosque|session-1:67.1-67.10'], ['warsh', 'halaqa-mosque|session-3:67.11-67.20'],
+    ]);
+    // What the record of the halaqa's riwayah already took in is left out (another riwayah's doesn't count).
+    const asked = [];
+    const taken = (riwayah) => { asked.push(riwayah); return new Set(riwayah === 'warsh' ? ['halaqa-mosque|session-1:67.1-67.10'] : []); };
+    expect(passedRecitations([joined], taken).map((r) => r.key)).toEqual(['halaqa-mosque|session-3:67.11-67.20']);
+    expect(asked).toEqual(['warsh']);
+    expect(recitationKey('halaqa-mosque', 'session-3', p(67, 11, 67, 21))).not.toBe('halaqa-mosque|session-3:67.11-67.20');
   });
 });

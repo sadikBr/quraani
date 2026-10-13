@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  applyHalaqat, assignmentFor, attendanceOf, decodeHalaqat, defaultHalaqatState, halaqaReminderQueue, historyOf, memorizedBy, nextMeeting, nextNew, nextRevision,
+  applyHalaqat, arrivalOf, assignmentFor, attendanceOf, clockText, decodeHalaqat, defaultHalaqatState, halaqaReminderQueue, historyOf, memorizedBy, nextMeeting, nextNew, nextRevision,
   ordinal, portionAyahs, refAt, spanOf, suggestGrade, suggestNext, validPortion,
 } from '../src/features/halaqat/model';
 
@@ -227,6 +227,29 @@ describe('reminders before sessions', () => {
     expect(halaqaReminderQueue(meets({ students: [] }), now)).toEqual([]);
     const done = meets({ sessions: [{ id: 'session-1', date: '2026-10-13', entries: [{ student: 'student-1', attendance: 'absent', recitations: [] }] }] });
     expect(halaqaReminderQueue(done, now, 2).map((r) => r.day)).toEqual(['2026-10-14']);
+  });
+
+  test('for a halaqa the user is a member of: as they chose on their phone, not as its supervisor did', () => {
+    const joined = halaqa({ id: 'halaqa-m', name: 'M', weekdays: [2], time: { hour: 17, minute: 30 }, reminder: { before: 120 }, students: [student('student-me', { me: true })] });
+    const queue = halaqaReminderQueue({ version: 1, halaqat: [] }, now, 8, [{ halaqa: joined, before: 15 }]);
+    expect(queue.map((r) => [r.day, r.date.getHours(), r.date.getMinutes(), r.member])).toEqual([['2026-10-13', 17, 15, true], ['2026-10-20', 17, 15, true]]);
+    expect(queue[0].id).toBe('quranni-halaqa:halaqa-m:2026-10-13:1730:15');
+    // Done for them once they have been heard that day.
+    const heardToday = { ...joined, sessions: [{ id: 'session-1', date: '2026-10-13', entries: [{ student: 'student-me', attendance: 'present', recitations: [{ kind: 'new', grade: 'good', portion: p(67, 1, 67, 5), marks: [] }] }] }] };
+    expect(halaqaReminderQueue({ version: 1, halaqat: [] }, now, 8, [{ halaqa: heardToday, before: 15 }]).map((r) => r.day)).toEqual(['2026-10-20']);
+    // Theirs and those they supervise, together, the soonest first.
+    const both = halaqaReminderQueue(meets(), now, 2, [{ halaqa: joined, before: 15 }]);
+    expect(both.map((r) => [r.halaqa, !!r.member])).toEqual([['halaqa-a', false], ['halaqa-m', true], ['halaqa-a', false]]);
+    // Gone once they left it.
+    const left = { ...joined, students: [student('student-me', { me: true, leftOn: '2026-10-12' })] };
+    expect(halaqaReminderQueue({ version: 1, halaqat: [] }, now, 8, [{ halaqa: left, before: 15 }])).toEqual([]);
+  });
+
+  test('say when they come, the evening before for a session just after midnight', () => {
+    expect(clockText({ hour: 7, minute: 5 })).toBe('07:05');
+    expect(arrivalOf({ hour: 17, minute: 30 }, 60)).toEqual({ hour: 16, minute: 30 });
+    expect(arrivalOf({ hour: 0, minute: 15 }, 30)).toEqual({ hour: 23, minute: 45 });
+    expect(arrivalOf({ hour: 9, minute: 0 }, 0)).toEqual({ hour: 9, minute: 0 });
   });
 
   test('are saved with the halaqa, and turned off when left out', () => {

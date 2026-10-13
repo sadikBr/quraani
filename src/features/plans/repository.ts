@@ -57,6 +57,12 @@ export function decodePlans(raw: string | null): ReadingPlan[] {
   return saved.plans;
 }
 
+/** How many recitations from halaqat a record can keep track of (decades of sessions), and how long each note can be. */
+const FROM_HALAQAT_LIMIT = 20000;
+export const FROM_HALAQAT_KEY = 320;
+/** What a record keeps of where its passages came from, when it is written again. */
+const provenance = (record: MemorizationRecord | undefined) => record?.fromHalaqat?.length ? { fromHalaqat: record.fromHalaqat } : {};
+
 export function decodeMemorization(raw: string | null): MemorizationRecord[] {
   if (!raw) return [];
   const saved = JSON.parse(raw);
@@ -66,6 +72,8 @@ export function decodeMemorization(raw: string | null): MemorizationRecord[] {
   for (const record of records) {
     if (!record || !['warsh', 'hafs'].includes(record.riwayah) || seen.has(record.riwayah) || typeof record.corpus !== 'string' || !Number.isInteger(record.totalAyahs) || record.totalAyahs < 1 || record.totalAyahs > 10000) throw new Error(t('plans.storage.invalidMemorization'));
     validateSpans(record.ranges, record.totalAyahs); seen.add(record.riwayah);
+    if (record.fromHalaqat !== undefined && (!Array.isArray(record.fromHalaqat) || record.fromHalaqat.length > FROM_HALAQAT_LIMIT
+      || record.fromHalaqat.some((key: unknown) => typeof key !== 'string' || !key || key.length > FROM_HALAQAT_KEY))) throw new Error(t('plans.storage.invalidMemorization'));
   }
   return records;
 }
@@ -87,7 +95,7 @@ function syncMemorization(previous: ReadingPlan[], next: ReadingPlan[], records:
     const added = subtractSpans(plan.memorized, old), removed = subtractSpans(old, plan.memorized);
     const ranges = mergeSpans([...subtractSpans(saved?.ranges ?? [], removed), ...added]);
     if ((plan.status === 'active' || plan.status === 'paused') && !sameSpans(ranges, plan.memorized)) throw new Error(t('plans.storage.memorizationChanged'));
-    result = [...result.filter(r => r.riwayah !== plan.riwayah), { riwayah: plan.riwayah, corpus: plan.corpus, totalAyahs: plan.totalAyahs, ranges }];
+    result = [...result.filter(r => r.riwayah !== plan.riwayah), { riwayah: plan.riwayah, corpus: plan.corpus, totalAyahs: plan.totalAyahs, ranges, ...provenance(saved) }];
   }
   // A revision goal can set what is memorized (when it is created, or from its
   // settings) only while no memorization goal owns the record for that edition.
@@ -101,7 +109,7 @@ function syncMemorization(previous: ReadingPlan[], next: ReadingPlan[], records:
     if (saved && (saved.corpus !== plan.corpus || saved.totalAyahs !== plan.totalAyahs)) throw new Error(t('plans.storage.memorizationEditionMismatch'));
     const added = subtractSpans(plan.memorized, old), removed = subtractSpans(old, plan.memorized);
     const ranges = mergeSpans([...subtractSpans(saved?.ranges ?? [], removed), ...added]);
-    result = [...result.filter(r => r.riwayah !== plan.riwayah), { riwayah: plan.riwayah, corpus: plan.corpus, totalAyahs: plan.totalAyahs, ranges }];
+    result = [...result.filter(r => r.riwayah !== plan.riwayah), { riwayah: plan.riwayah, corpus: plan.corpus, totalAyahs: plan.totalAyahs, ranges, ...provenance(saved) }];
   }
   return result;
 }
@@ -191,22 +199,29 @@ export function createPlansRepository(storage: CacheStorage, today: () => string
     },
     /**
      * Adds passages memorized elsewhere (the user's place in a halaqa) to the record of an
-     * edition. A memorization goal that owns the record takes them too, re-planned from today, and
-     * revision goals follow the record as always. Nothing is ever taken out this way.
+     * edition, and notes the recitations they came from (`taken`), each once. A memorization goal
+     * that owns the record takes them too, re-planned from today, and revision goals follow the
+     * record as always. Nothing is ever taken out this way.
      */
-    remember(index: PlanIndex, riwayah: MemorizationRecord['riwayah'], spans: AyahSpan[]) {
+    remember(index: PlanIndex, riwayah: MemorizationRecord['riwayah'], spans: AyahSpan[], taken: string[] = []) {
       const next = queue.then(async () => {
         if (!current) throw new Error(t('plans.storage.notLoaded'));
         const record = memorization.find(r => r.riwayah === riwayah);
         if (index.mushafId !== RIWAYAT[riwayah].mushafId || (record && (record.corpus !== index.corpus || record.totalAyahs !== index.ayahs.length))) throw new Error(t('plans.storage.memorizationEditionMismatch'));
         validateSpans(spans, index.ayahs.length);
         const ranges = mergeSpans([...(record?.ranges ?? []), ...spans]);
-        if (record ? sameSpans(record.ranges, ranges) : !ranges.length) return current;
+        const had = record?.fromHalaqat ?? [];
+        const fresh = [...new Set(taken)].filter(key => !had.includes(key));
+        const fromHalaqat = [...had, ...fresh];
+        const grew = record ? !sameSpans(record.ranges, ranges) : ranges.length > 0;
+        if (!fresh.length && !grew) return current;
         const date = today();
-        const owner = currentMemorizationGoal(current.filter(p => p.riwayah === riwayah));
+        // Only new passages re-plan the goal that owns the record: new notes alone are kept with
+        // the record, and leave the goal (and today's undo) as they were.
+        const owner = grew ? currentMemorizationGoal(current.filter(p => p.riwayah === riwayah)) : undefined;
         const plans = owner && isMemorizationPlan(owner)
           ? current.map(p => p.id === owner.id ? reviseMemorization(owner, index, ranges, memorizationReplanDate(owner, date)) : p) : current;
-        const memory = [...memorization.filter(r => r.riwayah !== riwayah), { riwayah, corpus: index.corpus, totalAyahs: index.ayahs.length, ranges }];
+        const memory = [...memorization.filter(r => r.riwayah !== riwayah), { riwayah, corpus: index.corpus, totalAyahs: index.ayahs.length, ranges, ...(fromHalaqat.length ? { fromHalaqat } : {}) }];
         const mirrored = mirrorRevision(plans, memory);
         const raw = JSON.stringify({ version: 1, plans: mirrored, memorization: memory });
         decodePlans(raw); decodeMemorization(raw);

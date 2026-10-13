@@ -7,8 +7,9 @@ import { usePlans } from '@/features/plans/provider';
 import { useAccount } from '@/features/account/provider';
 import { AccountError } from '@/features/account/auth-client';
 import type { InviteKind, InvitePreview, JoinResult } from '@/features/account/api';
-import { absent, activeStudents, applyHalaqat, decodeHalaqat, defaultHalaqatState, entryOf, HALAQAT_KEY, heard, type HalaqatChange, type HalaqatState } from './model';
-import { createMembershipStore, type MembershipState, type Person, type TeachingRole } from './membership';
+import { absent, activeStudents, applyHalaqat, decodeHalaqat, defaultHalaqatState, entryOf, HALAQAT_KEY, heard,
+  type Halaqa, type HalaqatChange, type HalaqatState, type MemberReminder, type ReminderLead } from './model';
+import { createMembershipStore, type MembershipState, type MembershipStore, type Person, type TeachingRole } from './membership';
 import { observeHalaqaNotifications, syncHalaqaReminders } from './notifications';
 import { registerHalaqat } from '@/features/account/registry';
 import { halaqatSource } from '@/features/account/sources';
@@ -39,6 +40,9 @@ interface MembershipContext {
   join: (code: string, name: string) => Promise<JoinResult | null>;
   /** Leaves a halaqa they are a member of, or teach with its owner. */
   leave: (halaqa: string) => Promise<void>;
+  /** The reminder the user chose on this phone for a halaqa they are a member of. */
+  reminderOf: (halaqa: string) => ReminderLead | undefined;
+  setReminder: (halaqa: string, lead: ReminderLead | undefined) => Promise<void>;
   invite: (halaqa: string, kind: InviteKind, renew?: boolean) => Promise<{ code: string; expiresAt: string | null }>;
   people: (halaqa: string) => Promise<Person[]>;
   removePerson: (halaqa: string, user: string) => Promise<void>;
@@ -46,14 +50,22 @@ interface MembershipContext {
 
 const Context = createContext<HalaqatContext | null>(null);
 const Membership = createContext<MembershipContext | null>(null);
-const noMembership: MembershipState = { roles: {}, joined: [], people: {}, photos: {}, loaded: false, refreshing: false };
+const noMembership: MembershipState = { roles: {}, joined: [], people: {}, photos: {}, reminders: {}, loaded: false, refreshing: false };
 const signedOut = () => Promise.reject(new AccountError('session'));
 
-/** The halaqat, saved on the phone as they change, and the reminders before their sessions. */
+/**
+ * The halaqat, saved on the phone as they change; the user's place in those shared through their
+ * account; and the reminders before their sessions, those they supervise and those they are in.
+ */
 export function HalaqatProvider({ children }: PropsWithChildren) {
   const { today } = usePlans();
-  const { user } = useAccount();
+  const { user, api } = useAccount();
   const signedIn = user === undefined ? undefined : !!user;
+  const userId = user?.id;
+  const membershipStore = useMemo(() => userId && api ? createMembershipStore({ user: userId, api, storage: contentStorage }) : undefined, [userId, api]);
+  const membership = useSyncExternalStore(
+    useCallback((listener: () => void) => membershipStore?.subscribe(listener) ?? (() => {}), [membershipStore]),
+    () => membershipStore?.getState() ?? noMembership, () => membershipStore?.getState() ?? noMembership);
   const [store] = useState(() => createPersistedStore<HalaqatState, HalaqatChange>({
     storage: contentStorage, key: HALAQAT_KEY, fallback: defaultHalaqatState, decode: decodeHalaqat, apply: applyHalaqat,
   }));
@@ -61,49 +73,57 @@ export function HalaqatProvider({ children }: PropsWithChildren) {
   useEffect(() => registerHalaqat(halaqatSource(store)), [store]);
   const { value: state, ready, error } = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   const [reminderError, setReminderError] = useState(false);
+  // The halaqat the user is a member of with a reminder they chose, as the reminders see them.
+  const members: MemberReminder[] = signedIn ? membership.joined.flatMap((j) => {
+    const before = membership.reminders[j.halaqa.id];
+    return before === undefined ? [] : [{ halaqa: j.halaqa, before }];
+  }) : [];
   // What the reminders depend on: each halaqa's name, days, time and reminder, whether it has
   // participants, and which sessions are already done. Rescheduled when that changes, and each day.
   // Signed out, there are none.
-  const schedule = JSON.stringify(signedIn ? state.halaqat.map((h) => {
+  const facts = (h: Halaqa, before: number | undefined) => {
     const students = activeStudents(h);
-    return [h.id, h.name, h.weekdays, h.time, h.reminder, students.length,
+    return [h.id, h.name, h.weekdays, h.time, before, students.length,
       h.sessions.filter((s) => s.date >= today && students.every((p) => heard(entryOf(s, p.id)) || absent(entryOf(s, p.id)))).map((s) => s.date)];
-  }) : []);
+  };
+  const schedule = JSON.stringify(signedIn ? [state.halaqat.map((h) => facts(h, h.reminder?.before)), members.map((m) => facts(m.halaqa, m.before))] : []);
+  // Signed in, the halaqat the user is a member of are read from the phone first: scheduled
+  // without them, their reminders would be cancelled at each start and set again a moment later.
+  const membersRead = !signedIn || !membershipStore || membership.loaded;
   useEffect(() => {
-    if (!ready || signedIn === undefined) return;
+    if (!ready || signedIn === undefined || !membersRead) return;
     let active = true;
-    void syncHalaqaReminders(signedIn ? state : defaultHalaqatState).then(() => { if (active) setReminderError(false); }, () => { if (active) setReminderError(true); });
+    void syncHalaqaReminders(signedIn ? state : defaultHalaqatState, members).then(() => { if (active) setReminderError(false); }, () => { if (active) setReminderError(true); });
     return () => { active = false; };
-    // `state` is read as it is when what the reminders depend on (`schedule`) changes.
+    // `state` and `members` are read as they are when what the reminders depend on (`schedule`) changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, schedule, today, signedIn]);
+  }, [ready, schedule, today, signedIn, membersRead]);
   // The same function for the store's life, so what depends on it doesn't run again at each change.
   const change = useCallback((next: HalaqatChange) => store.update(next), [store]);
   const value = useMemo(() => ({ state, ready, error, reminderError, change }), [state, ready, error, reminderError, change]);
-  return <Context.Provider value={value}><MembershipProvider signedIn={signedIn}>{children}</MembershipProvider></Context.Provider>;
+  return <Context.Provider value={value}>
+    <MembershipProvider signedIn={signedIn} store={membershipStore} membership={membership}>{children}</MembershipProvider>
+  </Context.Provider>;
 }
 
 /** The halaqat shared through the account: the user's roles, those they joined, and the way in. */
-function MembershipProvider({ signedIn, children }: PropsWithChildren<{ signedIn: boolean | undefined }>) {
+function MembershipProvider({ signedIn, store, membership, children }: PropsWithChildren<{
+  signedIn: boolean | undefined; store: MembershipStore | undefined; membership: MembershipState;
+}>) {
   const { today } = usePlans();
-  const { user, api, syncNow } = useAccount();
+  const { api, syncNow } = useAccount();
   const { change } = useContext(Context)!;
   // Read when needed: it changes with every step of a sync, and the actions below stay the same.
   const sync = useRef(syncNow);
   useEffect(() => { sync.current = syncNow; }, [syncNow]);
-  const userId = user?.id;
-  const store = useMemo(() => userId && api ? createMembershipStore({ user: userId, api, storage: contentStorage }) : undefined, [userId, api]);
   useEffect(() => {
     if (!store) return;
     void store.refresh(today);
     const appState = AppState.addEventListener('change', (next) => { if (next === 'active') void store.refresh(today); });
     return () => appState.remove();
   }, [store, today]);
-  const membership = useSyncExternalStore(
-    useCallback((listener: () => void) => store?.subscribe(listener) ?? (() => {}), [store]),
-    () => store?.getState() ?? noMembership, () => store?.getState() ?? noMembership);
 
-  const actions = useMemo<Omit<MembershipContext, 'signedIn' | 'membership' | 'roleOf'>>(() => ({
+  const actions = useMemo<Omit<MembershipContext, 'signedIn' | 'membership' | 'roleOf' | 'reminderOf'>>(() => ({
     refresh: () => store?.refresh(today) ?? Promise.resolve(),
     preview: (code) => api ? api.previewInvite(code) : signedOut(),
     async join(code, name) {
@@ -134,10 +154,12 @@ function MembershipProvider({ signedIn, children }: PropsWithChildren<{ signedIn
       await api.removeHalaqaMember(halaqa, person);
       await store.people(halaqa);
     },
+    setReminder: (halaqa, lead) => store ? store.setReminder(halaqa, lead) : signedOut(),
   }), [store, api, today, change]);
   const value = useMemo<MembershipContext>(() => ({
     signedIn, membership, ...actions,
     roleOf: (halaqa) => membership.roles[halaqa] ?? 'owner',
+    reminderOf: (halaqa) => membership.reminders[halaqa],
   }), [signedIn, membership, actions]);
   return <Membership.Provider value={value}>{children}</Membership.Provider>;
 }
@@ -159,12 +181,14 @@ export function useHalaqa(id: string | undefined) {
   return { halaqa: state.halaqat.find((h) => h.id === id), ready };
 }
 
-/** Opens the session a reminder was about. */
+/** Opens the session a reminder was about; for a member, the halaqa as they see it. */
 export function HalaqaNotificationObserver() {
   const navigation = useRootNavigationState();
   useEffect(() => {
     if (!navigation?.key) return;
-    return observeHalaqaNotifications((halaqa, date) => router.push({ pathname: '/halaqat/session', params: { halaqa, date } }));
+    return observeHalaqaNotifications((halaqa, date, member) => member
+      ? router.push({ pathname: '/halaqat/[id]', params: { id: halaqa } })
+      : router.push({ pathname: '/halaqat/session', params: { halaqa, date } }));
   }, [navigation?.key]);
   return null;
 }

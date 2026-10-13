@@ -1,6 +1,8 @@
 import type { CacheStorage } from '@/lib/quranpedia/cache';
 import type { AccountApi, HalaqaPersonRow } from '@/features/account/api';
-import { decodeHalaqat, monthStart, type Entry, type Halaqa, type HalaqaSession, type Student } from './model';
+import type { Riwayah } from '@/features/quran-reader/riwayat';
+import { FROM_HALAQAT_KEY } from '@/features/plans/repository';
+import { decodeHalaqat, monthStart, REMINDER_LEADS, type Entry, type Halaqa, type HalaqaSession, type Portion, type ReminderLead, type Student } from './model';
 
 /**
  * The user's place in the halaqat shared through their account: which they teach (their own, or
@@ -40,6 +42,8 @@ export interface MembershipState {
   people: Record<string, Person[]>;
   /** Links to photos, by path, and until when each works (ms). */
   photos: Record<string, { url: string; until: number }>;
+  /** The reminder the user chose on this phone for each halaqa they are a member of. */
+  reminders: Record<string, ReminderLead>;
   /** Read from the phone (and the account asked, if it could be). */
   loaded: boolean;
   refreshing: boolean;
@@ -86,9 +90,12 @@ export const personFrom = (row: HalaqaPersonRow): Person => ({
   name: row.name ?? '', ...(row.avatar ? { avatar: row.avatar } : {}), me: row.me === true,
 });
 
+type Saved = Pick<MembershipState, 'roles' | 'joined' | 'people' | 'photos' | 'reminders'>;
+const LEADS: readonly number[] = REMINDER_LEADS;
+
 /** What the phone remembers, read back: each halaqa only if it still reads whole. */
-function decodeSaved(raw: string | null): Pick<MembershipState, 'roles' | 'joined' | 'people' | 'photos'> {
-  const empty = { roles: {}, joined: [], people: {}, photos: {} };
+function decodeSaved(raw: string | null): Saved {
+  const empty = { roles: {}, joined: [], people: {}, photos: {}, reminders: {} };
   if (!raw) return empty;
   try {
     const saved = JSON.parse(raw) as Partial<MembershipState>;
@@ -96,7 +103,9 @@ function decodeSaved(raw: string | null): Pick<MembershipState, 'roles' | 'joine
       try { decodeHalaqat(JSON.stringify({ version: 1, halaqat: [j.halaqa] })); return Array.isArray(j.roster) && Array.isArray(j.teachers); } catch { return false; }
     });
     const roles = Object.fromEntries(Object.entries(saved.roles ?? {}).filter(([, r]) => r === 'owner' || r === 'teacher')) as Record<string, TeachingRole>;
-    return { roles, joined, people: saved.people && typeof saved.people === 'object' ? saved.people : {}, photos: saved.photos && typeof saved.photos === 'object' ? saved.photos : {} };
+    const reminders = Object.fromEntries(Object.entries(saved.reminders ?? {}).filter(([, lead]) => LEADS.includes(lead))) as Record<string, ReminderLead>;
+    return { roles, joined, reminders,
+      people: saved.people && typeof saved.people === 'object' ? saved.people : {}, photos: saved.photos && typeof saved.photos === 'object' ? saved.photos : {} };
   } catch {
     return empty;
   }
@@ -108,10 +117,12 @@ export function createMembershipStore({ user, api, storage, now = Date.now }: {
   storage: Pick<CacheStorage, 'getItem' | 'setItem'>;
   now?: () => number;
 }) {
-  let state: MembershipState = { roles: {}, joined: [], people: {}, photos: {}, loaded: false, refreshing: false };
+  let state: MembershipState = { roles: {}, joined: [], people: {}, photos: {}, reminders: {}, loaded: false, refreshing: false };
   const listeners = new Set<() => void>();
   const publish = (next: Partial<MembershipState>) => { state = { ...state, ...next }; listeners.forEach((l) => l()); };
-  const remember = () => storage.setItem(membershipKey(user), JSON.stringify({ roles: state.roles, joined: state.joined, people: state.people, photos: state.photos })).catch(() => {});
+  const remember = () => storage.setItem(membershipKey(user), JSON.stringify({
+    roles: state.roles, joined: state.joined, people: state.people, photos: state.photos, reminders: state.reminders,
+  })).catch(() => {});
   let reading: Promise<void> | undefined;
   // One refresh at a time; one asked for meanwhile runs after it (it may need what just changed).
   let running: Promise<void> | undefined;
@@ -175,9 +186,19 @@ export function createMembershipStore({ user, api, storage, now = Date.now }: {
       forgotten.set(halaqa, ++forgets);
       const { [halaqa]: _role, ...roles } = state.roles;
       const { [halaqa]: _people, ...people } = state.people;
-      publish({ roles, people, joined: state.joined.filter((j) => j.halaqa.id !== halaqa) });
+      const { [halaqa]: _reminder, ...reminders } = state.reminders;
+      publish({ roles, people, reminders, joined: state.joined.filter((j) => j.halaqa.id !== halaqa) });
       await remember();
     },
+
+    /** The reminder before each session of a halaqa the user is a member of (none: `undefined`). */
+    async setReminder(halaqa: string, lead: ReminderLead | undefined) {
+      await read();
+      const { [halaqa]: _old, ...reminders } = state.reminders;
+      publish({ reminders: lead === undefined ? reminders : { ...reminders, [halaqa]: lead } });
+      await remember();
+    },
+
   };
 
   /**
@@ -211,7 +232,9 @@ export function createMembershipStore({ user, api, storage, now = Date.now }: {
       for (const id of Object.keys(roles)) if (gone(id)) delete roles[id];
       const kept = joined.filter((j) => !gone(j.halaqa.id));
       const people = Object.fromEntries(Object.entries(state.people).filter(([id]) => roles[id] || kept.some((j) => j.halaqa.id === id)));
-      publish({ roles, joined: kept, people, problem });
+      // A halaqa the user is no longer a member of takes its reminder with it.
+      const reminders = Object.fromEntries(Object.entries(state.reminders).filter(([id]) => kept.some((j) => j.halaqa.id === id)));
+      publish({ roles, joined: kept, people, reminders, problem });
       await remember();
       await photosFor(kept.flatMap((j) => [...j.teachers.map((t) => t.avatar), ...j.roster.map((r) => r.avatar)]));
     } catch (error) {
@@ -230,3 +253,25 @@ export const photoOf = (state: Pick<MembershipState, 'photos'>, avatar: string |
   const link = avatar ? state.photos[avatar] : undefined;
   return link && link.until > now ? link.url : undefined;
 };
+
+/**
+ * A recitation's key among those a memorization record has taken in (`fromHalaqat`): its halaqa,
+ * its session and its portion (a portion changed afterwards counts anew).
+ */
+export const recitationKey = (halaqa: string, session: string, { from, to }: Portion) => `${halaqa}|${session}:${from.surah}.${from.ayah}-${to.surah}.${to.ayah}`;
+
+export interface PassedRecitation { riwayah: Riwayah; key: string; portion: Portion }
+/**
+ * What a member has passed in the halaqat they are in (a new portion heard and not to be repeated)
+ * that their memorization record of the halaqa's riwayah hasn't taken in yet (`taken`).
+ */
+export function passedRecitations(joined: JoinedHalaqa[], taken: (riwayah: Riwayah) => ReadonlySet<string>): PassedRecitation[] {
+  return joined.flatMap(({ halaqa, student }) => {
+    const had = taken(halaqa.riwayah);
+    return halaqa.sessions.flatMap((session) => session.entries.filter((e) => e.student === student).flatMap((entry) => entry.recitations
+      .filter((r) => r.kind === 'new' && r.grade !== 'repeat')
+      .map((r) => ({ riwayah: halaqa.riwayah, key: recitationKey(halaqa.id, session.id, r.portion), portion: r.portion }))
+      // A note too long for the record (ids written elsewhere) is passed over rather than refused with the rest.
+      .filter((r) => !had.has(r.key) && r.key.length <= FROM_HALAQAT_KEY)));
+  });
+}

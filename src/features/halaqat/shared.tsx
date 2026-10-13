@@ -196,7 +196,7 @@ function LawhRule({ palette: p, vertical = false }: { palette: ReaderPalette; ve
 }
 
 /** A halaqa in a line: its riwayah, its days, and its time. */
-export function halaqaFacts(halaqa: Halaqa) {
+export function halaqaFacts(halaqa: Pick<Halaqa, 'riwayah' | 'weekdays' | 'time'>) {
   return formatList([t('common.riwayahOf', { riwayah: RIWAYAT[halaqa.riwayah].label }), halaqa.weekdays.length ? weekdaysLabel(halaqa.weekdays) : t('halaqat.list.noDays'),
     ...(halaqa.time ? [t('halaqat.reminders.at', { time: `${String(halaqa.time.hour).padStart(2, '0')}:${String(halaqa.time.minute).padStart(2, '0')}` })] : [])]);
 }

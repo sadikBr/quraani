@@ -253,3 +253,30 @@ test('passages memorized in a halaqa join the record, and the memorization goal 
   // Another edition's index is refused.
   await expect(env.repo.remember(buildPlanIndex(fixture(2)), 'warsh', [{ start: 0, end: 2 }])).rejects.toThrow();
 });
+
+test('the record notes the halaqa recitations it took in, keeps them through goals, and reads them back', async () => {
+  const env = storageRepo();
+  await env.repo.load();
+  await env.repo.remember(index, 'warsh', [{ start: 0, end: 4 }], ['halaqa-a|session-1:78.1-78.4']);
+  expect(env.repo.memorization()[0].fromHalaqat).toEqual(['halaqa-a|session-1:78.1-78.4']);
+  // A recitation already in the record, its portion already there: only its note is added.
+  await env.repo.remember(index, 'warsh', [{ start: 0, end: 4 }], ['halaqa-a|session-2:78.1-78.4', 'halaqa-a|session-1:78.1-78.4']);
+  expect(env.repo.memorization()[0]).toMatchObject({ ranges: [{ start: 0, end: 4 }], fromHalaqat: ['halaqa-a|session-1:78.1-78.4', 'halaqa-a|session-2:78.1-78.4'] });
+  const before = env.raw();
+  await env.repo.remember(index, 'warsh', [{ start: 0, end: 4 }], ['halaqa-a|session-2:78.1-78.4']);
+  expect(env.raw()).toBe(before);
+  // A note alone, its portion already in the record, leaves the goal that owns it as it was.
+  await env.repo.update(() => [make({ memorized: [{ start: 0, end: 4 }], initialRecord: [{ start: 0, end: 4 }] })]);
+  const goalBefore = JSON.stringify(decodePlans(env.raw()));
+  await env.repo.remember(index, 'warsh', [{ start: 0, end: 4 }], ['halaqa-a|session-3:78.1-78.4']);
+  expect(JSON.stringify(decodePlans(env.raw()))).toBe(goalBefore);
+  expect(decodeMemorization(env.raw())[0].fromHalaqat).toHaveLength(3);
+  // A goal made on the record keeps the notes with it.
+  await env.repo.update((items) => items.map((p) => reviseMemorization(p, index, [{ start: 0, end: 6 }], monday)));
+  expect(decodeMemorization(env.raw())[0]).toMatchObject({ ranges: [{ start: 0, end: 6 }], fromHalaqat: ['halaqa-a|session-1:78.1-78.4', 'halaqa-a|session-2:78.1-78.4', 'halaqa-a|session-3:78.1-78.4'] });
+  // Notes that don't read as notes are refused, as the rest of a record that doesn't read.
+  const record = { riwayah: 'warsh', corpus: 'x', totalAyahs: 10, ranges: [] };
+  expect(() => decodeMemorization(JSON.stringify({ memorization: [{ ...record, fromHalaqat: 'halaqa-a' }] }))).toThrow();
+  expect(() => decodeMemorization(JSON.stringify({ memorization: [{ ...record, fromHalaqat: [3] }] }))).toThrow();
+  expect(decodeMemorization(JSON.stringify({ memorization: [record] }))).toEqual([record]);
+});

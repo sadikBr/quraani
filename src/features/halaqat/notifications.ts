@@ -3,7 +3,7 @@ import { isRunningInExpoGo } from 'expo';
 import * as Notifications from '@/features/plans/local-notifications';
 import { validDate } from '@/features/plans/dates';
 import { t } from '@/i18n';
-import { HALAQA_REMINDER_PREFIX, halaqaReminderQueue, type HalaqaReminder, type HalaqatState } from './model';
+import { clockText, HALAQA_REMINDER_PREFIX, halaqaReminderQueue, type HalaqaReminder, type HalaqatState, type MemberReminder } from './model';
 
 export const remindersSupported = true;
 
@@ -40,18 +40,22 @@ export async function requestHalaqaReminders(): Promise<void> {
   }
 }
 
-const clock = (r: HalaqaReminder) => `${String(r.time.hour).padStart(2, '0')}:${String(r.time.minute).padStart(2, '0')}`;
-/** A reminder's words: «حصة حلقة العائلة بعد ساعة», and when it starts. */
+/** A reminder's words: «حصة حلقة العائلة بعد ساعة», when it starts, and what to do (record it; for a member, be ready). */
 export const reminderText = (r: HalaqaReminder) => ({
   title: t(`halaqat.reminders.notification.title${r.before}`, { name: r.name }),
-  body: r.before ? t('halaqat.reminders.notification.body', { time: clock(r) }) : t('halaqat.reminders.notification.bodyNow'),
+  body: r.member
+    ? r.before ? t('halaqat.reminders.notification.bodyMember', { time: clockText(r.time) }) : t('halaqat.reminders.notification.bodyMemberNow')
+    : r.before ? t('halaqat.reminders.notification.body', { time: clockText(r.time) }) : t('halaqat.reminders.notification.bodyNow'),
 });
 
 let queue: Promise<unknown> = Promise.resolve();
-/** Replaces the scheduled halaqa reminders with the ones wanted now; other notifications are left alone. */
-export function syncHalaqaReminders(state: HalaqatState) {
+/**
+ * Replaces the scheduled halaqa reminders with the ones wanted now (those the user supervises, and
+ * those they are a member of with the reminder they chose); other notifications are left alone.
+ */
+export function syncHalaqaReminders(state: HalaqatState, members: MemberReminder[] = []) {
   const task = queue.catch(() => {}).then(async () => {
-    const wanted = allowed(await Notifications.getPermissionsAsync()) ? halaqaReminderQueue(state, new Date()) : [];
+    const wanted = allowed(await Notifications.getPermissionsAsync()) ? halaqaReminderQueue(state, new Date(), undefined, members) : [];
     const existing = (await Notifications.getAllScheduledNotificationsAsync()).filter((n) => n.identifier.startsWith(HALAQA_REMINDER_PREFIX));
     const keep = new Set(wanted.map((n) => n.id));
     for (const n of existing) if (!keep.has(n.identifier)) await Notifications.cancelScheduledNotificationAsync(n.identifier);
@@ -60,7 +64,7 @@ export function syncHalaqaReminders(state: HalaqatState) {
       const { title, body } = reminderText(n);
       if (existing.some((x) => x.identifier === n.id && x.content.title === title && x.content.body === body)) continue;
       await Notifications.scheduleNotificationAsync({ identifier: n.id,
-        content: { title, body, data: { halaqa: n.halaqa, date: n.day } },
+        content: { title, body, data: { halaqa: n.halaqa, date: n.day, ...(n.member ? { member: true } : {}) } },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: n.date, ...(channelId ? { channelId } : {}) } });
     }
   });
@@ -68,12 +72,12 @@ export function syncHalaqaReminders(state: HalaqatState) {
   return task;
 }
 
-/** Opens the session a reminder was about. */
-export function observeHalaqaNotifications(open: (halaqa: string, date: string) => void) {
+/** Opens what a reminder was about (`member`: a halaqa the user is a member of). */
+export function observeHalaqaNotifications(open: (halaqa: string, date: string, member: boolean) => void) {
   const handle = (response: Notifications.NotificationResponse | null) => {
     const data = response?.notification.request.content.data;
     const halaqa = data?.halaqa, date = data?.date;
-    if (typeof halaqa === 'string' && /^halaqa-[a-z0-9-]+$/.test(halaqa) && validDate(date)) { open(halaqa, date); Notifications.clearLastNotificationResponse(); }
+    if (typeof halaqa === 'string' && /^halaqa-[a-z0-9-]+$/.test(halaqa) && validDate(date)) { open(halaqa, date, data?.member === true); Notifications.clearLastNotificationResponse(); }
   };
   const subscription = Notifications.addNotificationResponseReceivedListener(handle);
   handle(Notifications.getLastNotificationResponse());
