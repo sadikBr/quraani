@@ -4,7 +4,7 @@ import * as Linking from 'expo-linking';
 import { contentStorage } from '@/features/quran-reader/storage/content-storage';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from './config';
 import { AccountError, createAuthClient, linkParams, type AccountUser } from './auth-client';
-import { createAccountApi, type PhotoBody } from './api';
+import { createAccountApi, type AccountApi, type PhotoBody } from './api';
 import { createProfileStore, devicesFrom, profileKey, type Device, type ProfileState } from './profile';
 import { deviceName, devicePlatform } from './device';
 import { createSyncEngine, type SyncState } from './sync/engine';
@@ -42,6 +42,8 @@ interface AccountContext {
   devices: () => Promise<Device[]>;
   endDevice: (id: string) => Promise<void>;
   endOtherDevices: () => Promise<void>;
+  /** The account's data as the signed-in user (none signed out): for features of their own. */
+  api: AccountApi | undefined;
 }
 
 const idle: SyncState = { syncing: false, conflicts: [], unreadable: [] };
@@ -118,6 +120,7 @@ export function AccountProvider({ children }: PropsWithChildren) {
     devices: async () => people ? devicesFrom(await people.api.sessions()) : signedOut(),
     endDevice: async (id: string) => { if (!people) return signedOut(); await people.api.endSession(id); },
     endOtherDevices: () => auth.signOutOthers(),
+    api: people?.api,
   }), [people]);
 
   const sync = useSyncExternalStore(

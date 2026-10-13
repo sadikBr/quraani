@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { Lawh } from '@/components/craft/lawh';
@@ -130,3 +131,8 @@ const s = StyleSheet.create({
   attendanceOption: { flex: 1, minWidth: 0, minHeight: 34, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.control, borderWidth: 1 },
   attendanceCompact: { minHeight: 30, paddingHorizontal: 2 },
 });
+
+/** Back, or to the halaqat when there is nothing to go back to (opened from a link). */
+export const backOrHalaqat = () => { if (router.canGoBack()) router.back(); else router.replace('/halaqat'); };
+/** Past a halaqa the user left or deleted (and the screen on it): to where they were before, or the halaqat. */
+export const pastHalaqa = (screens: number) => { if (router.canDismiss()) router.dismiss(screens); else router.replace('/halaqat'); };

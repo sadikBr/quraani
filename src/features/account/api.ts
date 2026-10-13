@@ -93,6 +93,33 @@ export function createAccountApi({ url, apiKey, token, fetch: send = fetch, time
       return (items ?? []).filter((item) => item.name && item.id).map((item) => `${folder}/${item.name}`);
     },
 
+    /** Links to several photos at once (the bucket is private); a photo that can't be reached has none. */
+    async photoLinks(paths: string[], seconds: number): Promise<Record<string, string>> {
+      if (!paths.length) return {};
+      const json = await authed<{ path?: string; signedURL?: string | null; signedUrl?: string | null }[]>(`/storage/v1/object/sign/${AVATARS}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expiresIn: seconds, paths }),
+      });
+      const links: Record<string, string> = {};
+      for (const item of json ?? []) {
+        const link = item.signedURL ?? item.signedUrl;
+        if (item.path && link) links[item.path] = /^https?:/.test(link) ? link : `${url}/storage/v1${link.startsWith('/') ? '' : '/'}${link}`;
+      }
+      return links;
+    },
+
+    // Halaqat shared with others (supabase/migrations/…_joining_halaqat.sql).
+    /** The code to share: the halaqa's own, or a co-teacher's; `renew` makes a new one. */
+    halaqaInvite: (halaqa: string, kind: InviteKind, renew = false) =>
+      rpc<{ code: string; kind: InviteKind; expires_at: string | null }>('halaqa_invite', { p_halaqa: halaqa, p_kind: kind, p_renew: renew }),
+    /** What a code opens (null when it opens nothing). */
+    previewInvite: (code: string) => rpc<InvitePreview | null>('preview_halaqa_invite', { p_code: code }),
+    joinHalaqa: (code: string, name: string, today: string) => rpc<JoinResult | null>('join_halaqa', { p_code: code, p_name: name, p_today: today }),
+    leaveHalaqa: (halaqa: string, today: string) => rpc<void>('leave_halaqa', { p_halaqa: halaqa, p_today: today }),
+    removeHalaqaMember: (halaqa: string, user: string) => rpc<boolean>('remove_halaqa_member', { p_halaqa: halaqa, p_user: user }),
+    halaqaPeople: (halaqa: string) => rpc<HalaqaPersonRow[]>('halaqa_people', { p_halaqa: halaqa }),
+    /** A halaqa as a member sees it; points counted in all and from `from`. */
+    joinedHalaqa: (halaqa: string, from: string) => rpc<unknown>('joined_halaqa', { p_halaqa: halaqa, p_from: from }),
+
     /** Names this phone's sign-in session, so the account's list of devices can say which it is. */
     registerDevice: (name: string, platform: 'android' | 'ios' | 'web') => rpc<void>('register_device', { p_name: name, p_platform: platform }),
     sessions: () => rpc<unknown>('my_sessions'),
@@ -102,3 +129,30 @@ export function createAccountApi({ url, apiKey, token, fetch: send = fetch, time
 }
 
 export type AccountApi = ReturnType<typeof createAccountApi>;
+
+/** `member`: the halaqa's own code (anyone joins as a participant); `teacher`: a co-teacher's (once). */
+export type InviteKind = 'member' | 'teacher';
+export interface InvitePreview {
+  halaqa: string;
+  /** The halaqa's settings, as its teachers keep them. */
+  data: { name?: string; riwayah?: string; weekdays?: number[] } | null;
+  deleted: boolean;
+  kind: InviteKind;
+  /** Its owner's name, if they gave one. */
+  teacher: string | null;
+  members: number;
+  /** The user's role in it already, if they are in it. */
+  role: 'teacher' | 'member' | null;
+}
+export interface JoinResult { halaqa: string; role: 'teacher' | 'member'; student: string | null; already: boolean }
+export interface HalaqaPersonRow {
+  /** Their account (teachers see it, to take someone out). */
+  user: string | null;
+  role: 'owner' | 'teacher' | 'member';
+  /** The participant a member is. */
+  student: string | null;
+  name: string;
+  avatar: string | null;
+  me: boolean;
+  joined_at: string;
+}

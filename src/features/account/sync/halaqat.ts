@@ -1,4 +1,4 @@
-import { newId, type Entry, type Halaqa, type HalaqaSession, type HalaqatState, type Student } from '@/features/halaqat/model';
+import { decodeHalaqat, newId, type Entry, type Halaqa, type HalaqaSession, type HalaqatState, type Student } from '@/features/halaqat/model';
 import { fingerprint } from './fingerprint';
 import type { HalaqaMark, HalaqaPush, HalaqaPushResult, HalaqatSource, Ledger, Mark, PulledHalaqa, Remote } from './types';
 
@@ -15,26 +15,54 @@ type Data = Record<string, unknown>;
 interface EntryRecord { date: string; student: string; session: string; data: Data }
 interface Records { meta: Data; students: Map<string, Data>; entries: Map<string, EntryRecord> }
 
+/** Whether a participant's record reads as the app's own (one that doesn't is left out, not the halaqa). */
+function readable(id: string, data: Data) {
+  try {
+    decodeHalaqat(JSON.stringify({ version: 1, halaqat: [{ id: 'halaqa-check', name: 'x', riwayah: 'warsh', weekdays: [], createdOn: '2026-01-01', students: [{ ...data, id }], sessions: [] }] }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** A mark that matches no record: the phone's record has to go up. */
 const UNSYNCED = '';
 export const entryKey = (date: string, student: string) => `${date}|${student}`;
 
-function recordsOf(halaqa: Halaqa): Records {
+/**
+ * A halaqa's records as the account keeps them. The phone's owner (`me`) goes up as their account
+ * (`account`), so that it is theirs on all their phones and no one else's: another teacher's phone
+ * keeps the participant someone else is as it came.
+ */
+function recordsOf(halaqa: Halaqa, user: string): Records {
   const { id: _id, students, sessions, ...meta } = halaqa;
   const entries = new Map<string, EntryRecord>();
   for (const session of sessions) {
     for (const { student, ...data } of session.entries) entries.set(entryKey(session.date, student), { date: session.date, student, session: session.id, data });
   }
-  return { meta, students: new Map(students.map(({ id, ...data }) => [id, data])), entries };
+  return {
+    meta, entries,
+    students: new Map(students.map(({ id, me, account, ...data }) => {
+      const of = me ? user : account === user ? undefined : account;
+      return [id, of ? { ...data, account: of } : data];
+    })),
+  };
 }
 
-/** The halaqa from its records, in the phone's order where it had them. */
-function halaqaOf(id: string, records: Records, local: Halaqa | undefined, fromAccount: Set<string>): Halaqa {
+/**
+ * The halaqa from its records, in the phone's order where it had them. The phone's owner is the
+ * participant that is their account (one: the phone's own choice first).
+ */
+function halaqaOf(id: string, records: Records, local: Halaqa | undefined, user: string): Halaqa {
   const known = local?.students.map((s) => s.id).filter((s) => records.students.has(s)) ?? [];
   const order = [...known, ...[...records.students.keys()].filter((s) => !known.includes(s)).sort()];
-  let students: Student[] = order.map((s) => ({ ...records.students.get(s), id: s }) as Student);
-  // One participant is the phone's owner: when both sides named one, the phone's stays.
-  if (students.filter((s) => s.me).length > 1) students = students.map(({ me, ...s }) => (me && !fromAccount.has(s.id) ? { ...s, me } : s) as Student);
+  const theirs = order.filter((s) => records.students.get(s)?.account === user);
+  const mine = theirs.find((s) => local?.students.find((x) => x.id === s)?.me) ?? theirs[0];
+  const students: Student[] = order.map((s) => {
+    // The user's own account is `me` on the phone; someone else's is kept as it came.
+    const { account, ...data } = records.students.get(s) as Data & { account?: string };
+    return { ...data, id: s, ...(account && account !== user ? { account } : {}), ...(s === mine ? { me: true } : {}) } as Student;
+  });
   const present = new Set(order);
 
   const sessions = new Map<string, HalaqaSession>();
@@ -69,11 +97,10 @@ function halaqaOf(id: string, records: Records, local: Halaqa | undefined, fromA
  * phone changed since `mark` keep the phone's version and are to go up on the account's revision.
  * Returns the halaqa (none when the account deleted it) and the marks to keep.
  */
-export function mergeHalaqa(local: Halaqa | undefined, pulled: PulledHalaqa, mark: HalaqaMark | undefined): { halaqa: Halaqa | undefined; mark: HalaqaMark | undefined } {
+export function mergeHalaqa(local: Halaqa | undefined, pulled: PulledHalaqa, mark: HalaqaMark | undefined, user: string): { halaqa: Halaqa | undefined; mark: HalaqaMark | undefined } {
   if (pulled.deleted) return { halaqa: undefined, mark: undefined };
-  const records: Records = local ? recordsOf(local) : { meta: {}, students: new Map(), entries: new Map() };
+  const records: Records = local ? recordsOf(local, user) : { meta: {}, students: new Map(), entries: new Map() };
   const next: HalaqaMark = { revision: mark?.revision ?? 0, fp: mark?.fp ?? UNSYNCED, version: pulled.version, students: { ...mark?.students }, entries: { ...mark?.entries } };
-  const fromAccount = new Set<string>();
 
   // Each record: the same on both sides, changed only in the account (it comes down), or changed on
   // the phone (it stays, to go up on the account's revision). The mark then holds the account's
@@ -108,8 +135,12 @@ export function mergeHalaqa(local: Halaqa | undefined, pulled: PulledHalaqa, mar
   }
 
   for (const s of pulled.students) {
-    const settled = settle(records.students.get(s.id), s.data, s.revision, s.deleted, mark?.students[s.id],
-      () => { records.students.set(s.id, s.data as Data); fromAccount.add(s.id); },
+    // (An older app named the phone's owner `me`: whose it was is unknown.)
+    const { me: _me, ...data } = (s.data ?? {}) as Data;
+    // One that doesn't read (written by a newer app, or by hand) is left as it was here.
+    if (!s.deleted && !readable(s.id, data)) continue;
+    const settled = settle(records.students.get(s.id), data, s.revision, s.deleted, mark?.students[s.id],
+      () => records.students.set(s.id, data),
       () => records.students.delete(s.id));
     if (settled) next.students[s.id] = settled; else delete next.students[s.id];
   }
@@ -122,14 +153,14 @@ export function mergeHalaqa(local: Halaqa | undefined, pulled: PulledHalaqa, mar
   }
   // A participant gone takes their days with them.
   for (const [key, record] of records.entries) if (!records.students.has(record.student)) records.entries.delete(key);
-  return { halaqa: halaqaOf(pulled.id, records, local, fromAccount), mark: next };
+  return { halaqa: halaqaOf(pulled.id, records, local, user), mark: next };
 }
 
 interface Sent { meta?: string; students: Map<string, string | null>; entries: Map<string, string | null> }
 
 /** What the phone changed in a halaqa since `mark` (all of it when the account has none), to go up. */
-export function pushFor(local: Halaqa, mark: HalaqaMark | undefined): { push: HalaqaPush; sent: Sent } | null {
-  const records = recordsOf(local);
+export function pushFor(local: Halaqa, mark: HalaqaMark | undefined, user: string): { push: HalaqaPush; sent: Sent } | null {
+  const records = recordsOf(local, user);
   const push: HalaqaPush = { students: [], entries: [] };
   const sent: Sent = { students: new Map(), entries: new Map() };
   const metaFp = fingerprint(records.meta);
@@ -199,6 +230,8 @@ export async function syncHalaqat(remote: Remote, source: HalaqatSource, ledger:
   const onPhone = (id: string) => source.read()?.halaqat.find((h) => h.id === id);
 
   for (const r of list) {
+    // A halaqa the user is a member of is theirs to see, not to keep (see halaqat/membership.ts).
+    if (r.role === 'member') continue;
     const mark = ledger.halaqat[r.id];
     try {
       if (r.deleted) {
@@ -214,7 +247,7 @@ export async function syncHalaqat(remote: Remote, source: HalaqatSource, ledger:
         const local = state.halaqat.find((h) => h.id === r.id);
         // Deleted on the phone while this was downloading: the deletion goes up instead.
         if (!local && ledger.halaqat[r.id]) { skipped = true; return state; }
-        const merged = mergeHalaqa(local, pulled, ledger.halaqat[r.id]);
+        const merged = mergeHalaqa(local, pulled, ledger.halaqat[r.id], ledger.user);
         next = merged.mark;
         return merged.halaqa ? withHalaqa(state, merged.halaqa) : without(state, r.id);
       });
@@ -229,10 +262,18 @@ export async function syncHalaqat(remote: Remote, source: HalaqatSource, ledger:
   for (const halaqa of source.read()?.halaqat ?? []) {
     const r = listed.get(halaqa.id);
     if (r?.deleted || r?.role === 'member' || failed.includes(halaqa.id)) continue;
-    // Kept before but no longer in the account: it goes up again, whole.
-    if (!r && ledger.halaqat[halaqa.id]) delete ledger.halaqat[halaqa.id];
+    // In step with the account before, and the user is no longer in it (taken out, or they left
+    // from another phone): it goes from this phone too.
+    if (!r && ledger.halaqat[halaqa.id]) {
+      try {
+        if (source.transform((state) => without(state, halaqa.id))) delete ledger.halaqat[halaqa.id];
+      } catch {
+        failed.push(halaqa.id);
+      }
+      continue;
+    }
     const mark = ledger.halaqat[halaqa.id];
-    const outgoing = pushFor(halaqa, mark);
+    const outgoing = pushFor(halaqa, mark, ledger.user);
     if (!outgoing) continue;
     try {
       ledger.halaqat[halaqa.id] = afterPush(mark, outgoing.sent, await remote.pushHalaqa(halaqa.id, outgoing.push));
@@ -251,7 +292,9 @@ export async function syncHalaqat(remote: Remote, source: HalaqatSource, ledger:
   for (const id of Object.keys(ledger.halaqat)) {
     if (onPhone(id)) continue;
     const r = listed.get(id);
-    if (!r || r.deleted || r.role === 'member') { delete ledger.halaqat[id]; continue; }
+    // Only its owner deletes a halaqa; a co-teacher's phone just stops keeping it (they leave it
+    // from the halaqa's screen, or it comes back at the next sync).
+    if (!r || r.deleted || r.role === 'member' || r.owner === false) { delete ledger.halaqat[id]; continue; }
     try {
       const result = await remote.pushHalaqa(id, { meta: { base: r.revision, deleted: true }, students: [], entries: [] });
       if (result.meta !== null) delete ledger.halaqat[id];

@@ -118,7 +118,7 @@ export function createSyncEngine({ user, remote, storage, documents, halaqat, no
       const halaqatState = halaqat()?.read();
       if (!halaqatState) return false;
       if (!halaqatSeen) return true;
-      if (halaqatState.halaqat.some((h) => pushFor(h, ledger!.halaqat[h.id]))) return true;
+      if (halaqatState.halaqat.some((h) => pushFor(h, ledger!.halaqat[h.id], ledger!.user))) return true;
       return Object.keys(ledger.halaqat).some((id) => !halaqatState.halaqat.some((h) => h.id === id));
     },
     /** Stops syncing (signed out, or the screen tree went away); `start` takes it up again. */

@@ -12,6 +12,9 @@ export function createFakeAccount() {
   const halaqat = new Map();
   // The halaqat are the signed-in user's (`user`); `others` are someone else's, ids taken.
   const others = new Set();
+  // The user's place in a halaqa when not its owner ({ role, owner }); `gone`: no longer in it.
+  const access = new Map();
+  const gone = new Set();
   const copy = (value) => value === undefined ? undefined : JSON.parse(canonical(value));
   const same = (a, b) => canonical(a) === canonical(b);
   let failNext = 0, loseNext = 0;
@@ -50,7 +53,8 @@ export function createFakeAccount() {
       if (!same(d.data, data)) { d.revision++; d.data = copy(data); }
       return d.revision;
     }),
-    halaqaVersions: call('halaqaVersions', () => [...halaqat].filter(([id]) => !others.has(id)).map(([id, h]) => ({ id, revision: h.revision, version: h.version, deleted: h.deleted, role: 'teacher' }))),
+    halaqaVersions: call('halaqaVersions', () => [...halaqat].filter(([id]) => !others.has(id) && !gone.has(id))
+      .map(([id, h]) => ({ id, revision: h.revision, version: h.version, deleted: h.deleted, role: 'teacher', owner: true, ...access.get(id) }))),
     pullHalaqa: call('pullHalaqa', (id, since) => {
       const h = halaqat.get(id);
       if (!h || others.has(id)) return null;
@@ -62,7 +66,8 @@ export function createFakeAccount() {
       };
     }),
     pushHalaqa: call('pushHalaqa', (id, push) => {
-      if (others.has(id)) {
+      if (push.meta?.deleted && access.get(id)?.owner === false) throw Object.assign(new Error('not_owner'), { kind: 'failed' });
+      if (others.has(id) || gone.has(id)) {
         if (push.meta?.base === 0) throw Object.assign(new Error('halaqa_taken'), { kind: 'failed' });
         throw Object.assign(new Error('halaqa_not_found'), { kind: 'failed' });
       }
@@ -97,7 +102,7 @@ export function createFakeAccount() {
     }),
   };
   return {
-    remote, documents, halaqat, calls, others,
+    remote, documents, halaqat, calls, others, access, gone,
     fail(n = 1) { failNext = n; },
     lose(n = 1) { loseNext = n; },
   };

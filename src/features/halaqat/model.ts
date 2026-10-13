@@ -53,6 +53,11 @@ export interface Student {
    * (محفوظك), and the new portions they pass here are added to it.
    */
   me?: true;
+  /**
+   * The account of the teacher this participant is (kept with the account, so that they are `me`
+   * on each of their phones and on no one else's).
+   */
+  account?: string;
 }
 export interface Halaqa {
   id: string;
@@ -79,6 +84,16 @@ export const NAME_LIMIT = 60;
 export const NOTE_LIMIT = 500;
 /** Marks on one recitation, at most. */
 export const MARK_LIMIT = 500;
+
+/** A name trimmed and cut to fit (`NAME_LIMIT` UTF-16 units, never half a character). */
+export function clampName(name: string) {
+  let out = '';
+  for (const char of name.trim()) {
+    if (out.length + char.length > NAME_LIMIT) break;
+    out += char;
+  }
+  return out.trim();
+}
 
 export const newId = (kind: 'halaqa' | 'student' | 'session') => `${kind}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -259,6 +274,36 @@ export function nextMeeting(halaqa: Halaqa, today: string): string | undefined {
   }
   return undefined;
 }
+// Points, for the scoreboard: attendance, and each recitation by its grade. The account counts them
+// the same way for members' phones (supabase/migrations/…_joining_halaqat.sql, `entry_points`).
+
+export const POINTS = {
+  attendance: { present: 2, late: 1, excused: 0, absent: 0 },
+  new: { excellent: 6, good: 4, fair: 2, repeat: 0 },
+  revision: { excellent: 3, good: 2, fair: 1, repeat: 0 },
+} as const satisfies { attendance: Record<Attendance, number> } & Record<RecitationKind, Record<Grade, number>>;
+
+export const entryPoints = (entry: Pick<Entry, 'attendance' | 'recitations'>) =>
+  (POINTS.attendance[entry.attendance] ?? 0) + entry.recitations.reduce((n, r) => n + (POINTS[r.kind]?.[r.grade] ?? 0), 0);
+
+export interface Score { student: string; total: number; recent: number }
+/** Each participant's points (those who left aside): in all, and on the days from `from`. */
+export function scoresOf(halaqa: Halaqa, from: string): Score[] {
+  return activeStudents(halaqa).map((student) => {
+    let total = 0, recent = 0;
+    for (const session of halaqa.sessions) {
+      const entry = entryOf(session, student.id);
+      if (!entry) continue;
+      const points = entryPoints(entry);
+      total += points;
+      if (session.date >= from) recent += points;
+    }
+    return { student: student.id, total, recent };
+  });
+}
+/** The first day of the month of `date` (YYYY-MM-DD). */
+export const monthStart = (date: string) => `${date.slice(0, 8)}01`;
+
 export const HALAQA_REMINDER_PREFIX = 'quranni-halaqa:';
 /** How many reminders are scheduled at most, all halaqat together (a phone keeps a limited number). */
 const REMINDER_LIMIT = 24;
@@ -385,7 +430,8 @@ export function decodeHalaqat(raw: string | null): HalaqatState {
     for (const s of h.students) {
       if (!s || !isId(s.id, 'student') || students.has(s.id) || !isName(s.name) || !validDate(s.joinedOn) || !(DIRECTIONS as readonly string[]).includes(s.direction) ||
         !Array.isArray(s.known) || s.known.some((p) => !isPortion(p)) || (s.first !== undefined && !isAssignment(s.first)) ||
-        (s.leftOn !== undefined && !validDate(s.leftOn)) || (s.me !== undefined && s.me !== true)) fail();
+        (s.leftOn !== undefined && !validDate(s.leftOn)) || (s.me !== undefined && s.me !== true) ||
+        (s.account !== undefined && (typeof s.account !== 'string' || !s.account || s.account.length > 64))) fail();
       students.add(s.id);
     }
     if (h.students.filter((s) => s.me).length > 1) fail();

@@ -15,10 +15,11 @@ import { PlanDateField } from '@/features/plans/plan-date-field';
 import { WeekdayPicker } from '@/features/plans/recurring-components';
 import { CreationFooter } from '@/features/plans/goal-creation-components';
 import { t } from '@/i18n';
-import { useHalaqat } from './provider';
+import { useHalaqat, useMembership } from './provider';
 import { NAME_LIMIT, newId, REMINDER_LEADS, type Clock, type ReminderLead } from './model';
 import { HalaqaReminderError, remindersSupported, requestHalaqaReminders } from './notifications';
 import { ConfirmDialog } from './confirm-dialog';
+import { pastHalaqa } from './shared';
 
 const EVERY_DAY = [0, 1, 2, 3, 4, 5, 6];
 
@@ -27,6 +28,7 @@ export function HalaqaFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { palette: p, preferences } = useReadingPreferences();
   const { state, change } = useHalaqat();
+  const { roleOf, leave } = useMembership();
   const { today } = usePlans();
   const existing = state.halaqat.find((h) => h.id === id);
   const [name, setName] = useState(existing?.name ?? '');
@@ -36,6 +38,10 @@ export function HalaqaFormScreen() {
   const [time, setTime] = useState<Clock | undefined>(existing?.time);
   const [lead, setLead] = useState<ReminderLead | undefined>(existing?.reminder?.before);
   const [message, setMessage] = useState('');
+  const [leaving, setLeaving] = useState(false);
+  const [leaveFailed, setLeaveFailed] = useState(false);
+  // Only its owner deletes a halaqa; a co-teacher leaves it.
+  const owner = !existing || roleOf(existing.id) === 'owner';
   // A reminder is asked for notifications when it is turned on.
   const remind = async (on: boolean) => {
     setMessage('');
@@ -95,8 +101,12 @@ export function HalaqaFormScreen() {
           </RowGroup>
           {!!message && <Alert variant="destructive" palette={p}>{message}</Alert>}
         </Section>
-        {existing && <Section title={t('halaqat.form.deleteTitle')} palette={p}>
+        {existing && owner && <Section title={t('halaqat.form.deleteTitle')} palette={p}>
           <Button variant="outline" icon="trash" tone={p.destructive} palette={p} onPress={() => setDeleting(true)} block>{t('halaqat.form.delete')}</Button>
+        </Section>}
+        {existing && !owner && <Section title={t('halaqat.sharing.leave')} palette={p}>
+          <Button variant="outline" icon="log-out" tone={p.destructive} palette={p} onPress={() => { setLeaveFailed(false); setLeaving(true); }} block>{t('halaqat.sharing.leave')}</Button>
+          {leaveFailed && <Alert variant="destructive" palette={p}>{t('halaqat.sharing.leaveFailed')}</Alert>}
         </Section>}
       </ScrollView>
       <CreationFooter>
@@ -107,6 +117,9 @@ export function HalaqaFormScreen() {
     {deleting && existing && <ConfirmDialog title={t('halaqat.form.deleteConfirmTitle')} body={t('halaqat.form.deleteConfirmBody', { name: existing.name })}
       confirm={t('halaqat.form.delete')} onClose={() => setDeleting(false)}
       onConfirm={() => { setDeleting(false); change({ type: 'deleteHalaqa', halaqa: existing.id }); router.dismiss(2); }} />}
+    {leaving && existing && <ConfirmDialog icon="log-out" title={t('halaqat.sharing.leaveTitle')} body={t('halaqat.sharing.leaveTeacherBody', { name: existing.name })}
+      confirm={t('halaqat.sharing.leave')} onClose={() => setLeaving(false)}
+      onConfirm={() => { setLeaving(false); leave(existing.id).then(() => pastHalaqa(2), () => setLeaveFailed(true)); }} />}
   </SafeAreaView>;
 }
 

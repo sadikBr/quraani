@@ -8,10 +8,10 @@ import { createFakeAccount, memoryDocument, memoryHalaqat } from './helpers/fake
 
 const USER = 'user-1';
 /** A phone: its documents, its halaqat and its own marks, syncing with `account`. */
-function phone(account, { documents = [], halaqat } = {}) {
+function phone(account, { documents = [], halaqat, user = USER } = {}) {
   const storage = new MemoryCacheStorage();
   const source = halaqat === undefined ? undefined : memoryHalaqat(halaqat);
-  const engine = createSyncEngine({ user: USER, remote: account.remote, storage, documents: () => documents, halaqat: () => source });
+  const engine = createSyncEngine({ user, remote: account.remote, storage, documents: () => documents, halaqat: () => source });
   return { engine, storage, documents, halaqat: source, sync: () => engine.run().then(() => engine.getState()) };
 }
 const plans = (n) => JSON.stringify({ version: 1, plans: Array.from({ length: n }, (_, i) => ({ id: `plan-${i}` })), memorization: [] });
@@ -189,7 +189,9 @@ describe('halaqat', () => {
     expect(h.data).toEqual({ createdOn: '2026-10-01', name: 'حلقة العائلة', reminder: { before: 60 }, riwayah: 'warsh', time: { hour: 17, minute: 30 }, weekdays: [0, 3] });
     const b = phone(account, { halaqat: state() });
     await b.sync();
+    // The phone's owner goes up as their account, and is them on B too.
     expect(b.halaqat.value).toEqual(state(family()));
+    expect([...h.students.values()].map((s) => s.data.account)).toEqual([USER, undefined]);
     expect(b.engine.pending()).toBe(false);
     account.calls.length = 0;
     await b.sync();
@@ -277,16 +279,87 @@ describe('halaqat', () => {
     expect([...account.halaqat.keys()].sort()).toEqual(['halaqa-family', 'halaqa-mosque']);
   });
 
-  test('the phone\'s owner stays one participant when both phones named one', async () => {
+  test('the phone\'s owner is the account\'s: theirs on each of their phones, no one else\'s', async () => {
     const account = createFakeAccount();
     const a = phone(account, { halaqat: state(family()) }), b = phone(account, { halaqat: state() });
     await a.sync(); await b.sync();
+    expect(only(b.halaqat).students.filter((s) => s.me).map((s) => s.id)).toEqual(['student-a']);
     const moveMe = (source, to) => source.set(state({ ...only(source), students: only(source).students.map(({ me, ...s }) => s.id === to ? { ...s, me: true } : s) }));
     moveMe(a.halaqat, 'student-b');
-    await a.sync();
-    moveMe(b.halaqat, 'student-a'); // unchanged on B: still a
-    await b.sync();
+    await a.sync(); await b.sync();
     expect(only(b.halaqat).students.filter((s) => s.me).map((s) => s.id)).toEqual(['student-b']);
+    // A co-teacher's phone: the participant is the owner's, not theirs.
+    account.access.set('halaqa-family', { role: 'teacher', owner: false });
+    const co = phone(account, { halaqat: state(), user: 'user-2' });
+    await co.sync();
+    expect(only(co.halaqat).students.some((s) => s.me)).toBe(false);
+    expect(only(co.halaqat).students.find((s) => s.id === 'student-b').account).toBe(USER);
+    // Whatever the co-teacher changes, the participant stays the owner's.
+    co.halaqat.set(state({ ...only(co.halaqat), students: only(co.halaqat).students.map((s) => ({ ...s, name: `${s.name}!` })) }));
+    await co.sync(); await a.sync();
+    expect(only(a.halaqat).students.filter((s) => s.me).map((s) => s.id)).toEqual(['student-b']);
+  });
+
+  test('an account copy that names a participant as the phone\'s owner (an older app) is not taken', async () => {
+    const account = createFakeAccount();
+    await phone(account, { halaqat: state(family()) }).sync();
+    const h = account.halaqat.get('halaqa-family');
+    h.students.get('student-b').data = { ...h.students.get('student-b').data, me: true };
+    const b = phone(account, { halaqat: state() });
+    await b.sync();
+    expect(only(b.halaqat).students.filter((s) => s.me).map((s) => s.id)).toEqual(['student-a']);
+  });
+
+  test('a participant who doesn\'t read is left out, and the rest of the halaqa comes down', async () => {
+    const account = createFakeAccount();
+    await phone(account, { halaqat: state(family()) }).sync();
+    const h = account.halaqat.get('halaqa-family');
+    h.students.set('student-odd', { id: 'student-odd', data: { name: '\u00a0', joinedOn: '2026-10-01', direction: 'backward', known: [] }, revision: 1, version: ++h.version, deleted: false });
+    const b = phone(account, { halaqat: state() });
+    expect((await b.sync()).problem).toBeUndefined();
+    expect(only(b.halaqat).students.map((s) => s.id)).toEqual(['student-a', 'student-b']);
+    expect(only(b.halaqat).sessions).toHaveLength(1);
+  });
+
+  test('a co-teacher\'s phone keeps the halaqa in step, and deleting it there deletes nothing in the account', async () => {
+    const account = createFakeAccount();
+    await phone(account, { halaqat: state(family()) }).sync();
+    account.access.set('halaqa-family', { role: 'teacher', owner: false });
+    const co = phone(account, { halaqat: state() });
+    await co.sync();
+    expect(only(co.halaqat).students).toHaveLength(2);
+    co.halaqat.set(state());
+    expect((await co.sync()).problem).toBeUndefined();
+    expect(account.halaqat.get('halaqa-family').deleted).toBe(false);
+    await co.sync();
+    expect(co.halaqat.value.halaqat.map((x) => x.id)).toEqual(['halaqa-family']); // back, as it is still theirs to teach
+  });
+
+  test('a halaqa the user is a member of never comes into the halaqat they teach', async () => {
+    const account = createFakeAccount();
+    await phone(account, { halaqat: state(family()) }).sync();
+    account.access.set('halaqa-family', { role: 'member', owner: false });
+    const member = phone(account, { halaqat: state() });
+    await member.sync();
+    expect(member.halaqat.value.halaqat).toEqual([]);
+    expect(account.calls).not.toContain('pullHalaqa');
+  });
+
+  test('a halaqa the user is no longer in goes from the phone, and doesn\'t go up again', async () => {
+    const account = createFakeAccount();
+    await phone(account, { halaqat: state(family()) }).sync();
+    account.access.set('halaqa-family', { role: 'teacher', owner: false });
+    const co = phone(account, { halaqat: state() });
+    await co.sync();
+    account.gone.add('halaqa-family');
+    account.calls.length = 0;
+    expect((await co.sync()).problem).toBeUndefined();
+    expect(co.halaqat.value.halaqat).toEqual([]);
+    expect(account.calls).not.toContain('pushHalaqa');
+    // A halaqa never synced from this account still goes up as the user's own.
+    const fresh = phone(account, { halaqat: state(family({ id: 'halaqa-new' })) });
+    await fresh.sync();
+    expect(account.halaqat.has('halaqa-new')).toBe(true);
   });
 
   test('data from the account that doesn\'t check is not taken, and the rest goes on', async () => {

@@ -103,7 +103,8 @@ insert into public.halaqa_members (halaqa, user_id, role, student) values ('hala
 set role authenticated;
 set request.jwt.claims = '{"sub": "00000000-0000-0000-0000-00000000000c"}';
 select test.ok((select role from public.halaqa_versions()) = 'member', 'a member sees the halaqa');
-select test.ok(jsonb_array_length(public.pull_halaqa('halaqa-family', 0) -> 'students') = 3, 'and its participants (deleted ones too)');
+select test.ok(jsonb_array_length(public.pull_halaqa('halaqa-family', 0) -> 'students') = 1
+  and (public.pull_halaqa('halaqa-family', 0) -> 'students' -> 0 ->> 'id') = 'student-b', 'but only their own participant record (see joined_halaqa)');
 select test.ok(jsonb_array_length(public.pull_halaqa('halaqa-family', 0) -> 'entries') = 1
   and (public.pull_halaqa('halaqa-family', 0) -> 'entries' -> 0 ->> 'student') = 'student-b', 'but only their own days');
 select test.ok((select count(*) from public.halaqa_members) = 1, 'and not the other members');

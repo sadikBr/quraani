@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -14,22 +14,29 @@ import { ReaderButton } from '@/features/quran-reader/components/reading/reader-
 import { usePlans } from '@/features/plans/provider';
 import { weekdayDateLabel } from '@/features/plans/presentation';
 import { formatList, t } from '@/i18n';
-import { useHalaqa } from './provider';
-import { absent, activeStudents, currentAssignment, entryOf, heard, historyOf, nextMeeting, sessionOn, type Halaqa, type Student } from './model';
-import { GradeMark, portionLabel, studentNumber, useHalaqaIndex, displayName, halaqaFacts } from './shared';
+import { useHalaqa, useMembership } from './provider';
+import { absent, activeStudents, currentAssignment, entryOf, heard, historyOf, monthStart, nextMeeting, scoresOf, sessionOn, type Halaqa, type Student } from './model';
+import { photoOf } from './membership';
+import { JoinedHalaqaScreen } from './joined-screen';
+import { Scoreboard } from './scoreboard';
+import { backOrHalaqat, GradeMark, portionLabel, studentNumber, useHalaqaIndex, displayName, halaqaFacts } from './shared';
 
 /**
  * A halaqa: today's session through an arched window (or the way to start it), its students
- * with the portion each is on, and its past sessions.
+ * with the portion each is on, their points, and its past sessions. A halaqa the user joined as a
+ * member shows as they see it.
  */
 export function HalaqaScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { palette: p } = useReadingPreferences();
   const { halaqa, ready } = useHalaqa(id);
-  const back = { label: t('common.back'), onPress: () => router.back() };
+  const { membership } = useMembership();
+  const joined = membership.joined.find((j) => j.halaqa.id === id);
+  const back = { label: t('common.back'), onPress: backOrHalaqat };
+  if (!halaqa && joined) return <JoinedHalaqaScreen joined={joined} />;
   if (!halaqa) return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <PageBar back={back} palette={p} />
-    <View style={page.content}>{ready ? <Empty icon="users" palette={p} title={t('halaqat.notFound')} description={t('halaqat.notFoundDetail')} /> : <ActivityIndicator color={p.mutedForeground} />}</View>
+    <View style={page.content}>{ready && membership.loaded ? <Empty icon="users" palette={p} title={t('halaqat.notFound')} description={t('halaqat.notFoundDetail')} /> : <ActivityIndicator color={p.mutedForeground} />}</View>
   </SafeAreaView>;
   return <HalaqaDetail halaqa={halaqa} />;
 }
@@ -38,15 +45,26 @@ function HalaqaDetail({ halaqa }: { halaqa: Halaqa }) {
   const { palette: p } = useReadingPreferences();
   const { today } = usePlans();
   const { index, shape, error, retry } = useHalaqaIndex(halaqa.riwayah);
+  const { membership, people } = useMembership();
+  // Who joined from their accounts, for their photos on the board.
+  useEffect(() => { void people(halaqa.id).catch(() => {}); }, [halaqa.id, people]);
   const [showFormer, setShowFormer] = useState(false);
   const students = activeStudents(halaqa), former = halaqa.students.filter((s) => s.leftOn);
   const past = [...halaqa.sessions].filter((s) => s.date !== today).sort((a, b) => b.date.localeCompare(a.date));
   const facts = halaqaFacts(halaqa);
-  const addStudent = () => router.push({ pathname: '/halaqat/student-form', params: { halaqa: halaqa.id } });
+  const invite = () => router.push({ pathname: '/halaqat/members', params: { halaqa: halaqa.id } });
+  const avatarOf = (student: string) => membership.people[halaqa.id]?.find((x) => x.student === student)?.avatar;
+  const board = scoresOf(halaqa, monthStart(today)).map((score) => {
+    const student = students.find((x) => x.id === score.student)!, avatar = avatarOf(score.student);
+    return { key: score.student, name: student.name, me: !!student.me, photo: photoOf(membership, avatar), cacheKey: avatar, total: score.total, recent: score.recent };
+  });
   const openStudent = (student: Student) => router.push({ pathname: '/halaqat/student', params: { halaqa: halaqa.id, student: student.id } });
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
-    <PageBar back={{ label: t('common.back'), onPress: () => router.back() }} palette={p}
-      actions={<IconButton name="settings" label={t('halaqat.detail.settings')} palette={p} onPress={() => router.push({ pathname: '/halaqat/new', params: { id: halaqa.id } })} />} />
+    <PageBar back={{ label: t('common.back'), onPress: backOrHalaqat }} palette={p}
+      actions={<>
+        <IconButton name="users" label={t('halaqat.detail.people')} palette={p} onPress={invite} />
+        <IconButton name="settings" label={t('halaqat.detail.settings')} palette={p} onPress={() => router.push({ pathname: '/halaqat/new', params: { id: halaqa.id } })} />
+      </>} />
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 24 }]}>
       <PageTitle title={halaqa.name} subtitle={facts} palette={p} />
       {error && <Alert variant="destructive" palette={p} action={<Button variant="outline" size="sm" palette={p} icon="restore" onPress={retry}>{t('common.retry')}</Button>}>{error}</Alert>}
@@ -62,8 +80,11 @@ function HalaqaDetail({ halaqa }: { halaqa: Halaqa }) {
               trailing={last ? <GradeMark grade={last.grade} palette={p} /> : undefined} chevron />;
           })}
         </RowGroup> : <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22 }}>{t('halaqat.detail.noStudents')}</Text>}
-        <AddRow title={t('halaqat.detail.addStudent')} detail={t('halaqat.detail.addStudentDetail')} onPress={addStudent} palette={p} icon="user-plus" />
+        <AddRow title={t('halaqat.detail.addStudent')} detail={t('halaqat.detail.addStudentDetail')} onPress={invite} palette={p} icon="user-plus" />
       </Section>
+      {students.length > 0 && <Section title={t('halaqat.sharing.board')} palette={p}>
+        <Scoreboard rows={board} palette={p} />
+      </Section>}
       {!!past.length && <Section title={t('halaqat.detail.past')} palette={p}>
         <RowGroup palette={p}>
           {past.slice(0, 30).map((session) => {

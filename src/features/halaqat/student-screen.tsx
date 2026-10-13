@@ -14,8 +14,9 @@ import { formatList, formatNumber, t } from '@/i18n';
 import { useHalaqa, useHalaqat } from './provider';
 import {
   ATTENDANCE, attendanceOf, currentAssignment, historyOf, markCount, memorizedBy, totalAyahs,
-  type Halaqa, type Portion, type RecitationKind, type Student,
+  type Halaqa, type Portion, type QuranShape, type RecitationKind, type Student,
 } from './model';
+import type { PlanIndex } from '@/features/plans/engine';
 import { attendanceTone, GradeMark, LawhPortion, portionLabel, useHalaqaIndex, displayName, useLinkedStudent } from './shared';
 import { PortionSheet } from './portion-sheet';
 
@@ -42,10 +43,6 @@ function StudentDetail({ halaqa, student }: { halaqa: Halaqa; student: Student }
   const [choosing, setChoosing] = useState<RecitationKind | null>(null);
   const assigned = currentAssignment(halaqa, student);
   const history = historyOf(halaqa, student.id);
-  const attendance = attendanceOf(halaqa, student.id);
-  // The phone's owner counts what their own record holds too.
-  const linked = useLinkedStudent(student, halaqa.riwayah, index, shape);
-  const memorized = shape ? spanCount(memorizedBy(shape, halaqa, linked)) : 0;
   // The portions they are on were given by their last session that gave any, or when they joined.
   const giver = history.find((h) => h.entry.next);
   const reassign = (kind: RecitationKind, portion: Portion | undefined) => {
@@ -69,48 +66,69 @@ function StudentDetail({ halaqa, student }: { halaqa: Halaqa; student: Student }
               onChange={() => setChoosing('revision')} onClear={() => reassign('revision', undefined)} />
           </View>
         </Section>
-        <Section title={t('halaqat.student.progress')} palette={p}>
-          <View style={[s.panel, { backgroundColor: p.card, borderColor: p.border }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
-              <Text style={{ color: p.foreground, fontSize: 18, fontFamily: 'ReaderNaskhBold', lineHeight: 30 }}>{t('halaqat.student.memorized', { count: memorized })}</Text>
-              <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('halaqat.student.share', { percent: formatNumber(Math.round((memorized / totalAyahs(shape)) * 1000) / 10) })}</Text>
-            </View>
-            <Progress value={memorized / totalAyahs(shape)} palette={p} label={t('halaqat.student.memorized', { count: memorized })} />
-            <View style={s.stats}>
-              {ATTENDANCE.map((a) => <View key={a} style={[s.stat, { borderColor: withAlpha(attendanceTone(p, a), 0.35) }]}>
-                <Text style={{ color: attendanceTone(p, a), fontSize: 18, fontWeight: '700' }}>{formatNumber(attendance[a])}</Text>
-                <Text numberOfLines={1} style={{ color: p.mutedForeground, fontSize: 11 }}>{t(`halaqat.attendance.${a}`)}</Text>
-              </View>)}
-            </View>
-          </View>
-        </Section>
-        <Section title={t('halaqat.student.history')} palette={p}>
-          {!history.length ? <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('halaqat.student.noHistory')}</Text>
-            : <View style={{ gap: 10 }}>{history.slice(0, 60).map(({ session, entry }) => <View key={session.id} style={[s.panel, { backgroundColor: p.card, borderColor: p.border, gap: 8 }]}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Text style={{ flex: 1, color: p.foreground, fontSize: 15, fontWeight: '600' }}>{weekdayDateLabel(session.date)}</Text>
-                <Text style={{ color: attendanceTone(p, entry.attendance), fontSize: 12, fontWeight: '600' }}>{t(`halaqat.attendance.${entry.attendance}`)}</Text>
-              </View>
-              {entry.recitations.map((r) => <View key={r.kind} style={{ gap: 4 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Text style={{ flex: 1, color: p.foreground, fontSize: 14 }}>{formatList([t(`halaqat.kinds.${r.kind}`), portionLabel(index, shape, r.portion)])}</Text>
-                  <GradeMark grade={r.grade} palette={p} />
-                </View>
-                {(markCount(r.marks, 'mistake') > 0 || markCount(r.marks, 'hesitation') > 0) && <Text style={{ color: p.mutedForeground, fontSize: 12 }}>
-                  {formatList([...(markCount(r.marks, 'mistake') ? [t('halaqat.marks.mistakeCount', { count: markCount(r.marks, 'mistake') })] : []),
-                    ...(markCount(r.marks, 'hesitation') ? [t('halaqat.marks.hesitationCount', { count: markCount(r.marks, 'hesitation') })] : [])])}
-                </Text>}
-              </View>)}
-              {!!entry.note && <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 21 }}>{entry.note}</Text>}
-              <Button size="sm" variant="ghost" icon="pencil" palette={p} style={{ alignSelf: 'flex-start' }}
-                onPress={() => router.push({ pathname: '/halaqat/recite', params: { halaqa: halaqa.id, date: session.date, student: student.id, session: session.id } })}>{t('halaqat.student.editEntry')}</Button>
-            </View>)}</View>}
-        </Section>
+        <StudentRecord halaqa={halaqa} student={student} index={index} shape={shape} editable />
       </>}
     </ScrollView>
     {choosing && index && shape && <PortionSheet index={index} shape={shape} value={assigned[choosing]} fallbackSurah={student.direction === 'forward' ? 1 : 114} title={t(choosing === 'new' ? 'halaqat.lawh.new' : 'halaqat.lawh.revision')}
       subtitle={t('halaqat.student.changeCurrent')} onClose={() => setChoosing(null)} onSave={(portion) => { reassign(choosing, portion); setChoosing(null); }} />}
   </SafeAreaView>;
+}
+
+/**
+ * A participant's record: how much they have memorized, how often they came, and every
+ * recitation with its grade and marks (`editable`: each day opens to change it).
+ */
+export function StudentRecord({ halaqa, student, index, shape, editable = false, self = false }: {
+  halaqa: Halaqa; student: Student; index: PlanIndex; shape: QuranShape; editable?: boolean;
+  /** Read by the participant themselves (on their own phone): «محفوظك», «سجلّ تسميعك». */
+  self?: boolean;
+}) {
+  const { palette: p } = useReadingPreferences();
+  const history = historyOf(halaqa, student.id);
+  const attendance = attendanceOf(halaqa, student.id);
+  // The phone's owner counts what their own record holds too.
+  const linked = useLinkedStudent(student, halaqa.riwayah, index, shape);
+  const memorized = spanCount(memorizedBy(shape, halaqa, linked));
+  const memorizedText = self ? t('halaqat.sharing.myMemorized', { count: memorized }) : t('halaqat.student.memorized', { count: memorized });
+  return <>
+    <Section title={self ? t('halaqat.sharing.myProgress') : t('halaqat.student.progress')} palette={p}>
+      <View style={[s.panel, { backgroundColor: p.card, borderColor: p.border }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+          <Text style={{ color: p.foreground, fontSize: 18, fontFamily: 'ReaderNaskhBold', lineHeight: 30 }}>{memorizedText}</Text>
+          <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('halaqat.student.share', { percent: formatNumber(Math.round((memorized / totalAyahs(shape)) * 1000) / 10) })}</Text>
+        </View>
+        <Progress value={memorized / totalAyahs(shape)} palette={p} label={memorizedText} />
+        <View style={s.stats}>
+          {ATTENDANCE.map((a) => <View key={a} style={[s.stat, { borderColor: withAlpha(attendanceTone(p, a), 0.35) }]}>
+            <Text style={{ color: attendanceTone(p, a), fontSize: 18, fontWeight: '700' }}>{formatNumber(attendance[a])}</Text>
+            <Text numberOfLines={1} style={{ color: p.mutedForeground, fontSize: 11 }}>{t(`halaqat.attendance.${a}`)}</Text>
+          </View>)}
+        </View>
+      </View>
+    </Section>
+    <Section title={self ? t('halaqat.sharing.myHistory') : t('halaqat.student.history')} palette={p}>
+      {!history.length ? <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{self ? t('halaqat.sharing.myNoHistory') : t('halaqat.student.noHistory')}</Text>
+        : <View style={{ gap: 10 }}>{history.slice(0, 60).map(({ session, entry }) => <View key={session.id} style={[s.panel, { backgroundColor: p.card, borderColor: p.border, gap: 8 }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={{ flex: 1, color: p.foreground, fontSize: 15, fontWeight: '600' }}>{weekdayDateLabel(session.date)}</Text>
+            <Text style={{ color: attendanceTone(p, entry.attendance), fontSize: 12, fontWeight: '600' }}>{t(`halaqat.attendance.${entry.attendance}`)}</Text>
+          </View>
+          {entry.recitations.map((r) => <View key={r.kind} style={{ gap: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={{ flex: 1, color: p.foreground, fontSize: 14 }}>{formatList([t(`halaqat.kinds.${r.kind}`), portionLabel(index, shape, r.portion)])}</Text>
+              <GradeMark grade={r.grade} palette={p} />
+            </View>
+            {(markCount(r.marks, 'mistake') > 0 || markCount(r.marks, 'hesitation') > 0) && <Text style={{ color: p.mutedForeground, fontSize: 12 }}>
+              {formatList([...(markCount(r.marks, 'mistake') ? [t('halaqat.marks.mistakeCount', { count: markCount(r.marks, 'mistake') })] : []),
+                ...(markCount(r.marks, 'hesitation') ? [t('halaqat.marks.hesitationCount', { count: markCount(r.marks, 'hesitation') })] : [])])}
+            </Text>}
+          </View>)}
+          {!!entry.note && <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 21 }}>{entry.note}</Text>}
+          {editable && <Button size="sm" variant="ghost" icon="pencil" palette={p} style={{ alignSelf: 'flex-start' }}
+            onPress={() => router.push({ pathname: '/halaqat/recite', params: { halaqa: halaqa.id, date: session.date, student: student.id, session: session.id } })}>{t('halaqat.student.editEntry')}</Button>}
+        </View>)}</View>}
+    </Section>
+  </>;
 }
 
 const s = StyleSheet.create({

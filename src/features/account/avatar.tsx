@@ -38,3 +38,18 @@ export function Avatar({ size, photo, cacheKey, initial, palette: p, busy = fals
     </View>
   </View>;
 }
+
+/** A person in a list: their photo in a small circle with a gold rim, or their name's first letter. */
+export function PersonPhoto({ size = 36, photo, cacheKey, initial, palette: p }: {
+  size?: number; photo?: string; cacheKey?: string; initial: string; palette: ReaderPalette;
+}) {
+  const [failed, setFailed] = useState<string | undefined>(undefined);
+  const shown = photo && failed !== photo ? photo : undefined;
+  return <View aria-hidden importantForAccessibility="no-hide-descendants" style={{
+    width: size, height: size, borderRadius: size / 2, overflow: 'hidden', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: withAlpha(p.ornament, 0.14), borderWidth: 1, borderColor: withAlpha(p.ornament, 0.5),
+  }}>
+    {shown ? <Image source={{ uri: shown, cacheKey }} style={{ width: size, height: size }} contentFit="cover" transition={120} onError={() => setFailed(shown)} accessible={false} />
+      : <Text style={{ color: p.ornament, fontSize: Math.round(size * 0.44), lineHeight: Math.round(size * 0.72), fontFamily: 'ReaderNaskhBold', textAlign: 'center' }}>{initial}</Text>}
+  </View>;
+}

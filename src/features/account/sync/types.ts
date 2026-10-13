@@ -5,7 +5,13 @@ import type { HalaqatState } from '@/features/halaqat/model';
 export interface DocumentRevision { key: string; revision: number }
 export interface RemoteDocument extends DocumentRevision { data: unknown }
 
-export interface HalaqaRevision { id: string; revision: number; version: number; deleted: boolean; role: 'teacher' | 'member' }
+export interface HalaqaRevision {
+  id: string; revision: number; version: number; deleted: boolean;
+  /** `teacher`: its owner or a co-teacher; `member`: a participant from their own phone. */
+  role: 'teacher' | 'member';
+  /** Whether it is the user's own (absent from an older account: taken as theirs). */
+  owner?: boolean;
+}
 export interface PulledStudent { id: string; revision: number; deleted: boolean; data: unknown }
 export interface PulledEntry { date: string; student: string; session: string; revision: number; deleted: boolean; data: unknown }
 export interface PulledHalaqa {

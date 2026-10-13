@@ -33,7 +33,7 @@ import { usePrayers, useNow } from '@/features/prayers/provider';
 import { prayerWindow } from '@/features/prayers/times';
 import { PracticeScreen } from '@/features/practice/practice-screen';
 import { HalaqatScreen } from '@/features/halaqat/halaqat-screen';
-import { useHalaqat } from '@/features/halaqat/provider';
+import { useHalaqat, useMembership } from '@/features/halaqat/provider';
 import { absent, activeStudents, entryOf, heard, nextMeeting, sessionOn, type Halaqa } from '@/features/halaqat/model';
 import { useAccount } from '@/features/account/provider';
 import { t } from '@/i18n';
@@ -118,8 +118,9 @@ function NowTiles({ onTab }: { onTab: (tab: Tab) => void }) {
   const { state: prayers } = usePrayers();
   const now = useNow(60_000);
   const overview = goalsOverview(plans, today);
-  // The halaqat that meet today, or whose session has begun.
-  const halaqat = useHalaqat().state.halaqat.filter((h) => activeStudents(h).length && (sessionOn(h, today) || nextMeeting(h, today) === today));
+  // The halaqat that meet today, or whose session has begun (signed out, the halaqat wait).
+  const { signedIn } = useMembership();
+  const halaqat = useHalaqat().state.halaqat.filter((h) => signedIn && activeStudents(h).length && (sessionOn(h, today) || nextMeeting(h, today) === today));
   const tile = Math.round(Math.min(188, Math.min(width, readerLayout.maxWidth) * 0.47));
   const current = prayers.location ? prayerWindow(prayers.location, now, prayers).current?.prayer : undefined;
   // With nothing due today, the goal that comes next.

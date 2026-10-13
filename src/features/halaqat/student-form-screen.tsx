@@ -14,7 +14,7 @@ import { CreationFooter } from '@/features/plans/goal-creation-components';
 import { MemorizedSelectionSheet } from '@/features/plans/memorized-selection-sheet';
 import { memoryFor, mergeSpans, spanCount } from '@/features/plans/memorization';
 import { t } from '@/i18n';
-import { useHalaqat } from './provider';
+import { useHalaqat, useMembership } from './provider';
 import { memorizedBy, NAME_LIMIT, newId, portionOf, spanOf, validPortion, type Direction, type Portion, type Student } from './model';
 import { LawhPortion, useHalaqaIndex } from './shared';
 import { PortionSheet } from './portion-sheet';
@@ -29,6 +29,7 @@ export function StudentFormScreen() {
   const params = useLocalSearchParams<{ halaqa: string; student?: string }>();
   const { palette: p } = useReadingPreferences();
   const { state, change } = useHalaqat();
+  const { membership } = useMembership();
   const { today, memorization, remember } = usePlans();
   const halaqa = state.halaqat.find((h) => h.id === params.halaqa);
   const existing = halaqa?.students.find((s) => s.id === params.student);
@@ -51,6 +52,8 @@ export function StudentFormScreen() {
   let record: AyahSpan[] = [];
   if (me && index) { try { record = memoryFor(memorization, halaqa.riwayah, index); } catch { record = []; } }
   const ownerElsewhere = halaqa.students.find((s) => s.me && s.id !== existing?.id);
+  // Someone else's participant (another supervisor's, or a member who joined) can't be the phone's owner.
+  const someoneElse = !!existing && !existing.me && (!!existing.account || !!membership.people[halaqa.id]?.some((x) => x.student === existing.id));
   const save = async (leftOn = existing?.leftOn) => {
     if (!valid) return;
     Keyboard.dismiss();
@@ -59,6 +62,8 @@ export function StudentFormScreen() {
       ...(first || existing?.first?.revision ? { first: { ...(first ? { new: first } : {}), ...(existing?.first?.revision ? { revision: existing.first.revision } : {}) } } : {}),
       ...(leftOn ? { leftOn } : {}),
       ...(me ? { me: true as const } : {}),
+      // Someone else's own participant (another supervisor's) stays theirs.
+      ...(existing?.account && !me ? { account: existing.account } : {}),
     };
     change({ type: 'saveStudent', halaqa: halaqa.id, student });
     // Linked now: what they knew and passed here joins their own record.
@@ -86,10 +91,10 @@ export function StudentFormScreen() {
         </Section>
         {error ? <Alert variant="destructive" palette={p} action={<Button variant="outline" size="sm" palette={p} icon="restore" onPress={retry}>{t('common.retry')}</Button>}>{error}</Alert>
           : !index || !shape ? <ActivityIndicator color={p.mutedForeground} style={{ marginVertical: 24 }} /> : <>
-          <RowGroup palette={p}>
+          {!someoneElse && <RowGroup palette={p}>
             <SwitchRow icon="bookmark" label={t('halaqat.me.switch')} checked={me} onChange={setMe}
               detail={ownerElsewhere && me ? t('halaqat.me.moves', { name: ownerElsewhere.name }) : t('halaqat.me.switchDetail')} />
-          </RowGroup>
+          </RowGroup>}
           <Section title={existing ? t('halaqat.studentForm.firstTitleExisting') : t('halaqat.studentForm.firstTitle')} palette={p}>
             <LawhPortion title={t('halaqat.lawh.new')} portion={first} index={index} shape={shape} palette={p} emptyText={t('halaqat.studentForm.firstEmpty')}
               onChange={() => setChoosing('first')} onClear={() => setFirst(undefined)} />
