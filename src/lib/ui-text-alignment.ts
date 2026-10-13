@@ -10,3 +10,12 @@ export function rtlTextAlignment(alignment: TextAlignment, platform: string): Te
   if (alignment === 'left') return 'right';
   return alignment;
 }
+
+/**
+ * A text field written right to left: its text, placeholder and cursor at the right. A field's
+ * alignment is the platform's own (on Android, the field's gravity), which is physical whatever
+ * the layout's direction: unlike text (see `rtlTextAlignment`), `right` is the right on every
+ * platform, and `left` would hold an Arabic field to the left. Latin typed into it (an email)
+ * keeps the right too.
+ */
+export const rtlInput = { textAlign: 'right', writingDirection: 'rtl' } as const;

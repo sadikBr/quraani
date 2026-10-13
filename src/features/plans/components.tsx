@@ -1,6 +1,6 @@
 import { useState, type PropsWithChildren } from 'react';
 import { Alert, Button, Progress, SwitchMark } from '@/components/ui';
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { PageBar, PageTitle, Row, page } from '@/components/craft/page';
@@ -8,6 +8,7 @@ import { useReadingPreferences } from '../quran-reader/state/reading-preferences
 import { fieldElevation, readerShape, withAlpha } from '../quran-reader/design';
 import type { ReaderIconName } from '../quran-reader/components/ui/reader-chrome';
 import { t } from '@/i18n';
+import { rtlInput } from '@/lib/ui-text-alignment';
 
 /** A goals page with a plain title: the way back (an arrow), the title in Naskh, then its content. */
 export function PlanScreen({ title, subtitle, onBack, children }: PropsWithChildren<{ title: string; subtitle?: string; onBack: () => void }>) {
@@ -63,7 +64,7 @@ export function ProgressBar({ value }: { value: number }) {
 export const planStyles = StyleSheet.create({ row: { flexDirection: 'row', alignItems: 'center', gap: 10 }, column: { flex: 1, minWidth: 0 }, section: { gap: 12 }, actionRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' } });
 const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: readerShape.card, padding: 16, gap: 16 },
-  input: { minHeight: 44, borderWidth: 1, borderRadius: readerShape.control, paddingHorizontal: 12, fontSize: 16, fontFamily: 'UiSans', writingDirection: 'rtl', textAlign: Platform.OS === 'android' ? 'left' : 'right' },
+  input: { minHeight: 44, borderWidth: 1, borderRadius: readerShape.control, paddingHorizontal: 12, fontSize: 16, fontFamily: 'UiSans', ...rtlInput },
   switch: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 52, paddingVertical: 6 },
 });
 /**

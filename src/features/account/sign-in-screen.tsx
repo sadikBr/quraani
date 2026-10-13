@@ -105,7 +105,7 @@ export function SignInScreen() {
 }
 
 type FieldProps = Pick<ComponentProps<typeof TextInput>, 'accessibilityLabel' | 'onFocus' | 'onBlur' | 'style' | 'placeholderTextColor' | 'selectionColor'>;
-/** A labelled text field, written left to right (emails, passwords). */
+/** A labelled text field: at the right as every field is, its characters left to right (emails, passwords). */
 export function Field({ label, children, hint }: { label: string; hint?: string; children: (field: FieldProps) => ReactNode }) {
   const { palette: p } = useReadingPreferences();
   const [focused, setFocused] = useState(false);
@@ -147,7 +147,7 @@ export function Link({ label, onPress, disabled }: { label: string; onPress: () 
 }
 
 const s = StyleSheet.create({
-  input: { minHeight: 48, borderWidth: 1, borderRadius: readerShape.control, paddingHorizontal: 14, fontSize: 16, fontFamily: 'UiSans', writingDirection: 'ltr', textAlign: 'center' },
+  input: { minHeight: 48, borderWidth: 1, borderRadius: readerShape.control, paddingHorizontal: 14, fontSize: 16, fontFamily: 'UiSans', textAlign: 'right', writingDirection: 'ltr' },
   password: { paddingHorizontal: 48 },
   eye: { position: 'absolute', end: 4, top: 0, bottom: 0, width: 40, alignItems: 'center', justifyContent: 'center' },
   links: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: 16 },

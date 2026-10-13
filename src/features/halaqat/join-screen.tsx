@@ -18,6 +18,7 @@ import { cleanCode, formatCode } from './invite';
 import { useMembership } from './provider';
 import { DoorPill, HalaqaDoor, RingCount, type Seat } from './ring';
 import { halaqaFacts } from './shared';
+import { rtlInput } from '@/lib/ui-text-alignment';
 
 /** A failure in words: a code tried too often, a halaqa deleted, or no connection. */
 function problemOf(error: unknown) {
@@ -143,5 +144,5 @@ const s = StyleSheet.create({
     minHeight: 60, borderWidth: 1, borderRadius: readerShape.control, paddingHorizontal: 14, fontSize: 26, fontFamily: 'UiSans', fontWeight: '700',
     letterSpacing: 4, writingDirection: 'ltr', textAlign: 'center',
   },
-  name: { writingDirection: 'rtl', textAlign: Platform.OS === 'android' ? 'left' : 'right' },
+  name: rtlInput,
 });

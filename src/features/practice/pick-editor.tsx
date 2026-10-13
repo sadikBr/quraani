@@ -18,6 +18,7 @@ import { scopeLabel } from './content';
 import { DIAL_KINDS, dialUnits, initialFocus, toggleUnit, unitState, type DialKind, type DialUnit } from './dial';
 import { EMBLEMS, MAX_PICK_NAME, type Emblem as EmblemName, type PracticePick } from './progress';
 import { createFocusStore, RangeDial, useFocus, type FocusStore } from './range-dial';
+import { rtlInput } from '@/lib/ui-text-alignment';
 
 const newId = () => `p${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`;
 
@@ -174,7 +175,7 @@ const s = StyleSheet.create({
   focus: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth },
   panel: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 14, paddingBottom: 16, gap: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopLeftRadius: readerShape.sheet, borderTopRightRadius: readerShape.sheet },
   mark: { width: 44, height: 44, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center' },
-  input: { flex: 1, minWidth: 0, height: 44, borderWidth: 1, borderRadius: readerShape.control, paddingHorizontal: 12, fontSize: 15, fontFamily: 'UiSans', writingDirection: 'rtl', textAlign: Platform.OS === 'android' ? 'left' : 'right' },
+  input: { flex: 1, minWidth: 0, height: 44, borderWidth: 1, borderRadius: readerShape.control, paddingHorizontal: 12, fontSize: 15, fontFamily: 'UiSans', ...rtlInput },
   emblems: { flexDirection: 'row', justifyContent: 'space-between' },
   emblem: { width: 38, height: 38, borderRadius: readerShape.control, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   share: { position: 'absolute', left: 12, bottom: 10, width: 52, height: 52 },

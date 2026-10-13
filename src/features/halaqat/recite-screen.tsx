@@ -26,6 +26,7 @@ import {
 import { AttendancePicker, gradeTone, LawhBoard, useHalaqaIndex, useLinkedStudent, displayName } from './shared';
 import { usePlans } from '@/features/plans/provider';
 import { PortionSheet } from './portion-sheet';
+import { rtlInput } from '@/lib/ui-text-alignment';
 
 /** What the teacher has of one recitation so far: the portion, the marks, and the grade once given. */
 interface Draft { portion: Portion | undefined; marks: Mark[]; grade: Grade | null }
@@ -286,5 +287,5 @@ const s = StyleSheet.create({
   text: { borderWidth: 1, borderRadius: readerShape.card, padding: 14, gap: 10 },
   gradeRow: { flexDirection: 'row', gap: 8 },
   gradeOption: { flex: 1, minWidth: 0, minHeight: 48, borderWidth: 1.5, borderRadius: readerShape.control, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
-  note: { minHeight: 76, borderWidth: 1, borderRadius: readerShape.control, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, writingDirection: 'rtl', textAlign: Platform.OS === 'android' ? 'left' : 'right' },
+  note: { minHeight: 76, borderWidth: 1, borderRadius: readerShape.control, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, ...rtlInput },
 });

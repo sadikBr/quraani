@@ -11,6 +11,7 @@ import type { Motif } from '@/components/craft/art';
 import { ReaderIcon, type ReaderIconName } from './reader-chrome';
 import { t } from '@/i18n';
 import { useBack } from '@/components/back';
+import { rtlInput } from '@/lib/ui-text-alignment';
 
 /** A library page's header: the way back to the mushaf, then the page's title in Naskh. */
 export function LibraryHeader({ title, subtitle, palette: p, actions }: { title: string; subtitle: string; icon?: ReaderIconName; palette: ReaderPalette; actions?: ReactNode }) {
@@ -82,7 +83,7 @@ export const libraryStyles = StyleSheet.create({
 });
 const l = StyleSheet.create({
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, borderWidth: 1, borderRadius: readerShape.control },
-  input: { flex: 1, minWidth: 0, minHeight: 44, paddingVertical: 8, fontFamily: 'UiSans', fontSize: 16, writingDirection: 'rtl', textAlign: Platform.OS === 'android' ? 'left' : 'right', ...Platform.select({ native: { direction: 'rtl' as const }, web: { outlineStyle: 'solid', outlineWidth: 0 } }) },
+  input: { flex: 1, minWidth: 0, minHeight: 44, paddingVertical: 8, fontFamily: 'UiSans', fontSize: 16, ...rtlInput, ...Platform.select({ native: { direction: 'rtl' as const }, web: { outlineStyle: 'solid', outlineWidth: 0 } }) },
   clear: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   words: { flexDirection: 'row', alignItems: 'flex-end', gap: 28 },
   word: { alignItems: 'center', minHeight: 44, justifyContent: 'flex-end' },

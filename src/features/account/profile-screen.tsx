@@ -17,6 +17,7 @@ import { initialOf, NAME_LIMIT } from './profile';
 import { AccountError } from './auth-client';
 import { useAccount } from './provider';
 import { Field } from './sign-in-screen';
+import { rtlInput } from '@/lib/ui-text-alignment';
 
 /** A photo chosen here and not yet in the account; null when the photo is to be removed. */
 type Choice = { body: PhotoBody; preview: string } | null;
@@ -127,5 +128,5 @@ export function ProfileScreen() {
 const s = StyleSheet.create({
   portrait: { alignItems: 'center', gap: 12, paddingTop: 52, paddingHorizontal: 18, paddingBottom: 20 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 4 },
-  name: { writingDirection: 'rtl', textAlign: Platform.OS === 'android' ? 'left' : 'right' },
+  name: rtlInput,
 });
