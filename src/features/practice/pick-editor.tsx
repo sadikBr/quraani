@@ -73,8 +73,9 @@ export function PickEditor({ index, pick, memorized, helper, used, palette: p, o
           </View>
           {/* Laid out left to right, as the wheel is: the ring stays in the left corner. */}
           <View style={{ flex: 1, direction: 'ltr' }} onLayout={(e) => { const { width, height } = e.nativeEvent.layout; if (!size || Math.abs(size.width - width) > 1 || Math.abs(size.height - height) > 1) setSize({ width, height }); }}>
-            {/* Kept while the keyboard squeezes it, so it stays at the unit named below it. */}
-            {size && shown && <View style={{ opacity: size.height > 120 ? 1 : 0 }} pointerEvents={size.height > 120 ? 'auto' : 'none'}>
+            {/* Kept while the keyboard squeezes it, so it stays at the unit named below it. Always a
+                native view, so hiding it never flattens it away (see the goal creation screens). */}
+            {size && shown && <View collapsable={false} style={{ opacity: size.height > 120 ? 1 : 0 }} pointerEvents={size.height > 120 ? 'auto' : 'none'}>
               <Animated.View style={{ opacity: fade }}>
                 <RangeDial key={kind} units={units} kind={kind} selected={draft} memorized={marks} juzStarts={juzStarts} focus={focus}
                   width={size.width} height={Math.max(size.height, 1)} palette={p} onChange={setDraft} />

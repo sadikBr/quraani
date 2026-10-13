@@ -114,7 +114,10 @@ function GoalCreationForm({ initialKind }: { initialKind: SequentialGoal['type']
         <PageTitle title={blocked ? t('khatma.create.heading.blocked') : step ? t('khatma.create.heading.review') : t('khatma.create.heading.setup')}
           subtitle={blocked ? t('khatma.create.subheading.blocked') : step ? t('khatma.create.subheading.review') : t('khatma.create.subheading.setup')} palette={p} />
         {!blocked && <CreationSteps step={step} canReview={!!preview.plan && !busy} onChange={changeStep} />}
-        <View pointerEvents={busy ? 'none' : 'auto'} style={{ gap: 24 }}>
+        {/* Always a native view: blocking touches while saving makes it one, and unblocking
+            would flatten it away again, which, with the content changing at the same time,
+            crashed Android's renderer (a view inserted while it still had a parent). */}
+        <View collapsable={false} pointerEvents={busy ? 'none' : 'auto'} style={{ gap: 24 }}>
           {blocked ? <>
             <GoalTypeChoices kind={kind} existing={blocked} onChange={() => {}} />
             <ExistingGoalCard goal={blocked} onOpen={() => openGoal(blocked.id)} />

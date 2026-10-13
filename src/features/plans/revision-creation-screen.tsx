@@ -79,7 +79,10 @@ export function RevisionCreationScreen() {
       <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={c.content}>
         <PageTitle title={step ? t('revision.creation.heading.review') : t('revision.creation.heading.setup')} subtitle={step ? t('revision.creation.intro.review') : t('revision.creation.intro.setup')} palette={p} />
         <CreationSteps step={step} canReview={!!preview.plan && !busy && !existing} onChange={changeStep} />
-        <View pointerEvents={busy ? 'none' : 'auto'} style={{ gap: 24 }}>
+        {/* Always a native view: blocking touches while saving makes it one, and unblocking
+            would flatten it away again, which, with the content changing at the same time,
+            crashed Android's renderer (a view inserted while it still had a parent). */}
+        <View collapsable={false} pointerEvents={busy ? 'none' : 'auto'} style={{ gap: 24 }}>
           {step === 0 ? <>
             <CreationSection title={t('revision.creation.memory.title')} description={t('revision.creation.memory.description')}>
               <Segments palette={p} value={riwayah} onChange={setRiwayah} options={[{ value: 'warsh', label: t('common.riwayah.warsh.name') }, { value: 'hafs', label: t('common.riwayah.hafs.name') }]} />

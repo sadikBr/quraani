@@ -71,7 +71,10 @@ export function RecurringCreationScreen({ preset }: { preset?: RecurringPreset }
       <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={c.content}>
         <PageTitle title={step ? t('recurring.creation.review.title') : preset ? initial!.name : t('recurring.creation.setup.title')} subtitle={step ? t('recurring.creation.review.subtitle') : t('recurring.creation.setup.subtitle')} palette={p} />
         <CreationSteps step={step} canReview={!!preview.plan && !busy} onChange={changeStep} />
-        <View pointerEvents={busy ? 'none' : 'auto'} style={{ gap: 24 }}>
+        {/* Always a native view: blocking touches while saving makes it one, and unblocking
+            would flatten it away again, which, with the content changing at the same time,
+            crashed Android's renderer (a view inserted while it still had a parent). */}
+        <View collapsable={false} pointerEvents={busy ? 'none' : 'auto'} style={{ gap: 24 }}>
           {step === 0 ? <>
             <CreationBoard>
               <BoardLabel center>{t('recurring.creation.what.title')}</BoardLabel>

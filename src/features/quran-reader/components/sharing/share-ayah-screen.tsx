@@ -127,7 +127,10 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
   return <>
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 22 }]}>
       <PageTitle title={t('share.title')} subtitle={t('share.subtitle')} palette={palette} />
-      <View pointerEvents={sharing ? 'none' : 'auto'} style={{ gap: 26 }}>
+      {/* Always a native view: blocking touches while sharing makes it one, and unblocking
+          would flatten it away again, which, with the content changing at the same time,
+          crashed Android's renderer (a view inserted while it still had a parent). */}
+      <View collapsable={false} pointerEvents={sharing ? 'none' : 'auto'} style={{ gap: 26 }}>
         {/* The stage: the card as it will be sent. */}
         <View style={[styles.stage, { backgroundColor: palette.muted, borderColor: palette.border }]}>
           <View style={styles.stageLabel}>
