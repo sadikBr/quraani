@@ -429,8 +429,12 @@ function RiwayahReaderScreen({ paging }: { paging: ReaderPaging }) {
         }}
         onTouchCancel={() => { tapStart.current = null; }}>
       {/* The safe starting space scrolls with the page. Padding the viewport
-          itself would create an opaque strip that cuts off text below the camera. */}
-      <ScrollView ref={isCurrent ? scroll : undefined} scrollEnabled={isCurrent} scrollEventThrottle={100} onScroll={(event) => {
+          itself would create an opaque strip that cuts off text below the camera.
+          The page moves only when it is scrolled, by hand or by this screen (to a
+          saved place, to an ayah). On Android a tapped tajweed page, a web view,
+          takes focus, and a scroll view brings a focused child into view: the text
+          jumped to the top of the screen at the first tap on each page. */}
+      <ScrollView ref={isCurrent ? scroll : undefined} scrollEnabled={isCurrent} scrollsChildToFocus={false} scrollEventThrottle={100} onScroll={(event) => {
           if (!isCurrent || !ready) return;
           deferPrintedPagePreparation();
           const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;

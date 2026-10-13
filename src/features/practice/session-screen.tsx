@@ -288,7 +288,8 @@ function PlacePage({ index, place, position, total, revealed, complete, helped, 
     <PageArrow label={t('practice.session.next')} onPress={onNext} palette={p} />
   </View>;
   const body = <>
-    <ScrollView ref={scroll} style={{ flex: 1 }} contentContainerStyle={s.textArea} showsVerticalScrollIndicator={false}
+    {/* Not scrolled to the text when a tap gives its web view (tajweed) focus, on Android. */}
+    <ScrollView ref={scroll} style={{ flex: 1 }} contentContainerStyle={s.textArea} showsVerticalScrollIndicator={false} scrollsChildToFocus={false}
       onLayout={(e) => { viewHeight.current = e.nativeEvent.layout.height; }}
       onContentSizeChange={() => {
         // Word by word, follow the reading; everything at once, go back to its start to check it.
