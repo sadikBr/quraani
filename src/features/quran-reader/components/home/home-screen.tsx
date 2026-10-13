@@ -247,7 +247,7 @@ function HalaqaTile({ halaqa, today, width }: { halaqa: Halaqa; today: string; w
       <Text style={{ color: colors.soft, fontSize: 12 }}>{progress}</Text>
     </View>
     : <Pill text={t('home.now.halaqaStart')} icon="users" />;
-  return <NowTile width={width} motif="arches" figure={{ icon: 'users' }} title={halaqa.name}
+  return <NowTile width={width} motif="circle" figure={{ icon: 'users' }} title={halaqa.name}
     detail={`${t('halaqat.detail.todaySession')} · ${t('halaqat.studentCount', { count: students.length })}`} footer={footer}
     label={t('home.now.halaqaLabel', { name: halaqa.name, state: session ? progress : t('home.now.halaqaNotStarted') })}
     onPress={() => router.push({ pathname: '/halaqat/session', params: { halaqa: halaqa.id, date: today } })} />;

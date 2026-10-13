@@ -15,22 +15,22 @@ export default {
     /** Read instead of the text while an ayah is hidden for revision. */
     hidden: 'آية مخفية',
     /** Spoken label of the ayah-number marker, which opens the ayah's actions; {{surah}} is a number. */
-    actions: 'إجراءات الآية {{ayah}} من السورة {{surah}}',
+    actions: 'خيارات الآية {{ayah}} من السورة {{surah}}',
     /** Screen reader custom action (the long press). */
-    openActions: 'فتح إجراءات الآية',
+    openActions: 'فتح خيارات الآية',
     /** Screen reader hint of an ayah's text. */
-    hint: 'اضغط لإظهار أدوات القراءة، واضغط مطوّلًا لفتح إجراءات الآية.',
+    hint: 'اضغط لإظهار أدوات القراءة، واضغط مطوّلًا لفتح خيارات الآية.',
     showTools: 'إظهار أدوات القراءة',
     /**
      * iOS hint for a group of {{count}} ayahs read as one paragraph. VoiceOver lists each ayah's
      * actions in its «الإجراءات» rotor.
      */
-    groupHint_zero: 'اضغط مرتين لإظهار أدوات القراءة. وتجد إجراءات الآية في قائمة الإجراءات.',
-    groupHint_one: 'اضغط مرتين لإظهار أدوات القراءة. وتجد إجراءات الآية في قائمة الإجراءات.',
-    groupHint_two: 'اضغط مرتين لإظهار أدوات القراءة. وتجد إجراءات كل آية في قائمة الإجراءات.',
-    groupHint_few: 'اضغط مرتين لإظهار أدوات القراءة. وتجد إجراءات كل آية في قائمة الإجراءات.',
-    groupHint_many: 'اضغط مرتين لإظهار أدوات القراءة. وتجد إجراءات كل آية في قائمة الإجراءات.',
-    groupHint_other: 'اضغط مرتين لإظهار أدوات القراءة. وتجد إجراءات كل آية في قائمة الإجراءات.',
+    groupHint_zero: 'اضغط مرتين لإظهار أدوات القراءة. وتجد خيارات الآية في قائمة الإجراءات.',
+    groupHint_one: 'اضغط مرتين لإظهار أدوات القراءة. وتجد خيارات الآية في قائمة الإجراءات.',
+    groupHint_two: 'اضغط مرتين لإظهار أدوات القراءة. وتجد خيارات كل آية في قائمة الإجراءات.',
+    groupHint_few: 'اضغط مرتين لإظهار أدوات القراءة. وتجد خيارات كل آية في قائمة الإجراءات.',
+    groupHint_many: 'اضغط مرتين لإظهار أدوات القراءة. وتجد خيارات كل آية في قائمة الإجراءات.',
+    groupHint_other: 'اضغط مرتين لإظهار أدوات القراءة. وتجد خيارات كل آية في قائمة الإجراءات.',
   },
   divisions: {
     /** "الجزء 2", or several: "الجزء 2–3". */
@@ -57,12 +57,12 @@ export default {
     thumun: 'الثمن',
     next: 'الثمن التالي',
     previous: 'الثمن السابق',
-    error: 'اختر حزبًا من {{firstHizb}} إلى {{lastHizb}} وثمنًا من 1 إلى 8.',
+    error: 'أدخل رقم الحزب من {{firstHizb}} إلى {{lastHizb}}، ورقم الثمن من 1 إلى 8.',
     /** Jump button: "الانتقال إلى الحزب 2 · الثمن 1". */
     to: 'الانتقال إلى {{position}}',
   },
   screen: {
-    sessionError: 'تعذّر فتح الورد.',
+    sessionError: 'تعذّر فتح الورد. أعد المحاولة.',
     openMushaf: 'فتح المصحف',
     fontError: 'تعذّر تحميل خط المصحف',
     fontErrorDetail: 'أعد فتح التطبيق لتحميل خط المصحف.',
@@ -121,10 +121,10 @@ export default {
     sessionPages: 'صفحات الورد: من {{first}} إلى {{last}}',
     chooseSurahFirst: 'اختر السورة أولًا',
     withinSession: 'ضمن الورد',
-    pageError: 'اختر صفحة بين {{first}} و{{last}}.',
+    pageError: 'أدخل رقم صفحة من {{first}} إلى {{last}}.',
     sessionAyahError: 'اختر آية من آيات الورد.',
     /** Ayah numbering differs between riwayat. */
-    ayahError: 'تحقّق من رقم السورة والآية في الرواية المختارة.',
+    ayahError: 'تحقّق من رقمي السورة والآية في الرواية المختارة.',
     toPage: 'الانتقال إلى الصفحة {{page}}',
     toAyah: 'الانتقال إلى الآية {{ayah}}',
     toDestination: 'الانتقال إلى الموضع',
@@ -138,7 +138,7 @@ export default {
     changeSurah: 'اضغط لاختيار سورة أخرى',
     chooseSurah: 'اختيار السورة',
     sessionSurahs: 'سور الورد',
-    backToForm: 'العودة إلى الانتقال',
+    backToForm: 'العودة إلى اختيار الموضع',
     surahCount_zero: 'لا سور',
     surahCount_one: 'سورة واحدة',
     surahCount_two: 'سورتان',
@@ -158,12 +158,12 @@ export default {
     startPage: 'صفحة {{page, number}}',
     ayahNumber: 'رقم الآية',
     /** Small caption above the destination's surah name. */
-    destination: 'وجهتك',
-    destinationSession: 'وجهتك في الورد',
-    chooseDestination: 'اختر موضعًا للانتقال',
+    destination: 'الموضع',
+    destinationSession: 'الموضع في الورد',
+    chooseDestination: 'اختر موضعًا للانتقال إليه',
   },
   actions: {
-    close: 'إغلاق إجراءات الآية',
+    close: 'إغلاق خيارات الآية',
     copied: 'نُسخت الآية.',
     copyFailed: 'تعذّر نسخ الآية. أعد المحاولة.',
     /** Shown on the bookmark button once the ayah is bookmarked ("marked"; not محفوظة, which reads as memorized). */
@@ -176,7 +176,7 @@ export default {
     listen: 'استماع',
     repeat: 'تكرار',
     /** Bookmarks stay in memory until the app is closed. */
-    bookmarkStorageError: 'تعذّر تسجيل العلامات على جهازك. ستبقى حتى تغلق التطبيق.',
+    bookmarkStorageError: 'تعذّر حفظ العلامات على جهازك. ستبقى متوفرة إلى أن تُغلق التطبيق.',
   },
   /**
    * The ayah's sciences in its sheet, as Quranpedia gives them: three arches (its meaning; its
@@ -213,11 +213,11 @@ export default {
       meanings: 'معاني غريب ألفاظها',
       e3rab: 'إعراب كلماتها',
       translations: 'معانيها بلغات أخرى',
-      asbab: 'ما نزلت فيه',
-      qiraat: 'كيف قرأها القراء',
+      asbab: 'الأحداث المرتبطة بنزولها',
+      qiraat: 'أوجه قراءتها',
       similar: 'الآيات التي تشبهها في لفظها',
       nasekh: 'ما قيل في نسخها',
-      mutshabeh: 'ما كُتب في مشكلها',
+      mutshabeh: 'بيان ما قد يُشكِل من معناها',
       sayings: 'ما رُوي فيها عن السلف',
       notes: 'وقفات وتأملات فيها',
       topics: 'موضوعات القرآن التي تتناولها',
@@ -235,7 +235,7 @@ export default {
       fundamental: 'الكتب المعتمدة',
       rest: 'سائر الكتب',
       search: 'البحث باسم الكتاب أو مؤلفه',
-      none: 'لا كتاب بهذا الاسم.',
+      none: 'لم نعثر على كتاب بهذا الاسم.',
       /** The author's death, in years of the Hijra: "ت 774هـ". */
       died: 'ت {{year}}هـ',
       /** Where the text is in the book. */
@@ -255,13 +255,13 @@ export default {
       own: '{{name}}، روايتك',
       listen: 'الاستماع إلى قراءة {{name}}',
       stop: 'إيقاف قراءة {{name}}',
-      failed: 'تعذّر تشغيل هذه القراءة.',
+      failed: 'تعذّر تشغيل هذه القراءة. أعد المحاولة.',
     },
     similar: {
       /** Above the note that tells the similar ayahs apart. */
       note: 'للتمييز بينها',
       here: 'هذه الآية',
-      video: 'مقطع في ضبطها',
+      video: 'شرح المتشابهات',
     },
     topics: {
       /** How many ayahs speak of the topic; opens them. */
@@ -296,7 +296,7 @@ export default {
   related: {
     /** {{references}} lists the matching "surah:ayah" references in the Hafs numbering, used by the source. */
     sources: 'موضع الآية بترقيم حفص: {{references}}. المصدر: الموسوعة القرآنية.',
-    loading: 'جارٍ تحميل المحتوى',
+    loading: 'جارٍ تحميل المحتوى…',
     loadError: 'تعذّر تحميل المحتوى. تحقّق من اتصالك بالإنترنت ثم أعد المحاولة.',
     empty: 'لا يتوفر محتوى لهذه الآية.',
     /** Caption above each tafsir or translation: the Hafs-numbered ayah it explains, e.g. "الآية 2:5 بترقيم حفص". */
@@ -311,20 +311,20 @@ export default {
     /** Spoken label of the printed page. */
     pageLabel: 'الصفحة {{page}} من المصحف',
     /** Screen reader label of an ayah on the printed page; {{surah}} is a number, {{text}} the Quran text. */
-    regionLabel: 'الآية {{ayah}} من السورة {{surah}}. {{text}}. اضغط لإظهار أدوات القراءة، واضغط على رقم الآية أو اضغط عليها مطوّلًا لفتح إجراءاتها.',
-    regionHint: 'اضغط لإظهار أدوات القراءة، واضغط على رقم الآية أو اضغط عليها مطوّلًا لفتح إجراءاتها.',
+    regionLabel: 'الآية {{ayah}} من السورة {{surah}}. {{text}}. اضغط لإظهار أدوات القراءة، واضغط على رقم الآية أو اضغط عليها مطوّلًا لفتح خياراتها.',
+    regionHint: 'اضغط لإظهار أدوات القراءة، واضغط على رقم الآية أو اضغط عليها مطوّلًا لفتح خياراتها.',
     loadError: 'تعذّر تحميل هذه الصفحة من المصحف.',
-    loading: 'جارٍ تحميل صفحة المصحف',
+    loading: 'جارٍ تحميل صفحة المصحف…',
     /** "سورة الفاتحة" */
     surahTitle: 'سورة {{name}}',
   },
   tajweed: {
     loadError: 'تعذّر تحميل مصحف التجويد.',
-    loading: 'جارٍ تحميل مصحف التجويد',
+    loading: 'جارٍ تحميل مصحف التجويد…',
     /** Spoken title of the Hafs tajweed page. */
     pageTitle: 'مصحف التجويد برواية حفص، الصفحة {{page}}',
     textError: 'تعذّر عرض النص القرآني.',
-    fontLoading: 'جارٍ تحميل خط المصحف',
+    fontLoading: 'جارٍ تحميل خط المصحف…',
     /** {{riwayah}} is the short riwayah name, e.g. "ورش". */
     previewTitle: 'معاينة ألوان التجويد برواية {{riwayah}}',
     /** Spoken title; {{surah}} is the surah number. */
@@ -332,12 +332,12 @@ export default {
     /** Label of a word of the ayah numbered {{ayah}}. */
     ayah: 'الآية {{ayah}}',
     /** Label of the ayah-number marker, which opens the ayah's actions. */
-    ayahActions: 'إجراءات الآية {{ayah}}',
+    ayahActions: 'خيارات الآية {{ayah}}',
   },
   warshLegend: {
     /** Expandable row in the settings, under the Warsh tajweed option. */
     title: 'دليل ألوان التجويد',
-    note: 'قد يجتمع في الحرف أكثر من حكم، فيُكتفى بلون واحد للتوضيح. ولا يدل اللون على عدد حركات المد.',
+    note: 'قد تنطبق على الحرف أحكام متعددة، فيظهر بلون أحدها. ولا يدل اللون على عدد حركات المد.',
     /** Tajweed rules, as named in the Warsh color legend. */
     rules: {
       maddaNormal: 'مد طبيعي أو عارض للسكون',

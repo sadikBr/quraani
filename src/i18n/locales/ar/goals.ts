@@ -8,7 +8,7 @@ export default {
   startingFrom: 'تاريخ البدء',
   /** Section with the goal's name and reminder. */
   makeItYours: 'الاسم والتذكير',
-  firstSchedule: 'مواعيدك الأولى',
+  firstSchedule: 'المواعيد الأولى',
   viewCurrent: 'فتح هدفك الحالي',
   backToGoals: 'العودة إلى الأهداف',
   backToGoal: 'العودة إلى الهدف',
@@ -36,8 +36,8 @@ export default {
     delete: 'حذف الهدف',
   },
   errors: {
-    startDate: 'اختر تاريخ بدء من اليوم فصاعدًا.',
-    reminderTime: 'اختر وقتًا صالحًا للتذكير.',
+    startDate: 'اختر اليوم أو تاريخًا لاحقًا للبدء.',
+    reminderTime: 'حدّد وقت التذكير بشكل صحيح.',
     /** Also shown in the revision flow: «تحقّق» rather than «راجع», which reads as revising. */
     checkChoices: 'تحقّق من اختياراتك.',
     saveGoal: 'تعذّر حفظ الهدف. أعد المحاولة.',

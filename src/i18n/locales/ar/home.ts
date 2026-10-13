@@ -3,14 +3,14 @@ export default {
   tabs: { today: 'اليوم', prayers: 'الصلاة', goals: 'الأهداف', adhkar: 'الأذكار', practice: 'التسميع', halaqat: 'الحلقات' },
   /** The cards to swipe on «اليوم». */
   now: {
-    title: 'لهذا اليوم',
+    title: 'اليوم',
     /** A halaqa meeting today, on its tile. */
     halaqaStart: 'ابدأ الحصة',
     halaqaNotStarted: 'لم تبدأ بعد',
     /** Spoken: «حلقة المسجد، سمّع ٣ من ١٠». */
     halaqaLabel: '{{name}}، {{state}}',
     /** Above the adhkar of this part of the day. */
-    adhkar: 'أذكار هذا الوقت',
+    adhkar: 'حان وقت الذكر',
     begin: 'ابدأ',
     noGoals: 'ضع لنفسك هدفًا',
     goalsDone: 'أتممت ورد اليوم',
@@ -19,10 +19,10 @@ export default {
   today: {
     allGoals: 'كل الأهداف',
     createGoal: 'إنشاء هدف',
-    emptyTitle: 'لم تضع لنفسك هدفًا بعد: ختمة، أو حفظ، أو سورة تعود إليها كل أسبوع.',
+    emptyTitle: 'ابدأ بختمة، أو خطة للحفظ، أو سورة تقرؤها كل أسبوع.',
     emptyAction: 'أنشئ هدفك الأول',
     completed: 'أتممت ورد اليوم، تقبّل الله منك.',
-    nothingDue: 'لا ورد عليك اليوم.',
+    nothingDue: 'ليس لديك ورد مقرر اليوم.',
     upcoming: 'موعدك القادم: {{name}} · {{date}}',
     overdue: 'ورد فائت',
     start: 'ابدأ',

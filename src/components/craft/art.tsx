@@ -12,9 +12,9 @@ import type { ReaderPalette } from '@/features/quran-reader/theme';
  */
 
 /** The patterns an arch can be drawn with (see `Pattern`). */
-export type Motif = 'ripple' | 'khatam' | 'rosette' | 'lattice' | 'crescent' | 'arches';
+export type Motif = 'ripple' | 'khatam' | 'rosette' | 'lattice' | 'crescent' | 'arches' | 'circle';
 /** The marks a saved selection or a collection can be drawn with (see `Emblem`). */
-export type EmblemName = 'star' | 'crescent' | 'arch' | 'lantern' | 'drop' | 'leaf' | 'sun' | 'knot';
+export type EmblemName = 'star' | 'crescent' | 'arch' | 'lantern' | 'drop' | 'leaf' | 'sun' | 'knot' | 'circle';
 
 /**
  * The colours of the arched cards: on a light page, a deep tile (the theme's primary darkened
@@ -62,7 +62,7 @@ export function star(cx: number, cy: number, n: number, outer: number, inner: nu
 /**
  * A pattern for an arched card, drawn in `color` over `w`×`h` (the arch's top at `rise`): tiles of
  * eight-pointed stars, a rosette, a lattice as of a mashrabiya, a crescent among stars, ripples,
- * or arches nested in one another.
+ * arches nested in one another, or circles of seats (a halaqa).
  */
 export function Pattern({ motif, w, h, rise, color, focus = rise * 0.95 }: { motif: Motif; w: number; h: number; rise: number; color: string; focus?: number }) {
   const lines = { stroke: color, strokeWidth: 1, fill: 'none' } as const;
@@ -103,6 +103,22 @@ export function Pattern({ motif, w, h, rise, color, focus = rise * 0.95 }: { mot
       <Path d={`M ${mx + d / 2} ${my - hh} A ${r} ${r} 0 1 0 ${mx + d / 2} ${my + hh} A ${r} ${r} 0 0 1 ${mx + d / 2} ${my - hh} Z`} fill={color} />
       {stars.map(([x, y, size], i) => <Path key={i} d={star(w * x, rise * y + 8, 4, size, size * 0.35)} fill={color} />)}
       <Circle cx={w / 2} cy={focus} r={w * 0.36} {...lines} strokeDasharray="1 6" strokeLinecap="round" />
+    </G>;
+  }
+  if (motif === 'circle') {
+    // Rows of people seated in circles round the one in the middle, as a halaqa in a mosque: rings
+    // of dots about the centre, each row a little further out, every other one turned half a seat.
+    const cx = w / 2, cy = focus, d = 1.6, dots: string[] = [];
+    for (let k = 1; k <= 10; k++) {
+      const r = 16 + k * 15, n = Math.max(8, Math.round((2 * Math.PI * r) / 14));
+      for (let i = 0; i < n; i++) {
+        const a = (2 * Math.PI * (i + (k % 2 ? 0.5 : 0))) / n, x = cx + r * Math.cos(a), y = cy + r * Math.sin(a);
+        if (x > -4 && x < w + 4 && y > -4 && y < h + 4) dots.push(`M ${x - d} ${y} a ${d} ${d} 0 1 0 ${d * 2} 0 a ${d} ${d} 0 1 0 ${-d * 2} 0`);
+      }
+    }
+    return <G>
+      {[1, 4, 7, 10].map((k) => <Circle key={k} cx={cx} cy={cy} r={16 + k * 15} {...lines} strokeDasharray="1 5" strokeLinecap="round" />)}
+      <Path d={dots.join(' ')} fill={color} />
     </G>;
   }
   if (motif === 'ripple') {
@@ -168,6 +184,11 @@ const emblems: Record<EmblemName, string> = {
   drop: 'M 12 3 C 9 8 6 11 6 15 A 6 6 0 0 0 18 15 C 18 11 15 8 12 3 Z M 9.5 15.5 A 2.5 2.5 0 0 0 12 18',
   leaf: 'M 5 19 C 5 10 10 5 19 5 C 19 14 14 19 5 19 Z M 5 19 L 14 10',
   sun: `${star(12, 12, 8, 9.5, 6.5)} M 15 12 A 3 3 0 1 1 9 12 A 3 3 0 1 1 15 12 Z`,
+  // A halaqa: eight seats round a star.
+  circle: `${khatam(12, 12, 3)} ${Array.from({ length: 8 }, (_, i) => {
+    const a = (Math.PI * i) / 4 - Math.PI / 2, x = 12 + 8.6 * Math.cos(a), y = 12 + 8.6 * Math.sin(a);
+    return `M ${(x - 1.7).toFixed(2)} ${y.toFixed(2)} a 1.7 1.7 0 1 0 3.4 0 a 1.7 1.7 0 1 0 -3.4 0`;
+  }).join(' ')}`,
   knot: 'M 12 3.5 C 15 3.5 15.5 8.5 12 8.5 C 8.5 8.5 9 3.5 12 3.5 Z M 12 15.5 C 15 15.5 15.5 20.5 12 20.5 C 8.5 20.5 9 15.5 12 15.5 Z M 3.5 12 C 3.5 9 8.5 8.5 8.5 12 C 8.5 15.5 3.5 15 3.5 12 Z M 20.5 12 C 20.5 9 15.5 8.5 15.5 12 C 15.5 15.5 20.5 15 20.5 12 Z M 9.5 9.5 H 14.5 V 14.5 H 9.5 Z',
 };
 

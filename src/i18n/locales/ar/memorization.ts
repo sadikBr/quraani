@@ -48,14 +48,14 @@ export default {
   errors: {
     invalidSegments: 'مقاطع الحفظ غير صالحة.',
     invalidBounds: 'حدود أحد المقاطع غير صالحة.',
-    recordMismatch: 'سجلّ محفوظك لا يطابق هذه النسخة من المصحف، ولم يتغيّر منه شيء.',
+    recordMismatch: 'سجلّ محفوظك غير متوافق مع هذه النسخة من المصحف. لم يتغيّر شيء في السجلّ.',
     weeklyAmount: 'اختر مقدارًا أسبوعيًا بين ربع حزب والقرآن كاملًا.',
     weekdays: 'اختر يومًا واحدًا على الأقل للحفظ.',
     reminderTime: 'وقت التذكير غير صالح.',
     startDate: 'تاريخ البدء غير صالح.',
     nameAndRiwayah: 'تحقّق من اسم الهدف وروايته.',
     mushafMismatch: 'هذه النسخة من المصحف لا تطابق سجلّ محفوظك.',
-    undoMismatch: 'تعذّر التراجع: نسخة المصحف أو التاريخ لا يطابق سجلّ محفوظك.',
+    undoMismatch: 'تعذّر التراجع لعدم تطابق نسخة المصحف أو التاريخ مع سجلّ محفوظك.',
     invalidSchedule: 'جدول الحفظ غير صالح.',
     invalidDates: 'مواعيد الحفظ غير صالحة.',
     overlapping: 'مقاطع الحفظ متداخلة.',
@@ -63,14 +63,14 @@ export default {
     /** The list of confirmed memorization portions. */
     invalidLog: 'سجلّ الإنجاز غير صالح.',
     invalidUndoDate: 'تاريخ التراجع غير صالح.',
-    invalidLastEntry: 'آخر ما سُجّل من الحفظ غير صالح.',
+    invalidLastEntry: 'بيانات آخر مقطع حفظته غير صالحة.',
   },
   hero: {
     label: 'محفوظك من القرآن',
     complete: 'هنيئًا لك حفظ القرآن',
     growing: 'آية بعد آية',
     /** Nothing memorized yet. */
-    start: 'كل حافظ بدأ بآية',
+    start: 'ابدأ الحفظ آيةً آية',
     /** Memorized ayahs and their rough size: "١٢ آية · ربع حزب تقريبًا". {{amount}} is hero.approximately, or «أقل من ربع حزب». */
     approximately: '{{amount}} تقريبًا',
     summary_zero: 'لم تضف أي آية بعد',
@@ -90,12 +90,12 @@ export default {
   },
   juzChart: {
     /** Number of fully memorized ajza' (0–29; all thirty use `all`). */
-    complete_zero: 'لم يكتمل جزء بعد',
-    complete_one: 'جزء واحد مكتمل',
-    complete_two: 'جزءان مكتملان',
-    complete_few: '{{count, number}} أجزاء مكتملة',
-    complete_many: '{{count, number}} جزءًا مكتملًا',
-    complete_other: '{{count, number}} جزء مكتمل',
+    complete_zero: 'لم تُتمّ حفظ جزء بعد',
+    complete_one: 'جزء واحد محفوظ',
+    complete_two: 'جزءان محفوظان',
+    complete_few: '{{count, number}} أجزاء محفوظة',
+    complete_many: '{{count, number}} جزءًا محفوظًا',
+    complete_other: '{{count, number}} جزء محفوظ',
     all: 'ثلاثون جزءًا، هنيئًا لك',
     outOfThirty: 'من ثلاثين',
     /** Accessibility label: the summary above, then the juz being memorized now. */
@@ -107,18 +107,18 @@ export default {
     /** Shown instead of the creation screen while another memorization goal is in progress. */
     blocked: {
       title: 'هدف حفظ واحد في كل مرة',
-      subtitle: 'ليمضي حفظك متصلًا بترتيب المصحف.',
-      notice: 'لديك هدف حفظ جارٍ. أتمّه أو أرشفه قبل إنشاء هدف حفظ جديد.',
+      subtitle: 'لتتابع حفظك بانتظام وفق ترتيب المصحف.',
+      notice: 'لديك هدف حفظ قائم. أتمّه أو أرشفه قبل إنشاء هدف حفظ جديد.',
       continue: 'تابع {{name}}',
     },
     backToSetup: 'العودة إلى إعداد الهدف',
     setupTitle: 'احفظ على قدر طاقتك',
-    setupSubtitle: 'اختر أيامك ومقدارك، ونرتّب لك أورادك.',
+    setupSubtitle: 'حدّد أيام الحفظ ومقداره الأسبوعي لنرتّب لك الأوراد.',
     reviewTitle: 'جدول حفظك',
-    reviewSubtitle: 'تأكّد من مقدارك ومواعيدك، ثم ابدأ على بركة الله.',
+    reviewSubtitle: 'تأكّد من مقدار الحفظ ومواعيده، ثم ابدأ على بركة الله.',
     memorized: {
       title: 'ما حفظته من قبل',
-      description: 'لا يدخل محفوظك في الجدول، وكل مقطع تحفظه بعد ذلك يُضاف إليه تلقائيًا.',
+      description: 'يستثني الجدول ما سبق أن حفظته. وكل مقطع تتمّ حفظه يُضاف إلى سجلّ محفوظك تلقائيًا.',
       /** Accessibility label of the button that opens the memorized-ayahs picker. */
       chooseLabel: 'تحديد محفوظك من القرآن',
       empty: 'هل تحفظ شيئًا من القرآن؟',
@@ -129,23 +129,23 @@ export default {
     },
     amount: {
       title: 'مقدار الحفظ',
-      description: 'اختر ما تحفظه كل أسبوع بأرباع الأحزاب؛ والحزب أربعة أرباع.',
+      description: 'حدّد مقدار الحفظ الأسبوعي بعدد أرباع الحزب. كل أربعة أرباع تساوي حزبًا.',
       /** Caption under the number in the amount field, also read after each quick-choice number (plans.creation.amount.preset): must fit any number. */
       unit: 'بأرباع الأحزاب في الأسبوع',
       summary: '{{amount}} كل أسبوع',
     },
     days: {
-      title: 'أيام تحفظ فيها',
-      description: 'نقسّم المقدار على هذه الأيام، وينتهي ورد كل يوم عند آية كاملة.',
+      title: 'أيام الحفظ',
+      description: 'يُوزَّع المقدار الأسبوعي على الأيام المختارة، وينتهي كل ورد عند نهاية آية.',
     },
     schedule: {
       /** {{count}} is the number of memorization days in the week (1–7). */
-      description_zero: '{{amount}} أسبوعيًا. مقدار كل ورد تقريبي لأنه ينتهي عند آية كاملة.',
-      description_one: '{{amount}} أسبوعيًا، في يوم واحد. مقدار كل ورد تقريبي لأنه ينتهي عند آية كاملة.',
-      description_two: '{{amount}} أسبوعيًا، على يومين. مقدار كل ورد تقريبي لأنه ينتهي عند آية كاملة.',
-      description_few: '{{amount}} أسبوعيًا، على {{count, number}} أيام. مقدار كل ورد تقريبي لأنه ينتهي عند آية كاملة.',
-      description_many: '{{amount}} أسبوعيًا، على {{count, number}} يومًا. مقدار كل ورد تقريبي لأنه ينتهي عند آية كاملة.',
-      description_other: '{{amount}} أسبوعيًا، على {{count, number}} يوم. مقدار كل ورد تقريبي لأنه ينتهي عند آية كاملة.',
+      description_zero: '{{amount}} أسبوعيًا. مقدار كل ورد تقريبي ليلائم نهايات الآيات.',
+      description_one: '{{amount}} أسبوعيًا، في يوم واحد. مقدار كل ورد تقريبي ليلائم نهايات الآيات.',
+      description_two: '{{amount}} أسبوعيًا، على يومين. مقدار كل ورد تقريبي ليلائم نهايات الآيات.',
+      description_few: '{{amount}} أسبوعيًا، على {{count, number}} أيام. مقدار كل ورد تقريبي ليلائم نهايات الآيات.',
+      description_many: '{{amount}} أسبوعيًا، على {{count, number}} يومًا. مقدار كل ورد تقريبي ليلائم نهايات الآيات.',
+      description_other: '{{amount}} أسبوعيًا، على {{count, number}} يوم. مقدار كل ورد تقريبي ليلائم نهايات الآيات.',
       /** A day's portion has more segments than the three listed above it. */
       moreSegments_zero: 'و{{count, number}} مقطع آخر',
       moreSegments_one: 'ومقطع آخر',
@@ -161,7 +161,7 @@ export default {
       sessions_many: '{{count, number}} وردًا حتى إتمام الحفظ',
       sessions_other: '{{count, number}} ورد حتى إتمام الحفظ',
       expectedEnd: 'الموعد المتوقع للإتمام: {{date}}',
-      allMemorized: 'حددت القرآن كاملًا في محفوظك، هنيئًا لك. سنسجّل محفوظك دون أوراد جديدة.',
+      allMemorized: 'حدّدت القرآن كاملًا ضمن محفوظك، هنيئًا لك. سيُسجَّل محفوظك دون إنشاء أوراد جديدة.',
     },
     reminderDetail: 'في أيام الحفظ فقط.',
     howItWorks: 'نبدأ من أول آية لم تحفظها، ونتابع بترتيب المصحف. إذا فاتك يوم، ينتقل ورده إلى يوم الحفظ التالي. ويمكنك تعديل أيامك ومقدارك لاحقًا.',
@@ -183,30 +183,30 @@ export default {
       /** First and last page, kept left to right inside an isolate. */
       pageRange: '⁦{{from, number}}–{{to, number}}⁩',
       /** The next portion is made of several separate segments (shown from 2). */
-      segments_zero: 'يضم هذا الورد {{count, number}} مقطع، ويُفتح كل مقطع وحده.',
+      segments_zero: 'يضم هذا الورد {{count, number}} مقطع، ويُفتح كل مقطع على حدة.',
       segments_one: 'يضم هذا الورد مقطعًا واحدًا.',
-      segments_two: 'يضم هذا الورد مقطعين، ويُفتح كل مقطع وحده.',
-      segments_few: 'يضم هذا الورد {{count, number}} مقاطع، ويُفتح كل مقطع وحده.',
-      segments_many: 'يضم هذا الورد {{count, number}} مقطعًا، ويُفتح كل مقطع وحده.',
-      segments_other: 'يضم هذا الورد {{count, number}} مقطع، ويُفتح كل مقطع وحده.',
+      segments_two: 'يضم هذا الورد مقطعين، ويُفتح كل مقطع على حدة.',
+      segments_few: 'يضم هذا الورد {{count, number}} مقاطع، ويُفتح كل مقطع على حدة.',
+      segments_many: 'يضم هذا الورد {{count, number}} مقطعًا، ويُفتح كل مقطع على حدة.',
+      segments_other: 'يضم هذا الورد {{count, number}} مقطع، ويُفتح كل مقطع على حدة.',
       start: 'ابدأ الحفظ',
       done: 'أتممت حفظ هذا المقطع',
-      confirmNote: 'لا يُضاف المقطع إلى محفوظك حتى تؤكد إتمام حفظه.',
+      confirmNote: 'يُضاف المقطع إلى محفوظك بعد تأكيد إتمام حفظه.',
       /** {{date}} includes the weekday: "الاثنين، 12 أكتوبر". */
-      opensOn: 'موعد هذا المقطع يوم {{date}}. وإلى أن يحين، راجع محفوظك.',
+      opensOn: 'موعد حفظ هذا المقطع: {{date}}. يمكنك مراجعة محفوظك حتى يحين الموعد.',
     },
     completedTitle: 'أتممت حفظ القرآن، هنيئًا لك',
     completedNote: 'يبقى سجلّ محفوظك كما هو، ويمكنك تصحيحه متى احتجت.',
-    pausedTitle: 'خذ وقتك، محفوظك باقٍ',
-    pausedNote: 'عند العودة نتابع ما تبقّى في أيام الحفظ المختارة.',
+    pausedTitle: 'الحفظ متوقف مؤقتًا',
+    pausedNote: 'عند الاستئناف، تتابع الحفظ من حيث توقفت في الأيام التي اخترتها.',
     /** Followed by deletesOn when the deletion date is known. */
-    archivedNote: 'حذف الهدف لا يمس سجلّ محفوظك.',
+    archivedNote: 'يبقى سجلّ محفوظك كما هو عند حذف الهدف.',
     deletesOn: 'يُحذف الهدف في {{date}}.',
     resume: 'استئناف الحفظ',
     pause: 'إيقاف الحفظ مؤقتًا',
     record: {
       title: 'سجلّ محفوظك',
-      description: 'أضف ما حفظته خارج الهدف أو صحح اختيارًا سابقًا.',
+      description: 'أضف ما حفظته خارج الهدف أو صحّح اختيارًا سابقًا.',
       edit: 'تعديل محفوظك',
     },
     /** Undoes the last confirmed memorization portion. */
@@ -218,20 +218,20 @@ export default {
     settings: {
       /** Same caption as creation.amount.unit. */
       amountUnit: 'بأرباع الأحزاب في الأسبوع',
-      note: 'تغيير الأيام أو المقدار يعيد توزيع ما تبقّى، ولا يمس محفوظك.',
+      note: 'عند تغيير الأيام أو المقدار، يُعاد توزيع ما تبقّى دون تغيير محفوظك.',
       reminderDetail: 'في أيام الحفظ فقط.',
       recordKept: 'يبقى سجلّ محفوظك بعد أرشفة الهدف أو حذفه.',
     },
     errors: {
       memoryChanged: 'تغيّر محفوظك. أغلق النافذة وافتحها مجددًا.',
       nameAndTime: 'تحقّق من اسم الهدف ووقت التذكير.',
-      daysAndAmount: 'اختر أيام الحفظ ومقدارًا صحيحًا يبدأ من ربع حزب.',
+      daysAndAmount: 'اختر أيام الحفظ وحدّد مقدارًا لا يقل عن ربع حزب.',
     },
   },
   /** The memorized-ayahs picker, used by both the memorization and the revision goal. */
   selection: {
     title: 'محفوظك',
-    subtitle: 'حدّد ما تحفظه، ونبني جدولك على أساسه.',
+    subtitle: 'حدّد ما تحفظه ليُرتَّب جدولك بناءً عليه.',
     close: 'إغلاق اختيار المحفوظ',
     /** Accessibility label of the tabs below. */
     tabsLabel: 'طريقة تحديد المحفوظ',
@@ -242,16 +242,16 @@ export default {
     hizb: 'الحزب {{hizb, number}}',
     quarter: 'الحزب {{hizb, number}} · الربع {{quarter, number}}',
     custom: {
-      title: 'مقطع من آية إلى آية',
+      title: 'تحديد مقطع بالآيات',
       hint: 'أدخل رقم السورة ورقم الآية لبداية المقطع ونهايته.',
       fromSurah: 'من السورة',
       fromAyah: 'من الآية',
       toSurah: 'إلى السورة',
       toAyah: 'إلى الآية',
-      invalid: 'تحقّق من أرقام السور والآيات وترتيب المقطع.',
+      invalid: 'تحقّق من أرقام السور والآيات، ومن أن نهاية المقطع لا تسبق بدايته.',
       remove: 'إزالة المقطع من محفوظك',
       add: 'إضافة المقطع إلى محفوظك',
-      note: 'يمكنك إضافة أكثر من مقطع، وما تداخل منها يُحتسب مرة واحدة.',
+      note: 'يمكنك إضافة أكثر من مقطع، وتُحتسب الآيات المشتركة بينها مرة واحدة.',
     },
     noResults: 'لا توجد نتائج.',
     /** Under a surah memorized in part; {{count}} is the surah's number of ayahs (3 or more). */
@@ -262,12 +262,12 @@ export default {
     partial_many: '{{count, number}} آية · تحفظ بعضها',
     partial_other: '{{count, number}} آية · تحفظ بعضها',
     /** Live total of the selection, above the confirm button. */
-    total_zero: 'لم تحدد أي آية بعد',
-    total_one: 'حددت آية واحدة',
-    total_two: 'حددت آيتين',
-    total_few: 'حددت {{count, number}} آيات',
-    total_many: 'حددت {{count, number}} آية',
-    total_other: 'حددت {{count, number}} آية',
+    total_zero: 'لم تحدّد أي آية بعد',
+    total_one: 'حدّدت آية واحدة',
+    total_two: 'حدّدت آيتين',
+    total_few: 'حدّدت {{count, number}} آيات',
+    total_many: 'حدّدت {{count, number}} آية',
+    total_other: 'حدّدت {{count, number}} آية',
     /** On the confirm button while the selection is being stored; avoids «الحفظ», which reads as memorizing. */
     saving: 'جارٍ التسجيل…',
     confirm: 'اعتماد المحفوظ',

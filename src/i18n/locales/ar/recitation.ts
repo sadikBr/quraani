@@ -40,14 +40,14 @@ export default {
     times_many: '{{count, number}} مرة',
     times_other: '{{count, number}} مرة',
     /** Repeat until the listener stops. */
-    endless: 'حتى تُوقفها',
+    endless: 'تكرار مستمر',
     /** Short chip text beside the repeat icon: the number of times, or ∞. */
     chip: '{{count, number}}',
     chipEndless: '∞',
   },
   ayahSheet: {
     fromHere: 'الاستماع من هذه الآية',
-    fromHereDetail: 'تمضي التلاوة آيةً بعد آية',
+    fromHereDetail: 'تستمر التلاوة آية بعد آية',
     /** Whole surahs chosen, and the reciter's timings place the ayah in the recording. */
     fromHereSurahDetail: 'من تسجيل السورة كاملة',
     /** Whole surahs chosen, without timings: the recording can only start from the top. */
@@ -55,18 +55,18 @@ export default {
     wholeSurahDetail: 'يبدأ التسجيل من أول السورة',
     repeatAyah: 'تكرار هذه الآية',
     /** How many times the ayah is recited (the chosen repetition, always 2 or more). */
-    repeatAyahDetail_zero: 'تُتلى مكررةً حتى تُوقفها',
+    repeatAyahDetail_zero: 'تتكرر حتى توقف التلاوة',
     repeatAyahDetail_one: 'تُتلى مرة واحدة',
     repeatAyahDetail_two: 'تُتلى مرتين',
     repeatAyahDetail_few: 'تُتلى {{count, number}} مرات',
     repeatAyahDetail_many: 'تُتلى {{count, number}} مرة',
     repeatAyahDetail_other: 'تُتلى {{count, number}} مرة',
     /** No repetition chosen: the ayah repeats until the listener stops it. */
-    repeatAyahEndless: 'تُتلى مكررةً حتى تُوقفها',
+    repeatAyahEndless: 'تتكرر حتى توقف التلاوة',
   },
   styles: { murattal: 'مرتّل', mujawwad: 'مجوّد', muallim: 'معلّم' },
   /** A whole-surah recording with ayah timings: the page follows the ayah being recited. */
-  follows: 'تتبع الآيات',
+  follows: 'تتبّع الآيات',
   /** A reciter who recorded only part of the Quran. */
   partial_zero: 'لا سور مسجلة',
   partial_one: 'سورة واحدة مسجلة',
@@ -78,11 +78,11 @@ export default {
     /** Ayah by ayah, or whole surahs; each keeps its own reciter and repetition. */
     listening: {
       title: 'طريقة الاستماع',
-      description: 'لكل طريقة قارئها وتكرارها.',
-      ayah: { label: 'آية بعد آية', detail: 'لكل آية تسجيلها: تكرّر الآية وتنتقل بين الآيات، والصفحة تتبع التلاوة.' },
-      surah: { label: 'السورة كاملة', detail: 'تسجيل السورة متصلًا كما تلاها القارئ، ثم السورة التي تليها.' },
+      description: 'يمكنك اختيار القارئ وعدد مرات التكرار لكل طريقة على حدة.',
+      ayah: { label: 'آية بعد آية', detail: 'تسجيل مستقل لكل آية يتيح تكرارها والتنقل بين الآيات، مع انتقال الصفحات تلقائيًا أثناء التلاوة.' },
+      surah: { label: 'السورة كاملة', detail: 'تستمع إلى السورة كاملة بتسجيل متصل، ثم تبدأ السورة التالية.' },
       /** Repeating one ayah and a goal's portion need each ayah on its own. */
-      surahNote: 'تكرار آية واحدة والاستماع إلى ورد الأهداف يبقيان آيةً بعد آية، بقارئها.',
+      surahNote: 'عند تكرار آية واحدة أو الاستماع إلى ورد، تُستخدم تسجيلات «آية بعد آية» والقارئ المحدد لها.',
     },
     reciter: {
       title: 'القارئ',
@@ -97,7 +97,7 @@ export default {
     },
     repeat: {
       title: 'تكرار الآيات',
-      description: 'عدد مرات تلاوة كل آية قبل الانتقال إلى التي تليها. يعين على الحفظ والمراجعة.',
+      description: 'حدّد عدد مرات تكرار كل آية قبل الانتقال إلى التالية، ليساعدك ذلك على الحفظ والمراجعة.',
       surahTitle: 'تكرار السورة',
       surahDescription: 'عدد مرات تلاوة السورة قبل الانتقال إلى التي تليها.',
       /** Beside the − and + of the count. */
@@ -106,14 +106,14 @@ export default {
       more: 'مرات أكثر',
       /** A switch under the count: repeat until the listener stops. */
       endless: 'تكرار دون توقف',
-      endlessDetail: 'تتكرر كل آية حتى تُوقفها.',
-      surahEndlessDetail: 'تتكرر السورة حتى تُوقفها.',
+      endlessDetail: 'تتكرر كل آية حتى توقف التلاوة.',
+      surahEndlessDetail: 'تتكرر السورة حتى توقف التلاوة.',
     },
     offline: {
       title: 'الاستماع دون اتصال',
       description: 'نزّل تلاوة القارئ إلى جهازك لتستمع إليها دون إنترنت.',
       phoneOnly: 'التنزيل متوفر في تطبيق الهاتف.',
-      none: 'لم تنزّل شيئًا من هذه التلاوة بعد.',
+      none: 'لم تنزّل أي سورة بصوت هذا القارئ بعد.',
       complete: 'التلاوة كاملة على جهازك',
       saved_zero: 'لا سور على جهازك',
       saved_one: 'سورة واحدة على جهازك',
@@ -132,12 +132,12 @@ export default {
       chooseSurahs: 'تنزيل سور مختارة',
       cancel: 'إيقاف التنزيل',
       delete: 'حذف التلاوة من جهازك',
-      deleteConfirm: 'حذف كل ما نُزّل من تلاوة {{name}}؟',
+      deleteConfirm: 'حذف جميع تلاوات {{name}} المنزّلة؟',
       /** Delete button of another saved reciter. */
       deleteOther: 'حذف تلاوة {{name}} من جهازك',
       confirmDelete: 'حذف',
       keep: 'إلغاء',
-      networkError: 'توقف التنزيل لانقطاع الاتصال، وما نُزّل باقٍ على جهازك. أعد المحاولة حين يتوفر الإنترنت.',
+      networkError: 'توقف التنزيل بسبب انقطاع الاتصال. بقيت التلاوات المنزّلة على جهازك. أعد المحاولة عند عودة الاتصال.',
       storageError: 'لا توجد مساحة كافية على جهازك لإكمال التنزيل.',
       /** Downloads continue only while the app is open. */
       keepOpen: 'يستمر التنزيل ما دام التطبيق مفتوحًا.',
@@ -147,7 +147,7 @@ export default {
   reciterSheet: {
     title: 'اختيار القارئ',
     /** {{riwayah}} is e.g. «ورش عن نافع». */
-    subtitle: 'القرّاء برواية {{riwayah}}',
+    subtitle: 'قرّاء رواية {{riwayah}}',
     surahSubtitle: 'تسجيلات السور كاملة برواية {{riwayah}}',
     close: 'إغلاق اختيار القارئ',
     searchLabel: 'البحث عن قارئ',
@@ -157,7 +157,7 @@ export default {
     /** The listen button of each reciter: a short sample from the opening of Al-Fatiha. */
     sample: 'الاستماع إلى عيّنة من تلاوة {{name}}',
     sampleStop: 'إيقاف عيّنة {{name}}',
-    sampleFailed: 'تعذّر تشغيل العيّنة. تحقّق من اتصالك بالإنترنت.',
+    sampleFailed: 'تعذّر تشغيل العيّنة. تحقّق من اتصالك بالإنترنت وأعد المحاولة.',
   },
   surahSheet: {
     title: 'تنزيل سور مختارة',
@@ -180,6 +180,6 @@ export default {
     noReciter: 'لا تتوفر تلاوة لهذه الرواية بعد.',
     noSurahReciter: 'لا تتوفر تسجيلات للسور كاملة بهذه الرواية بعد.',
     /** The chosen whole-surah reciter recorded neither this surah nor any after it. */
-    noSurahLeft: 'لم يسجّل هذا القارئ هذه السورة ولا ما بعدها. اختر قارئًا آخر من الإعدادات.',
+    noSurahLeft: 'لا تتوفر لهذا القارئ تسجيلات لهذه السورة أو السور التالية. اختر قارئًا آخر من الإعدادات.',
   },
 } as const;

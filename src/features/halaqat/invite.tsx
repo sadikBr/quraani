@@ -4,6 +4,7 @@ import * as Linking from 'expo-linking';
 import { ArabicText as Text } from '@/components/arabic-text';
 import type { ReaderPalette } from '@/features/quran-reader/theme';
 import { readerShape, withAlpha } from '@/features/quran-reader/design';
+import { artColors } from '@/components/craft/art';
 import { t } from '@/i18n';
 
 /** A code as it is shown and shared: two groups of four, «K7Q2-MX4P». */
@@ -32,14 +33,21 @@ export const copyText = (text: string) => Clipboard.setStringAsync(text);
  * A code set as tiles, two groups of four with a dash between, each letter on its own small tile
  * with a gold rim, as letters are set on a lawh: read aloud letter by letter.
  */
-export function CodeTiles({ code, palette: p, size = 'lg' }: { code: string; palette: ReaderPalette; size?: 'lg' | 'md' }) {
+export function CodeTiles({ code, palette: p, size = 'lg', tile = false }: {
+  code: string; palette: ReaderPalette; size?: 'lg' | 'md';
+  /** Set on an arched tile (its colours), not on the page. */
+  tile?: boolean;
+}) {
   const cell = size === 'lg' ? 34 : 28;
   const letters = code.split('');
+  const colors = artColors(p);
+  const ink = tile ? colors.ink : p.foreground;
+  const ground = tile ? withAlpha(colors.ink, 0.07) : p.background;
   return <View accessible accessibilityLabel={t('halaqat.sharing.codeLabel', { code: letters.join(' ') })} style={s.row} {...(Platform.OS === 'web' ? { dir: 'ltr' } : {})}>
     {[letters.slice(0, 4), letters.slice(4)].map((group, g) => <View key={g} style={s.group}>
       {g === 1 && <Text style={{ color: withAlpha(p.ornament, 0.8), fontSize: cell * 0.6, marginHorizontal: 2 }} aria-hidden>–</Text>}
-      {group.map((letter, i) => <View key={i} style={[s.cell, { width: cell, height: cell * 1.22, borderColor: withAlpha(p.ornament, 0.6), backgroundColor: p.background }]}>
-        <Text style={{ color: p.foreground, fontSize: cell * 0.62, lineHeight: cell * 0.9, fontFamily: 'UiSans', fontWeight: '700', writingDirection: 'ltr' }}>{letter}</Text>
+      {group.map((letter, i) => <View key={i} style={[s.cell, { width: cell, height: cell * 1.22, borderColor: tile ? colors.edge : withAlpha(p.ornament, 0.6), backgroundColor: ground }]}>
+        <Text style={{ color: ink, fontSize: cell * 0.62, lineHeight: cell * 0.9, fontFamily: 'UiSans', fontWeight: '700', writingDirection: 'ltr' }}>{letter}</Text>
       </View>)}
     </View>)}
   </View>;

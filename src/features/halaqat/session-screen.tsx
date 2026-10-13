@@ -5,21 +5,24 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { Medallion } from '@/components/craft/marks';
 import { PageBar, PageTitle, Section, page } from '@/components/craft/page';
+import { ArchPanel } from '@/components/craft/panels';
 import { Button, Empty } from '@/components/ui';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
 import { ReaderIcon } from '@/features/quran-reader/components/ui/reader-chrome';
-import { readerElevation, readerShape, withAlpha } from '@/features/quran-reader/design';
+import { readerShape, withAlpha } from '@/features/quran-reader/design';
 import { validDate } from '@/features/plans/dates';
 import { weekdayDateLabel } from '@/features/plans/presentation';
-import { formatList, t } from '@/i18n';
+import { formatList, formatNumber, t } from '@/i18n';
 import { useHalaqa, useHalaqat } from './provider';
 import { absent, activeStudents, assignmentFor, entryOf, heard, newId, sessionOn, type Attendance, type Entry, type Halaqa, type Student } from './model';
 import { AttendancePicker, GradeMark, portionLabel, studentNumber, useHalaqaIndex, displayName } from './shared';
 import { ConfirmDialog } from './confirm-dialog';
+import { HalaqaRing, RingCount, SeatLegend, seatsOf, type Seat } from './ring';
 
 /**
- * A session of the halaqa, on a day: the roll call, then each student with the portions they are
- * to recite, how they went once heard, and the way to hear them.
+ * A session of the halaqa, on a day: its ring (who has been heard, who is here waiting, who is not
+ * marked yet, who is away) and what each kind of seat counts, then each participant with the
+ * portions they are to recite (or how they went, once heard), the way to hear them, and the roll call.
  */
 export function SessionScreen() {
   const params = useLocalSearchParams<{ halaqa: string; date: string }>();
@@ -56,10 +59,25 @@ function Session({ halaqa, date }: { halaqa: Halaqa; date: string }) {
   };
   const done = students.filter((s) => heard(entryOf(session, s.id))).length;
   const away = students.filter((s) => absent(entryOf(session, s.id))).length;
+  const seats = seatsOf(halaqa, session, students);
+  const count = (seat: Seat) => seats.filter((x) => x === seat).length;
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <PageBar back={{ label: t('common.back'), onPress: () => router.back() }} palette={p} />
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 22 }]}>
-      <PageTitle title={weekdayDateLabel(date)} subtitle={formatList([halaqa.name, t('halaqat.detail.heardOf', { done, total: students.length }), ...(away ? [t('halaqat.detail.away', { count: away })] : [])])} palette={p} />
+      <PageTitle title={weekdayDateLabel(date)} subtitle={halaqa.name} palette={p} />
+      {students.length > 0 && <ArchPanel palette={p} rise={40} tone={done === students.length ? p.ornament : undefined} contentStyle={s.hero}>
+        <HalaqaRing seats={seats} size={136} palette={p} label={formatList([t('halaqat.detail.heardOf', { done, total: students.length }), ...(away ? [t('halaqat.detail.away', { count: away })] : [])])}>
+          <RingCount palette={p} value={formatNumber(done)} caption={t('halaqat.detail.ofTotal', { total: students.length })} />
+        </HalaqaRing>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <SeatLegend palette={p} items={[
+            { seat: 'heard', label: t('halaqat.session.legend.heard'), count: count('heard') },
+            { seat: 'present', label: t('halaqat.session.legend.present'), count: count('present') },
+            { seat: 'waiting', label: t('halaqat.session.legend.waiting'), count: count('waiting') },
+            { seat: 'away', label: t('halaqat.session.legend.away'), count: count('away') },
+          ]} />
+        </View>
+      </ArchPanel>}
       <Section title={t('halaqat.session.students')} palette={p}
         action={unmarked.length ? <Button size="sm" variant="outline" icon="roll" palette={p} onPress={() => save(unmarked.map((s) => ({ student: s.id, attendance: 'present' as const, recitations: [] })))}>{t('halaqat.session.allPresent')}</Button> : undefined}>
         {!students.length && <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('halaqat.detail.noStudents')}</Text>}
@@ -70,18 +88,23 @@ function Session({ halaqa, date }: { halaqa: Halaqa; date: string }) {
             const missing = absent(entry), done = heard(entry);
             const hear = () => router.push({ pathname: '/halaqat/recite', params: { halaqa: halaqa.id, date, student: student.id, session: session?.id ?? sessionId } });
             const lines = index && shape ? [
-              assigned.new && t('halaqat.session.newLine', { portion: portionLabel(index, shape, assigned.new) }),
-              assigned.revision && t('halaqat.session.revisionLine', { portion: portionLabel(index, shape, assigned.revision) }),
-            ].filter((x): x is string => !!x) : [];
-            return <View key={student.id} style={[s.card, { backgroundColor: p.card, borderColor: done ? withAlpha(p.ornament, 0.6) : p.border, opacity: missing ? 0.75 : 1 }, readerElevation(1, p)]}>
-              <Pressable accessibilityRole="button" accessibilityLabel={formatList([student.name, ...(done ? [t('halaqat.session.heard')] : lines)])}
-                accessibilityHint={t('halaqat.session.hearHint')} onPress={hear} style={({ pressed }) => [s.head, { opacity: pressed ? 0.7 : 1 }]}>
-                <Medallion value={studentNumber(halaqa.students, student.id)} size={40} palette={p} current={done} />
-                <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                  <Text numberOfLines={1} style={{ color: p.foreground, fontSize: 17, fontWeight: '600' }}>{displayName(student)}</Text>
+              assigned.new && { kind: t('halaqat.lawh.new'), portion: portionLabel(index, shape, assigned.new) },
+              assigned.revision && { kind: t('halaqat.lawh.revision'), portion: portionLabel(index, shape, assigned.revision) },
+            ].filter((x): x is { kind: string; portion: string } => !!x) : [];
+            return <View key={student.id} style={[s.card, { backgroundColor: p.card, borderColor: done ? withAlpha(p.ornament, 0.55) : p.border }]}>
+              <Pressable accessibilityRole="button" accessibilityLabel={formatList([student.name, ...(done ? [t('halaqat.session.heard')] : lines.map((l) => formatList([l.kind, l.portion])))])}
+                accessibilityHint={t('halaqat.session.hearHint')} onPress={hear}
+                style={({ pressed }) => [s.main, { backgroundColor: pressed ? p.accent : 'transparent', opacity: missing ? 0.6 : 1 }]}>
+                <Medallion value={studentNumber(halaqa.students, student.id)} size={40} palette={p} current={done} tone={missing ? p.mutedForeground : undefined} />
+                <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+                  <Text numberOfLines={1} style={{ color: p.foreground, fontSize: 17, lineHeight: 28, fontFamily: 'ReaderNaskhBold' }}>{displayName(student)}</Text>
                   {done ? <View style={s.grades}>
                     {entry!.recitations.map((r) => <GradeMark key={r.kind} grade={r.grade} palette={p} label={formatList([t(`halaqat.kinds.${r.kind}`), t(`halaqat.grades.${r.grade}`)])} />)}
-                  </View> : lines.length ? lines.map((line) => <Text key={line} numberOfLines={1} style={{ color: p.mutedForeground, fontSize: 13 }}>{line}</Text>)
+                  </View> : missing ? <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t(`halaqat.attendance.${entry!.attendance}`)}</Text>
+                    : lines.length ? lines.map((line) => <View key={line.kind} style={s.line}>
+                      <Text style={{ color: p.ornament, fontSize: 12, fontWeight: '700' }}>{line.kind}</Text>
+                      <Text numberOfLines={1} style={{ flex: 1, minWidth: 0, color: p.mutedForeground, fontSize: 13 }}>{line.portion}</Text>
+                    </View>)
                     : <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('halaqat.detail.noPortion')}</Text>}
                 </View>
                 {!missing && <View style={[s.hear, { backgroundColor: done ? 'transparent' : p.primary, borderColor: done ? p.input : p.primary }]}>
@@ -89,7 +112,9 @@ function Session({ halaqa, date }: { halaqa: Halaqa; date: string }) {
                   <Text style={{ color: done ? p.foreground : p.primaryForeground, fontSize: 13, fontWeight: '600' }}>{done ? t('halaqat.session.edit') : t('halaqat.session.hear')}</Text>
                 </View>}
               </Pressable>
-              <AttendancePicker compact name={student.name} value={entry?.attendance} onChange={(value) => mark(student, value)} palette={p} />
+              <View style={[s.foot, { borderColor: p.border }]}>
+                <AttendancePicker compact name={student.name} value={entry?.attendance} onChange={(value) => mark(student, value)} palette={p} />
+              </View>
             </View>;
           })}
         </View>
@@ -105,8 +130,11 @@ function Session({ halaqa, date }: { halaqa: Halaqa; date: string }) {
 }
 
 const s = StyleSheet.create({
-  card: { borderWidth: 1, borderRadius: readerShape.card, padding: 12, gap: 12 },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  grades: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
+  hero: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingTop: 46, paddingHorizontal: 18, paddingBottom: 18 },
+  card: { borderWidth: 1, borderRadius: readerShape.card, overflow: 'hidden' },
+  main: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12 },
+  line: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+  grades: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   hear: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 12, borderRadius: readerShape.pill, borderWidth: 1 },
+  foot: { borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 12, paddingVertical: 10 },
 });

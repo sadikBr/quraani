@@ -4,13 +4,13 @@
  */
 export default {
   /** Follows the device's light or dark setting. */
-  system: 'حسب الجهاز',
+  system: 'تلقائي',
   light: 'فاتح',
   dark: 'داكن',
   /** Deep green with gold. */
   emerald: 'زمرد وذهب',
   /** Sand beige with warm brown. */
-  sand: 'لؤلؤة الصحراء',
+  sand: 'رمال الصحراء',
   /** Soft pink with deep rose. */
   rose: 'ورد جوري',
   /** Navy blue with pale blue and gold. */

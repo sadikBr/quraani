@@ -7,11 +7,11 @@ export default {
     search: {
       label: 'البحث في الفهرس',
       /** A juz or hizb also matches the name of the surah it starts in. */
-      placeholder: { surah: 'اسم السورة أو رقمها', juz: 'رقم الجزء أو سورته الأولى', hizb: 'رقم الحزب أو سورته الأولى' },
+      placeholder: { surah: 'اسم السورة أو رقمها', juz: 'رقم الجزء أو اسم السورة', hizb: 'رقم الحزب أو اسم السورة' },
     },
     prompt: 'اختر موضعًا وابدأ القراءة',
     /** Above the surahs: all of them, or the Meccan or the Medinan ones alone. */
-    revelation: { label: 'السور بحسب نزولها', all: 'الكل', meccan: 'المكية', medinan: 'المدنية' },
+    revelation: { label: 'السور المكية والمدنية', all: 'الكل', meccan: 'المكية', medinan: 'المدنية' },
     /** Number of listed items; {{count}} keeps Latin digits, like the numbers in the list. Zero only after a search. */
     count: {
       surah_zero: 'لا نتائج',
@@ -33,9 +33,9 @@ export default {
       hizb_many: '{{count}} حزبًا',
       hizb_other: '{{count}} حزب',
     },
-    loading: 'جارٍ تحميل الفهرس',
+    loading: 'جارٍ تحميل الفهرس…',
     error: { title: 'تعذّر فتح الفهرس', unavailable: 'لا يمكن عرض الفهرس الآن. أعد المحاولة.' },
-    empty: { title: 'لا شيء يطابق بحثك', description: 'جرّب اسمًا أو رقمًا آخر، أو امسح البحث لعرض الفهرس كاملًا.' },
+    empty: { title: 'لا نتائج تطابق بحثك', description: 'جرّب اسمًا أو رقمًا آخر، أو امسح البحث لعرض الفهرس كاملًا.' },
     item: {
       /** e.g. "سورة البقرة، الآيات: 286، الصفحة 2". */
       label: '{{title}}، {{detail}}، الصفحة {{page}}',
@@ -51,8 +51,8 @@ export default {
     title: 'البحث في القرآن',
     label: 'البحث في نص القرآن',
     placeholder: 'اكتب كلمة أو عبارة من الآية',
-    tip: 'ابحث بالتشكيل أو دونه، في روايتك المختارة.',
-    searching: 'جارٍ البحث',
+    tip: 'يمكنك البحث بالتشكيل أو دونه في الرواية المختارة.',
+    searching: 'جارٍ البحث…',
     /** {{count}} keeps Latin digits. */
     count_zero: 'لا نتائج',
     count_one: 'نتيجة واحدة',
@@ -74,10 +74,10 @@ export default {
     title: 'العلامات',
     search: { label: 'البحث في العلامات', placeholder: 'اسم السورة أو كلمات من الآية' },
     order: { label: 'ترتيب العلامات', quran: 'ترتيب المصحف', recent: 'الأحدث أولًا' },
-    removed: 'أُزيلت العلامة',
+    removed: 'أُزيلت العلامة.',
     undoLabel: 'التراجع عن إزالة العلامة',
     undo: 'تراجع',
-    storageError: 'تعذّر قراءة العلامات أو تسجيلها على جهازك. ستبقى تغييراتك حتى تغلق التطبيق.',
+    storageError: 'تعذّر تحميل العلامات أو حفظها على جهازك. ستبقى تغييراتك متوفرة إلى أن تُغلق التطبيق.',
     summary: {
       title: 'آيات تعود إليها',
       /** {{bookmarks}} and {{surahs}} keep Latin digits. */
@@ -95,7 +95,7 @@ export default {
     empty: {
       title: 'لم تضع علامة على أي آية بعد',
       description: 'ضع علامة على أي آية من المصحف أو من نتائج البحث، وستجدها هنا متى أردت العودة إليها.',
-      noMatchTitle: 'لا علامة تطابق بحثك',
+      noMatchTitle: 'لا علامات تطابق بحثك',
       noMatchDescription: 'جرّب اسم السورة أو كلمات أخرى من الآية.',
       showAll: 'عرض كل العلامات',
       findAyah: 'البحث عن آية',
@@ -104,7 +104,7 @@ export default {
   /** The mushaf text comes from the device's cache. */
   stale: 'تُستخدم نسخة المصحف المخزَّنة على جهازك.',
   loadError: 'تعذّر تحميل المصحف',
-  preparing: 'جارٍ تجهيز النتائج',
+  preparing: 'جارٍ تجهيز النتائج…',
   /** One ayah in search results or bookmarks. {{surah}} already includes the word سورة. */
   result: {
     label: '{{surah}}، الآية {{ayah}}، الصفحة {{page}}. {{text}}',

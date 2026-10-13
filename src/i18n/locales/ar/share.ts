@@ -1,21 +1,21 @@
 /** The "share an ayah" screen and the image card it exports. */
 export default {
   title: 'بطاقة آية',
-  subtitle: 'شارك الآية في صورة تليق بها',
-  preparing: 'جارٍ تجهيز البطاقة',
+  subtitle: 'صمّم بطاقة للآية وشاركها',
+  preparing: 'جارٍ تجهيز البطاقة…',
   notFound: 'لم نعثر على هذه الآية.',
   loadError: 'تعذّر تجهيز البطاقة. أعد المحاولة.',
   /** `title` heads the choice of the image's shape. */
   format: { title: 'شكل البطاقة', status: 'حالة واتساب · 9:16', square: 'منشور مربع · 1:1' },
-  preview: { title: 'معاينة البطاقة', extended: 'طالت البطاقة لتتسع للنص كاملًا.' },
+  preview: { title: 'معاينة البطاقة', extended: 'زاد طول البطاقة لتتسع للنص كاملًا.' },
   /** `app`: the swatch that follows the app's current theme; the other swatches are named in reader.ayahCard.themes. */
   color: { title: 'لون البطاقة', app: 'مظهر التطبيق' },
   /** Shows the app's logo and name at the bottom of the card. */
   showBrand: 'إظهار شعار التطبيق',
   translation: {
     add: 'إضافة ترجمة المعاني',
-    loading: 'جارٍ تحميل الترجمة',
-    error: 'تعذّر تحميل ترجمة كاملة لهذه الآية. أعد المحاولة، أو شارك الآية دون ترجمة.',
+    loading: 'جارٍ تحميل الترجمة…',
+    error: 'تعذّر تحميل ترجمة معاني الآية كاملة. أعد المحاولة أو شارك الآية دون ترجمة.',
     reload: 'إعادة تحميل الترجمة',
     source: 'المصدر: {{source}}',
     /** {{refs}} is a list of "surah:ayah" references in Hafs numbering, which translations follow. */
@@ -27,7 +27,7 @@ export default {
     brand: 'تعذّر تحميل شعار التطبيق. أعد المحاولة.',
     share: 'تعذّرت المشاركة. أعد المحاولة.',
   },
-  downloaded: 'نُزِّلت البطاقة. يمكنك مشاركتها من الصور أو الملفات.',
+  downloaded: 'نُزّلت البطاقة. يمكنك مشاركتها من تطبيق الصور أو الملفات.',
   retryImage: 'إعادة تجهيز الصورة',
   shareImage: 'مشاركة الصورة',
   downloadImage: 'تنزيل الصورة',

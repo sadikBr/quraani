@@ -13,7 +13,7 @@ export default {
   /** The way back to the mushaf, written on the button at the top of a page. */
   mushaf: 'المصحف',
   back: 'رجوع',
-  clearSearch: 'مسح البحث',
+  clearSearch: 'مسح نص البحث',
   checkConnection: 'تحقّق من اتصالك بالإنترنت ثم أعد المحاولة.',
   /** "رواية حفص عن عاصم" */
   riwayahOf: 'رواية {{riwayah}}',

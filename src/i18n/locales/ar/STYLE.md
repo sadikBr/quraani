@@ -18,6 +18,10 @@ or changing text.
   sentence. No filler («بالفعل», «حاليًا», «فقط» when it adds nothing).
 - **Direct address** in the masculine singular, as Arabic apps conventionally do («اختر»، «لديك»،
   «محفوظك»). Where a neutral construction is just as natural (verbal noun, passive, «لك»), prefer it.
+- **Natural, explicit sentences.** Name the action and its object when a pronoun would be unclear:
+  «تعديل بيانات المشاركين», «تسجيل الخروج من الجهاز», «حفظ التغييرات».
+  Avoid personifying the account («لم يقبل حسابك الاسم») or vague promises («أهدافك ماضية»).
+  Explain what happened and what the reader can do next.
 
 ## Grammar and spelling (non-negotiable)
 
@@ -30,6 +34,8 @@ or changing text.
 - Duals change with case: «يومان» (subject) but «خلال يومين», «كل يومين».
 - Tanween fatha on the alif: «يومًا», «أسبوعيًا», «مؤقتًا» (not «يوماً»).
 - Use shadda/diacritics only where they prevent a misreading («تقبّل», «حُفظ» vs «حفظ», «يُحذف»).
+- Match the verb to its subject: «ستُعاد المحاولة تلقائيًا», not «سيُعاد المحاولة».
+  Check pronouns against their referents in the complete sentence, including inserted phrases.
 - Arabic punctuation: «،» «؛» «؟», quotes «…», ellipsis «…». No space before punctuation.
   No exclamation marks except a genuine congratulation.
 - Titles, buttons, tabs, labels: no final period. Full sentences (descriptions, errors): end with «.».
@@ -100,7 +106,9 @@ or changing text.
 
 **Important ambiguity:** «حفظ» means both "save" and "memorize". In this app, memorization is a
 core feature, so wherever the two could be confused, use «حفظ/محفوظ» only for memorization and
-pick another wording for saving.
+pick another wording for saving. In settings and profile editing, «حفظ الإعدادات» and
+«حفظ التغييرات» are clear, conventional Arabic; do not replace them with awkward wording merely
+to avoid the word «حفظ».
 
 ## Plurals and placeholders (technical rules — the build depends on them)
 

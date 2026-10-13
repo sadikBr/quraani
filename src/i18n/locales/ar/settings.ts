@@ -3,21 +3,21 @@ export default {
   tabs: { label: 'أقسام الإعدادات', reading: 'القراءة', recitation: 'التلاوة', appearance: 'المظهر', prayers: 'الصلاة' },
   /** Headline and sentence at the top of each settings tab (the reading tab has group headings instead). */
   intro: {
-    recitation: { title: 'تلاوة تعينك على الحفظ', detail: 'اختر قارئك وعدد مرات التكرار، ونزّل التلاوة لتستمع إليها دون اتصال.' },
-    appearance: { title: 'ألوان تريح عينك', detail: 'اختر مظهرًا يرافقك في كل صفحة.' },
-    prayers: { title: 'صلاتك في وقتها', detail: 'اختر كيف ينبّهك التطبيق لكل صلاة، وطريقة حساب المواقيت.' },
+    recitation: { title: 'تلاوة تعينك على الحفظ', detail: 'اختر القارئ وعدد مرات التكرار، ونزّل التلاوة لتستمع إليها دون اتصال.' },
+    appearance: { title: 'ألوان مريحة للعين', detail: 'اختر ألوان التطبيق والمصحف.' },
+    prayers: { title: 'صلاتك في وقتها', detail: 'اختر طريقة حساب المواقيت وكيفية التنبيه لكل صلاة.' },
   },
   /** The reading tab's last section: how the Quran text looks. */
   groups: {
     text: {
       title: 'النص القرآني',
-      detail: 'في وضع النص، والأذكار، والبحث. كل تغيير يظهر في المعاينة.',
+      detail: 'اضبط مظهر الآيات في وضع النص والأذكار والبحث، وشاهد النتيجة في المعاينة.',
       /** Added for Warsh while the printed pages are chosen: the letter style and colours leave them as they are. */
-      pagesStay: 'صفحات المصحف تبقى كما طُبعت.',
+      pagesStay: 'تبقى صفحات المصحف كما هي في النسخة المطبوعة.',
     },
   },
   riwayah: {
-    title: 'رواية القرآن',
+    title: 'الرواية',
     /** Shown under the riwayah name, e.g. "ورش" then "عن نافع". */
     from: { warsh: 'عن نافع', hafs: 'عن عاصم' },
     savedSeparately: 'يُحتفظ بموضع القراءة والعلامات لكل رواية على حدة.',
@@ -29,7 +29,7 @@ export default {
     /** Warsh in the text view: one page per thumun (eighth of a hizb) instead of the mushaf's pages. */
     thumun: {
       label: 'صفحة لكل ثمن',
-      detail: 'تُقسَّم القراءة إلى {{count, number}} صفحة: لكل ثمن صفحته، تُعرَف بحزبها وثمنها.',
+      detail: 'لكل ثمن حزب صفحة مستقلة. عدد الصفحات: {{count, number}}، وتُحدَّد كل صفحة برقم الحزب والثمن.',
     },
   },
   textLayout: {
@@ -38,7 +38,7 @@ export default {
     ayah: 'آيات منفصلة',
     flowing: 'نص متصل',
     ayahDetail: 'تبدأ كل آية في سطر جديد.',
-    flowingDetail: 'تتوالى الآيات متصلة، وتتكيّف السطور مع شاشتك.',
+    flowingDetail: 'تظهر الآيات في نص متصل، وتُرتَّب السطور بحسب عرض الشاشة.',
   },
   /** Warsh only: the letters as in the Maghrib (the Warsh font) or the East (the Madinah mushaf's font). */
   warshScript: {
@@ -46,15 +46,15 @@ export default {
     /** On the Maghribi choice: the letters Warsh's own mushafs are written in. */
     recommended: 'موصى به',
     /** Under the choice, for the one chosen; the preview shows the dots of ق and ف. */
-    maghribi: { label: 'مغاربي', detail: 'كمصاحف المغرب، وهو الموصى به لرواية ورش' },
-    mashriqi: { label: 'مشرقي', detail: 'كمصحف المدينة. والموصى به لرواية ورش هو المغاربي' },
+    maghribi: { label: 'مغاربي', detail: 'كما في مصاحف المغرب، وهو الموصى به لرواية ورش' },
+    mashriqi: { label: 'مشرقي', detail: 'كما في مصحف المدينة. ويُوصى بالخط المغاربي لرواية ورش' },
   },
   tajweed: {
     title: 'ألوان التجويد',
     /** Under the switch: whose rules (Warsh), or where the colours show (Hafs: the printed pages too). */
     warshDetail: 'وفق رواية ورش من طريق الأزرق',
     hafsDetail: 'ألوان مصحف التجويد، في الصفحات والنص معًا',
-    stopNote: 'تُعرض الأحكام باعتبار الوقف على رأس كل آية.',
+    stopNote: 'تُعرض أحكام التجويد على أساس الوقف عند نهاية كل آية.',
   },
   footer: {
     /** Avoids «تُحفظ», which reads as memorizing. */
@@ -72,10 +72,10 @@ export default {
       live: 'معاينة مباشرة',
       /** Shown while the surah name of the preview (Al-Mulk 9) is not loaded yet. */
       fallbackSurah: 'سورة الملك',
-      loading: 'جارٍ تحميل المعاينة',
-      error: 'تعذّر عرض المعاينة، ويمكنك مع ذلك ضبط الخط والتباعد.',
+      loading: 'جارٍ تحميل المعاينة…',
+      error: 'تعذّر عرض المعاينة. يمكنك مواصلة ضبط الخط والتباعد.',
       reload: 'إعادة تحميل المعاينة',
-      tajweedError: 'تعذّر تحميل ألوان التجويد، فعُرض النص دونها.',
+      tajweedError: 'تعذّر تحميل ألوان التجويد. يظهر النص دون تلوين.',
       reloadTajweed: 'إعادة تحميل الألوان',
     },
   },
@@ -91,11 +91,11 @@ export default {
     label: 'مظهر التطبيق',
     /** {{theme}} is the selected theme name, shown in bold. */
     current: 'المظهر الحالي: {{theme}}',
-    systemDetail: 'يتبدّل تلقائيًا بين الفاتح والداكن.',
+    systemDetail: 'يتبدّل بين الفاتح والداكن وفق إعدادات الجهاز.',
     /** Headings of the two groups of themes. */
     darkShades: 'ألوان داكنة',
     lightShades: 'ألوان فاتحة',
     /** Accessibility hint of each theme. */
-    themeHint: 'يُطبَّق على التطبيق والمصحف، ويُحتفظ به تلقائيًا',
+    themeHint: 'يُطبَّق على التطبيق والمصحف ويُحفظ تلقائيًا',
   },
 } as const;

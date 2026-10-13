@@ -1,22 +1,20 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { ArchPanel } from '@/components/craft/panels';
-import { Beads, Medallion } from '@/components/craft/marks';
+import { Medallion } from '@/components/craft/marks';
 import { AddRow, PageBar, PageTitle, Row, RowGroup, Section, page } from '@/components/craft/page';
 import { Alert, Button, Empty } from '@/components/ui';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
 import { IconButton } from '@/features/quran-reader/components/ui/reader-chrome';
-import { withAlpha } from '@/features/quran-reader/design';
-import { ReaderButton } from '@/features/quran-reader/components/reading/reader-button';
 import { usePlans } from '@/features/plans/provider';
 import { weekdayDateLabel } from '@/features/plans/presentation';
-import { formatList, t } from '@/i18n';
+import { formatList, formatNumber, t } from '@/i18n';
 import { useHalaqa, useMembership } from './provider';
 import { absent, activeStudents, currentAssignment, entryOf, heard, historyOf, monthStart, nextMeeting, scoresOf, sessionOn, type Halaqa, type Student } from './model';
 import { photoOf } from './membership';
+import { DoorPill, HalaqaDoor, HalaqaRing, RingCount, seatsOf } from './ring';
 import { JoinedHalaqaScreen } from './joined-screen';
 import { Scoreboard } from './scoreboard';
 import { backOrHalaqat, GradeMark, portionLabel, studentNumber, useHalaqaIndex, displayName, halaqaFacts } from './shared';
@@ -51,6 +49,7 @@ function HalaqaDetail({ halaqa }: { halaqa: Halaqa }) {
   const [showFormer, setShowFormer] = useState(false);
   const students = activeStudents(halaqa), former = halaqa.students.filter((s) => s.leftOn);
   const past = [...halaqa.sessions].filter((s) => s.date !== today).sort((a, b) => b.date.localeCompare(a.date));
+  const todaySession = sessionOn(halaqa, today);
   const facts = halaqaFacts(halaqa);
   const invite = () => router.push({ pathname: '/halaqat/members', params: { halaqa: halaqa.id } });
   const avatarOf = (student: string) => membership.people[halaqa.id]?.find((x) => x.student === student)?.avatar;
@@ -68,16 +67,18 @@ function HalaqaDetail({ halaqa }: { halaqa: Halaqa }) {
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 24 }]}>
       <PageTitle title={halaqa.name} subtitle={facts} palette={p} />
       {error && <Alert variant="destructive" palette={p} action={<Button variant="outline" size="sm" palette={p} icon="restore" onPress={retry}>{t('common.retry')}</Button>}>{error}</Alert>}
-      <TodayPanel halaqa={halaqa} today={today} />
+      <TodayDoor halaqa={halaqa} today={today} />
       <Section title={t('halaqat.detail.students')} detail={students.length ? t('halaqat.studentCount', { count: students.length }) : undefined} palette={p}>
         {students.length ? <RowGroup palette={p}>
           {students.map((student) => {
             const assigned = currentAssignment(halaqa, student);
             const last = historyOf(halaqa, student.id).find((h) => h.entry.recitations.length)?.entry.recitations.find((r) => r.kind === 'new');
+            // Heard today: their star filled with gold, as their seat in the ring.
+            const heardToday = heard(entryOf(todaySession, student.id));
             return <Row key={student.id} palette={p} onPress={() => openStudent(student)} title={displayName(student)}
-              leading={<Medallion value={studentNumber(halaqa.students, student.id)} size={38} palette={p} />}
+              leading={<Medallion value={studentNumber(halaqa.students, student.id)} size={40} palette={p} current={heardToday} />}
               detail={index && shape && assigned.new ? t('halaqat.detail.onPortion', { portion: portionLabel(index, shape, assigned.new) }) : t('halaqat.detail.noPortion')}
-              trailing={last ? <GradeMark grade={last.grade} palette={p} /> : undefined} chevron />;
+              trailing={last ? <View style={{ alignSelf: 'center' }}><GradeMark grade={last.grade} palette={p} /></View> : undefined} chevron />;
           })}
         </RowGroup> : <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22 }}>{t('halaqat.detail.noStudents')}</Text>}
         <AddRow title={t('halaqat.detail.addStudent')} detail={t('halaqat.detail.addStudentDetail')} onPress={invite} palette={p} icon="user-plus" />
@@ -89,7 +90,9 @@ function HalaqaDetail({ halaqa }: { halaqa: Halaqa }) {
         <RowGroup palette={p}>
           {past.slice(0, 30).map((session) => {
             const came = session.entries.filter((e) => !absent(e)).length, recited = session.entries.filter((e) => heard(e)).length;
-            return <Row key={session.id} palette={p} icon="calendar" title={weekdayDateLabel(session.date)}
+            // That day's ring: who was heard, who came, who was away.
+            const seats = session.entries.map((e) => heard(e) ? 'heard' as const : absent(e) ? 'away' as const : 'present' as const);
+            return <Row key={session.id} palette={p} title={weekdayDateLabel(session.date)} leading={<HalaqaRing seats={seats} size={44} palette={p} />}
               detail={t('halaqat.detail.pastSummary', { came, recited })}
               onPress={() => router.push({ pathname: '/halaqat/session', params: { halaqa: halaqa.id, date: session.date } })} />;
           })}
@@ -98,39 +101,37 @@ function HalaqaDetail({ halaqa }: { halaqa: Halaqa }) {
       {!!former.length && <Section title={t('halaqat.detail.former')} palette={p}
         action={<Button size="sm" variant="ghost" palette={p} onPress={() => setShowFormer((x) => !x)}>{showFormer ? t('halaqat.detail.hide') : t('halaqat.detail.show')}</Button>}>
         {showFormer && <RowGroup palette={p}>
-          {former.map((student) => <Row key={student.id} palette={p} icon="archive" title={student.name} detail={t('halaqat.detail.leftOn', { date: weekdayDateLabel(student.leftOn!) })} onPress={() => openStudent(student)} />)}
+          {former.map((student) => <Row key={student.id} palette={p} leading={<Medallion value={studentNumber(halaqa.students, student.id)} size={40} palette={p} tone={p.mutedForeground} />} title={student.name} detail={t('halaqat.detail.leftOn', { date: weekdayDateLabel(student.leftOn!) })} onPress={() => openStudent(student)} />)}
         </RowGroup>}
       </Section>}
     </ScrollView>
   </SafeAreaView>;
 }
 
-/** Today's session through an arched window: who has recited, as beads, and the way in. */
-function TodayPanel({ halaqa, today }: { halaqa: Halaqa; today: string }) {
+/**
+ * Today's session through the halaqa's door: its ring (who has been heard, who is here, who is
+ * away), how many have recited in its middle, and the way in. Without participants yet, the door
+ * leads to inviting them.
+ */
+function TodayDoor({ halaqa, today }: { halaqa: Halaqa; today: string }) {
   const { palette: p } = useReadingPreferences();
   const students = activeStudents(halaqa);
   const session = sessionOn(halaqa, today);
   const meets = nextMeeting(halaqa, today);
   const done = students.filter((s) => heard(entryOf(session, s.id))).length;
   const away = students.filter((s) => absent(entryOf(session, s.id))).length;
-  const open = () => router.push({ pathname: '/halaqat/session', params: { halaqa: halaqa.id, date: today } });
-  return <ArchPanel palette={p} rise={46} tone={session || meets === today ? withAlpha(p.ornament, 0.85) : undefined} contentStyle={s.today}>
-    <Text style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>{weekdayDateLabel(today)}</Text>
-    <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 22, lineHeight: 36, fontFamily: 'ReaderNaskhBold', textAlign: 'center' }}>
-      {session ? t('halaqat.detail.todaySession') : meets === today ? t('halaqat.detail.meetsToday') : t('halaqat.detail.noSessionToday')}
-    </Text>
-    {session && students.length > 0 && <View style={{ gap: 8, alignSelf: 'stretch' }}>
-      <Beads count={students.length} done={done} palette={p} size={10} max={40} label={t('halaqat.detail.heardOf', { done, total: students.length })} />
-      <Text style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>{formatList([t('halaqat.detail.heardOf', { done, total: students.length }), ...(away ? [t('halaqat.detail.away', { count: away })] : [])])}</Text>
-    </View>}
-    {!session && meets && meets !== today && <Text style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>{t('halaqat.list.nextMeeting', { date: weekdayDateLabel(meets) })}</Text>}
-    <View style={{ alignSelf: 'stretch', marginTop: 6 }}>
-      <ReaderButton palette={p} selected disabled={!students.length} onPress={open}>{session ? t('halaqat.detail.continue') : t('halaqat.detail.start')}</ReaderButton>
-    </View>
-    {!students.length && <Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center' }}>{t('halaqat.detail.addFirst')}</Text>}
-  </ArchPanel>;
+  const heardOf = t('halaqat.detail.heardOf', { done, total: students.length });
+  const open = () => router.push(students.length ? { pathname: '/halaqat/session', params: { halaqa: halaqa.id, date: today } } : { pathname: '/halaqat/members', params: { halaqa: halaqa.id } });
+  const title = session ? t('halaqat.detail.todaySession') : meets === today ? t('halaqat.detail.meetsToday') : t('halaqat.detail.noSessionToday');
+  const detail = !students.length ? t('halaqat.detail.addFirst')
+    : session ? formatList([heardOf, ...(away ? [t('halaqat.detail.away', { count: away })] : [])])
+    : meets && meets !== today ? t('halaqat.list.nextMeeting', { date: weekdayDateLabel(meets) }) : t('halaqat.studentCount', { count: students.length });
+  const action = !students.length ? t('halaqat.detail.addStudent') : session ? t('halaqat.detail.continue') : t('halaqat.detail.start');
+  return <HalaqaDoor palette={p} seats={seatsOf(halaqa, session)} kicker={weekdayDateLabel(today)} title={title} detail={detail}
+    ringLabel={session ? heardOf : t('halaqat.studentCount', { count: students.length })}
+    center={session ? <RingCount tile palette={p} value={formatNumber(done)} caption={t('halaqat.detail.ofTotal', { total: students.length })} />
+      : <RingCount tile palette={p} value={formatNumber(students.length)} caption={t('halaqat.detail.inCircle')} />}
+    label={formatList([title, detail, action])} onPress={open}>
+    <DoorPill palette={p} icon={!students.length ? 'user-plus' : session ? 'headphones' : 'play'} text={action} />
+  </HalaqaDoor>;
 }
-
-const s = StyleSheet.create({
-  today: { alignItems: 'center', gap: 6 },
-});

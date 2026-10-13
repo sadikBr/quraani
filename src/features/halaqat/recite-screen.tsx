@@ -23,7 +23,7 @@ import {
   assignmentFor, entryOf, GRADES, MARK_LIMIT, markCount, newId, NOTE_LIMIT, ordinal, RECITATION_KINDS, samePortion, sessionOn, spanOf, suggestGrade, suggestNext, validPortion,
   type Assignment, type Attendance, type Grade, type Halaqa, type Mark, type MarkKind, type Portion, type QuranShape, type Recitation, type RecitationKind, type Student,
 } from './model';
-import { AttendancePicker, gradeTone, LawhPortion, useHalaqaIndex, useLinkedStudent, displayName } from './shared';
+import { AttendancePicker, gradeTone, LawhBoard, useHalaqaIndex, useLinkedStudent, displayName } from './shared';
 import { usePlans } from '@/features/plans/provider';
 import { PortionSheet } from './portion-sheet';
 
@@ -127,9 +127,10 @@ function Recite({ halaqa, student: participant, date, sessionId: given }: { hala
           : !present ? <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22 }}>{t('halaqat.recite.absentNote')}</Text> : <>
           <Tabs palette={p} label={t('halaqat.recite.kindsLabel')} value={kind} onChange={setKind}
             options={RECITATION_KINDS.map((k) => ({ value: k, label: t(`halaqat.kinds.${k}`), icon: drafts[k].grade ? 'done' as const : undefined }))} />
-          <LawhPortion title={kind === 'new' ? t('halaqat.lawh.new') : t('halaqat.lawh.revision')} portion={draft.portion} index={index} shape={shape} palette={p}
-            tone={draft.grade ? gradeTone(p, draft.grade) : undefined} emptyText={kind === 'new' ? t('halaqat.recite.noNew') : t('halaqat.recite.noRevision')}
-            onChange={() => setChoosing({ what: 'recited', kind })} />
+          <LawhBoard index={index} shape={shape} palette={p} tone={draft.grade ? gradeTone(p, draft.grade) : undefined} lines={[{
+            title: kind === 'new' ? t('halaqat.lawh.new') : t('halaqat.lawh.revision'), portion: draft.portion,
+            emptyText: kind === 'new' ? t('halaqat.recite.noNew') : t('halaqat.recite.noRevision'), onChange: () => setChoosing({ what: 'recited', kind }),
+          }]} />
           {validPortion(shape, draft.portion) && <>
             <MarkTools marks={draft.marks} full={draft.marks.length >= MARK_LIMIT} palette={p} onAdd={(k) => addMark({ kind: k })}
               onRemove={(k) => { const i = draft.marks.map((m) => m.kind).lastIndexOf(k); if (i >= 0) update(kind, { marks: draft.marks.filter((_, j) => j !== i) }); }}
@@ -140,10 +141,12 @@ function Recite({ halaqa, student: participant, date, sessionId: given }: { hala
           </>}
           <Section title={t('halaqat.recite.nextTitle')} detail={ownChoice ? undefined : t('halaqat.recite.nextSuggested')} palette={p}>
             <View style={{ gap: 12 }}>
-              <LawhPortion title={t('halaqat.lawh.new')} portion={next.new} index={index} shape={shape} palette={p} emptyText={t('halaqat.recite.noNextNew')}
-                onChange={() => setChoosing({ what: 'next', kind: 'new' })} onClear={() => setChosen((c) => ({ ...c, new: undefined }))} />
-              <LawhPortion title={t('halaqat.lawh.revision')} portion={next.revision} index={index} shape={shape} palette={p} emptyText={t('halaqat.recite.noNextRevision')}
-                onChange={() => setChoosing({ what: 'next', kind: 'revision' })} onClear={() => setChosen((c) => ({ ...c, revision: undefined }))} />
+              <LawhBoard index={index} shape={shape} palette={p} lines={[
+                { title: t('halaqat.lawh.new'), portion: next.new, emptyText: t('halaqat.recite.noNextNew'),
+                  onChange: () => setChoosing({ what: 'next', kind: 'new' }), onClear: () => setChosen((c) => ({ ...c, new: undefined })) },
+                { title: t('halaqat.lawh.revision'), portion: next.revision, emptyText: t('halaqat.recite.noNextRevision'),
+                  onChange: () => setChoosing({ what: 'next', kind: 'revision' }), onClear: () => setChosen((c) => ({ ...c, revision: undefined })) },
+              ]} />
               {ownChoice && <Button size="sm" variant="ghost" icon="restore" palette={p} onPress={() => { setKeepSaved(false); setChosen({}); }}>{t('halaqat.recite.useSuggested')}</Button>}
             </View>
           </Section>

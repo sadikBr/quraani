@@ -5,15 +5,15 @@ export default {
     defaultName: { khatma: 'ختمتي', wird: 'وردي اليومي' },
     backToSetup: 'العودة إلى إعداد الهدف',
     heading: {
-      blocked: 'هدفك الحالي أولًا',
+      blocked: 'لديك هدف قراءة قائم',
       /** Second step: a last look at the goal before creating it. */
       review: 'نظرة أخيرة قبل البدء',
       setup: 'على قدر استطاعتك',
     },
     subheading: {
-      blocked: 'هدف قراءة واحد في كل مرة، ومعه ما شئت من القراءات المتكررة.',
-      review: 'هذا وردك، فاجعل له وقتًا في يومك.',
-      setup: 'اختر المدة أو المقدار، ونرتّب لك وردك.',
+      blocked: 'يمكنك متابعة هدف قراءة واحد، وإضافة ما تشاء من القراءات المتكررة.',
+      review: 'تأكّد من إعدادات وردك ومواعيده قبل البدء.',
+      setup: 'حدّد مدة الختمة أو مقدار القراءة اليومي لنرتّب لك الأوراد.',
     },
     blockedNote: 'الختمة والورد اليومي طريقتان لتنظيم القراءة. يمكنك بدء أيٍّ منهما بعد إتمام هدفك الحالي أو أرشفته.',
     /** Choices of the reading unit (segmented control). */
@@ -22,7 +22,7 @@ export default {
       khatmaTitle: 'في كم أسبوع؟',
       wirdTitle: 'كم تقرأ كل يوم؟',
       khatmaDescription: 'نحسب وردك اليومي لتختم في المدة التي تختارها.',
-      wirdDescription: 'مقدارك ثابت، بلا موعد إتمام. إذا فاتك يوم، تتابع من حيث توقفت.',
+      wirdDescription: 'تقرأ مقدارًا ثابتًا كل يوم، دون موعد محدد للإتمام. إذا فاتك يوم، فتابع من حيث توقفت.',
       khatmaLabel: 'مدة الختمة بالأسابيع',
       wirdLabel: 'مقدار الورد اليومي',
       /** Unit under the number of weeks typed above it; count is that number. */
@@ -53,7 +53,7 @@ export default {
         juzs_many: 'جزءًا يوميًا',
         juzs_other: 'جزء يوميًا',
       },
-      divideBy: 'قسّم القراءة حسب',
+      divideBy: 'وحدة تقسيم الورد',
     },
     timing: {
       title: 'الرواية والموعد',
@@ -63,7 +63,7 @@ export default {
     start: {
       title: 'من أين تبدأ؟',
       khatmaDescription: 'نوزّع القراءة من الموضع الذي تختاره إلى آخر المصحف على المدة التي حدّدتها.',
-      wirdDescription: 'تبدأ من هنا، ثم تواصل كل يوم بالمقدار الذي اخترته.',
+      wirdDescription: 'تبدأ القراءة من الموضع المختار، ثم تواصل يوميًا بالمقدار الذي حدّدته.',
     },
     /** Summary card of the review step. */
     summary: {
@@ -106,14 +106,14 @@ export default {
     firstSteps: {
       /** The first three portions of the new goal. */
       title: 'أورادك الأولى',
-      wirdNote: 'المواعيد تقديرية، فكل ورد يأتي بعد إتمام الذي قبله.',
+      wirdNote: 'المواعيد تقديرية. يبدأ كل ورد بعد إتمام الورد السابق.',
     },
     /** Section with the name, repeat and reminder settings. */
     makeItYours: 'إعدادات الهدف',
-    repeatDetail: 'تبدأ من أول المصحف في اليوم التالي للإتمام.',
+    repeatDetail: 'تبدأ ختمة جديدة من أول المصحف في اليوم التالي لإتمام الختمة الحالية.',
     reminder: 'ذكّرني بوردي',
     reminderDetail: 'كل يوم، في الوقت الذي تختاره.',
-    replacesRepeat: 'بإنشاء هذا الهدف يتوقف التجديد التلقائي لهدف القراءة المكتمل، ويبقى ما أنجزته فيه.',
+    replacesRepeat: 'إنشاء هذا الهدف يوقف التكرار التلقائي لهدف القراءة السابق، مع الاحتفاظ بسجلّ إنجازه.',
     /** Under the button of the first step; count is the number of portions. */
     sessionsPreview_zero: 'لا أوراد · التفاصيل في الخطوة التالية',
     sessionsPreview_one: 'ورد واحد · التفاصيل في الخطوة التالية',
@@ -125,13 +125,13 @@ export default {
     continueToReview: 'متابعة',
     create: 'إنشاء الهدف',
     errors: {
-      timeFormat: 'اكتب الوقت مثل 20:00.',
+      timeFormat: 'أدخل الوقت بهذه الصيغة: 20:00.',
       checkGoal: 'تحقّق من بيانات الهدف.',
-      savedPosition: 'تعذّر استرجاع آخر موضع قرأت فيه. اختر موضع البداية.',
+      savedPosition: 'تعذّر استعادة موضع قراءتك الأخير. اختر موضع البداية.',
     },
   },
   /** Repeat switch, in creation and in the goal settings. A new round starts from the beginning of the mushaf. */
-  repeat: 'ابدأ ختمة جديدة عند الإتمام',
+  repeat: 'تكرار الختمة عند الإتمام',
   detail: {
     /** Screen title while the goal loads or when it does not exist. */
     title: 'الهدف',
@@ -143,7 +143,7 @@ export default {
       /** Position of the session in the schedule: "الورد ٣". */
       number: 'الورد {{number, number}}',
       /** After the date, when part of the portion is already read. */
-      resume: 'تتابع من حيث توقفت',
+      resume: 'تابع من حيث توقفت',
       /** Disabled reading button of a portion that is not due yet; {{date}} is "١٢ أكتوبر". */
       availableOn: 'يُتاح يوم {{date}}',
       markDone: 'أتممت هذا الورد',
@@ -151,18 +151,18 @@ export default {
     catchUp: {
       show: 'تحتاج إلى تعديل الجدول؟',
       hide: 'إخفاء خيارات تعديل الجدول',
-      note: 'ما قرأته محسوب لك. يمكنك تمديد الجدول، أو توزيع ما بقي على الأيام حتى الموعد الأصلي.',
+      note: 'ما قرأته مسجّل. يمكنك تمديد الجدول أو توزيع الورد المتبقي على الأيام حتى موعد الإتمام الأصلي.',
       extend: 'تمديد الجدول من اليوم',
       redistribute: 'توزيع المتبقي حتى الموعد الأصلي',
     },
     status: {
       completedTitle: 'أتممت ختمتك، تقبّل الله منك',
-      pausedTitle: 'خذ وقتك، ما قرأته لن يضيع',
+      pausedTitle: 'القراءة متوقفة مؤقتًا',
       completedRepeat: 'تبدأ الختمة التالية في اليوم الذي يلي الإتمام.',
       completedOnce: 'تجد أورادك كلها في الجدول أدناه.',
-      paused: 'عند الاستئناف نمدّد الجدول بقدر مدة التوقف.',
-      archivedUntil: 'تذكيراته متوقفة. سيُحذف نهائيًا في {{date}}. استعده قبل ذلك للاحتفاظ به.',
-      archived: 'تذكيراته متوقفة. سيُحذف نهائيًا بعد أسبوعين. استعده قبل ذلك للاحتفاظ به.',
+      paused: 'عند استئناف القراءة، يُمدَّد الجدول بمدة تساوي فترة التوقف.',
+      archivedUntil: 'تذكيرات هذا الهدف متوقفة. سيُحذف نهائيًا في {{date}}. استعده قبل ذلك للاحتفاظ به.',
+      archived: 'تذكيرات هذا الهدف متوقفة. سيُحذف نهائيًا بعد أسبوعين. استعده قبل ذلك للاحتفاظ به.',
     },
     undo: 'التراجع عن آخر قراءة سجّلتها',
     /** One line of facts under the schedule, joined with "·". */
@@ -195,7 +195,7 @@ export default {
       once: 'ختمة واحدة',
       cycleStart: 'بداية الختمة: {{date}}',
       /** {{time}} is HH:MM in Latin digits. */
-      reminderAt: 'التذكير {{time}}',
+      reminderAt: 'التذكير الساعة {{time}}',
       reminderOff: 'بلا تذكير',
     },
     history: {
@@ -204,7 +204,7 @@ export default {
       cycle: 'الختمة {{number, number}} · أتممتها في {{date}}',
     },
     settings: {
-      repeatDetail: 'تبدأ من أول المصحف في اليوم التالي للإتمام.',
+      repeatDetail: 'تبدأ ختمة جديدة من أول المصحف في اليوم التالي لإتمام الختمة الحالية.',
       reminder: 'ذكّرني بوردي',
       reminderDetail: 'كل يوم، في الوقت الذي تختاره.',
       deletionNote: 'يُحذف الهدف المؤرشف نهائيًا بعد أسبوعين، ويمكنك استعادته قبل ذلك.',
@@ -286,7 +286,7 @@ export default {
       results_few: '{{count, number}} نتائج',
       results_many: '{{count, number}} نتيجة',
       results_other: '{{count, number}} نتيجة',
-      empty: 'لم نجد نتيجة. جرّب رقمًا آخر أو اسم السورة.',
+      empty: 'لم نعثر على نتائج. جرّب رقمًا آخر أو ابحث باسم السورة.',
       page: 'الصفحة {{page, number}}',
       surahAyah: '{{surah}} · الآية {{ayah, number}}',
     },

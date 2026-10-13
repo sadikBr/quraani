@@ -11,7 +11,7 @@ export default {
     total_few: '{{count, number}} أوراد',
     total_many: '{{count, number}} وردًا',
     total_other: '{{count, number}} ورد',
-    wirdNote: 'المواعيد تقديرية، فكل ورد يأتي بعد إتمام الذي قبله.',
+    wirdNote: 'المواعيد تقديرية. يبدأ كل ورد بعد إتمام الورد السابق.',
     /** {{of}} is the muted "من …" part (weekOf). */
     week: 'الأسبوع {{week, number}} {{of}}',
     weekOf: 'من {{total, number}}',
@@ -53,7 +53,7 @@ export default {
       end: 'بلغت نهاية مقطع الحفظ',
       note: 'أكّد إتمام حفظ المقطع لتُضاف آياته إلى محفوظك.',
       /** Shown above the button when more passages remain. */
-      afterSave: 'بعد التأكيد نعود بك إلى هدفك لتنتقل إلى المقطع التالي.',
+      afterSave: 'بعد التأكيد، ستعود إلى الهدف لتتابع المقطع التالي.',
     },
     revision: {
       portion: 'مراجعتك',
@@ -62,7 +62,7 @@ export default {
       pageLabel: 'تسجيل مراجعتك حتى نهاية هذه الصفحة والعودة إلى الهدف',
       end: 'بلغت نهاية مراجعتك',
       note: 'ثبّت الله حفظك. أكّد الإتمام عندما تنتهي.',
-      afterSave: 'بعد التأكيد نعود بك إلى هدفك لتنتقل إلى المقطع التالي من محفوظك.',
+      afterSave: 'بعد التأكيد، ستعود إلى الهدف لتراجع المقطع التالي من محفوظك.',
     },
     /** Khatma, daily wird and recurring reading. */
     reading: {
@@ -75,7 +75,7 @@ export default {
       endSurah: 'بلغت نهاية السورة',
       note: 'تقبّل الله قراءتك. أكّد الإتمام عندما تنتهي.',
       /** Recurring reading only, when more surahs remain today. */
-      afterSave: 'بعد التأكيد نعود بك إلى هدفك لتنتقل إلى السورة التالية.',
+      afterSave: 'بعد التأكيد، ستعود إلى الهدف لتقرأ السورة التالية.',
     },
     /** Followed by the surah name (calligraphy) and «الآية ٥». */
     start: 'تبدأ من',

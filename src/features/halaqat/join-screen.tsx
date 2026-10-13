@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { ArchPanel } from '@/components/craft/panels';
+import { artColors } from '@/components/craft/art';
 import { PageBar, PageTitle, page } from '@/components/craft/page';
 import { Alert, Button, Empty } from '@/components/ui';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
@@ -12,10 +12,11 @@ import { useAccount } from '@/features/account/provider';
 import { AccountError } from '@/features/account/auth-client';
 import type { InvitePreview } from '@/features/account/api';
 import { Field } from '@/features/account/sign-in-screen';
-import { formatList, t } from '@/i18n';
+import { formatNumber, t } from '@/i18n';
 import { clampName, NAME_LIMIT, type Halaqa } from './model';
 import { cleanCode, formatCode } from './invite';
 import { useMembership } from './provider';
+import { DoorPill, HalaqaDoor, RingCount, type Seat } from './ring';
 import { halaqaFacts } from './shared';
 
 /** A failure in words: a code tried too often, a halaqa deleted, or no connection. */
@@ -86,7 +87,7 @@ export function JoinScreen() {
   if (signedIn === false) return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <PageBar back={back} palette={p} />
     <View style={page.content}>
-      <Empty icon="users" motif="arches" palette={p} title={t('halaqat.sharing.signedOutTitle')} description={t('halaqat.sharing.signedOutBody')}>
+      <Empty icon="users" motif="circle" palette={p} title={t('halaqat.sharing.signedOutTitle')} description={t('halaqat.sharing.signedOutBody')}>
         <Button size="lg" icon="user" palette={p} block onPress={() => router.push('/account/sign-in')}>{t('halaqat.sharing.signIn')}</Button>
       </Empty>
     </View>
@@ -114,16 +115,14 @@ export function JoinScreen() {
         {!!error && <Alert variant="destructive" palette={p}>{error}</Alert>}
 
         {found && <>
-          <ArchPanel palette={p} rise={42} tone={p.ornament} contentStyle={s.found}>
-            {!!facts && <Text style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>{facts}</Text>}
-            <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 24, lineHeight: 40, fontFamily: 'ReaderNaskhBold', textAlign: 'center' }}>{found.data?.name ?? ''}</Text>
-            <Text style={{ color: p.mutedForeground, fontSize: 13, textAlign: 'center' }}>
-              {formatList([...(found.teacher ? [t('halaqat.list.taughtBy', { name: found.teacher })] : []), t('halaqat.sharing.memberCount', { count: found.members })])}
-            </Text>
-            <Text style={{ color: p.foreground, fontSize: 14, lineHeight: 22, textAlign: 'center', marginTop: 8 }}>
-              {found.role ? t('halaqat.sharing.already') : teacher ? t('halaqat.sharing.asTeacher') : t('halaqat.sharing.asMember')}
-            </Text>
-          </ArchPanel>
+          <HalaqaDoor palette={p} seats={[...Array.from({ length: Math.min(found.members, 40) }, (): Seat => 'waiting'), ...(teacher ? [] : ['me' as const])]}
+            ringLabel={t('halaqat.sharing.memberCount', { count: found.members })}
+            center={<RingCount tile palette={p} value={formatNumber(found.members)} caption={t('halaqat.detail.inCircle')} />}
+            kicker={facts || undefined} title={found.data?.name ?? ''}
+            detail={found.teacher ? t('halaqat.list.taughtBy', { name: found.teacher }) : undefined}>
+            {found.role ? <DoorPill palette={p} icon="check" text={t('halaqat.sharing.already')} />
+              : <Text style={{ color: artColors(p).ink, fontSize: 14, lineHeight: 23, textAlign: 'center' }}>{teacher ? t('halaqat.sharing.asTeacher') : t('halaqat.sharing.asMember')}</Text>}
+          </HalaqaDoor>
           {found.role ? <Button size="lg" icon="users" palette={p} block onPress={() => router.replace({ pathname: '/halaqat/[id]', params: { id: found.halaqa } })}>{t('halaqat.sharing.open')}</Button> : <>
             {!teacher && <Field label={t('halaqat.sharing.yourName')} hint={t('halaqat.sharing.yourNameHint')}>
               {(field) => <TextInput {...field} style={[field.style, s.name]} value={shownName} onChangeText={setName} maxLength={NAME_LIMIT}
@@ -145,5 +144,4 @@ const s = StyleSheet.create({
     letterSpacing: 4, writingDirection: 'ltr', textAlign: 'center',
   },
   name: { writingDirection: 'rtl', textAlign: Platform.OS === 'android' ? 'left' : 'right' },
-  found: { alignItems: 'center', gap: 4, paddingTop: 50, paddingHorizontal: 18, paddingBottom: 20 },
 });

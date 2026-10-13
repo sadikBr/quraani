@@ -1,27 +1,29 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArabicText as Text } from '@/components/arabic-text';
-import { ArchPanel } from '@/components/craft/panels';
+import { artColors } from '@/components/craft/art';
 import { AddRow, PageBar, PageTitle, Row, RowGroup, Section, page } from '@/components/craft/page';
 import { Alert, Button, Empty } from '@/components/ui';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
+import { ReaderIcon } from '@/features/quran-reader/components/ui/reader-chrome';
 import { PrayerSheet } from '@/features/prayers/sheet';
 import { PersonPhoto } from '@/features/account/avatar';
 import { initialOf } from '@/features/account/profile';
 import { shortDate } from '@/features/plans/presentation';
-import { t } from '@/i18n';
+import { formatNumber, t } from '@/i18n';
 import { ConfirmDialog } from './confirm-dialog';
 import { CodeTiles, copyText, formatCode, joinLink, shareText } from './invite';
 import { photoOf, type Person } from './membership';
 import { useHalaqa, useMembership } from './provider';
-import type { Halaqa } from './model';
+import { activeStudents, type Halaqa } from './model';
+import { DoorPill, HalaqaDoor, RingCount, type Seat } from './ring';
 import { pastHalaqa } from './shared';
 
 /**
- * Who is in a halaqa, for its teachers: the halaqa's code to share (and a new one when it has gone
- * too far), its teachers, and those who joined from their accounts. Its owner brings in a
+ * Who is in a halaqa, for its supervisors: the halaqa's door, its ring with a seat kept open and
+ * the code that fills it, to share (and a new one when it has gone too far), its supervisors, and those who joined from their accounts. Its owner brings in a
  * co-teacher with a code of their own, and takes them out; any teacher takes a member out.
  */
 export function MembersScreen() {
@@ -76,6 +78,14 @@ function Members({ halaqa }: { halaqa: Halaqa }) {
   const nameOf = (person: Person) => (person.student && halaqa.students.find((s) => s.id === person.student)?.name) || person.name || t('halaqat.sharing.noName');
   const teachers = list?.filter((x) => x.role !== 'member') ?? [];
   const members = list?.filter((x) => x.role === 'member') ?? [];
+  // The halaqa's ring: those who joined from their accounts in gold, those added by name empty,
+  // and a seat kept open for whoever the code brings.
+  const students = activeStudents(halaqa);
+  const joinedIds = new Set(members.map((x) => x.student));
+  const linked = students.filter((x) => x.account || joinedIds.has(x.id)).length;
+  const seats: Seat[] = [...students.map((x): Seat => x.account || joinedIds.has(x.id) ? 'heard' : 'waiting'), 'open'];
+  const ringLabel = t('halaqat.sharing.ringLabel', { count: students.length, linked });
+  const colors = artColors(p);
   const personRow = (person: Person, detail: string, removable: boolean) => {
     const name = nameOf(person);
     return <Row key={person.user ?? person.student ?? name} palette={p} title={person.me ? t('halaqat.me.you', { name }) : name} detail={detail}
@@ -93,16 +103,22 @@ function Members({ halaqa }: { halaqa: Halaqa }) {
         {codeFailed ? t('halaqat.sharing.codeFailed') : t('halaqat.sharing.peopleFailed')}
       </Alert>}
 
-      <ArchPanel palette={p} rise={42} contentStyle={s.code}>
-        <Text style={{ color: p.mutedForeground, fontSize: 13, fontWeight: '600' }}>{t('halaqat.sharing.code')}</Text>
-        {code ? <CodeTiles code={code} palette={p} /> : !codeFailed && <ActivityIndicator color={p.mutedForeground} style={{ marginVertical: 14 }} />}
-        <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 21, textAlign: 'center', marginTop: 4 }}>{t('halaqat.sharing.codeHint')}</Text>
+      <HalaqaDoor palette={p} seats={seats} kicker={t('halaqat.sharing.code')} ringLabel={ringLabel}
+        center={<RingCount tile palette={p} value={formatNumber(students.length)} caption={t('halaqat.detail.inCircle')} />}
+        detail={<View style={{ marginTop: 6, minHeight: 40, justifyContent: 'center' }}>
+          {code ? <CodeTiles code={code} palette={p} size="md" tile /> : !codeFailed && <ActivityIndicator color={colors.soft} />}
+        </View>}>
+        <Text style={{ color: colors.soft, fontSize: 13, lineHeight: 21, textAlign: 'center' }}>{t('halaqat.sharing.codeHint')}</Text>
         <View style={s.actions}>
-          <Button icon="share" palette={p} disabled={!code} onPress={() => code && void share(code)}>{t('halaqat.sharing.share')}</Button>
-          <Button variant="outline" icon="copy" palette={p} disabled={!code} onPress={() => code && void copy(code)}>{t('halaqat.sharing.copy')}</Button>
+          <DoorPill filled icon="share" palette={p} disabled={!code} text={t('halaqat.sharing.share')} onPress={() => code && void share(code)} />
+          <DoorPill icon="copy" palette={p} disabled={!code} text={t('halaqat.sharing.copy')} onPress={() => code && void copy(code)} />
         </View>
-        <Button size="sm" variant="ghost" icon="sync" palette={p} disabled={!code || busy} onPress={() => setConfirm({ kind: 'renew' })}>{t('halaqat.sharing.renew')}</Button>
-      </ArchPanel>
+        <Pressable accessibilityRole="button" disabled={!code || busy} onPress={() => setConfirm({ kind: 'renew' })} hitSlop={8}
+          style={({ pressed }) => [s.renew, { opacity: !code || busy ? 0.5 : pressed ? 0.7 : 1 }]}>
+          <ReaderIcon name="sync" color={colors.soft} size={13} />
+          <Text style={{ color: colors.soft, fontSize: 12, fontWeight: '600' }}>{t('halaqat.sharing.renew')}</Text>
+        </Pressable>
+      </HalaqaDoor>
       {!!note && <Alert icon="check" palette={p}>{note}</Alert>}
       {!!error && <Alert variant="destructive" palette={p}>{error}</Alert>}
 
@@ -153,6 +169,6 @@ function Members({ halaqa }: { halaqa: Halaqa }) {
 }
 
 const s = StyleSheet.create({
-  code: { alignItems: 'center', gap: 10, paddingTop: 50, paddingHorizontal: 18, paddingBottom: 14 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 4 },
+  renew: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 32, paddingHorizontal: 8 },
 });

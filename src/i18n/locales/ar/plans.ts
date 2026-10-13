@@ -92,9 +92,9 @@ export default {
       dueTitle: 'وردك بانتظارك',
       completedTitle: 'ورد اليوم مكتمل',
       idleTitle: 'وقتٌ للقرآن',
-      dueDetail: 'قليلٌ كل يوم يبلّغك هدفك.',
+      dueDetail: 'المواظبة على وردك تقرّبك من هدفك.',
       /** Shown when nothing is due today but the user has goals (whether or not some were completed today). */
-      ongoingDetail: 'أهدافك ماضية على مهلٍ وثبات.',
+      ongoingDetail: 'تابع أهدافك في المواعيد التي اخترتها.',
       emptyDetail: 'اجعل للقرآن نصيبًا من يومك.',
       /** Next to the number of portions due today. */
       due: 'بانتظارك اليوم',
@@ -109,11 +109,11 @@ export default {
     empty: {
       archiveTitle: 'أرشيفك فارغ',
       completedTitle: 'أتممت وردك، تقبّل الله منك',
-      nothingDueTitle: 'لا ورد عليك الآن',
+      nothingDueTitle: 'ليس لديك ورد مقرر الآن',
       startTitle: 'لم تضع لنفسك هدفًا بعد',
       archiveDetail: 'تبقى الأهداف المؤرشفة هنا أسبوعين، ثم تُحذف نهائيًا.',
       waitingDetail: 'تجد أهدافك القادمة والمتوقفة في «أهدافي».',
-      startDetail: 'ختمة، أو حفظ متدرّج تراجعه، أو سور تقرؤها في أيام تختارها.',
+      startDetail: 'اختر ختمة، أو خطة للحفظ والمراجعة، أو سورًا تقرؤها في أيام محددة.',
       /** Button that opens the "أهدافي" tab. */
       showMine: 'كل أهدافي',
       createFirst: 'أنشئ هدفك الأول',
@@ -137,9 +137,9 @@ export default {
     subtitle: 'اختر ما تحب أن تواظب عليه.',
     recurring: {
       title: 'سور تعود إليها',
-      description: 'تقرؤها في الأيام التي تناسبك. ابدأ باقتراح جاهز أو اختر بنفسك.',
-      customLabel: 'إنشاء قراءة متكررة من اختيارك',
-      customTitle: 'قراءة متكررة من اختيارك',
+      description: 'اختر سورًا تقرؤها بانتظام في أيام تناسبك، أو ابدأ بأحد الاقتراحات.',
+      customLabel: 'إنشاء قراءة متكررة',
+      customTitle: 'قراءة متكررة',
       customDetail: 'سورة أو أكثر · أيام تختارها',
     },
     presets: {
@@ -167,22 +167,22 @@ export default {
     reading: {
       title: 'قراءة المصحف',
       khatmaDetail: 'تختم في مدة تختارها',
-      wirdDetail: 'مقدار ثابت، بلا موعد إتمام',
+      wirdDetail: 'مقدار يومي ثابت دون مدة محددة',
       /** {{goal}} is a goal type name: "إنشاء ختمة". */
       create: 'إنشاء {{goal}}',
-      existing: 'لديك هدف قراءة جارٍ، ويمكنك إنشاء قراءات متكررة بجانبه.',
+      existing: 'لديك هدف قراءة قائم. يمكنك إضافة قراءات متكررة إلى جانبه.',
       /** Link to the current reading goal. */
       viewExisting: 'افتح «{{name}}»',
-      hint: 'هدف قراءة واحد في كل مرة، ومعه ما شئت من القراءات المتكررة.',
+      hint: 'يمكنك متابعة هدف قراءة واحد، وإضافة ما تشاء من القراءات المتكررة.',
     },
   },
   creation: {
     goalType: {
       label: 'نوع الهدف',
       khatmaDetail: 'تختم في مدة تختارها',
-      wirdDetail: 'مقدار ثابت، بلا موعد إتمام',
+      wirdDetail: 'مقدار يومي ثابت دون مدة محددة',
       /** {{goal}} is a goal type name. */
-      unavailableLabel: '{{goal}}، لديك هدف قراءة جارٍ',
+      unavailableLabel: '{{goal}}، لديك هدف قراءة قائم',
       current: 'هدفك الحالي',
       later: 'يُتاح بعد إتمام هدفك',
     },
@@ -217,7 +217,7 @@ export default {
   },
   surahSheet: {
     title: 'اختيار السور',
-    subtitle: 'اختر سورة أو أكثر، وتُقرأ بترتيب المصحف.',
+    subtitle: 'اختر سورة أو أكثر لتقرأها بترتيب المصحف.',
     close: 'إغلاق اختيار السور',
     searchLabel: 'البحث عن سورة',
     searchPlaceholder: 'اسم السورة أو رقمها',
@@ -234,7 +234,7 @@ export default {
       /** The current round of a khatma or wird that repeats. */
       cycle: 'الختمة {{cycle, number}}',
       /** Shown once the last ayah of the mushaf is read. */
-      finished: 'بلغت آخر المصحف، تقبّل الله منك',
+      finished: 'بلغت نهاية المصحف، تقبّل الله منك',
       started: 'وردًا بعد ورد',
       notStarted: 'على بركة الله',
       progressLabel: 'تقدّم القراءة',
@@ -308,34 +308,34 @@ export default {
     errors: {
       restore: 'تعذّرت استعادة الهدف. أعد المحاولة.',
       delete: 'تعذّر حذف الهدف. أعد المحاولة.',
-      restoredCannotDelete: 'استُعيد هذا الهدف من الأرشيف، ولا يُحذف نهائيًا إلا منه.',
+      restoredCannotDelete: 'أُعيد هذا الهدف من الأرشيف. أرشفه مجددًا لتتمكّن من حذفه نهائيًا.',
     },
   },
   limit: {
-    duplicateKhatma: 'لديك ختمة جارية. أتمّها أو أرشفها قبل بدء هدف قراءة جديد.',
-    duplicateWird: 'لديك ورد يومي جارٍ. أتمّه أو أرشفه قبل بدء هدف قراءة جديد.',
-    duplicateMemorization: 'لديك هدف حفظ جارٍ. أتمّه أو أرشفه قبل إنشاء هدف حفظ جديد.',
-    duplicateRevision: 'لديك هدف مراجعة جارٍ لهذه الرواية. عدّله أو أرشفه قبل إنشاء هدف مراجعة جديد.',
+    duplicateKhatma: 'لديك ختمة قائمة. أتمّها أو أرشفها قبل بدء هدف قراءة جديد.',
+    duplicateWird: 'لديك ورد يومي قائم. أتمّه أو أرشفه قبل بدء هدف قراءة جديد.',
+    duplicateMemorization: 'لديك هدف حفظ قائم. أتمّه أو أرشفه قبل إنشاء هدف حفظ جديد.',
+    duplicateRevision: 'لديك هدف مراجعة قائم لهذه الرواية. عدّله أو أرشفه قبل إنشاء هدف مراجعة جديد.',
   },
   start: {
-    invalid: 'اختر موضع بداية صالحًا.',
+    invalid: 'تحقّق من موضع بداية القراءة.',
     notFound: 'موضع البداية غير موجود في هذه الرواية.',
   },
   engine: {
     incompleteBoundaries: 'بيانات المصحف غير مكتملة.',
-    editionMismatch: 'لا يوافق هذا الهدف نسخة المصحف الحالية، ولم يتغيّر تقدّمك.',
-    surahBoundsMismatch: 'حدود السور لا توافق المصحف الحالي، ولم يتغيّر تقدّمك.',
-    invalidWirdAmount: 'اختر مقدارًا صالحًا للورد.',
+    editionMismatch: 'هذا الهدف غير متوافق مع نسخة المصحف الحالية. لم يتغيّر سجلّ إنجازك.',
+    surahBoundsMismatch: 'بيانات بدايات السور ونهاياتها لا تتوافق مع المصحف الحالي. لم يتغيّر سجلّ إنجازك.',
+    invalidWirdAmount: 'حدّد مقدار الورد بشكل صحيح.',
     checkDraft: 'تحقّق من اسم الهدف وتاريخه وروايته.',
     khatmaWeeks: 'اختر مدة بين أسبوع واحد و٥٢ أسبوعًا.',
-    invalidReminderTime: 'اختر وقتًا صالحًا للتذكير.',
+    invalidReminderTime: 'حدّد وقت التذكير بشكل صحيح.',
     /** Redistributing a khatma whose end date has passed; extending the schedule still works. */
-    periodEnded: 'انتهت مدة الختمة، فمدّد الجدول من اليوم.',
+    periodEnded: 'انتهت مدة الختمة. مدّد الجدول بدءًا من اليوم.',
     invalidDate: 'التاريخ غير صالح.',
   },
   session: {
     unavailable: 'لم يعد هذا الورد موجودًا. افتح الهدف لتجد وردك الحالي.',
-    changed: 'تغيّر هذا الورد. عد إلى الهدف لترى تقدّمك.',
+    changed: 'تغيّر هذا الورد. عد إلى الهدف للاطّلاع على آخر تحديث.',
   },
   indexLoadFailed: 'تعذّر تحميل بيانات المصحف. يلزم الاتصال بالإنترنت في المرة الأولى؛ تحقّق من اتصالك ثم أعد المحاولة.',
   reminders: {
@@ -343,12 +343,12 @@ export default {
     channelName: 'تذكيرات الأهداف',
     /** Same wording as goals.reminder.enableOnPhone. */
     phoneOnly: 'التذكير متوفر في تطبيق الهاتف.',
-    permissionDenied: 'لم يُسمح بالإشعارات. يمكنك تفعيلها من إعدادات الهاتف.',
+    permissionDenied: 'الإشعارات غير مفعّلة. يمكنك تفعيلها من إعدادات الهاتف.',
     unavailable: 'تعذّر تفعيل التذكيرات على هذا الجهاز.',
-    savedWithoutPermission: 'حُفظ الهدف دون تذكير. اسمح بالإشعارات من إعدادات الهاتف، ثم فعّل التذكير من إعدادات الهدف.',
+    savedWithoutPermission: 'حُفظ الهدف دون تذكير. فعّل الإشعارات من إعدادات الهاتف، ثم فعّل التذكير من إعدادات الهدف.',
     savedUnavailable: 'حُفظ الهدف، لكن تعذّر تفعيل التذكير. أعد المحاولة لاحقًا من إعدادات الهدف.',
-    syncPermission: 'التذكيرات معطّلة من إعدادات الهاتف، ولم تتأثر أهدافك ولا تقدّمك.',
-    syncFailed: 'تعذّر تحديث التذكيرات، ولم تتأثر أهدافك ولا تقدّمك. أعد المحاولة من إعدادات الهدف.',
+    syncPermission: 'التذكيرات معطّلة في إعدادات الهاتف. أهدافك وسجلّ إنجازك لم يتأثرا.',
+    syncFailed: 'تعذّر تحديث التذكيرات. أهدافك وسجلّ إنجازك لم يتأثرا. أعد المحاولة من إعدادات الهدف.',
     /** Notification text under the goal's name, read on the lock screen: short and inviting. */
     body: {
       memorization: 'حان وقت الحفظ، وردك اليوم بانتظارك.',
@@ -370,12 +370,12 @@ export default {
     invalidCycles: 'سجلّ الختمات السابقة غير صالح.',
     invalidMemorization: 'سجلّ محفوظك غير صالح.',
     memorizationChanged: 'تغيّر سجلّ محفوظك. أعد فتح الهدف لتحديثه.',
-    memorizationEditionMismatch: 'سجلّ محفوظك لا يوافق نسخة المصحف في هذا الهدف.',
+    memorizationEditionMismatch: 'سجلّ محفوظك غير متوافق مع نسخة المصحف المستخدمة في هذا الهدف.',
     memorizationChangedDuringCreation: 'تغيّر سجلّ محفوظك أثناء الإنشاء. ابدأ إنشاء هدف الحفظ من جديد.',
-    memorizationOwnedByGoal: 'يتولّى هدف الحفظ تسجيل محفوظك، فعدّله من هناك.',
+    memorizationOwnedByGoal: 'يرتبط سجلّ محفوظك بهدف الحفظ. يمكنك تعديله من صفحة ذلك الهدف.',
     notLoaded: 'لم تُحمَّل الأهداف بعد.',
-    loadFailed: 'تعذّر تحميل أهدافك، ولم يتغيّر شيء من بياناتك. أعد المحاولة.',
-    archiveCleanupFailed: 'تعذّر تنظيف الأرشيف، ولم تتأثر بياناتك. أعد المحاولة.',
-    rolloverFailed: 'تعذّر بدء الختمة التالية. سنعيد المحاولة تلقائيًا حين يتوفر المصحف.',
+    loadFailed: 'تعذّر تحميل أهدافك. بياناتك لم تتغيّر. أعد المحاولة.',
+    archiveCleanupFailed: 'تعذّر حذف الأهداف التي انتهت مدة بقائها في الأرشيف. لم تتأثر بياناتك. أعد المحاولة.',
+    rolloverFailed: 'تعذّر بدء الختمة التالية. ستُعاد المحاولة تلقائيًا عند توفر بيانات المصحف.',
   },
 } as const;

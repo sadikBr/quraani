@@ -1,7 +1,7 @@
 /** Prayer times, their alerts and the athan. Times are shown as «05:04» (24-hour, Latin digits, like the app's time fields). */
 export default {
   title: 'مواقيت الصلاة',
-  storageError: 'تعذّر تسجيل إعدادات المواقيت على جهازك، وسيُعاد المحاولة تلقائيًا.',
+  storageError: 'تعذّر حفظ إعدادات المواقيت على جهازك. ستُعاد المحاولة تلقائيًا.',
   names: { fajr: 'الفجر', sunrise: 'الشروق', dhuhr: 'الظهر', asr: 'العصر', maghrib: 'المغرب', isha: 'العشاء' },
   /** The prayer with its noun, for sentences: «صلاة الظهر»; sunrise is not a prayer. */
   prayerOf: { fajr: 'صلاة الفجر', sunrise: 'الشروق', dhuhr: 'صلاة الظهر', asr: 'صلاة العصر', maghrib: 'صلاة المغرب', isha: 'صلاة العشاء' },
@@ -19,17 +19,17 @@ export default {
     useMine: 'استخدام موقعي',
     chooseCity: 'اختيار مدينة',
     locating: 'جارٍ تحديد موقعك…',
-    denied: 'لم يُسمح للتطبيق بمعرفة موقعك. اختر مدينتك من القائمة، أو اسمح بذلك من إعدادات الهاتف.',
+    denied: 'لم تمنح التطبيق إذن الوصول إلى موقعك. اختر مدينتك من القائمة أو فعّل الإذن من إعدادات الهاتف.',
     failed: 'تعذّر تحديد موقعك. أعد المحاولة، أو اختر مدينتك من القائمة.',
     sheetTitle: 'موقعك',
-    sheetSubtitle: 'تُحسب المواقيت لأقرب مدينة أو لموقعك بالضبط.',
+    sheetSubtitle: 'اختر مدينة أو استخدم موقعك الدقيق لحساب المواقيت.',
     searchLabel: 'البحث عن مدينة',
     searchPlaceholder: 'ابحث باسم المدينة',
-    empty: 'لا مدينة بهذا الاسم. جرّب «استخدام موقعي».',
+    empty: 'لم نعثر على مدينة بهذا الاسم. جرّب «استخدام موقعي».',
     morocco: 'المغرب',
     others: 'مدن أخرى',
     /** Under «استخدام موقعي» when the place came from the phone: «الرباط، حُدِّد من موقع الهاتف». */
-    gpsDetail: '{{place}}، حُدِّد من موقع الهاتف',
+    gpsDetail: '{{place}}، بحسب موقع الهاتف',
   },
   next: {
     /** Above the next prayer's name. */
@@ -68,9 +68,9 @@ export default {
       s: 'الجنوب', sw: 'الجنوب الغربي', w: 'الغرب', nw: 'الشمال الغربي',
     },
     /** Under the compass: its bearing from true north, and the distance to Makkah. */
-    where: 'على ⁦{{bearing}}°⁩ من الشمال الجغرافي، وتبعد مكة المكرمة {{distance, number}} كم',
+    where: 'بزاوية ⁦{{bearing}}°⁩ من الشمال الجغرافي، وتبعد مكة المكرمة {{distance, number}} كم',
     /** Spoken for the compass at rest. */
-    spoken: 'بوصلة القبلة. القبلة نحو {{wind}}، على {{bearing}} درجة من الشمال',
+    spoken: 'بوصلة القبلة. الاتجاه: {{wind}}، والزاوية بالدرجات من الشمال: {{bearing}}',
     /** The letters of the four winds on the rose. */
     letters: { n: 'ش', e: 'ق', s: 'ج', w: 'غ' },
     start: 'تشغيل البوصلة',
@@ -79,19 +79,19 @@ export default {
     /** With the compass on: which way to turn, and by how much. */
     right: 'استدر يمينًا ⁦{{degrees}}°⁩',
     left: 'استدر يسارًا ⁦{{degrees}}°⁩',
-    facing: 'أنت مستقبل القبلة',
+    facing: 'أنت متّجه إلى القبلة',
     /** With the compass on: where the phone's top points, to compare with another compass. */
     phone: 'يتجه هاتفك إلى ⁦{{degrees}}°⁩ ({{wind}})',
-    how: 'شغّل البوصلة، ثم استدر حتى تقف الكعبة تحت المحراب.',
-    flat: 'أمسك هاتفك مستويًا، بعيدًا عن الحديد والمغناطيس.',
+    how: 'شغّل البوصلة، ثم استدر حتى يصبح رمز الكعبة أسفل المحراب.',
+    flat: 'أمسك هاتفك أفقيًا، بعيدًا عن المعادن والمغناطيس.',
     /** Where the phone cannot say whether its compass is calibrated. */
-    flatCalibrate: 'أمسك هاتفك مستويًا، بعيدًا عن الحديد والمغناطيس. إن بدا الاتجاه خاطئًا، حرّك الهاتف في الهواء على شكل الرقم 8 لمعايرة البوصلة.',
-    calibrate: 'البوصلة تحتاج إلى معايرة: حرّك هاتفك في الهواء على شكل الرقم 8.',
+    flatCalibrate: 'أمسك هاتفك أفقيًا، بعيدًا عن المعادن والمغناطيس. إذا بدا الاتجاه غير صحيح، حرّك الهاتف في الهواء على شكل الرقم 8 لمعايرة البوصلة.',
+    calibrate: 'تحتاج البوصلة إلى معايرة. حرّك هاتفك في الهواء على شكل الرقم 8.',
     /** On Android without the app's own compass (in Expo Go), Expo's works only with the location permission. */
-    denied: 'لا تعمل البوصلة على هاتفك دون إذن الموقع. امنحه من إعدادات الهاتف ثم أعد المحاولة.',
+    denied: 'تحتاج البوصلة إلى إذن الوصول إلى الموقع. فعّله من إعدادات الهاتف ثم أعد المحاولة.',
     settings: 'فتح إعدادات الهاتف',
-    unavailable: 'لم تصل قراءة من بوصلة الهاتف. قد لا يحتوي هاتفك على مستشعر اتجاه.',
-    phoneOnly: 'تعمل البوصلة في التطبيق على الهاتف.',
+    unavailable: 'تعذّر الحصول على قراءة من البوصلة. قد لا يتوفر في هاتفك مستشعر للاتجاه.',
+    phoneOnly: 'البوصلة متوفرة في تطبيق الهاتف.',
   },
   today: {
     /** Spoken label of a row: «العصر 15:33، أذان قصير». */
@@ -111,29 +111,29 @@ export default {
     title: 'التنبيهات',
     description: 'إشعار أو أذان عند دخول وقت كل صلاة.',
     enable: 'التنبيه عند دخول الوقت',
-    phoneOnly: 'تعمل التنبيهات في التطبيق على الهاتف.',
-    permissionDenied: 'لم يُسمح للتطبيق بالإشعارات. اسمح بها من إعدادات الهاتف ثم أعد المحاولة.',
+    phoneOnly: 'التنبيهات متوفرة في تطبيق الهاتف.',
+    permissionDenied: 'الإشعارات غير مفعّلة للتطبيق. فعّلها من إعدادات الهاتف ثم أعد المحاولة.',
     unavailable: 'تعذّر إعداد التنبيهات على هذا الجهاز.',
     syncFailed: 'تعذّر جدولة بعض التنبيهات. افتح هذه الصفحة لاحقًا لإعادة المحاولة.',
     noLocation: 'حدّد موقعك أولًا لتصلك التنبيهات.',
     kinds: { off: 'بلا تنبيه', notify: 'إشعار', takbir: 'تكبير', full: 'الأذان كاملًا' },
     details: {
-      off: 'لا يصلك شيء في هذا الوقت.',
+      off: 'لن يصلك تنبيه عند دخول هذا الوقت.',
       notify: 'إشعار بنغمة الهاتف المعتادة.',
-      takbir: 'إشعار يُسمعك التكبير: الله أكبر، الله أكبر.',
-      full: 'يُرفع الأذان كاملًا وتظهر شاشته، وتوقفه متى شئت.',
+      takbir: 'إشعار بصوت التكبير: الله أكبر، الله أكبر.',
+      full: 'يُشغَّل الأذان كاملًا وتظهر شاشته، ويمكنك إيقافه متى شئت.',
       /** Expo Go, iOS or the web: the whole athan needs the installed Android app. */
-      fullFallback: 'يحتاج إلى التطبيق المثبّت على أندرويد. يُسمعك هنا التكبير.',
+      fullFallback: 'يتطلب تطبيق أندرويد المثبّت. سيُشغَّل التكبير هنا بدلًا من الأذان الكامل.',
     },
     sheetTitle: 'تنبيه {{prayer}}',
     /** In a prayer's alert sheet while alerts are off. */
-    offNote: 'التنبيهات متوقفة. إذا اخترت تنبيهًا هنا شُغِّلت لكل الصلوات بما ضُبط لها.',
+    offNote: 'التنبيهات متوقفة. اختيار تنبيه هنا يفعّل تنبيهات جميع الصلوات وفق إعداداتها.',
     voice: 'صوت الأذان كاملًا',
     takbirSound: 'صوت التكبير',
     /** A switch; once on, the lengths below it. */
     before: 'تذكير قبل الوقت',
     /** Spoken name of the lengths. */
-    beforeLength: 'مدة التذكير قبل الوقت',
+    beforeLength: 'المدة بين التذكير ووقت الصلاة',
     /** A length of the reminder before: «١٠ دقائق». */
     beforeChip_zero: 'بلا تذكير',
     beforeChip_one: 'دقيقة',
@@ -148,7 +148,7 @@ export default {
     /** «05:04 · الدار البيضاء». */
     body: '{{time}} · {{place}}',
     /** Sunrise ends the time of Fajr. */
-    sunriseBody: 'خرج وقت صلاة الفجر · {{time}}',
+    sunriseBody: 'انتهى وقت صلاة الفجر · {{time}}',
     before_zero: '{{prayer}} الآن',
     before_one: '{{prayer}} بعد دقيقة',
     before_two: '{{prayer}} بعد دقيقتين',
@@ -160,7 +160,7 @@ export default {
   },
   voices: {
     title: 'صوت الأذان كاملًا',
-    subtitle: 'يُرفع في وقت الصلاة التي اخترت لها «الأذان كاملًا». تسمع هنا مطلعه.',
+    subtitle: 'يُشغَّل هذا الصوت للصلوات التي اخترت لها «الأذان كاملًا». يمكنك الاستماع إلى بدايته هنا.',
     play: 'استماع',
     stop: 'إيقاف',
     playLabel: 'الاستماع إلى {{voice}}',
@@ -184,7 +184,7 @@ export default {
   /** The takbir notification's sounds: «الله أكبر، الله أكبر» from each voice, and a single takbir. */
   takbirs: {
     title: 'صوت التكبير',
-    subtitle: 'يُسمع مع إشعار «تكبير» في وقت الصلاة.',
+    subtitle: 'يُشغَّل مع إشعار «تكبير» عند دخول وقت الصلاة.',
     /** A takbir alone, before the voices. */
     single: { name: 'تكبيرة واحدة', source: '«الله أكبر» مرة واحدة · ست ثوانٍ' },
     makkah: { name: 'المسجد الحرام', source: 'من أذان مكة المكرمة' },
@@ -218,18 +218,18 @@ export default {
   },
   reliability: {
     title: 'لتصلك التنبيهات في وقتها',
-    exact: 'اسمح للتطبيق بضبط المنبّهات، وإلا تأخّرت التنبيهات أحيانًا عن وقتها.',
+    exact: 'اسمح للتطبيق بضبط المنبّهات لتصلك التنبيهات في مواعيدها.',
     exactAction: 'السماح بالمنبّهات',
-    screen: 'اسمح للتطبيق بالإشعارات على الشاشة كاملة لتظهر شاشة الأذان والهاتف مقفل.',
+    screen: 'فعّل إشعارات ملء الشاشة لتظهر شاشة الأذان حتى عندما يكون الهاتف مقفلًا.',
     screenAction: 'السماح بالشاشة الكاملة',
-    battery: 'قد يؤخّر توفير البطارية التنبيهات أو يمنعها. استثنِ التطبيق منه.',
+    battery: 'قد يؤخّر وضع توفير البطارية التنبيهات أو يمنعها. استثنِ التطبيق من قيوده.',
     batteryAction: 'إعدادات البطارية',
-    silent: 'لا يُرفع الأذان كاملًا والهاتف صامت أو في وضع «عدم الإزعاج»، ويصلك الإشعار وحده. التجربة تُرفع في كل حال.',
+    silent: 'في الوضع الصامت أو وضع «عدم الإزعاج»، يصلك إشعار دون تشغيل الأذان الكامل. أما عند تجربة التنبيه، فيُشغَّل الأذان حتى في هذين الوضعين.',
     ok: 'كل شيء جاهز لتصلك التنبيهات في وقتها.',
   },
   calculation: {
     title: 'طريقة الحساب',
-    description: 'تُعتمد طريقة وزارة الأوقاف والشؤون الإسلامية المغربية ما لم تختر غيرها.',
+    description: 'الطريقة الافتراضية هي طريقة وزارة الأوقاف والشؤون الإسلامية المغربية، ويمكنك تغييرها.',
     method: 'الطريقة',
     madhab: 'وقت العصر',
     madhabs: { shafi: 'الجمهور', hanafi: 'الحنفية' },
@@ -239,14 +239,14 @@ export default {
     /** «الفجر +2، العشاء −1». */
     adjustmentItem: '{{prayer}} {{minutes}}',
     adjustmentsTitle: 'تعديل المواقيت',
-    adjustmentsSubtitle: 'لموافقة توقيت مسجدك بالدقيقة.',
+    adjustmentsSubtitle: 'قدّم المواقيت أو أخّرها لتوافق توقيت مسجدك.',
     /** Signed minutes, kept left to right: «+2 د», «−1 د». */
     minutes: '{{minutes}} د',
     later: 'تأخير {{prayer}} دقيقة',
     earlier: 'تقديم {{prayer}} دقيقة',
     reset: 'إلغاء التعديلات',
     hijri: 'التاريخ الهجري',
-    hijriDetail: 'تاريخ حسابي، وقد يختلف بيوم عن الإعلان الرسمي.',
+    hijriDetail: 'يُحدَّد بالحساب، وقد يختلف بيوم عن التاريخ المعلن رسميًا.',
     hijriLater: 'زيادة يوم على التاريخ الهجري',
     hijriEarlier: 'إنقاص يوم من التاريخ الهجري',
     methodsTitle: 'طريقة الحساب',
@@ -273,12 +273,12 @@ export default {
   screen: {
     /** The row in the alerts card, and the page's title. */
     title: 'شاشة الأذان',
-    subtitle: 'تظهر مع الأذان كاملًا والهاتف مقفل. اختر خلفيتها وحركتها.',
+    subtitle: 'تظهر عند تشغيل الأذان الكامل حتى والهاتف مقفل. اختر الخلفية وتأثير الحركة.',
     /** Above the prayer's name on the screen: «حان وقت صلاة / العصر». */
     heading: 'حان وقت صلاة',
     previewLabel: 'معاينة شاشة الأذان',
-    preview: 'معاينة على الشاشة كاملة',
-    previewHint: 'تظهر الشاشة كما تظهر مع الأذان، دون صوت.',
+    preview: 'معاينة بملء الشاشة',
+    previewHint: 'عاين شاشة الأذان كما ستظهر، دون تشغيل الصوت.',
     previewFailed: 'تعذّر فتح الشاشة. أعد المحاولة.',
     /** The button of the preview, which plays nothing. */
     close: 'إغلاق',
@@ -306,9 +306,9 @@ export default {
   timesNotification: {
     title: 'إشعار المواقيت',
     label: 'المواقيت في الإشعارات',
-    detail: 'إشعار ثابت فيه مواقيت اليوم والصلاة القادمة والوقت الباقي عليها.',
+    detail: 'إشعار ثابت يعرض مواقيت اليوم والصلاة القادمة والوقت المتبقي لها.',
     /** Without exact alarms, Android may refresh it up to ten minutes late, so it hides the countdown. */
-    exact: 'اسمح للتطبيق بضبط المنبّهات ليتجدّد الإشعار مع دخول كل وقت ويُظهر الوقت الباقي.',
+    exact: 'اسمح للتطبيق بضبط المنبّهات ليُحدَّث الإشعار عند دخول كل وقت ويعرض الوقت المتبقي للصلاة القادمة.',
     /** Its notification channel, in the system settings. */
     channel: 'مواقيت الصلاة',
     /** Before the date, after Isha, when it shows the next day's times. */
@@ -323,7 +323,7 @@ export default {
     /** After Isha the card shows the next day: «غدًا، 29 ربيع الآخر 1448 هـ». */
     tomorrow: 'غدًا، {{date}}',
     setupTitle: 'مواقيت الصلاة',
-    setup: 'حدّد مدينتك لترى مواقيت اليوم هنا، والصلاة القادمة والوقت الباقي عليها.',
+    setup: 'حدّد مدينتك لعرض مواقيت اليوم والصلاة القادمة والوقت المتبقي لها.',
     setupAction: 'تحديد الموقع',
     setupLabel: 'مواقيت الصلاة: حدّد مدينتك',
   },

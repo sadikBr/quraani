@@ -7,7 +7,7 @@ export default {
   /** {{riwayah}} is e.g. «ورش». */
   riwayah: 'رواية {{riwayah}}',
   loadFailed: 'تعذّر تحميل المصحف. أعد المحاولة.',
-  storageError: 'تعذّر تسجيل نتائج التسميع على جهازك، وسيُعاد المحاولة تلقائيًا.',
+  storageError: 'تعذّر تسجيل نتائج التسميع على جهازك. ستُعاد المحاولة تلقائيًا.',
   scope: {
     /** A selection of more than three surahs: «سورة الملك، سورة القلم و٣ سور أخرى». */
     andMore_zero: '',
@@ -33,43 +33,43 @@ export default {
     hizb: 'الحزب {{hizb, number}}',
   },
   cue: {
-    title: 'ما يُعرض عليك',
+    title: 'نوع السؤال',
     complete: 'أكمل الآية',
-    completeDetail: 'أول كلمات الآية، فتكملها',
+    completeDetail: 'تظهر بداية الآية لتكملها',
     next: 'ما بعدها',
-    nextDetail: 'آية كاملة، فتقرأ ما بعدها',
+    nextDetail: 'تظهر آية لتقرأ ما بعدها',
     previous: 'ما قبلها',
-    previousDetail: 'آية كاملة، فتقرأ ما قبلها',
+    previousDetail: 'تظهر آية لتقرأ ما قبلها',
     surah: 'في أي سورة؟',
-    surahDetail: 'آية كاملة، فتختار سورتها',
+    surahDetail: 'تظهر آية لتحدّد سورتها',
     /** After the detail of «في أي سورة؟». */
-    surahScope: 'يحتاج ثلاث سور أو أكثر',
+    surahScope: 'اختر ثلاث سور على الأقل',
     /** A portion of fewer than three surahs started with «في أي سورة؟». */
-    surahScopeStart: '«في أي سورة؟» يحتاج ثلاث سور أو أكثر. اختر ما هو أوسع، أو طريقة أخرى.',
+    surahScopeStart: 'يتطلب سؤال «في أي سورة؟» اختيار ثلاث سور على الأقل. أضف سورًا أو اختر نوعًا آخر من الأسئلة.',
   },
   /** The lawh at the top of the page: how the session goes. */
   board: {
     typeLabel: 'نوع الجلسة',
     tasmee: 'تسميع',
     /** At the foot of the lawh, pointing to the portions below. */
-    then: 'ثم اختر من الأسفل ما تسمّعه',
-    thenHelper: 'ثم اختر من الأسفل ما يُسمَّع',
+    then: 'اختر أدناه ما تريد تسميعه',
+    thenHelper: 'اختر أدناه مقاطع التسميع',
   },
   /** «مقترح لك»: portions offered ready, each started with a tap. */
   presets: {
     title: 'مقترح لك',
     review: 'مواضع المراجعة',
     reviewDetail_zero: '',
-    reviewDetail_one: 'موضع ينتظرك',
-    reviewDetail_two: 'موضعان ينتظرانك',
-    reviewDetail_few: '{{count, number}} مواضع تنتظرك',
-    reviewDetail_many: '{{count, number}} موضعًا ينتظرك',
-    reviewDetail_other: '{{count, number}} موضع ينتظرك',
+    reviewDetail_one: 'موضع للمراجعة',
+    reviewDetail_two: 'موضعان للمراجعة',
+    reviewDetail_few: '{{count, number}} مواضع للمراجعة',
+    reviewDetail_many: '{{count, number}} موضعًا للمراجعة',
+    reviewDetail_other: '{{count, number}} موضع للمراجعة',
     reviewStart: 'راجعها',
     memorized: 'محفوظك كله',
     /** What was memorized in the last two weeks, and before the last month. */
-    recent: 'جديد حفظك',
-    old: 'قديم حفظك',
+    recent: 'الحفظ الجديد',
+    old: 'الحفظ السابق',
     juz30: 'جزء عمّ',
     juz29: 'جزء تبارك',
     surahs_zero: '',
@@ -97,9 +97,9 @@ export default {
     count_many: '{{count, number}} اختيارًا',
     count_other: '{{count, number}} اختيار',
     new: 'اختيار جديد',
-    firstDetail: 'سمِّ ما تعود إليه كثيرًا، كجزء تراجعه أو حفظ من تسمع له، ليبدأ بنقرة.',
-    newDetail: 'اختر سورًا أو أجزاء أو أحزابًا، وسمّه لتعود إليه.',
-    full: 'بلغت اثني عشر اختيارًا. احذف واحدًا لتضيف غيره.',
+    firstDetail: 'اجمع المقاطع التي تراجعها أو تستمع إلى تسميعها تحت اسم واحد لتعود إليها بنقرة.',
+    newDetail: 'اختر سورًا أو أجزاء أو أحزابًا، وحدّد اسمًا لاختيارك لتعود إليه بسهولة.',
+    full: 'لديك اثنا عشر اختيارًا. احذف أحدها لإضافة اختيار جديد.',
     /** «ابدأ التسميع: مراجعة الجمعة». */
     startLabel: '{{action}}: {{name}}',
     editLabel: 'تعديل {{name}}',
@@ -107,8 +107,8 @@ export default {
     close: 'إغلاق',
     empty: 'لم تختر شيئًا بعد.',
     nameLabel: 'اسم الاختيار',
-    namePlaceholder: 'اسم تعرفه به، مثل: مراجعة الجمعة',
-    emblemLabel: 'علامة الاختيار',
+    namePlaceholder: 'مثل: مراجعة الجمعة',
+    emblemLabel: 'رمز الاختيار',
     emblems: {
       star: 'نجمة',
       crescent: 'هلال',
@@ -132,21 +132,21 @@ export default {
       juz: 'الأجزاء',
       hizb: 'الأحزاب',
     },
-    kindsLabel: 'ما في الدائرة',
+    kindsLabel: 'محتوى الدائرة',
     /** For a screen reader, on the wheel. */
-    hint: 'اسحب للأعلى أو للأسفل للانتقال، وانقر مرتين للاختيار أو الإزالة.',
-    how: 'أدِر الدائرة وانقر لتختار، أو اضغط مطولًا واسحب لتختار ما تمرّ عليه.',
+    hint: 'اسحب لأعلى أو لأسفل للتنقل، وانقر مرتين للتحديد أو إلغاء التحديد.',
+    how: 'أدِر الدائرة وانقر للتحديد. لتحديد عدة مقاطع، اضغط مطولًا ثم اسحب عبرها.',
     /** Whether the unit at the pointer is chosen (a surah, juz or hizb: no gender). */
-    chosen: 'في اختيارك',
-    partly: 'بعضه في اختيارك',
-    notChosen: 'ليس في اختيارك',
+    chosen: 'ضمن اختيارك',
+    partly: 'محدّد جزئيًا',
+    notChosen: 'خارج اختيارك',
     add: 'إضافة',
     remove: 'إزالة',
     /** How much of the Quran is chosen: «٤٪». */
     share: '{{value, number}}٪',
   },
   reach: {
-    title: 'إلى أين تقرأ',
+    title: 'مقدار التلاوة',
     ayah: 'آية',
     ayahs: 'ثلاث آيات',
     page: 'آخر الصفحة',
@@ -170,8 +170,8 @@ export default {
     title: 'من يسمّع؟',
     self: 'أنا',
     other: 'غيري',
-    selfDetail: 'تتلو من حفظك ثم تتحقق، وتُسجَّل نتائجك لتعود إليك مواضع المراجعة.',
-    otherDetail: 'تسمع لغيرك: يظهر لك الموضع كاملًا لتتابع التلاوة، ولا يُسجَّل شيء في سجلك.',
+    selfDetail: 'سمّع من حفظك ثم تحقّق من تلاوتك. تُسجَّل نتائجك لتراجع المواضع التي تحتاج إلى إتقان.',
+    otherDetail: 'استمع إلى تسميع غيرك وتابع تلاوته من النص الكامل. لن تُضاف النتائج إلى سجلّك.',
     /** Next to the session's title. */
     badge: 'لغيرك',
     /** In place of the kinds' details: what happens, without saying who does it. */
@@ -182,7 +182,7 @@ export default {
       surahDetail: 'آية كاملة، ثم اختيار سورتها',
     },
     reach: 'مقدار التلاوة',
-    examDescription: 'أسئلة منوّعة تطرحها كما يسأل المعلّم، وفي آخرها النتيجة.',
+    examDescription: 'اطرح أسئلة متنوعة وقيّم الإجابات لتظهر النتيجة في النهاية.',
     /** What is asked at a place, as the task rather than an order to the reciter. */
     completeAyah: 'إكمال الآية',
     completeMore_zero: 'إكمال الآية',
@@ -218,17 +218,17 @@ export default {
     done: 'انتهى التسميع',
     /** «أُتقن ٨ من ١٠». */
     score: 'أُتقن {{good, number}} من {{total, number}}',
-    rightScore: 'صحّ {{good, number}} من {{total, number}}',
+    rightScore: 'الإجابات الصحيحة: {{good, number}} من {{total, number}}',
     review: 'مواضع للمراجعة',
     retry: 'إعادة ما لم يُتقن',
     /** Under the places missed, and in the exam's result. */
-    notRecorded: 'لا يُسجَّل شيء من هذا في سجلك.',
+    notRecorded: 'لا تُضاف هذه النتائج إلى سجلّك.',
     result: 'النتيجة',
   },
   /** «اختبار الحفظ»: like a teacher's exam, mixed questions and a score at the end. */
   exam: {
     title: 'اختبار الحفظ',
-    description: 'أسئلة منوّعة مما تسمّعه، كما يسألك المعلّم، وفي آخرها نتيجتك.',
+    description: 'أجب عن أسئلة متنوعة من المقاطع التي اخترتها، ثم اطّلع على نتيجتك.',
     /** The number of questions: «١٠ أسئلة», «٢٠ سؤالًا». */
     questions_zero: 'لا أسئلة',
     questions_one: 'سؤال واحد',
@@ -269,16 +269,16 @@ export default {
     unanswered_one: 'بقي سؤال لم تُجب عنه.',
     unanswered_two: 'بقي سؤالان لم تُجب عنهما.',
     unanswered_few: 'بقيت {{count, number}} أسئلة لم تُجب عنها.',
-    unanswered_many: 'بقي {{count, number}} سؤالًا لم تُجب عنه.',
-    unanswered_other: 'بقي {{count, number}} سؤال لم تُجب عنه.',
+    unanswered_many: 'بقي {{count, number}} سؤالًا لم تُجب عنها.',
+    unanswered_other: 'بقي {{count, number}} سؤال لم تُجب عنها.',
     toUnanswered: 'الانتقال إلى الأسئلة الباقية',
     /** Under the list of places missed or hesitated over. */
-    reviewNote: 'تعود إليك هذه المواضع في التسميع أكثر من غيرها.',
+    reviewNote: 'ستظهر لك هذه المواضع في التسميع أكثر من غيرها لتتمكّن من إتقانها.',
   },
-  noPlaces: 'لا يكفي ما اخترته لموضع واحد. اختر سورًا أو مقاطع أطول.',
+  noPlaces: 'تعذّر إعداد أسئلة من المقاطع المحددة. اختر سورًا أو مقاطع أطول.',
   review: {
-    title: 'مواضع تحتاج مراجعة',
-    description: 'ما أخطأت فيه أو تردّدت آخر مرة، ويعود إليك أكثر من غيره.',
+    title: 'مواضع تحتاج إلى مراجعة',
+    description: 'هذه المواضع التي أخطأت فيها أو تردّدت عند آخر تسميع. ستظهر لك أكثر من غيرها لتراجعها.',
     start: 'سمّع هذه المواضع',
     /** Under a place in the list: how it went last, and when. */
     wrong: 'أخطأت فيها · {{date}}',
@@ -328,16 +328,16 @@ export default {
     /** After a surah is chosen. */
     right: 'أصبت',
     /** {{surah}} includes the word سورة: «بل هي في سورة البقرة». */
-    wrongAnswer: 'بل هي في {{surah}}',
+    wrongAnswer: 'الإجابة الصحيحة: {{surah}}',
     /** A surah choice, spoken. */
     choiceLabel: '{{surah}}، الخيار {{position, number}} من {{total, number}}',
     hint: 'تلميح',
     hintLabel: 'إظهار السورة ورقم الآية',
     /** The cue repeats elsewhere in the Quran, so the place is named from the start. */
-    named: 'تتكرر هذه البداية في القرآن، فذكرنا موضعها.',
+    named: 'تتكرر هذه البداية في القرآن، لذا حدّدنا السورة ورقم الآية.',
     /** Above (in «ما قبلها», below) the lighter ayahs shown with a cue that repeats word for word elsewhere. */
-    contextBefore: 'يتكرر هذا الموضع في القرآن، فذكرنا ما قبله.',
-    contextAfter: 'يتكرر هذا الموضع في القرآن، فذكرنا ما بعده.',
+    contextBefore: 'يتكرر هذا النص في القرآن، لذا أظهرنا ما قبله لتحديد الموضع المقصود.',
+    contextAfter: 'يتكرر هذا النص في القرآن، لذا أظهرنا ما بعده لتحديد الموضع المقصود.',
     /** The place's text with tajweed colours, as a document, named for screen readers. */
     textTitle: 'نص الموضع',
     hidden: 'كلمات مخفية تتلوها من حفظك',
@@ -374,8 +374,8 @@ export default {
     ungraded_one: 'بقي موضع لم تقيّمه.',
     ungraded_two: 'بقي موضعان لم تقيّمهما.',
     ungraded_few: 'بقيت {{count, number}} مواضع لم تقيّمها.',
-    ungraded_many: 'بقي {{count, number}} موضعًا لم تقيّمه.',
-    ungraded_other: 'بقي {{count, number}} موضع لم تقيّمه.',
+    ungraded_many: 'بقي {{count, number}} موضعًا لم تقيّمها.',
+    ungraded_other: 'بقي {{count, number}} موضع لم تقيّمها.',
     review: 'راجع هذه المواضع',
     retry: 'إعادة ما لم تتقنه',
     finish: 'العودة إلى التسميع',
@@ -383,7 +383,7 @@ export default {
   /** On memorization and revision goals. */
   goal: {
     title: 'التسميع',
-    description: 'اختبر ما حفظته: نعرض عليك موضعًا، فتسمّع من حفظك ما يتصل به.',
+    description: 'اختبر حفظك بإكمال الآيات أو تلاوة ما قبلها وما بعدها من الذاكرة.',
     start: 'سمّع محفوظك',
   },
 } as const;

@@ -16,7 +16,7 @@ import { memoryFor, mergeSpans, spanCount } from '@/features/plans/memorization'
 import { t } from '@/i18n';
 import { useHalaqat, useMembership } from './provider';
 import { memorizedBy, NAME_LIMIT, newId, portionOf, spanOf, validPortion, type Direction, type Portion, type Student } from './model';
-import { LawhPortion, useHalaqaIndex } from './shared';
+import { LawhBoard, useHalaqaIndex } from './shared';
 import { PortionSheet } from './portion-sheet';
 import { ConfirmDialog } from './confirm-dialog';
 
@@ -96,8 +96,9 @@ export function StudentFormScreen() {
               detail={ownerElsewhere && me ? t('halaqat.me.moves', { name: ownerElsewhere.name }) : t('halaqat.me.switchDetail')} />
           </RowGroup>}
           <Section title={existing ? t('halaqat.studentForm.firstTitleExisting') : t('halaqat.studentForm.firstTitle')} palette={p}>
-            <LawhPortion title={t('halaqat.lawh.new')} portion={first} index={index} shape={shape} palette={p} emptyText={t('halaqat.studentForm.firstEmpty')}
-              onChange={() => setChoosing('first')} onClear={() => setFirst(undefined)} />
+            <LawhBoard index={index} shape={shape} palette={p} lines={[
+              { title: t('halaqat.lawh.new'), portion: first, emptyText: t('halaqat.studentForm.firstEmpty'), onChange: () => setChoosing('first'), onClear: () => setFirst(undefined) },
+            ]} />
           </Section>
           <Section title={t('halaqat.studentForm.known')} palette={p}>
             <RowGroup palette={p}>
