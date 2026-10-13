@@ -61,7 +61,6 @@ export function SearchScreen({ saved = false }: { saved?: boolean }) {
   const hasSearch = normalizeArabicSearch(debounced).length >= 2;
   const filtering = !!normalizeArabicSearch(debounced), searching = query !== debounced;
   const available = !!content && font.loaded && (!saved || ready);
-  const back = () => router.canGoBack() ? router.back() : router.replace('/');
   const changeQuery = (value: string) => { setQuery(value); setLimit(50); list.current?.scrollToOffset({ offset: 0, animated: false }); };
   const open = (item: QuranSearchResult) => router.dismissTo({ pathname: '/', params: { surah: String(item.reference.surahNumber), ayah: String(item.reference.ayahNumber) } });
   const save = (item: QuranSearchResult) => {
@@ -72,7 +71,7 @@ export function SearchScreen({ saved = false }: { saved?: boolean }) {
   const surahs = new Set(savedItems.map(item => item.reference.surahNumber)).size;
   return <SafeAreaView style={[l.root, { backgroundColor: p.background }]}>
     <StatusBar style={dark ? 'light' : 'dark'} />
-    <LibraryHeader title={saved ? t('library.bookmarks.title') : t('library.search.title')} subtitle={t('common.riwayahOf', { riwayah: RIWAYAT[preferences.riwayah].label })} icon={saved ? 'bookmark' : 'search'} palette={p} onBack={back} />
+    <LibraryHeader title={saved ? t('library.bookmarks.title') : t('library.search.title')} subtitle={t('common.riwayahOf', { riwayah: RIWAYAT[preferences.riwayah].label })} icon={saved ? 'bookmark' : 'search'} palette={p} />
     {(!saved || savedItems.length > 0 || !!query) && <View style={l.filters}>
       <LibrarySearch value={query} onChange={changeQuery} label={saved ? t('library.bookmarks.search.label') : t('library.search.label')} placeholder={saved ? t('library.bookmarks.search.placeholder') : t('library.search.placeholder')} palette={p} />
       {saved ? <LibraryTabs options={orders} value={order} onChange={value => { setOrder(value); list.current?.scrollToOffset({ offset: 0, animated: false }); }} label={t('library.bookmarks.order.label')} palette={p} />

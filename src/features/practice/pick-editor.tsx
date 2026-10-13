@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { Animated, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,7 +10,6 @@ import { readerLayout, readerShape } from '@/features/quran-reader/design';
 import type { ReaderPalette } from '@/features/quran-reader/theme';
 import type { PlanIndex } from '@/features/plans/engine';
 import { spanCount } from '@/features/plans/memorization';
-import { MemorizedSelectionSheet } from '@/features/plans/memorized-selection-sheet';
 import type { AyahSpan } from '@/features/plans/types';
 import { t } from '@/i18n';
 import { Emblem } from '@/components/craft/art';
@@ -24,8 +23,7 @@ const newId = () => `p${Date.now().toString(36)}${Math.floor(Math.random() * 1e6
 
 /**
  * Choosing a saved selection, on the dial (`RangeDial`): turned and tapped, or swept with a long
- * press. The list of surahs, juz, hizbs and quarters, and an exact stretch of ayahs, stay a tap
- * away. Below, what is chosen, a name and a mark to know it by, and saving (or removing it).
+ * press. Below, what is chosen, a name and a mark to know it by, and saving (or removing it).
  */
 export function PickEditor({ index, pick, memorized, helper, used, palette: p, onSave, onDelete, onClose }: {
   index: PlanIndex; pick: PracticePick | null; memorized: AyahSpan[]; helper: boolean;
@@ -40,7 +38,6 @@ export function PickEditor({ index, pick, memorized, helper, used, palette: p, o
   // The unit at the pointer: kept apart, so that turning the wheel redraws only what names it.
   const [focus] = useState(() => createFocusStore(initialFocus(dialUnits(index, 'surah'), pick?.ranges ?? [], helper ? [] : memorized)));
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
-  const [listing, setListing] = useState(false);
   const [removing, setRemoving] = useState(false);
   const units = useMemo(() => dialUnits(index, kind), [index, kind]);
   const juzStarts = useMemo(() => index.juzs.slice(0, -1), [index]);
@@ -50,7 +47,6 @@ export function PickEditor({ index, pick, memorized, helper, used, palette: p, o
   const summary = useMemo(() => ayahs ? `${scopeLabel(index, draft)} · ${t('practice.scope.ayahs', { count: ayahs })}` : t('practice.picks.empty'), [index, draft, ayahs]);
   const share = index.ayahs.length ? ayahs / index.ayahs.length : 0;
   const save = () => onSave({ id: pick?.id ?? newId(), name: name.trim().slice(0, MAX_PICK_NAME), emblem, ranges: draft });
-  const openList = useCallback(() => setListing(true), []);
   // The wheel is laid out once the editor has slid in (its many parts would hold up the slide),
   // then fades in.
   const [shown, setShown] = useState(false);
@@ -69,7 +65,7 @@ export function PickEditor({ index, pick, memorized, helper, used, palette: p, o
         {/* The modal is drawn edge to edge, so the window does not shrink for the keyboard: the
             panel is lifted over it (where the window does shrink, there is no overlap to lift). */}
         <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
-          <Header editing={!!pick} palette={p} onClose={onClose} onList={openList} />
+          <Header editing={!!pick} palette={p} onClose={onClose} />
           <View style={s.kinds}>
             <Tabs role="radio" palette={p} label={t('practice.dial.kindsLabel')} value={kind}
               onChange={(next) => { focus.set(initialFocus(dialUnits(index, next), draft, marks)); setKind(next); }}
@@ -101,8 +97,6 @@ export function PickEditor({ index, pick, memorized, helper, used, palette: p, o
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
-      {listing && <MemorizedSelectionSheet purpose={helper ? 'helper' : 'practice'} index={index} selected={draft}
-        onClose={() => setListing(false)} onSave={(value) => { setDraft(value); setListing(false); }} />}
     </GestureHandlerRootView>
   </Modal>;
 }
@@ -110,10 +104,9 @@ export function PickEditor({ index, pick, memorized, helper, used, palette: p, o
 // The parts that do not change with what is chosen are drawn again only when their own props do:
 // a choice on the wheel redraws the wheel and what counts it, not the whole editor.
 
-const Header = memo(function Header({ editing, palette: p, onClose, onList }: { editing: boolean; palette: ReaderPalette; onClose: () => void; onList: () => void }) {
+const Header = memo(function Header({ editing, palette: p, onClose }: { editing: boolean; palette: ReaderPalette; onClose: () => void }) {
   return <View style={s.header}>
-    <SheetTitle title={editing ? t('practice.picks.edit') : t('practice.picks.new')} subtitle={t('practice.dial.how')} palette={p} onClose={onClose} closeLabel={t('practice.picks.close')}
-      actions={<Button variant="outline" size="sm" palette={p} icon="lines" label={t('practice.picks.listLabel')} onPress={onList}>{t('practice.picks.list')}</Button>} />
+    <SheetTitle title={editing ? t('practice.picks.edit') : t('practice.picks.new')} subtitle={t('practice.dial.how')} palette={p} onClose={onClose} closeLabel={t('practice.picks.close')} />
   </View>;
 });
 

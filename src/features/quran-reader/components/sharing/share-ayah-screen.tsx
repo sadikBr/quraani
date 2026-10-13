@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Sharing from 'expo-sharing';
 import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
@@ -23,6 +23,7 @@ import { AyahShareCard } from './ayah-share-card';
 import { readerElevation, readerLayout, readerShape, withAlpha } from '../../design';
 import type { ReaderPalette } from '../../theme';
 import { formatList, t } from '@/i18n';
+import { useBack } from '@/components/back';
 
 /**
  * «بطاقة آية»: an ayah made into an image to send. The card is shown as it will be sent, on a
@@ -34,11 +35,12 @@ export function ShareAyahScreen() {
   const { content, loading, error, refresh } = useReaderContent();
   const { loaded: fontsLoaded, error: fontError } = useQuranFont();
   const { palette, dark } = useReadingPreferences();
+  const back = useBack();
   const chapter = content?.data.quran.surahs.find((item) => item.number === Number(surah));
   const ayah = chapter?.ayahs.find((item) => item.ayahNumber === Number(number));
   return <SafeAreaView style={[styles.root, { backgroundColor: palette.background }]}>
     <StatusBar style={dark ? 'light' : 'dark'} hidden={false} />
-    <PageBar back={{ label: t('common.backToReading'), text: t('common.mushaf'), onPress: () => router.canGoBack() ? router.back() : router.replace('/') }} palette={palette} />
+    <PageBar back={back} palette={palette} />
     {loading || (!fontsLoaded && !fontError) ? <View style={styles.center}><ActivityIndicator color={palette.primary} accessibilityLabel={t('share.preparing')} /></View>
       : error || fontError || !ayah || !chapter ? <View style={[styles.center, { gap: 16, padding: 24 }]}>
         <Text accessibilityRole="alert" style={{ color: palette.destructive, textAlign: 'center' }}>{!error && !fontError ? t('share.notFound') : t('share.loadError')}</Text>

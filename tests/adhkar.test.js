@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { audioIds, collections, COLLECTION_IDS, isCollectionId } from '../src/features/adhkar/content';
 import { adhkarReminderQueue, applyAdhkar, collectionProgress, countsOn, decodeAdhkar, defaultAdhkarState, nextUnfinished, TEXT_SCALES } from '../src/features/adhkar/progress';
 import { quranReadings, readingLength, resolveReading } from '../src/features/adhkar/quran';
+import { beadLayout } from '../src/features/adhkar/thread';
 
 const find = (id, key) => collections[id].find((d) => d.key === key);
 const finish = (state, id, day) => collections[id].reduce((s, d) => Array.from({ length: d.count }).reduce((x) => applyAdhkar(x, { type: 'step', day, collection: id, key: d.key, delta: 1 }), s), state);
@@ -164,5 +165,35 @@ describe('text size', () => {
     expect(decodeAdhkar(JSON.stringify({ version: 1, textSize: 1.5 })).textSize).toBe(defaultAdhkarState.textSize);
     expect(applyAdhkar(defaultAdhkarState, { type: 'textSize', step: 9 }).textSize).toBe(TEXT_SCALES.length - 1);
     expect(applyAdhkar(defaultAdhkarState, { type: 'textSize', step: -3 }).textSize).toBe(0);
+  });
+});
+
+describe('the string of beads', () => {
+  test('the bead shown gets the wide slot and the others share the rest, from the right', () => {
+    const beads = beadLayout(5, 2, 126, 26);
+    // Slots from the right: 25, 25, 26, 25, 25.
+    expect([0, 1, 2, 3, 4].map((i) => beads.x(i))).toEqual([113.5, 88.5, 63, 37.5, 12.5]);
+    expect(beads.at(120)).toBe(0);
+    expect(beads.at(70)).toBe(2);
+    expect(beads.at(51)).toBe(2);
+    expect(beads.at(49)).toBe(3);
+    expect(beads.at(0)).toBe(4);
+  });
+
+  test('taps beyond the ends, odd positions and one bead stay within the string', () => {
+    const beads = beadLayout(4, 0, 100, 26);
+    expect(beads.at(-10)).toBe(3);
+    expect(beads.at(130)).toBe(0);
+    expect(beadLayout(4, 9, 100, 26).x(3)).toBe(13);
+    expect(beadLayout(1, 0, 80, 26).x(0)).toBe(40);
+    expect(beadLayout(1, 0, 80, 26).at(5)).toBe(0);
+    expect(beadLayout(3, 1, 0, 26).at(5)).toBe(0);
+  });
+
+  test('every bead is found where it is drawn, whichever is shown', () => {
+    for (let current = 0; current < 23; current++) {
+      const beads = beadLayout(23, current, 290, 26);
+      for (let i = 0; i < 23; i++) expect(beads.at(beads.x(i))).toBe(i);
+    }
   });
 });

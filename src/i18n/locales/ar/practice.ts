@@ -105,8 +105,6 @@ export default {
     editLabel: 'تعديل {{name}}',
     edit: 'تعديل الاختيار',
     close: 'إغلاق',
-    list: 'قائمة',
-    listLabel: 'الاختيار من قائمة: السور والأجزاء والأحزاب والأرباع، أو آيات بعينها',
     empty: 'لم تختر شيئًا بعد.',
     nameLabel: 'اسم الاختيار',
     namePlaceholder: 'اسم تعرفه به، مثل: مراجعة الجمعة',
@@ -176,9 +174,6 @@ export default {
     otherDetail: 'تسمع لغيرك: يظهر لك الموضع كاملًا لتتابع التلاوة، ولا يُسجَّل شيء في سجلك.',
     /** Next to the session's title. */
     badge: 'لغيرك',
-    scopeTitle: 'ما يُسمَّع',
-    /** Under the selection sheet's title. */
-    selectionSubtitle: 'اختر السور أو الأجزاء أو المقاطع التي يُسمَّع منها.',
     /** In place of the kinds' details: what happens, without saying who does it. */
     cue: {
       completeDetail: 'أول كلمات الآية، ثم إكمالها',
@@ -390,27 +385,5 @@ export default {
     title: 'التسميع',
     description: 'اختبر ما حفظته: نعرض عليك موضعًا، فتسمّع من حفظك ما يتصل به.',
     start: 'سمّع محفوظك',
-  },
-  /** The selection sheet, when choosing what to recite. */
-  selection: {
-    title: 'ما تسمّعه',
-    subtitle: 'اختر السور أو الأجزاء أو المقاطع التي تسمّعها.',
-    close: 'إغلاق الاختيار',
-    tabsLabel: 'طريقة الاختيار',
-    add: 'إضافة المقطع إلى اختيارك',
-    remove: 'إزالة المقطع من اختيارك',
-    partial_zero: '{{count, number}} آية · اخترت بعضها',
-    partial_one: 'آية واحدة',
-    partial_two: 'آيتان · اخترت إحداهما',
-    partial_few: '{{count, number}} آيات · اخترت بعضها',
-    partial_many: '{{count, number}} آية · اخترت بعضها',
-    partial_other: '{{count, number}} آية · اخترت بعضها',
-    total_zero: 'لم تختر أي آية بعد',
-    total_one: 'اخترت آية واحدة',
-    total_two: 'اخترت آيتين',
-    total_few: 'اخترت {{count, number}} آيات',
-    total_many: 'اخترت {{count, number}} آية',
-    total_other: 'اخترت {{count, number}} آية',
-    confirm: 'اعتماد الاختيار',
   },
 } as const;

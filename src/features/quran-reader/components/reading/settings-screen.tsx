@@ -23,6 +23,7 @@ import { isDarkColor, mixColor, readerLayout, readerShape, withAlpha } from '../
 import { RecitationSettings } from '@/features/recitation/recitation-settings';
 import { PrayerSettings } from '@/features/prayers/prayer-settings';
 import { t } from '@/i18n';
+import { useBack } from '@/components/back';
 
 type SettingsTab = 'reading' | 'recitation' | 'appearance' | 'prayers';
 const tabs: { value: SettingsTab; label: string; icon: ReaderIconName }[] = [
@@ -46,10 +47,12 @@ export function SettingsScreen() {
   const params = useLocalSearchParams<{ tab?: string }>();
   const [initial] = useState<SettingsTab>(() => isTab(params.tab) ? params.tab : 'reading');
   const { tab, open, pages } = useSwipeTabs(TAB_IDS, initial);
+  // To the mushaf when opened from it; to the home screen or the prayer times when opened from there.
+  const back = useBack();
   // The swipe's gesture needs a gesture root; the app's stack screens have none of their own.
   return <GestureHandlerRootView style={{ flex: 1 }}><SafeAreaView style={[s.root, { backgroundColor: p.background }]}>
     <StatusBar style={dark ? 'light' : 'dark'} />
-    <PageHeader back={{ label: t('common.backToReading'), text: t('common.mushaf'), onPress: () => router.canGoBack() ? router.back() : router.replace('/') }}
+    <PageHeader back={back}
       title={t('common.settings')} palette={p} />
     <View style={[s.tabBar, { borderColor: p.border }]}>
       {/* Laid out evenly across the page; a large text size lets the row scroll instead of clipping. */}

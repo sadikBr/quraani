@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Vibration, View } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Vibration, View, type GestureResponderEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import Svg, { Circle, ClipPath, Defs, G, Path } from 'react-native-svg';
@@ -27,6 +27,7 @@ import { CentredBeads, collectionMotifs } from './adhkar-screen';
 import { DhikrText } from './dhikr-text';
 import { QuranDhikr } from './dhikr-quran';
 import { quranReadings, readingLength, resolveReading } from './quran';
+import { beadLayout } from './thread';
 
 /** The mushaf in the chosen riwayah, and its font, for the Quran adhkar. */
 interface Mushaf { quran: Quran; fontFamily: string; display: (text: string) => string }
@@ -36,6 +37,8 @@ const nativeDriver = Platform.OS !== 'web';
 const buzz = (done: boolean) => { if (Platform.OS === 'android') Vibration.vibrate(done ? 40 : 12); };
 /** How high the window's arch rises over its panel. */
 const RISE = 52;
+/** The ring around the bead of the dhikr shown, and the height of the string of beads. */
+const HALO = 22, BEADS_HEIGHT = 32;
 
 /** Says the adhkar of one collection, one dhikr per page, with a counter. */
 export function AdhkarSessionScreen() {
@@ -157,30 +160,45 @@ function Session({ id }: { id: CollectionId }) {
 
 /**
  * The collection as a string of beads, a bead a dhikr: said, partly said, still to say, and the
- * one shown, larger, with a halo. Tapping a bead opens its dhikr; the arrows at either end turn
- * to the previous and the next.
+ * one shown, larger, in a ring of its own. The beads part to give it room, so the ring never
+ * crowds its neighbours however long the string is. Tapping a bead opens its dhikr; the arrows
+ * at either end turn to the previous and the next.
+ *
+ * The string is drawn whole, at the width it is given, with the beads where `beadLayout` puts
+ * them; a tap finds its bead from where it fell.
  */
 function Thread({ items, counts, current, palette: p, onSelect, onPrevious, onNext }: {
   items: Dhikr[]; counts: Record<string, number>; current: number; palette: ReaderPalette; onSelect: (index: number) => void; onPrevious?: () => void; onNext?: () => void;
 }) {
+  const [width, setWidth] = useState(0);
+  const beads = beadLayout(items.length, current, width, HALO + 4);
+  const select = (event: GestureResponderEvent) => {
+    // Native touches give where they fell in the string; a click on the web, its offset.
+    const native = event.nativeEvent as GestureResponderEvent['nativeEvent'] & { offsetX?: number };
+    const x = Number.isFinite(native.locationX) ? native.locationX : native.offsetX;
+    if (x !== undefined && Number.isFinite(x)) onSelect(beads.at(x));
+  };
+  const y = BEADS_HEIGHT / 2;
   return <View style={s.thread}>
     <PageArrow label={t('adhkar.session.previous')} reversed onPress={onPrevious} palette={p} />
-    <View style={s.beads} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" {...(Platform.OS === 'web' ? { 'aria-hidden': true } : {})}>
-      <View style={[s.string, { backgroundColor: withAlpha(p.ornament, 0.4) }]} />
-      {items.map((d, i) => {
-        const said = counts[d.key] ?? 0;
-        const finished = said >= d.count;
-        const here = i === current;
-        const size = here ? 13 : 9;
-        return <Pressable key={d.key} onPress={() => onSelect(i)} hitSlop={{ top: 8, bottom: 8 }} style={s.beadHit}>
-          <View style={[s.halo, here && { backgroundColor: withAlpha(p.ornament, 0.2) }]}>
-            <View style={{ width: size, height: size, borderRadius: size / 2, borderWidth: here && !finished ? 2 : 1,
-              borderColor: finished || said ? p.ornament : withAlpha(p.ornament, here ? 1 : 0.6),
-              backgroundColor: finished ? p.ornament : said ? withAlpha(p.ornament, 0.45) : p.background }} />
-          </View>
-        </Pressable>;
-      })}
-    </View>
+    <Pressable onPress={select} onLayout={(e) => setWidth(e.nativeEvent.layout.width)} hitSlop={{ top: 8, bottom: 8 }} focusable={false} style={s.beads}
+      accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" {...(Platform.OS === 'web' ? { 'aria-hidden': true } : {})}>
+      {width > 0 && <Svg width={width} height={BEADS_HEIGHT} pointerEvents="none" aria-hidden>
+        <Path d={`M0 ${y}H${width}`} stroke={withAlpha(p.ornament, 0.4)} strokeWidth={1} />
+        {items.map((d, i) => {
+          const said = counts[d.key] ?? 0;
+          const finished = said >= d.count;
+          const fill = finished ? p.ornament : said ? withAlpha(p.ornament, 0.45) : p.background;
+          const x = beads.x(i);
+          return i === current
+            ? <G key={d.key}>
+              <Circle cx={x} cy={y} r={HALO / 2 - 0.5} fill={withAlpha(p.ornament, 0.1)} stroke={withAlpha(p.ornament, 0.45)} strokeWidth={0.8} />
+              <Circle cx={x} cy={y} r={finished ? 6.5 : 5.75} fill={fill} stroke={p.ornament} strokeWidth={finished ? 0 : 1.5} />
+            </G>
+            : <Circle key={d.key} cx={x} cy={y} r={4} fill={fill} stroke={finished || said ? p.ornament : withAlpha(p.ornament, 0.6)} strokeWidth={1} />;
+        })}
+      </Svg>}
+    </Pressable>
     <PageArrow label={t('adhkar.session.next')} onPress={onNext} palette={p} />
   </View>;
 }
@@ -225,12 +243,29 @@ function DhikrPage({ dhikr, position, total, said, palette: p, scale, mushaf }: 
   </View>;
 }
 
-/** Opens the text size bar: a small and a large letter. */
+/**
+ * The letter ʿayn of the Naskh font (Noto Naskh Arabic Bold), in font units with y downwards and
+ * the baseline at 0: from x 83 to 613, and from y -475 (its head) to 301 (its tail).
+ */
+const AYN = 'M367 301Q289 301 232 273Q175 245 144 193Q113 141 113 71Q113 -37 188 -118Q156 -133 132 -158Q107 -182 95 -209Q83 -236 83 -261Q83 -291 94 -326Q106 -360 126 -392Q147 -423 172 -444Q209 -475 250 -475Q285 -475 323 -452Q361 -429 402 -382L381 -342Q351 -354 325 -360Q299 -365 276 -365Q241 -365 214 -358Q186 -350 154 -333Q157 -279 190 -243Q224 -207 281 -193Q325 -219 373 -240Q421 -262 475 -280Q486 -264 486 -229Q486 -208 478 -192Q469 -175 450 -162Q442 -156 424 -148Q406 -139 379 -128Q292 -94 249 -66Q206 -38 185 -5Q175 11 170 29Q164 47 164 65Q164 122 216 154Q269 186 369 186Q389 186 410 184Q431 183 453 180Q474 177 511 170Q548 162 600 150L613 192Q527 245 462 273Q398 301 367 301Z';
+/** The two letters' scales (font units to points), and the space between them. */
+const AYN_LARGE = 0.0205, AYN_SMALL = 0.0135, AYN_GAP = 2.5;
+const AYN_ICON = { width: 530 * (AYN_LARGE + AYN_SMALL) + AYN_GAP, height: 776 * AYN_LARGE, baseline: 475 * AYN_LARGE };
+
+/**
+ * Opens the text size bar: a small and a large letter on one baseline. They are drawn, not set as
+ * text, so they sit in the middle of the button on every platform: each font and each platform
+ * puts a line's text at its own height in the line.
+ */
 function TextSizeButton({ open, palette: p, onPress }: { open: boolean; palette: ReaderPalette; onPress: () => void }) {
+  const { width, height, baseline } = AYN_ICON;
   return <Pressable accessibilityRole="button" accessibilityLabel={t('adhkar.session.textSize')} accessibilityState={{ expanded: open }} aria-expanded={open} onPress={onPress} hitSlop={4}
     style={({ pressed }) => [s.sizeButton, { borderColor: open ? p.ornament : p.input, backgroundColor: pressed ? p.accent : open ? withAlpha(p.ornament, 0.12) : p.background }, readerElevation(1, p)]}>
-    <Text style={{ color: p.foreground, fontSize: 13, lineHeight: 22, fontFamily: 'ReaderNaskhBold' }}>{t('adhkar.session.textSizeGlyph')}</Text>
-    <Text style={{ color: p.foreground, fontSize: 19, lineHeight: 30, fontFamily: 'ReaderNaskhBold' }}>{t('adhkar.session.textSizeGlyph')}</Text>
+    {/* Read from the right: the small letter, then the large. */}
+    <Svg width={width} height={height} aria-hidden>
+      <Path d={AYN} fill={p.foreground} transform={`translate(${width - 613 * AYN_SMALL} ${baseline}) scale(${AYN_SMALL})`} />
+      <Path d={AYN} fill={p.foreground} transform={`translate(${-83 * AYN_LARGE} ${baseline}) scale(${AYN_LARGE})`} />
+    </Svg>
   </Pressable>;
 }
 
@@ -395,16 +430,13 @@ function SurahButton({ surah, palette: p }: { surah: number; palette: ReaderPale
 const s = StyleSheet.create({
   header: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 8, gap: 6 },
   bar: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 52 },
-  sizeButton: { height: 40, minWidth: 40, paddingHorizontal: 6, borderRadius: readerShape.control, borderWidth: 1, flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 1 },
+  sizeButton: { height: 40, minWidth: 40, paddingHorizontal: 6, borderRadius: readerShape.control, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   sizeBar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 10, paddingVertical: 8, borderRadius: readerShape.lg, borderWidth: StyleSheet.hairlineWidth },
   sizeMiddle: { flex: 1, alignItems: 'center', gap: 4 },
   sizeSteps: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 20 },
   sizeString: { position: 'absolute', left: 4, right: 4, top: 10, height: 1 },
   thread: { flexDirection: 'row', alignItems: 'center', gap: 2, marginHorizontal: -8 },
-  beads: { flex: 1, flexDirection: 'row', alignItems: 'center', height: 32 },
-  string: { position: 'absolute', left: 0, right: 0, top: 16, height: 1 },
-  beadHit: { flex: 1, height: 32, alignItems: 'center', justifyContent: 'center' },
-  halo: { width: 23, height: 23, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  beads: { flex: 1, height: BEADS_HEIGHT },
   notice: { width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center', paddingHorizontal: 16, paddingTop: 10 },
   pager: { flex: 1, overflow: 'hidden', width: '100%', maxWidth: readerLayout.maxWidth, alignSelf: 'center' },
   page: { flex: 1, paddingHorizontal: 16, paddingTop: 6, paddingBottom: 4 },

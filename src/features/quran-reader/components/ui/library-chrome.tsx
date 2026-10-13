@@ -10,10 +10,13 @@ import { BrushStroke } from '@/components/craft/marks';
 import type { Motif } from '@/components/craft/art';
 import { ReaderIcon, type ReaderIconName } from './reader-chrome';
 import { t } from '@/i18n';
+import { useBack } from '@/components/back';
 
 /** A library page's header: the way back to the mushaf, then the page's title in Naskh. */
-export function LibraryHeader({ title, subtitle, palette: p, onBack, actions }: { title: string; subtitle: string; icon?: ReaderIconName; palette: ReaderPalette; onBack: () => void; actions?: ReactNode }) {
-  return <PageHeader back={{ label: t('common.backToReading'), text: t('common.mushaf'), onPress: onBack }} actions={actions} title={title} subtitle={subtitle} palette={p} />;
+export function LibraryHeader({ title, subtitle, palette: p, actions }: { title: string; subtitle: string; icon?: ReaderIconName; palette: ReaderPalette; actions?: ReactNode }) {
+  // To the mushaf when opened from it; otherwise to the page it was opened from.
+  const back = useBack();
+  return <PageHeader back={back} actions={actions} title={title} subtitle={subtitle} palette={p} />;
 }
 
 /** Input with a leading search icon: `input` border, `radius-md`, shadow-xs; focus turns the border `ring`. */

@@ -75,8 +75,6 @@ export default {
     readSurah: 'قراءة {{surah}}',
     /** The header button that shows the text size bar, and the bar's label. */
     textSize: 'حجم النص',
-    /** Drawn small then large on that button. */
-    textSizeGlyph: 'ع',
     smaller: 'تصغير النص',
     larger: 'تكبير النص',
     /** Spoken: "حجم النص ٣ من ٧". */

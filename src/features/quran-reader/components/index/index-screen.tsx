@@ -73,7 +73,7 @@ export function IndexScreen() {
   const calligraphy = font.loaded;
   return <SafeAreaView style={[l.root, { backgroundColor: p.background }]}>
     <StatusBar style={dark ? 'light' : 'dark'} />
-    <LibraryHeader title={t('library.index.title')} subtitle={t('common.riwayahOf', { riwayah: RIWAYAT[preferences.riwayah].label })} icon="index" palette={p} onBack={() => router.canGoBack() ? router.back() : router.replace('/')} />
+    <LibraryHeader title={t('library.index.title')} subtitle={t('common.riwayahOf', { riwayah: RIWAYAT[preferences.riwayah].label })} icon="index" palette={p} />
     <View style={l.filters}>
       <WordTabs options={tabs} value={kind} onChange={value => { setKind(value); changeQuery(''); }} label={t('library.index.tabs.label')} palette={p} />
       <LibrarySearch value={query} onChange={changeQuery} label={t('library.index.search.label')} placeholder={placeholder} palette={p} />

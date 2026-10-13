@@ -18,26 +18,13 @@ import { PlanField, PlanNotice, sheet } from './components';
 import { t } from '@/i18n';
 
 type SelectionTab = 'surahs' | 'juzs' | 'hizbs' | 'quarters' | 'ayahs';
-/** The sheet's own words: choosing what is memorized, what to recite in a tasmee', or what someone else recites. */
+/** The sheet's own words: choosing what is memorized. */
 const sheetTexts = {
   memorized: {
     title: () => t('memorization.selection.title'), subtitle: () => t('memorization.selection.subtitle'), close: () => t('memorization.selection.close'),
     tabsLabel: () => t('memorization.selection.tabsLabel'), add: () => t('memorization.selection.custom.add'), remove: () => t('memorization.selection.custom.remove'),
     partial: (count: number) => t('memorization.selection.partial', { count }), total: (count: number) => t('memorization.selection.total', { count }),
     confirm: () => t('memorization.selection.confirm'),
-  },
-  practice: {
-    title: () => t('practice.selection.title'), subtitle: () => t('practice.selection.subtitle'), close: () => t('practice.selection.close'),
-    tabsLabel: () => t('practice.selection.tabsLabel'), add: () => t('practice.selection.add'), remove: () => t('practice.selection.remove'),
-    partial: (count: number) => t('practice.selection.partial', { count }), total: (count: number) => t('practice.selection.total', { count }),
-    confirm: () => t('practice.selection.confirm'),
-  },
-  /** Listening to someone else: what they recite, without saying who. */
-  helper: {
-    title: () => t('practice.helper.scopeTitle'), subtitle: () => t('practice.helper.selectionSubtitle'), close: () => t('practice.selection.close'),
-    tabsLabel: () => t('practice.selection.tabsLabel'), add: () => t('practice.selection.add'), remove: () => t('practice.selection.remove'),
-    partial: (count: number) => t('practice.selection.partial', { count }), total: (count: number) => t('practice.selection.total', { count }),
-    confirm: () => t('practice.selection.confirm'),
   },
 };
 
