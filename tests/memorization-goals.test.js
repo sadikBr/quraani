@@ -232,3 +232,24 @@ test('restoring an old archived goal must rebase to the lifelong record', async 
   const saved = await t.repo.update(items => items.map(p => p.id === 'plan-memory' ? restoreArchivedGoal(reviseMemorization(p, index, t.repo.memorization()[0].ranges, monday)) : p));
   expect(nextPortion(saved[0], monday).start).toBe(20);
 });
+
+test('passages memorized in a halaqa join the record, and the memorization goal that owns it', async () => {
+  // No goal yet: the record is made.
+  const env = storageRepo();
+  await env.repo.load();
+  await env.repo.remember(index, 'warsh', [{ start: 0, end: 4 }]);
+  expect(env.repo.memorization()).toEqual([{ riwayah: 'warsh', corpus: index.corpus, totalAyahs: index.ayahs.length, ranges: [{ start: 0, end: 4 }] }]);
+  // A memorization goal owns the record: it takes the passages and is re-planned without them.
+  await env.repo.update(() => [make({ memorized: [{ start: 0, end: 4 }], initialRecord: [{ start: 0, end: 4 }] })]);
+  await env.repo.remember(index, 'warsh', [{ start: 4, end: 10 }]);
+  const [goal] = decodePlans(env.raw());
+  expect(goal.memorized).toEqual([{ start: 0, end: 10 }]);
+  expect(goal.sessions[0].ranges[0].start).toBe(10);
+  expect(decodeMemorization(env.raw())[0].ranges).toEqual([{ start: 0, end: 10 }]);
+  // Nothing is taken out, and the same passages again change nothing.
+  const before = env.raw();
+  await env.repo.remember(index, 'warsh', [{ start: 2, end: 6 }]);
+  expect(env.raw()).toBe(before);
+  // Another edition's index is refused.
+  await expect(env.repo.remember(buildPlanIndex(fixture(2)), 'warsh', [{ start: 0, end: 2 }])).rejects.toThrow();
+});

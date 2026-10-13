@@ -43,6 +43,20 @@ describe('bookmarks and preferences are never overwritten after a failed read', 
     stop();
   });
 
+  test('saved data that cannot be read shows a failure and is never written over', async () => {
+    const env = flaky(0);
+    await env.storage.setItem(KEY, '{ not json');
+    const store = createPersistedStore({ storage: env.wrapped, key: KEY, fallback: [], decode: (raw) => JSON.parse(raw), apply: applyBookmarkChange, retryDelay: () => 1000 });
+    const stop = store.start();
+    await tick();
+    expect(store.getSnapshot()).toMatchObject({ ready: true, loaded: false, error: true });
+    store.update({ key: '4:2:1', saved: true });
+    await tick();
+    expect(env.writes).toEqual([]);
+    expect(await env.storage.getItem(KEY)).toBe('{ not json');
+    stop();
+  });
+
   test('a failing read is retried with backoff and nothing is written meanwhile', async () => {
     const env = flaky(2);
     await env.storage.setItem(KEY, JSON.stringify(['4:1:1']));

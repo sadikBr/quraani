@@ -32,10 +32,13 @@ import { PrayersScreen } from '@/features/prayers/prayers-screen';
 import { usePrayers, useNow } from '@/features/prayers/provider';
 import { prayerWindow } from '@/features/prayers/times';
 import { PracticeScreen } from '@/features/practice/practice-screen';
+import { HalaqatScreen } from '@/features/halaqat/halaqat-screen';
+import { useHalaqat } from '@/features/halaqat/provider';
+import { absent, activeStudents, entryOf, heard, nextMeeting, sessionOn, type Halaqa } from '@/features/halaqat/model';
 import { t } from '@/i18n';
 
 /** The home screen's sections, each a whole page; a new major feature is one more tab. */
-const TABS = ['today', 'prayers', 'goals', 'adhkar', 'practice'] as const;
+const TABS = ['today', 'prayers', 'goals', 'adhkar', 'practice', 'halaqat'] as const;
 type Tab = typeof TABS[number];
 
 /**
@@ -72,7 +75,7 @@ export function HomeScreen() {
       </ScrollView>
     </View>
     <SwipePages pages={pages} render={(id) => id === 'today' ? <TodayTab onTab={open} /> : <Embedded>
-      {id === 'prayers' ? <PrayersScreen /> : id === 'goals' ? <PlansScreen /> : id === 'adhkar' ? <AdhkarScreen /> : <PracticeScreen />}
+      {id === 'prayers' ? <PrayersScreen /> : id === 'goals' ? <PlansScreen /> : id === 'adhkar' ? <AdhkarScreen /> : id === 'halaqat' ? <HalaqatScreen /> : <PracticeScreen />}
     </Embedded>} />
   </SafeAreaView></GestureHandlerRootView>;
 }
@@ -102,6 +105,8 @@ function NowTiles({ onTab }: { onTab: (tab: Tab) => void }) {
   const { state: prayers } = usePrayers();
   const now = useNow(60_000);
   const overview = goalsOverview(plans, today);
+  // The halaqat that meet today, or whose session has begun.
+  const halaqat = useHalaqat().state.halaqat.filter((h) => activeStudents(h).length && (sessionOn(h, today) || nextMeeting(h, today) === today));
   const tile = Math.round(Math.min(188, Math.min(width, readerLayout.maxWidth) * 0.47));
   const current = prayers.location ? prayerWindow(prayers.location, now, prayers).current?.prayer : undefined;
   // With nothing due today, the goal that comes next.
@@ -111,6 +116,7 @@ function NowTiles({ onTab }: { onTab: (tab: Tab) => void }) {
   return <HorizontalControl><ScrollView horizontal showsHorizontalScrollIndicator={false} snapToInterval={tile + 12} decelerationRate="fast"
     style={{ marginHorizontal: -16 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
     <AdhkarTile id={adhkarNow(current, now.getHours())} width={tile} />
+    {halaqat.map((halaqa) => <HalaqaTile key={halaqa.id} halaqa={halaqa} today={today} width={tile} />)}
     {ready && overview.due.map((plan) => <GoalTile key={plan.id} plan={plan} today={today} width={tile} />)}
     {ready && !overview.due.length && <NoGoalTile width={tile} hasGoals={!!overview.all.length} completed={overview.completedToday > 0} later={later} onTab={onTab} />}
   </ScrollView></HorizontalControl>;
@@ -210,6 +216,27 @@ function GoalTile({ plan, today, width }: { plan: ReadingPlan; today: string; wi
     detail={[next.date < today ? `${kind} · ${t('home.today.overdue')}` : kind, portion].filter(Boolean).join('\n')}
     footer={index ? <Pill text={t('home.today.start')} /> : <ActivityIndicator size="small" color={artColors(p).ink} />}
     label={t('home.today.startGoal', { name: plan.name })} onPress={start} />;
+}
+
+/** A halaqa meeting today: its students as beads, those heard filled, and the way into the session. */
+function HalaqaTile({ halaqa, today, width }: { halaqa: Halaqa; today: string; width: number }) {
+  const { palette: p } = useReadingPreferences();
+  const colors = artColors(p);
+  const students = activeStudents(halaqa);
+  const session = sessionOn(halaqa, today);
+  const done = students.filter((s) => heard(entryOf(session, s.id))).length;
+  const finished = !!session && students.every((s) => heard(entryOf(session, s.id)) || absent(entryOf(session, s.id)));
+  const progress = t('halaqat.detail.heardOf', { done, total: students.length });
+  const footer = finished ? <Done text={progress} />
+    : session ? <View style={{ gap: 6 }}>
+      <Beads count={students.length} done={done} palette={p} size={7} tone={p.ornament} />
+      <Text style={{ color: colors.soft, fontSize: 12 }}>{progress}</Text>
+    </View>
+    : <Pill text={t('home.now.halaqaStart')} icon="users" />;
+  return <NowTile width={width} motif="arches" figure={{ icon: 'users' }} title={halaqa.name}
+    detail={`${t('halaqat.detail.todaySession')} · ${t('halaqat.studentCount', { count: students.length })}`} footer={footer}
+    label={t('home.now.halaqaLabel', { name: halaqa.name, state: session ? progress : t('home.now.halaqaNotStarted') })}
+    onPress={() => router.push({ pathname: '/halaqat/session', params: { halaqa: halaqa.id, date: today } })} />;
 }
 
 function NoGoalTile({ width, hasGoals, completed, later, onTab }: { width: number; hasGoals: boolean; completed: boolean; later: string; onTab: (tab: Tab) => void }) {

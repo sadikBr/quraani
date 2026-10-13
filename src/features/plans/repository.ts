@@ -1,13 +1,14 @@
 import type { CacheStorage } from '@/lib/quranpedia/cache';
 import { localDate, validDate } from './dates';
-import { isMemorizationPlan, isRevisionPlan, type MemorizationRecord, type ReadingPlan } from './types';
-import { mergeSpans, sameSpans, subtractSpans, validateMemorizationPlan, validateSpans } from './memorization';
+import { isMemorizationPlan, isRevisionPlan, type AyahSpan, type MemorizationRecord, type ReadingPlan } from './types';
+import { memorizationReplanDate, mergeSpans, reviseMemorization, sameSpans, subtractSpans, validateMemorizationPlan, validateSpans } from './memorization';
 import { currentMemorizationGoal, enforceGoalLimit } from './goal-limit';
 import { validateRevisionPlan } from './revision';
 import { maintainArchives, stampArchiveTransitions } from './archive';
 import { validateRecurringPlan } from './recurring';
 import type { PlanIndex } from './engine';
 import { relinkPlans, relinkRecords } from './relink';
+import { RIWAYAT } from '../quran-reader/riwayat';
 import { t } from '@/i18n';
 
 export const PLANS_KEY = 'plans:v1';
@@ -150,6 +151,34 @@ export function createPlansRepository(storage: CacheStorage, today: () => string
         decodePlans(raw); decodeMemorization(raw);
         await storage.setItem(PLANS_KEY, raw);
         current = plans; memorization = memory;
+        return current;
+      });
+      queue = next.catch(() => {});
+      return next;
+    },
+    /**
+     * Adds passages memorized elsewhere (the user's place in a halaqa) to the record of an
+     * edition. A memorization goal that owns the record takes them too, re-planned from today, and
+     * revision goals follow the record as always. Nothing is ever taken out this way.
+     */
+    remember(index: PlanIndex, riwayah: MemorizationRecord['riwayah'], spans: AyahSpan[]) {
+      const next = queue.then(async () => {
+        if (!current) throw new Error(t('plans.storage.notLoaded'));
+        const record = memorization.find(r => r.riwayah === riwayah);
+        if (index.mushafId !== RIWAYAT[riwayah].mushafId || (record && (record.corpus !== index.corpus || record.totalAyahs !== index.ayahs.length))) throw new Error(t('plans.storage.memorizationEditionMismatch'));
+        validateSpans(spans, index.ayahs.length);
+        const ranges = mergeSpans([...(record?.ranges ?? []), ...spans]);
+        if (record ? sameSpans(record.ranges, ranges) : !ranges.length) return current;
+        const date = today();
+        const owner = currentMemorizationGoal(current.filter(p => p.riwayah === riwayah));
+        const plans = owner && isMemorizationPlan(owner)
+          ? current.map(p => p.id === owner.id ? reviseMemorization(owner, index, ranges, memorizationReplanDate(owner, date)) : p) : current;
+        const memory = [...memorization.filter(r => r.riwayah !== riwayah), { riwayah, corpus: index.corpus, totalAyahs: index.ayahs.length, ranges }];
+        const mirrored = mirrorRevision(plans, memory);
+        const raw = JSON.stringify({ version: 1, plans: mirrored, memorization: memory });
+        decodePlans(raw); decodeMemorization(raw);
+        await storage.setItem(PLANS_KEY, raw);
+        current = mirrored; memorization = memory;
         return current;
       });
       queue = next.catch(() => {});

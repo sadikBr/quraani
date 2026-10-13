@@ -18,13 +18,20 @@ import { PlanField, PlanNotice, sheet } from './components';
 import { t } from '@/i18n';
 
 type SelectionTab = 'surahs' | 'juzs' | 'hizbs' | 'quarters' | 'ayahs';
-/** The sheet's own words: choosing what is memorized. */
+/** The sheet's own words: choosing what is memorized, one's own or a student's. */
 const sheetTexts = {
   memorized: {
     title: () => t('memorization.selection.title'), subtitle: () => t('memorization.selection.subtitle'), close: () => t('memorization.selection.close'),
     tabsLabel: () => t('memorization.selection.tabsLabel'), add: () => t('memorization.selection.custom.add'), remove: () => t('memorization.selection.custom.remove'),
     partial: (count: number) => t('memorization.selection.partial', { count }), total: (count: number) => t('memorization.selection.total', { count }),
     confirm: () => t('memorization.selection.confirm'),
+  },
+  /** A halaqa's student: what they had memorized when they joined. */
+  student: {
+    title: () => t('halaqat.known.title'), subtitle: () => t('halaqat.known.subtitle'), close: () => t('halaqat.known.close'),
+    tabsLabel: () => t('halaqat.known.tabsLabel'), add: () => t('halaqat.known.add'), remove: () => t('halaqat.known.remove'),
+    partial: (count: number) => t('halaqat.known.partial', { count }), total: (count: number) => t('halaqat.known.total', { count }),
+    confirm: () => t('halaqat.known.confirm'),
   },
 };
 

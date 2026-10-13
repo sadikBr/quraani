@@ -7,7 +7,8 @@ import { createPlansRepository } from './repository';
 import { buildPlanIndex, rollCompletedCycle, type PlanIndex } from './engine';
 import { localDate } from './dates';
 import { observePlanNotifications, syncPlanReminders } from './notifications';
-import { isSequentialPlan, type MemorizationRecord, type ReadingPlan } from './types';
+import { isSequentialPlan, type AyahSpan, type MemorizationRecord, type ReadingPlan } from './types';
+import type { Riwayah } from '../quran-reader/riwayat';
 import { reminderFailureMessage } from './reminder-errors';
 import { currentGoal } from './goal-limit';
 import { maintainArchives } from './archive';
@@ -17,6 +18,8 @@ interface PlansContextValue {
   plans: ReadingPlan[]; memorization: MemorizationRecord[]; ready: boolean; error: string; reminderError: string; today: string;
   commit: (change: (plans: ReadingPlan[]) => ReadingPlan[]) => Promise<void>;
   relink: (index: PlanIndex) => Promise<void>;
+  /** Adds passages memorized elsewhere (a halaqa) to the user's memorization record. */
+  remember: (index: PlanIndex, riwayah: Riwayah, spans: AyahSpan[]) => Promise<void>;
   retry: () => void;
 }
 const Context = createContext<PlansContextValue | null>(null);
@@ -47,6 +50,11 @@ export function PlansProvider({ children }: PropsWithChildren) {
   }, []);
   const relink = useCallback(async (index: PlanIndex) => {
     const value = await repository.current.relink(index);
+    setPlans(value);
+    setMemorization(repository.current.memorization());
+  }, []);
+  const remember = useCallback(async (index: PlanIndex, riwayah: Riwayah, spans: AyahSpan[]) => {
+    const value = await repository.current.remember(index, riwayah, spans);
     setPlans(value);
     setMemorization(repository.current.memorization());
   }, []);
@@ -93,7 +101,7 @@ export function PlansProvider({ children }: PropsWithChildren) {
         .catch(() => { rollovers.current.set(plan.id, Date.now() + 5 * 60_000); setRolloverError(t('plans.storage.rolloverFailed')); });
     }
   }, [plans, ready, today, commit, clockRevision]);
-  return <Context.Provider value={{ plans, memorization, ready, error: error || archiveError || rolloverError, reminderError, today, commit, relink, retry: () => { rollovers.current.clear(); setRevision(x => x + 1); setClockRevision(x => x + 1); } }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ plans, memorization, ready, error: error || archiveError || rolloverError, reminderError, today, commit, relink, remember, retry: () => { rollovers.current.clear(); setRevision(x => x + 1); setClockRevision(x => x + 1); } }}>{children}</Context.Provider>;
 }
 export function usePlans() {
   const value = useContext(Context);

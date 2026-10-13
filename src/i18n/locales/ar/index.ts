@@ -3,6 +3,7 @@ import app from './app';
 import common from './common';
 import credits from './credits';
 import goals from './goals';
+import halaqat from './halaqat';
 import home from './home';
 import khatma from './khatma';
 import library from './library';
@@ -23,5 +24,5 @@ import themes from './themes';
  * The Arabic catalog is the source of truth: keys, placeholders and plural forms start here.
  * One namespace per area of the app; `common` and `goals` hold text shared across areas.
  */
-const messages = { adhkar, app, common, credits, goals, home, khatma, library, memorization, plans, practice, prayers, reader, recitation, recurring, revision, session, settings, share, themes } as const;
+const messages = { adhkar, app, common, credits, goals, halaqat, home, khatma, library, memorization, plans, practice, prayers, reader, recitation, recurring, revision, session, settings, share, themes } as const;
 export default messages;

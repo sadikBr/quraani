@@ -59,7 +59,10 @@ export function createPersistedStore<T, C>({ storage, key, fallback, decode, app
     if (timer) { clearTimeout(timer); timer = undefined; }
     void storage.getItem(key).then((raw) => {
       if (!active) return;
-      base = decode(raw); readError = false;
+      // Saved data that cannot be read is kept as it is: nothing is written over it, and the
+      // failure shows (changes stay in this session's log).
+      try { base = decode(raw); } catch { readError = true; return; }
+      readError = false;
       if (saveOnLoad || changes.length) save();
     }, () => {
       if (!active) return;

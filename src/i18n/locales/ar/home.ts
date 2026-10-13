@@ -1,9 +1,14 @@
 export default {
   /** The home screen's tabs: what matters now, then each section in place. */
-  tabs: { today: 'اليوم', prayers: 'الصلاة', goals: 'الأهداف', adhkar: 'الأذكار', practice: 'التسميع' },
+  tabs: { today: 'اليوم', prayers: 'الصلاة', goals: 'الأهداف', adhkar: 'الأذكار', practice: 'التسميع', halaqat: 'الحلقات' },
   /** The cards to swipe on «اليوم». */
   now: {
     title: 'لهذا اليوم',
+    /** A halaqa meeting today, on its tile. */
+    halaqaStart: 'ابدأ الحصة',
+    halaqaNotStarted: 'لم تبدأ بعد',
+    /** Spoken: «حلقة المسجد، سمّع ٣ من ١٠». */
+    halaqaLabel: '{{name}}، {{state}}',
     /** Above the adhkar of this part of the day. */
     adhkar: 'أذكار هذا الوقت',
     begin: 'ابدأ',

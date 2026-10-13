@@ -10,7 +10,11 @@ import { completedOccurrences, occurrenceProgress, scheduledOn, WEEKDAYS, weekda
 import type { RecurringPlan } from './types';
 
 /** Days of the week as chips, with quick choices above them and what is chosen said under them. */
-export function WeekdayPicker({ days, onChange, quickOptions = [{ label: t('common.weekdays.everyDay'), value: [0, 1, 2, 3, 4, 5, 6] }, { label: t('recurring.weekdayPicker.fridayOnly'), value: [5] }] }: { days: number[]; onChange: (days: number[]) => void; quickOptions?: { label: string; value: number[] }[] }) {
+export function WeekdayPicker({ days, onChange, quickOptions = [{ label: t('common.weekdays.everyDay'), value: [0, 1, 2, 3, 4, 5, 6] }, { label: t('recurring.weekdayPicker.fridayOnly'), value: [5] }], emptyLabel }: {
+  days: number[]; onChange: (days: number[]) => void; quickOptions?: { label: string; value: number[] }[];
+  /** Said when no day is chosen, where days are optional (otherwise choosing one is asked for). */
+  emptyLabel?: string;
+}) {
   const { palette: p } = useReadingPreferences();
   return <View style={{ gap: 12 }}>
     <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>{quickOptions.map(option => {
@@ -28,7 +32,7 @@ export function WeekdayPicker({ days, onChange, quickOptions = [{ label: t('comm
         <Text numberOfLines={1} style={{ color: checked ? p.secondaryForeground : p.mutedForeground, fontSize: 14, fontWeight: checked ? '700' : '500', textAlign: 'center' }}>{day.label}</Text>
       </Pressable>;
     })}{i === 1 && <View style={{ flex: 1 }} />}</View>)}
-    <Text accessibilityLiveRegion="polite" style={{ color: days.length ? p.mutedForeground : p.destructive, fontSize: 13 }}>{days.length ? weekdaysLabel(days) : t('recurring.weekdayPicker.chooseDay')}</Text>
+    <Text accessibilityLiveRegion="polite" style={{ color: days.length || emptyLabel ? p.mutedForeground : p.destructive, fontSize: 13 }}>{days.length ? weekdaysLabel(days) : emptyLabel ?? t('recurring.weekdayPicker.chooseDay')}</Text>
   </View>;
 }
 
