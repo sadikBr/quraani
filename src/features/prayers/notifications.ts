@@ -5,7 +5,7 @@ import { t } from '@/i18n';
 import { athanModule, canScheduleExactAlarms, scheduleAthans, testAthan, type AthanLabels } from './athan-native';
 import { hijriLabel } from './labels';
 import { placeName } from './place';
-import { ALERT_PREFIX, isPrayerAlertData, prayerAlerts, type PrayerAlert, type PrayerState, type TakbirId } from './settings';
+import { ALERT_PREFIX, alertsRenewal, isAlertRenewalData, isPrayerAlertData, prayerAlerts, type PrayerAlert, type PrayerState, type TakbirId } from './settings';
 import { clock, dayOf, type PrayerId } from './times';
 
 export const alertsSupported = true;
@@ -111,14 +111,17 @@ export const athanScreenText = (state: PrayerState, prayer: PrayerId, time: Date
 let queue: Promise<unknown> = Promise.resolve();
 /**
  * Replaces the scheduled prayer alerts with the ones wanted now: two weeks of notifications (two
- * days on iOS, which keeps few), and a month of whole athans for the Android module. Other
- * notifications are left alone.
+ * days on iOS, which keeps few), and a month of whole athans for the Android module, with a
+ * reminder to open the app a day before they run out. Other notifications are left alone.
  */
 export function syncPrayerAlerts(state: PrayerState) {
   const task = queue.catch(() => {}).then(async () => {
     const permitted = allowed(await Notifications.getPermissionsAsync());
     const horizon = { days: Platform.OS === 'ios' ? 2 : 14, native: !!athanModule, nativeDays: 30 };
-    const { notifications: wanted, athans } = permitted ? prayerAlerts(state, new Date(), horizon) : { notifications: [], athans: [] };
+    const now = new Date();
+    const { notifications: wanted, athans } = permitted ? prayerAlerts(state, now, horizon) : { notifications: [], athans: [] };
+    // Before all this runs out in an app left closed: a reminder to open it.
+    const renewal = alertsRenewal({ notifications: wanted, athans }, now);
     const place = state.location ? placeName(state.location) : '';
     let failed = false;
     if (athanModule) {
@@ -138,10 +141,11 @@ export function syncPrayerAlerts(state: PrayerState) {
     const exact = canScheduleExactAlarms();
     const existing = (await Notifications.getAllScheduledNotificationsAsync()).filter((n) => n.identifier.startsWith(ALERT_PREFIX));
     const keep = new Set(wanted.map((n) => n.id));
+    if (renewal) keep.add(renewal.id);
     for (const n of existing) if (!keep.has(n.identifier)) await Notifications.cancelScheduledNotificationAsync(n.identifier);
     // Once nothing scheduled uses them (the notifications below move to the takbir's channels).
     await retireOldChannels();
-    const alertsId = wanted.some((n) => n.kind !== 'takbir') ? await alertChannel() : undefined;
+    const alertsId = renewal || wanted.some((n) => n.kind !== 'takbir') ? await alertChannel() : undefined;
     const takbirId = wanted.some((n) => n.kind === 'takbir') ? await takbirChannel(state.takbir) : undefined;
     for (const alert of wanted) {
       const next = content(alert, state, place, exact);
@@ -153,6 +157,11 @@ export function syncPrayerAlerts(state: PrayerState) {
       })) continue;
       await Notifications.scheduleNotificationAsync({ identifier: alert.id, content: next,
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: alert.date, ...(channelId ? { channelId } : {}) } });
+    }
+    if (renewal && !existing.some((x) => x.identifier === renewal.id)) {
+      await Notifications.scheduleNotificationAsync({ identifier: renewal.id,
+        content: { title: t('prayers.notification.renewTitle'), body: t('prayers.notification.renewBody'), sound: 'default', data: { renew: true } },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: renewal.date, ...(alertsId ? { channelId: alertsId } : {}) } });
     }
     if (!permitted && state.enabled) throw new PrayerAlertError('permission');
     if (failed) throw new PrayerAlertError('unavailable');
@@ -186,7 +195,8 @@ export async function testPrayerAlert(state: PrayerState, kind: 'notify' | 'takb
 /** Opens the prayer times from one of their notifications. */
 export function observePrayerNotifications(open: () => void) {
   const handle = (response: Notifications.NotificationResponse | null) => {
-    if (isPrayerAlertData(response?.notification.request.content.data)) { open(); Notifications.clearLastNotificationResponse(); }
+    const data = response?.notification.request.content.data;
+    if (isPrayerAlertData(data) || isAlertRenewalData(data)) { open(); Notifications.clearLastNotificationResponse(); }
   };
   const subscription = Notifications.addNotificationResponseReceivedListener(handle);
   handle(Notifications.getLastNotificationResponse());

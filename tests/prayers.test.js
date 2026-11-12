@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { countdown, dayOf, dayTimes, hijriDate, PRAYERS, prayerWindow, shiftDay } from '../src/features/prayers/times';
-import { applyPrayers, decodePrayers, defaultPrayerState, normalizePrayers, prayerAlerts, upcomingTimes } from '../src/features/prayers/settings';
+import { alertsRenewal, applyPrayers, decodePrayers, defaultPrayerState, isAlertRenewalData, isPrayerAlertData, normalizePrayers, prayerAlerts, upcomingTimes } from '../src/features/prayers/settings';
 import { CITIES, nearestCity } from '../src/features/prayers/cities';
 import ar from '../src/i18n/locales/ar/prayers';
 
@@ -159,6 +159,31 @@ describe('prayer settings', () => {
     expect(notifications.every((n) => n.kind === 'takbir' && n.id.startsWith('quranni-prayer:') && n.date > now)).toBe(true);
     expect(athans).toEqual([]);
     expect(new Set(notifications.map((n) => n.id)).size).toBe(notifications.length);
+  });
+
+  test('a reminder to open the app comes a day before the scheduled alerts run out', () => {
+    const day = 24 * 60 * 60_000;
+    expect(alertsRenewal(prayerAlerts(defaultPrayerState, now, { days: 14, native: true, nativeDays: 30 }), now)).toBeUndefined();
+    // Notifications alone: a day before the last of them.
+    const plain = prayerAlerts(located, now, { days: 14, native: false, nativeDays: 30 });
+    const renewal = alertsRenewal(plain, now);
+    expect(renewal.date.getTime()).toBe(plain.notifications.at(-1).date.getTime() - day);
+    expect(renewal.id.startsWith('quranni-prayer:renew:')).toBe(true);
+    // Whole athans last a month, the notifications beside them two weeks: the earlier end counts.
+    const mixed = prayerAlerts({ ...located, alerts: { ...located.alerts, fajr: 'full' } }, now, { days: 14, native: true, nativeDays: 30 });
+    expect(mixed.athans.at(-1).time > mixed.notifications.at(-1).date).toBe(true);
+    expect(alertsRenewal(mixed, now).date.getTime()).toBe(mixed.notifications.at(-1).date.getTime() - day);
+    // Whole athans alone: a day before the last one.
+    const allFull = Object.fromEntries(Object.keys(located.alerts).map((prayer) => [prayer, prayer === 'sunrise' ? 'off' : 'full']));
+    const athansOnly = prayerAlerts({ ...located, alerts: allFull }, now, { days: 14, native: true, nativeDays: 30 });
+    expect(athansOnly.notifications).toEqual([]);
+    expect(alertsRenewal(athansOnly, now).date.getTime()).toBe(Math.max(...athansOnly.athans.map((a) => a.time.getTime())) - day);
+    // The same schedule keeps the same reminder; the next day's moves it on.
+    expect(alertsRenewal(prayerAlerts(located, new Date(now.getTime() + 60_000), { days: 14, native: false, nativeDays: 30 }), now).id).toBe(renewal.id);
+    expect(alertsRenewal(prayerAlerts(located, new Date(now.getTime() + day), { days: 14, native: false, nativeDays: 30 }), now).id).not.toBe(renewal.id);
+    // Alerts ending within the day get none.
+    expect(alertsRenewal({ notifications: plain.notifications.slice(0, 1), athans: [] }, now)).toBeUndefined();
+    expect(isAlertRenewalData({ renew: true }) && !isPrayerAlertData({ renew: true }) && !isAlertRenewalData({ prayer: 'fajr' })).toBe(true);
   });
 
   test('whole athans go to the Android module when it is there, otherwise they are the takbir', () => {

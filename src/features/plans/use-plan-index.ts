@@ -12,7 +12,7 @@ export function usePlanIndex(riwayah: Riwayah) {
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     let active = true;
-    void loadReaderContent(undefined, riwayah).then(content => { if (active) setResult({ riwayah, index: buildPlanIndex(content.data) }); })
+    void loadReaderContent(riwayah).then(content => { if (active) setResult({ riwayah, index: buildPlanIndex(content.data) }); })
       .catch(() => { if (active) setResult({ riwayah, error: t('plans.indexLoadFailed') }); });
     return () => { active = false; };
   }, [riwayah, revision]);
@@ -26,7 +26,7 @@ export function usePlanIndex(riwayah: Riwayah) {
     // Only the newest edition may re-link goals. A screen that kept an older copy
     // (e.g. a list under a detail screen) refreshes its index instead of
     // re-linking goals backwards, which would otherwise ping-pong forever.
-    void loadReaderContent(undefined, riwayah).then(content => {
+    void loadReaderContent(riwayah).then(content => {
       const latest = buildPlanIndex(content.data);
       if (!active) return;
       if (latest.corpus === index.corpus) return relink(index);

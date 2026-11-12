@@ -65,6 +65,9 @@ and each return to the app:
   channels (`prayer-athan-<voice>`) are deleted once their notifications are cancelled. While the
   app is open, prayer notifications keep their sound (the shared handler in
   `plans/notifications.ts`).
+- **A reminder to open the app** (`alertsRenewal`) is scheduled a day before the first of these
+  runs out (the notifications after two weeks, the athans after a month): in an app left closed
+  the alerts would otherwise end without a word. Opening the app tops them up and moves it on.
 - **The whole athan** is played by the app's own Android module (`modules/athan`), given a month
   of times. It keeps them, arms one alarm at a time (exact when allowed, re-armed after a reboot,
   an update or a clock change; an athan up to 10 minutes late still plays, and none plays twice),

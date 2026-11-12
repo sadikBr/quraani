@@ -1,14 +1,16 @@
 import { expect, test } from 'bun:test';
 import data from '../assets/tajweed/warsh-azraq-v1.json';
-import sample from './fixtures/quranpedia/warsh-tajweed-sample.json';
-import { decodeAyah } from '../src/lib/quranpedia/validation';
+import bundle from '../assets/quran/mushaf-4.json';
+import { expandBundledMushaf } from '../src/lib/quranpedia/bundled';
+import { decodeQuran } from '../src/lib/quranpedia/validation';
 import { decodeWarshTajweed } from '../src/features/quran-reader/utils/warsh-tajweed';
 import { tajweedColor } from '../src/features/quran-reader/utils/tajweed';
 import { tajweedTextDocument, tajweedTextState } from '../src/features/quran-reader/utils/tajweed-text-document';
 import { createPagePractice, practiceVisibility } from '../src/features/quran-reader/utils/page-practice';
 import { readerThemes } from '../src/features/quran-reader/theme';
 
-const surahs = sample.surahs.map((s) => ({ number: s.id, name: s.name, codedName: s.coded_name, ayahs: s.ayahs.map((ayah) => decodeAyah(ayah, 4, s.id)) }));
+// The colours are made for the text bundled with the app: a few of its surahs.
+const surahs = decodeQuran(expandBundledMushaf(bundle), 4).surahs.filter((s) => [1, 2, 20, 67, 114].includes(s.number));
 test('offline Warsh annotations cover all 6,214 ayahs with bounded, ordered color spans', () => {
   expect(data.mushafId).toBe(4);
   expect(data.route).toBe('warsh-al-azraq');
@@ -29,13 +31,14 @@ test('offline Warsh annotations cover all 6,214 ayahs with bounded, ordered colo
   }
 });
 
-test('color spans preserve original Warsh spelling, marks, numbering and composed maddah', () => {
+test('color spans preserve original Warsh spelling, marks, numbering and maddah', () => {
   for (const surah of surahs) {
     const colored = decodeWarshTajweed(surah, data);
     for (const ayah of surah.ayahs) expect(colored[ayah.ayahNumber].map((r) => r.text).join('')).toBe(ayah.text);
   }
   expect(surahs[0].ayahs[0].text).toStartWith('اِ۬لْحَمْدُ');
-  expect(surahs.find((s) => s.number === 67).ayahs[0].text).toContain('جَآءَنَا');
+  // «جَآءَنَا» with its alif and maddah apart, as the source now spells it.
+  expect(surahs.find((s) => s.number === 67).ayahs.find((a) => a.ayahNumber === 9).text).toContain('\u062C\u064E\u0627\u0653\u0621\u064E\u0646\u064E\u0627');
 });
 
 test('Warsh annotations include its own hamza, inclination and lam rules', () => {

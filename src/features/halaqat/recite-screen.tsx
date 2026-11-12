@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text as NativeText, TextInput, View, type AccessibilityActionEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useKeepAwakeWhileShown } from '@/hooks/use-keep-awake-while-shown';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { JustifiedText } from '@/components/justified-text';
 import { PageBar, PageTitle, Section, page } from '@/components/craft/page';
@@ -37,6 +38,7 @@ interface Draft { portion: Portion | undefined; marks: Mark[]; grade: Grade | nu
  * to give them next (suggested from what they recited) and a note.
  */
 export function ReciteScreen() {
+  useKeepAwakeWhileShown('halaqa-recite');
   const params = useLocalSearchParams<{ halaqa: string; date: string; student: string; session?: string }>();
   const { palette: p } = useReadingPreferences();
   const { halaqa, ready } = useHalaqa(params.halaqa);

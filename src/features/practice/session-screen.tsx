@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useKeepAwakeWhileShown } from '@/hooks/use-keep-awake-while-shown';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { Alert, Button } from '@/components/ui';
@@ -34,6 +35,7 @@ const gradeIcon: Record<Grade, ReaderIconName> = { good: 'done', hesitant: 'aler
 
 /** One place per page: the cue, revealed word by word or all at once, then graded. A summary closes the session. */
 export function PracticeSessionScreen() {
+  useKeepAwakeWhileShown('practice');
   const { session } = usePractice();
   if (!session) return <NoSession />;
   return <Session key={session.id} session={session} />;

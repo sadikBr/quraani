@@ -4,7 +4,8 @@ import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import hafsSample from './fixtures/quranpedia/hafs-sample.json';
 import warshFatiha from './fixtures/quranpedia/warsh-fatiha.json';
-import { MemoryCacheStorage, CORPUS_TTL_MS } from '../src/lib/quranpedia/cache';
+import { MemoryCacheStorage } from '../src/lib/quranpedia/cache';
+import { expandBundledMushaf, packMushaf } from '../src/lib/quranpedia/bundled';
 import { decodeQuran, decodeSurahAyahs } from '../src/lib/quranpedia/validation';
 import { prepareReaderContent } from '../src/features/quran-reader/utils/content';
 import { syntheticCorpus } from './helpers/synthetic-corpus';
@@ -31,7 +32,7 @@ afterAll(() => {
   if (!hadWindow) delete globalThis.window;
   delete globalThis.IS_REACT_ACT_ENVIRONMENT;
 });
-const { loadReaderContent } = await import('../src/features/quran-reader/services/reader-service');
+const { createReaderContentLoader, loadReaderContent } = await import('../src/features/quran-reader/services/reader-service');
 const { loadTajweedPrintedSurah, loadTajweedSurah } = await import('../src/features/quran-reader/services/tajweed-service');
 const { useReaderContent } = await import('../src/features/quran-reader/hooks/use-reader-content');
 const { useReadingPosition } = await import('../src/features/quran-reader/hooks/use-reading-position');
@@ -54,37 +55,49 @@ const hafsFatiha = { number: 1, name: 'الفاتحة', codedName: '', ayahs: de
 const printedHtml = readFileSync(new URL('./fixtures/quranpedia/hafs-tajweed-printed-sample.html', import.meta.url), 'utf8');
 
 describe('reader content service', () => {
-  test('expired cache is returned without waiting for the network, refreshed once in the background', async () => {
-    const fetchedAt = Date.now() - CORPUS_TTL_MS - 1000;
-    await storage.setItem('quranpedia:v1:/mushafs/4', JSON.stringify({ version: 1, fetchedAt, payload: syntheticCorpus() }));
-    handler = slow(() => new Response('', { status: 503 }));
-    const started = Date.now();
-    const result = await loadReaderContent({}, 'warsh');
-    expect(Date.now() - started).toBeLessThan(120);
-    expect(result).toMatchObject({ source: 'cache', stale: true, fetchedAt });
-    expect(result.data.pages).toHaveLength(604);
-    expect(calls).toHaveLength(1);
-    await tick(200);
-    expect(await loadReaderContent({}, 'warsh')).toBe(result);
-    await tick(200);
-    expect(calls).toHaveLength(1); // A failed refresh is not retried on every mount.
+  const bundle = (corpus, fetched = '2026-11-12') => packMushaf(corpus, { source: 'test', fetched, sha256: '0' });
+
+  test('the Quran text comes from the copy bundled with the app, without the network or the cache', async () => {
+    calls.length = 0;
+    // An older version's download is still in storage: it is not read, and is removed.
+    await storage.setItem('quranpedia:v1:/mushafs/4', JSON.stringify({ version: 1, fetchedAt: Date.now(), payload: syntheticCorpus(undefined, { name: 'downloaded' }) }));
+    const warsh = await loadReaderContent('warsh');
+    expect(warsh).toMatchObject({ source: 'bundle', stale: false, fetchedAt: Date.parse('2026-11-12') });
+    expect(warsh.data.quran).toMatchObject({ id: 4, riwayah: { name: 'ورش' } });
+    expect(warsh.data.pages).toHaveLength(604);
+    expect(warsh.data.quran.surahs.flatMap((surah) => surah.ayahs)).toHaveLength(6214);
+    // Prepared once per edition; each edition has its own text.
+    expect(await loadReaderContent('warsh')).toBe(warsh);
+    const hafs = await loadReaderContent('hafs');
+    expect(hafs.data.quran.surahs.flatMap((surah) => surah.ayahs)).toHaveLength(6236);
+    await tick();
+    expect(await storage.getItem('quranpedia:v1:/mushafs/4')).toBeNull();
+    expect(calls).toHaveLength(0);
   });
 
-  test('a manual refresh waits for the network and reports failures', async () => {
-    handler = async () => new Response('', { status: 503 });
-    const failed = await loadReaderContent({ forceRefresh: true }, 'warsh');
-    expect(failed).toMatchObject({ source: 'cache', stale: true, refreshError: { status: 503 } });
-    handler = async () => Response.json(syntheticCorpus());
-    const fresh = await loadReaderContent({ forceRefresh: true }, 'warsh');
-    expect(fresh).toMatchObject({ source: 'network', stale: false });
-    expect(await loadReaderContent({}, 'warsh')).toBe(fresh);
-    expect(calls).toHaveLength(3);
+  test('a bundled copy is validated like a response: the wrong edition or an unreadable copy is refused, then read again', async () => {
+    let copy = bundle(syntheticCorpus(undefined, { id: 2 }));
+    const load = createReaderContentLoader(() => copy);
+    await expect(load('hafs')).rejects.toThrow('riwayah');
+    await expect(load('warsh')).rejects.toThrow();
+    copy = { version: 2 };
+    await expect(load('warsh')).rejects.toThrow('Unreadable');
+    // The failure is not kept.
+    copy = bundle(syntheticCorpus());
+    const loaded = await load('warsh');
+    expect(loaded.data.pages).toHaveLength(604);
+    expect(await load('warsh')).toBe(loaded);
   });
 
-  test('a payload for the wrong riwayah is rejected before it is cached', async () => {
-    handler = async () => Response.json(syntheticCorpus(undefined, { id: 2 }));
-    await expect(loadReaderContent({}, 'hafs')).rejects.toThrow('riwayah');
-    expect(await storage.getItem('quranpedia:v1:/mushafs/2')).toBeNull();
+  test('packing keeps every value the app reads', () => {
+    const corpus = syntheticCorpus();
+    corpus.surahs[1].ayahs[2].options = ['tafsir'];
+    const packed = bundle(corpus);
+    expect(packed.options).toHaveLength(2);
+    // (The sample ayahs come from a per-surah response, which has no juz or hizb: kept as none.)
+    const strip = ({ ruku, manzil, ...ayah }) => ({ ...ayah, juz: ayah.juz ?? null, hizb: ayah.hizb ?? null });
+    expect(expandBundledMushaf(JSON.parse(JSON.stringify(packed)))).toEqual({ ...corpus, surahs: corpus.surahs.map((surah) => ({ ...surah, ayahs: surah.ayahs.map(strip) })) });
+    expect(decodeQuran(expandBundledMushaf(packed), 4)).toEqual(decodeQuran(corpus, 4));
   });
 });
 
@@ -119,35 +132,24 @@ describe('reader hooks', () => {
   const hafsMetadata = { ...hafsSample, surahs: undefined };
   const hafsCorpus = () => syntheticCorpus(undefined, { id: 2, rawi: hafsMetadata.rawi, name: hafsMetadata.name });
 
-  test('reader content: errors and manual-refresh revisions do not leak across riwayat', async () => {
+  test('reader content: each riwayah gets its own bundled text, and a refresh asks nothing of the network', async () => {
     calls.length = 0;
     riwayah = 'hafs';
-    handler = async () => new Response('', { status: 503 });
     const hook = renderHook(() => useReaderContent());
     await hook.render();
     await hook.settle();
-    expect(hook.result.current.error).not.toBeNull();
+    expect(hook.result.current).toMatchObject({ loading: false, error: null, content: { source: 'bundle', data: { quran: { id: 2 } } } });
     riwayah = 'warsh';
     hook.result.history.length = 0;
     await hook.render();
     await hook.settle();
-    // Warsh never shows the Hafs error while it loads, and is served from memory.
-    expect(hook.result.history.every((value) => value.error === null)).toBe(true);
+    // Warsh never shows the Hafs text while its own loads.
+    expect(hook.result.history.every((value) => value.error === null && (value.content === null || value.content.data.quran.id === 4))).toBe(true);
     expect(hook.result.current).toMatchObject({ loading: false, content: { data: { quran: { id: 4 } } } });
-    const before = calls.length;
     await act(async () => hook.result.current.refresh());
     await hook.settle();
-    expect(calls.length).toBe(before + 1); // the manual refresh went to the network
-    await storage.setItem('quranpedia:v1:/mushafs/2', JSON.stringify({ version: 1, fetchedAt: Date.now(), payload: hafsCorpus() }));
-    riwayah = 'hafs';
-    await hook.render();
-    await hook.settle();
-    expect(hook.result.current).toMatchObject({ loading: false, error: null, content: { data: { quran: { id: 2 } } } });
-    expect(calls.length).toBe(before + 1); // switching riwayah did not force a network fetch
-    riwayah = 'warsh';
-    await hook.render();
-    await hook.settle();
-    expect(calls.length).toBe(before + 1);
+    expect(hook.result.current).toMatchObject({ loading: false, error: null, content: { data: { quran: { id: 4 } } } });
+    expect(calls).toHaveLength(0);
     await hook.unmount();
   });
 

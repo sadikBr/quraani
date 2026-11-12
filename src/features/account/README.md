@@ -6,8 +6,11 @@ or offline, nothing changes.
 
 - **Sign-in** (`auth-client.ts`): an email and a password (Supabase Auth over `fetch`, with a
   30-second timeout; no native module). Signing up sends a confirmation email whose link opens
-  the app at `/account/callback`, signed in; a forgotten password is reset the same way, then
-  `/account/password`. The links' tokens come after `#` (Supabase's implicit flow), and the
+  the app at `/account/callback`; a forgotten password is reset the same way, then
+  `/account/password`. A link is not proof that the phone's owner asked for it (anyone can send
+  one carrying their own account's tokens, and the phone's data would sync to them), so the
+  screen shows the account's email and signs in only when the user agrees (`peek`, then
+  `adopt`); a link to the account already signed in needs no asking. The links' tokens come after `#` (Supabase's implicit flow), and the
   project must allow `quranmobile://**` as a redirect URL. The session is kept on the phone
   (`account:session:v1`) and refreshed one request at a time; a session the account ended signs
   out here too, and signing out (or in as someone else) wins over a refresh still on its way.

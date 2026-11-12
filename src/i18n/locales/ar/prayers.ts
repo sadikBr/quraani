@@ -157,6 +157,9 @@ export default {
     before_other: '{{prayer}} بعد {{count, number}} دقيقة',
     /** The button on the whole athan's notification. */
     stop: 'إيقاف الأذان',
+    /** Sent a day before the scheduled alerts end, in an app not opened for weeks. */
+    renewTitle: 'تنبيهات الصلاة توشك أن تتوقف',
+    renewBody: 'افتح «قرآني» لتستمر تنبيهات الصلاة في الأيام القادمة.',
   },
   voices: {
     title: 'صوت الأذان كاملًا',

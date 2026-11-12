@@ -101,7 +101,7 @@ export function PlansProvider({ children }: PropsWithChildren) {
       // missing mushaf never turns into a download on every state change.
       if ((rollovers.current.get(plan.id) ?? 0) > Date.now()) continue;
       rollovers.current.set(plan.id, Number.MAX_SAFE_INTEGER);
-      void loadReaderContent(undefined, plan.riwayah).then(content => {
+      void loadReaderContent(plan.riwayah).then(content => {
         const index = buildPlanIndex(content.data);
         return commit(items => items.map(p => p.id === plan.id && isSequentialPlan(p) && p.status === 'completed' && p.repeat
           ? currentGoal(items, p.id) ? { ...p, repeat: false } : rollCompletedCycle(p, index, today)

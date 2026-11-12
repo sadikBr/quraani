@@ -16,8 +16,9 @@ export function useReaderContent() {
     const [content, setContent] = useState<ContentResult<ReaderContent> | null>(
         null,
     );
-    // Manual refreshes and outcomes belong to one riwayah: switching editions
-    // neither forces a network fetch nor shows the other edition's error.
+    // The text is bundled with the app, so a refresh only reads it again (after
+    // a failure). Refreshes and outcomes belong to one riwayah: switching
+    // editions never shows the other edition's error.
     const [refreshes, setRefreshes] = useState({ riwayah, revision: 0 });
     if (refreshes.riwayah !== riwayah) setRefreshes({ riwayah, revision: 0 });
     const revision = refreshes.riwayah === riwayah ? refreshes.revision : 0;
@@ -25,7 +26,7 @@ export function useReaderContent() {
 
     useEffect(() => {
         let active = true;
-        void loadReaderContent({ forceRefresh: revision > 0 }, riwayah)
+        void loadReaderContent(riwayah)
             .then((result) => {
                 if (active) {
                     setContent(result);

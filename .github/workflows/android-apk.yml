@@ -8,6 +8,7 @@
 # Every APK is signed with the same key, from these repository secrets:
 #   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
 # (plugins/with-release-signing.js reads them), so each APK installs over the previous one.
+# Actions are pinned to commits (the job holds the signing key); the comment names the release.
 name: Android APK
 
 on:
@@ -31,8 +32,8 @@ jobs:
   check:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: ${{ env.BUN_VERSION }}
       - run: bun install --frozen-lockfile
@@ -52,15 +53,15 @@ jobs:
       ABIS: arm64-v8a
       APK_NAME: quraani-${{ github.ref_name }}-${{ github.run_number }}.apk
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           distribution: temurin
           java-version: 17
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: ${{ env.BUN_VERSION }}
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
       - name: Install the NDK
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;$NDK_VERSION" > /dev/null
@@ -92,7 +93,10 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          ./gradlew assembleRelease -PreactNativeArchitectures="$ABIS"
+          # R8 and resource shrinking: a smaller APK (sounds played by name are kept by
+          # modules/athan/android/src/main/res/raw/athan_keep.xml).
+          ./gradlew assembleRelease -PreactNativeArchitectures="$ABIS" \
+            -Pandroid.enableMinifyInReleaseBuilds=true -Pandroid.enableShrinkResourcesInReleaseBuilds=true
           mv app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/$APK_NAME"
 
       # Refuse an APK signed with anything but the release key.
@@ -107,7 +111,7 @@ jobs:
             | sed -n 's/^[[:space:]]*SHA256: //p' | tr -d ':' | tr 'A-F' 'a-f')"
           [ -n "$expected" ] && grep -q "SHA-256 digest: $expected" signature.txt || { echo "::error::APK is not signed with the release key"; exit 1; }
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: quraani-${{ github.ref_name }}-${{ github.run_number }}
           path: ${{ env.APK_NAME }}

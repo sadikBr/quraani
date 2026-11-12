@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useKeepAwakeWhileShown } from '@/hooks/use-keep-awake-while-shown';
 import { ArabicText as Text } from '@/components/arabic-text';
 import { Medallion } from '@/components/craft/marks';
 import { PageBar, PageTitle, Section, page } from '@/components/craft/page';
@@ -25,6 +26,7 @@ import { HalaqaRing, RingCount, SeatLegend, seatsOf, type Seat } from './ring';
  * portions they are to recite (or how they went, once heard), the way to hear them, and the roll call.
  */
 export function SessionScreen() {
+  useKeepAwakeWhileShown('halaqa-session');
   const params = useLocalSearchParams<{ halaqa: string; date: string }>();
   const { palette: p } = useReadingPreferences();
   const { halaqa, ready } = useHalaqa(params.halaqa);

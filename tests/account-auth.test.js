@@ -91,6 +91,24 @@ describe('email and password', () => {
     expect(requests[2].body).toEqual({ password: 'another-one', current_password: 'a-new-password' });
     const expired = linkParams('quranmobile://account/callback#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired');
     expect(await kind(auth.adopt(expired))).toBe('link_expired');
+    expect(await kind(auth.peek(expired))).toBe('link_expired');
+  });
+
+  test('a link shows whose account it opens without signing in, so the app can ask first', async () => {
+    const { auth, storage, requests } = client({
+      '/auth/v1/token?grant_type=password': () => json(200, sessionBody(1)),
+      '/auth/v1/user': (body, init) => json(200, init.headers.Authorization === 'Bearer theirs' ? { id: 'user-2', email: 'someone@else.example' } : { id: 'user-1', email: 'me@example.com' }),
+    });
+    await auth.signIn('me@example.com', 'pw');
+    const saved = await storage.getItem(SESSION_KEY);
+    // A link someone else made, carrying their own account's tokens.
+    const theirs = linkParams('quranmobile://account/callback#access_token=theirs&refresh_token=theirs-refresh&expires_in=3600&type=signup');
+    expect(await auth.peek(theirs)).toEqual({ id: 'user-2', email: 'someone@else.example' });
+    expect(requests.at(-1)).toMatchObject({ path: '/auth/v1/user', method: 'GET', headers: { Authorization: 'Bearer theirs' } });
+    // Nothing changed: still signed in as before, with the same saved session.
+    expect(auth.user()).toEqual({ id: 'user-1', email: 'me@example.com' });
+    expect(await storage.getItem(SESSION_KEY)).toBe(saved);
+    expect(await kind(auth.peek(linkParams('quranmobile://account/callback#access_token=only')))).toBe('failed');
   });
 });
 

@@ -55,7 +55,7 @@ function ArchivedGoalCard({ plan, onOpen }: { plan: ReadingPlan; onOpen: (id: st
     if (busy) return;
     setBusy(true); setError(''); setConflictId(undefined);
     try {
-      const index = isMemorizationPlan(plan) ? buildPlanIndex((await loadReaderContent(undefined, plan.riwayah)).data) : undefined;
+      const index = isMemorizationPlan(plan) ? buildPlanIndex((await loadReaderContent(plan.riwayah)).data) : undefined;
       await commit(items => items.map(item => item.id === plan.id ? restoreArchivedGoal(isMemorizationPlan(item) && index ? reviseMemorization(item, index, memoryFor(memorization, item.riwayah, index), memorizationReplanDate(item, today)) : item) : item));
     }
     catch (e) { setError(e instanceof Error ? e.message : t('plans.archive.errors.restore')); if (e instanceof DuplicateGoalError) setConflictId(e.goalId); }

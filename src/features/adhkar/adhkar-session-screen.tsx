@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Vibration, View, type GestureResponderEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useKeepAwakeWhileShown } from '@/hooks/use-keep-awake-while-shown';
 import Svg, { Circle, ClipPath, Defs, G, Path } from 'react-native-svg';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { createPager, useRecentre } from '@/components/pager';
@@ -42,6 +43,7 @@ const HALO = 22, BEADS_HEIGHT = 32;
 
 /** Says the adhkar of one collection, one dhikr per page, with a counter. */
 export function AdhkarSessionScreen() {
+  useKeepAwakeWhileShown('adhkar');
   const { id } = useLocalSearchParams<{ id?: string }>();
   if (!isCollectionId(id)) return <MissingCollection />;
   return <Session key={id} id={id} />;

@@ -6,19 +6,12 @@ import oldHafs from './fixtures/quranpedia/hafs-sample.json';
 import fatiha from './fixtures/quranpedia/warsh-fatiha.json';
 import { toBundledSpelling } from '../src/lib/quranpedia/encoding';
 import { decodeAyah } from '../src/lib/quranpedia/validation';
-import { decodeWarshTajweed, matchWarshSpelling } from '../src/features/quran-reader/utils/warsh-tajweed';
+import { decodeWarshTajweed } from '../src/features/quran-reader/utils/warsh-tajweed';
 import { decodeTajweedSurah } from '../src/features/quran-reader/utils/tajweed';
 import { createQuranSearch } from '../src/features/quran-reader/utils/search';
 
 /** Letters of the 3.0 fonts' spelling that the bundled V21/V22 fonts do not draw. */
 const NEW_LETTERS = /[\u065C\u06D1\u0870-\u089F\u08C9-\u08FF]/;
-/**
- * Ayahs whose colours no longer fit: Quranpedia changed a letter of 21:87 (نُـۨجِي → نُنجِي), and
- * 3:15 differs from the 2026-10 text in a way the respelling does not recover. 160 of the 6,214
- * ayahs were like this on 2026-11-12.
- */
-const CHANGED = new Set(['3:15', '21:87']);
-
 const ayah = (key, text) => {
   const [surahNumber, ayahNumber] = key.split(':').map(Number);
   return { mushafId: 4, surahNumber, ayahNumber, text };
@@ -74,41 +67,24 @@ describe('Quranpedia 3.0 spelling', () => {
 });
 
 describe('Warsh colours after the respelling', () => {
-  test('every sample ayah but a changed one finds the spelling its colours were made for', () => {
-    for (const a of respelt) {
-      const key = `${a.surahNumber}:${a.ayahNumber}`;
-      const spelling = matchWarshSpelling(a.text, data.ayahs[key][0]);
-      expect([key, !!spelling]).toEqual([key, !CHANGED.has(key)]);
-    }
-  });
-
-  test('colours keep the ayah text intact, including the settings preview (Al-Mulk 9-10)', () => {
+  test('the colours are made for the respelt text, including the settings preview (Al-Mulk 9-10)', () => {
     for (const [number, ayahs] of bySurah) {
-      if (number === 21 || number === 3) continue; // Their only sample ayah is a changed one.
       const colours = decodeWarshTajweed({ number, ayahs }, data);
       for (const a of ayahs) {
         const runs = colours[a.ayahNumber];
         expect(runs.map((r) => r.text).join('')).toBe(a.text);
-        expect([`${number}:${a.ayahNumber}`, runs.some((r) => r.rule)]).toEqual([`${number}:${a.ayahNumber}`, !CHANGED.has(`${number}:${a.ayahNumber}`)]);
+        expect([`${number}:${a.ayahNumber}`, runs.some((r) => r.rule)]).toEqual([`${number}:${a.ayahNumber}`, true]);
       }
     }
-    const mulk = decodeWarshTajweed({ number: 67, ayahs: bySurah.get(67) }, data);
-    expect(mulk[9].some((r) => r.rule) && mulk[10].some((r) => r.rule)).toBe(true);
   });
 
-  test('a longer presentation tatweel in the old text maps back onto the new one', () => {
-    // «شَيْـٔاࣰ»: the colours were made for «شَيْــٔا» (two tatweels).
-    const a = respelt.find((x) => x.surahNumber === 2 && x.ayahNumber === 47);
-    const spelling = matchWarshSpelling(a.text, data.ayahs['2:47'][0]);
-    expect(spelling.text.length).toBe(a.text.length + 1);
-    expect(spelling.offsets.at(-1)).toBe(a.text.length);
-  });
-
-  test('a changed ayah stays plain beside coloured ones; a surah with none matching is an error', () => {
+  test('an ayah that reads otherwise stays plain beside coloured ones; a surah with none matching is an error', () => {
     const fatihah = bySurah.get(1).map((a) => a.ayahNumber === 7 ? { ...a, text: a.text.replace('\u064E', '\u0650') } : a);
     const colours = decodeWarshTajweed({ number: 1, ayahs: fatihah }, data);
     expect(colours[7]).toEqual([{ text: fatihah[6].text }]);
     expect(colours[1].some((r) => r.rule)).toBe(true);
-    expect(() => decodeWarshTajweed({ number: 21, ayahs: bySurah.get(21) }, data)).toThrow();
+    // The text as Quranpedia now spells it, not respelt: nothing matches.
+    const raw = Object.entries(v3.ayahs).filter(([key]) => key.startsWith('1:')).map(([key, text]) => ayah(key, text));
+    expect(() => decodeWarshTajweed({ number: 1, ayahs: raw }, data)).toThrow();
   });
 });

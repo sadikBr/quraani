@@ -63,6 +63,7 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test tests",
     "verify:quranpedia": "bun scripts/verify-quranpedia.mjs",
+    "bundle:quran": "bun scripts/bundle-quran.mjs",
     "icons": "node scripts/generate-icons.mjs"
   },
   "private": true

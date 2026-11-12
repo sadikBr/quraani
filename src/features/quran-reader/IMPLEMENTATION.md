@@ -55,15 +55,19 @@ the reader or the preview, and a retry failed the same way. Plain text still sho
 a fallback font, and search for «الحمد» no longer found Warsh 1:1.
 
 `lib/quranpedia/encoding.ts` spells the text back as the bundled fonts and colours do, when an
-ayah is decoded (so for fresh and cached responses alike; old-spelling text is unchanged). The
-Hafs tajweed markup, also respelt, gets the same one-for-one mapping. The Warsh colours are now
-matched ayah by ayah against their fingerprints, allowing the old text's presentation variants
-(tatweel length, composed آ and ئ, shadda before or after its vowel, a no-break space after ۞);
-an ayah that still differs stays in plain ink, and only a surah with no matching ayah reports
-an error. Checked against the live corpus on 2026-11-12: 6,054 of 6,214 ayahs coloured, the
-whole Quran matched in under 0.1 s in a browser, the slowest ayah in 1 ms. The other 160 differ
-in a sign, a space or a letter (21:87 now spells نُنجِي); `bun run verify:quranpedia` lists them.
-A retry clears the decoded colours and the refresh backoff before loading again.
+ayah is decoded (old-spelling text is unchanged). The Hafs tajweed markup, also respelt, gets the
+same one-for-one mapping. A retry clears the decoded colours and the refresh backoff before
+loading again.
+
+Since then the Quran text itself ships with the app (`assets/quran`, read by
+`services/reader-service.ts`; provenance, checks and how to take a new copy in its README): the
+reader, search, goals, practice and adhkar read that copy, never the network, so the text is
+the one that was reviewed, the first launch works offline, and a change at the source cannot
+reach readers unseen (`bun run verify:quranpedia` lists what Quranpedia serves differently).
+The Warsh colours are regenerated from the bundled text, so all 6,214 ayahs are coloured; each
+ayah is still checked by its fingerprint, one that reads otherwise stays in plain ink, and only
+a surah with no matching ayah reports an error. The copy earlier versions downloaded
+(`quranpedia:v1:/mushafs/<id>`) is removed from the phone's cache.
 
 The cache was not at fault: native caches use `expo-sqlite/kv-store`, which reads through
 expo-sqlite's own SQLite binding, not Android's CursorWindow, and the document fonts are read
@@ -324,10 +328,11 @@ testing. It validates references before requests and response structure before
 mapping or persistence, applies a 15-second timeout to fetching and JSON reading,
 and deduplicates concurrent requests for the same resource.
 
-`loadReaderContent` loads the default Warsh corpus in **one documented API
-request** and prepares page, juz, hizb, and quarter-hizb indexes. This response is
-approximately 5.24 MiB over the inspected HTTP connection. It enables full local
-search without a crawl. No corpus snapshot ships in the application.
+`loadReaderContent` reads the selected edition's corpus from the copy bundled with
+the app (`assets/quran`, since 2026-11-12; before, one API request of about
+5.24 MiB, cached) and prepares page, juz, hizb, and quarter-hizb indexes. It
+enables full local search, and asks nothing of the network. The caches below
+serve what an ayah opens, the printed pages and the Hafs colours.
 
 - Native persistent cache: `expo-sqlite/kv-store`.
 - Web persistent cache: IndexedDB, avoiding localStorage quota pressure.

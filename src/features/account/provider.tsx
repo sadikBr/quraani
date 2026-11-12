@@ -23,7 +23,9 @@ interface AccountContext {
   signIn: (email: string, password: string) => Promise<void>;
   resendConfirmation: (email: string) => Promise<void>;
   requestReset: (email: string) => Promise<void>;
-  /** Signs in from a link in an account email (the part after its `#`); returns what it was for. */
+  /** Whose account a link in an account email opens (the part after its `#`), without signing in. */
+  peek: (fragment: string) => Promise<AccountUser>;
+  /** Signs in from such a link, once the user agreed to; returns what it was for. */
   adopt: (fragment: string) => Promise<string>;
   updatePassword: (password: string, current?: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -133,6 +135,7 @@ export function AccountProvider({ children }: PropsWithChildren) {
     signIn: (email, password) => auth.signIn(email, password),
     resendConfirmation: (email) => auth.resendConfirmation(email, callback()),
     requestReset: (email) => auth.requestReset(email, callback()),
+    peek: (fragment) => auth.peek(linkParams(`#${fragment}`)),
     adopt: (fragment) => auth.adopt(linkParams(`#${fragment}`)),
     updatePassword: (password, current) => auth.updatePassword(password, current),
     signOut: () => auth.signOut(),

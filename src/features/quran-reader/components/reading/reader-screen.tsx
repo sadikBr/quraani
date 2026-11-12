@@ -27,6 +27,7 @@ import { ReaderButton } from './reader-button';
 import { ReaderDrawer } from './reader-drawer';
 import { HoldTextPreferences, useReadingPreferences } from '../../state/reading-preferences-provider';
 import { Stack, router, useIsFocused, useLocalSearchParams } from 'expo-router';
+import { useKeepAwakeWhileShown } from '@/hooks/use-keep-awake-while-shown';
 import { indexRouteDestination } from '../../utils/reader-index';
 import { ReaderControls } from './reader-controls';
 import { createPagePractice, practiceVisibility, revealNext } from '../../utils/page-practice';
@@ -40,6 +41,7 @@ import { useListen, useWholeSurahs } from '@/features/recitation/use-listen';
 import { t } from '@/i18n';
 
 export function ReaderScreen() {
+  useKeepAwakeWhileShown('reader');
   // Under the settings, the pages are not laid out again at every step of a size or letter change.
   const focused = useIsFocused();
   return <HoldTextPreferences held={!focused}><PagedReaderScreen /></HoldTextPreferences>;

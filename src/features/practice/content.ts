@@ -16,7 +16,7 @@ export function usePracticeContent(riwayah: Riwayah) {
     if (!index) return;
     let active = true;
     // Already in memory once the index is built.
-    void loadReaderContent(undefined, riwayah).then((content) => {
+    void loadReaderContent(riwayah).then((content) => {
       if (active && buildPlanIndex(content.data).corpus === index.corpus) setLoaded({ riwayah, quran: content.data.quran });
     }).catch(() => {});
     return () => { active = false; };

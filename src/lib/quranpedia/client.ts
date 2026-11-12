@@ -35,7 +35,8 @@ export const QURANPEDIA_BASE_URL = "https://api.quranpedia.net/v1";
 export interface ContentResult<T> {
     data: T;
     fetchedAt: number;
-    source: "network" | "cache";
+    /** `bundle`: the copy that ships with the app (the Quran text itself). */
+    source: "network" | "cache" | "bundle";
     /** True when the copy is older than its lifetime or a refresh failed. */
     stale: boolean;
     /** Expose this in the reader when serving older content offline. */

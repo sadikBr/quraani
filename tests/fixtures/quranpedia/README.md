@@ -32,3 +32,8 @@ only, not a frozen corpus for app distribution. Source: https://quranpedia.net
 mushaf 4, retrieved 2026-10-09, including Al-Fatiha, the beginning of Al-Baqarah,
 Ta-Ha's opening, Al-Mulk 9–10's canonical encoding variants, and An-Nas. See
 `assets/tajweed/README.md` for the annotation source and full-corpus validation.
+
+Since 2026-11-12 the app reads the Quran text from its bundled copy (`assets/quran`), and the
+colour tests run on that text. This sample stays as a specimen of the 2026-10 spelling
+(`tests/quranpedia-respelling.test.js`), beside `warsh-v3-sample.json`: the same and other ayahs
+as Quranpedia has served them since it moved to its 3.0 fonts.

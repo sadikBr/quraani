@@ -1,3 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The app's screen designer loads these by name from JavaScript: keep them if resource shrinking is ever turned on. -->
-<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@drawable/athan_screen_*" />
+<!-- Loaded by name, which resource shrinking (on in the GitHub build) cannot see: the athan screens
+     by the app's screen designer, the athan recordings, and the takbir sounds of the notification
+     channels and the notification icon (copied into the app by expo-notifications). -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@drawable/athan_screen_*,@drawable/notification_icon,@color/notification_icon_color,@raw/athan_full_*,@raw/takbir_*" />

@@ -229,5 +229,24 @@ export function upcomingTimes(state: PrayerState, now: Date, count: number): Tim
   });
 }
 
+/** The reminder to open the app comes this long before the scheduled alerts end. */
+const RENEWAL_LEAD_MS = 24 * 60 * 60_000;
+/**
+ * Alerts are scheduled some days ahead and topped up whenever the app opens; in an app left
+ * closed they would end without a word. This is the reminder to open it: a day before the first
+ * kind of alert (notifications, whole athans) runs out, and none when nothing is scheduled.
+ * Opening the app moves it on with the alerts.
+ */
+export function alertsRenewal(scheduled: { notifications: readonly PrayerAlert[]; athans: readonly NativeAthan[] }, now: Date): { id: string; date: Date } | undefined {
+  const ends = [scheduled.notifications.map((n) => n.date.getTime()), scheduled.athans.map((a) => a.time.getTime())]
+    .filter((times) => times.length).map((times) => Math.max(...times));
+  if (!ends.length) return undefined;
+  const at = Math.min(...ends) - RENEWAL_LEAD_MS;
+  // Alerts that end within the day are not worth a reminder of their own.
+  if (at <= now.getTime()) return undefined;
+  return { id: `${ALERT_PREFIX}renew:${Math.round(at / 60000)}`, date: new Date(at) };
+}
+export const isAlertRenewalData = (data: unknown): boolean => !!data && typeof data === 'object' && (data as { renew?: unknown }).renew === true;
+
 export const isPrayerAlertData = (data: unknown): data is { prayer: PrayerId } =>
   !!data && typeof data === 'object' && isPrayerId((data as { prayer?: unknown }).prayer);

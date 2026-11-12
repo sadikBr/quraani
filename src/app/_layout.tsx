@@ -3,7 +3,6 @@ import { DarkTheme, DefaultTheme, LocaleProvider, Stack, ThemeProvider } from 'e
 import Head from 'expo-router/head';
 import { ReadingPreferencesProvider, useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
 import * as SplashScreen from 'expo-splash-screen';
-import { useKeepAwake } from 'expo-keep-awake';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
@@ -42,9 +41,6 @@ export default function RootLayout() {
 
 function RootNavigator() {
   const { dark, palette } = useReadingPreferences();
-  // The screen stays on while the app is open (reading, reciting, a session): the phone sleeps
-  // again once the app is left.
-  useKeepAwake();
   const baseTheme = dark ? DarkTheme : DefaultTheme;
   const [fontsLoaded, fontError] = useFonts({
     ReaderNaskh: require('@/assets/fonts/NotoNaskhArabic-Regular.ttf'),

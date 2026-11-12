@@ -2,10 +2,13 @@
 """Build offline color spans, never Quran text, from a pinned Warsh analysis.
 
 Usage: python3 scripts/generate-warsh-tajweed.py --source /path/to/phonemizer
-  --corpus /path/to/quranpedia-mushaf-4.json
+  --corpus /path/to/app-warsh-text.json
+The corpus is the Warsh text as the app reads it from its bundled copy
+(`bun scripts/export-app-text.mjs 4 /path/to/app-warsh-text.json`).
 Requires Python 3.11+ and PyYAML. See assets/tajweed/README.md.
 """
 import argparse
+import difflib
 import hashlib
 import json
 import subprocess
@@ -93,12 +96,37 @@ def unit_color(unit, result):
     return color
 
 
+# The most characters of an ayah, on either side, that may differ from the analysed source.
+MAX_DIFFERENCE = 6
+
+
+def aligned(ref, left, right):
+    """Pairs of matching characters when the app's text differs a little from the analysed one.
+
+    Quranpedia's text has a few signs the King Fahd source spells otherwise (a stop or sajda
+    sign added or dropped, a small noon written whole, the mark on a wasl alif). Colors are
+    carried over the characters that match and the differing ones stay in plain ink; an ayah
+    that differs by more is an error.
+    """
+    a, b = [c for c, _ in left], [c for c, _ in right]
+    pairs, difference = [], 0
+    for op, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+        if op == 'equal':
+            pairs.extend(zip(left[i1:i2], right[j1:j2]))
+        else:
+            difference += max(i2 - i1, j2 - j1)
+    if difference > MAX_DIFFERENCE:
+        raise ValueError(f'{ref}: source differs from the app\'s text by {difference} characters')
+    return pairs
+
+
 def build_ayah(reader, ref, original):
     result = reader.analyse(ref)
     source = result.source()
     left, right = canonical(source.text), canonical(original)
+    pairs, differs = list(zip(left, right)), False
     if [c for c, _ in left] != [c for c, _ in right]:
-        raise ValueError(f'{ref}: source differs from Quranpedia text')
+        pairs, differs = aligned(ref, left, right), True
     source_colors = [None] * len(source.text)
     for unit in source.units:
         color = unit_color(unit, result)
@@ -106,7 +134,7 @@ def build_ayah(reader, ref, original):
             for start, end in unit.ranges:
                 source_colors[start:end] = [color] * (end - start)
     colors = [None] * len(original)
-    for (_, source_index), (_, target_index) in zip(left, right):
+    for (_, source_index), (_, target_index) in pairs:
         if source_colors[source_index]:
             colors[target_index] = source_colors[source_index]
     # Tatweel has no recitation of its own; extend the preceding ink through it.
@@ -121,7 +149,7 @@ def build_ayah(reader, ref, original):
             spans[-1][1] += 1
         else:
             spans.append([i, i + 1, color])
-    return [fingerprint(original), spans]
+    return [fingerprint(original), spans], differs
 
 
 def main():
@@ -139,12 +167,14 @@ def main():
     corpus_bytes = options.corpus.read_bytes()
     corpus = json.loads(corpus_bytes)
     assert corpus['id'] == 4 and len(corpus['surahs']) == 114
-    rows, errors, counts = {}, [], Counter()
+    rows, errors, counts, differing = {}, [], Counter(), []
     for chapter in corpus['surahs']:
         for ayah in chapter['ayahs']:
             ref = f"{chapter['id']}:{ayah['number']}"
             try:
-                rows[ref] = build_ayah(reader, ref, ayah['text'])
+                rows[ref], differs = build_ayah(reader, ref, ayah['text'])
+                if differs:
+                    differing.append(ref)
                 counts.update(span[2] for span in rows[ref][1])
             except Exception as error:
                 errors.append([ref, str(error)])
@@ -158,11 +188,15 @@ def main():
         for span in spans:
             span[2] = rules.index(span[2])
     output = dict(version=1, mushafId=4, route='warsh-al-azraq', boundary='stop-at-each-ayah',
-                  annotator=COMMIT, corpusSha256=hashlib.sha256(corpus_bytes).hexdigest(),
+                  annotator=COMMIT,
+                  # The bundled copy's source response when the corpus names it (export-app-text.mjs).
+                  corpusSha256=corpus.get('sourceSha256') or hashlib.sha256(corpus_bytes).hexdigest(),
+                  # Ayahs whose text differs a little from the analysed source (see `aligned`).
+                  differing=differing,
                   variants=reader.analyse('1:1').analysis.variant, rules=rules, ayahs=rows)
     options.output.parent.mkdir(parents=True, exist_ok=True)
     options.output.write_text(json.dumps(output, ensure_ascii=False, separators=(',', ':')) + '\n')
-    print(json.dumps(dict(ayahs=len(rows), spans=sum(counts.values()), colors=counts, bytes=options.output.stat().st_size), indent=2))
+    print(json.dumps(dict(ayahs=len(rows), differing=differing, spans=sum(counts.values()), colors=counts, bytes=options.output.stat().st_size), indent=2))
 
 
 if __name__ == '__main__':

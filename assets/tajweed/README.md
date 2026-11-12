@@ -37,21 +37,23 @@ in the divine name left in the ordinary ink.
 ## Reproduce and validate
 
 1. Check out the exact annotator commit above outside this application.
-2. With Python 3.11+ and PyYAML available, save the Quranpedia mushaf 4 JSON.
-3. Run from this repository:
+2. With Python 3.11+ and PyYAML available, export the Warsh text as the app reads it from its
+   bundled copy (`assets/quran`), then run the generator on it, from this repository:
 
 ```sh
+bun scripts/export-app-text.mjs 4 /tmp/app-warsh-text.json
 python3 scripts/generate-warsh-tajweed.py \
   --source /path/to/quranic-phonemizer \
-  --corpus /path/to/quranpedia-mushaf-4.json
-bun test tests/warsh-tajweed.test.js
+  --corpus /tmp/app-warsh-text.json
+bun test tests/warsh-tajweed.test.js tests/bundled-quran.test.js
 ```
 
 The app has no Python dependency and makes no phonemizer/server request at
-runtime. Generation fails without writing production data if any ayah differs
-or cannot be analyzed. The complete 6,214-ayah generation passed with zero
-annotation/alignment errors on 2026-10-09. This verifies coverage and alignment,
-not independent scholarly review of every rule.
+runtime. Generation fails without writing production data if any ayah cannot be
+analyzed or differs from the analysed text by more than a few characters. The
+complete 6,214-ayah generation passed with zero errors on 2026-11-12, for the
+text bundled that day (the same on 2026-10-09 for the text of the time). This
+verifies coverage and alignment, not independent scholarly review of every rule.
 
 Alignment compares all Unicode scalars, allowing only presentation tatweel,
 whitespace, rub-el-hizb marks and RLM to be excluded from the comparison, and
@@ -68,9 +70,11 @@ Warsh V21 and Hafs V22 document fonts are separately cached and embedded so that
 the native joined-text renderer cannot display one edition using the other's
 font. Practice hides/reveals the existing colored words without changing text.
 
-## Quranpedia's 3.0 spelling (2026-11-12)
+## The bundled text (2026-11-12)
 
-Quranpedia now serves mushaf 4 in the spelling of its UthmanicWarsh 3.0 font. The app spells it
-back before checking these fingerprints (`src/lib/quranpedia/encoding.ts`) and allows the old
-text's presentation variants; 6,054 of 6,214 ayahs match and are coloured, the rest stay plain.
-Regenerating this file from the new text, and bundling the 3.0 font, would colour all of them.
+The colours are generated from the Warsh text bundled with the app, in the spelling the app
+gives it (`src/lib/quranpedia/encoding.ts`), so every ayah's fingerprint matches
+(`tests/bundled-quran.test.js`), and they are regenerated whenever a new copy of the text is
+bundled. In eleven ayahs that text differs from the analysed King Fahd source in a sign or a
+letter (`assets/quran/README.md`; listed in the JSON as `differing`): their colours are carried
+over the characters that match, and the differing ones stay in plain ink.

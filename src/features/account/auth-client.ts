@@ -2,8 +2,8 @@ import type { CacheStorage } from '@/lib/quranpedia/cache';
 
 /**
  * Signing in to the account with an email and a password (Supabase Auth, over plain HTTP; nothing
- * native). Signing up sends a confirmation email whose link opens the app signed in; a forgotten
- * password is reset from an emailed link that opens the app too (`adopt`). The session stays on
+ * native). Signing up sends a confirmation email whose link opens the app, which signs in once
+ * the user agrees (`peek`, then `adopt`); a forgotten password is reset from such a link too. The session stays on
  * the phone and is refreshed before it expires, one refresh at a time (each one replaces the
  * refresh token); signing out (or in as someone else) meanwhile wins over a refresh in flight.
  */
@@ -180,6 +180,12 @@ export function createAuthClient({ url, apiKey, storage, fetch: send = fetch, no
   }
 
   const redirect = (to?: string) => to ? `?redirect_to=${encodeURIComponent(to)}` : '';
+  /** The user a link's tokens belong to, as the account says (or the error the link carries). */
+  function linkUser(link: Record<string, string>) {
+    if (link.error || link.error_code) throw new AccountError(link.error_code === 'otp_expired' ? 'link_expired' : 'failed', link.error_description ?? link.error);
+    if (!link.access_token || !link.refresh_token) throw new AccountError('failed', 'No tokens in link');
+    return call('/user', undefined, { token: link.access_token, method: 'GET' });
+  }
 
   return {
     /** Reads the saved session; resolves with the current one (null when signed out). */
@@ -210,13 +216,21 @@ export function createAuthClient({ url, apiKey, storage, fetch: send = fetch, no
       await call(`/recover${redirect(resetTo)}`, { email: normalizeEmail(email) });
     },
     /**
+     * Whose account a link from an account email opens, without signing in. A link is not proof
+     * that this phone's owner asked for it (anyone can send one that opens the app), so the app
+     * shows this account and asks before `adopt`.
+     */
+    async peek(link: Record<string, string>): Promise<AccountUser> {
+      const user = await linkUser(link);
+      if (typeof user?.id !== 'string' || typeof user.email !== 'string') throw new AccountError('failed', 'Unexpected user');
+      return { id: user.id, email: user.email };
+    },
+    /**
      * Signs in from a link in an account email (confirmation or password reset): the tokens after
      * its `#`. Returns what the link was for.
      */
     async adopt(link: Record<string, string>): Promise<string> {
-      if (link.error || link.error_code) throw new AccountError(link.error_code === 'otp_expired' ? 'link_expired' : 'failed', link.error_description ?? link.error);
-      if (!link.access_token || !link.refresh_token) throw new AccountError('failed', 'No tokens in link');
-      const user = await call('/user', undefined, { token: link.access_token, method: 'GET' });
+      const user = await linkUser(link);
       await begin(sessionFrom({ ...link, user }));
       return link.type ?? '';
     },
