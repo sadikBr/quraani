@@ -44,6 +44,33 @@ for Warsh, the letters its mushafs are written in. Ayah markers sit at the same 
 the text layouts, tajweed text, practice, search results, share cards and the
 adhkar's Quran passages; printed Warsh pages stay as printed.
 
+### Quranpedia's 3.0 spelling — 2026-11-12
+
+Quranpedia moved mushaf 4 to `UthmanicWarsh-v-3.0` and mushaf 2 to `UthmanicHafs-v-3.0`
+(2026-10-08: V21 and V22) and respelt the text for them. Warsh now writes wasl alifs, hamza
+dots and stop signs with Unicode 14 letters (U+0870–U+0888, U+08C9, U+08CC); both editions
+write open tanween as U+08F0–U+08F2. The bundled fonts draw none of these, and the bundled Warsh
+colours were made for the old spelling, so every Warsh surah failed their check: no colours in
+the reader or the preview, and a retry failed the same way. Plain text still showed, partly in
+a fallback font, and search for «الحمد» no longer found Warsh 1:1.
+
+`lib/quranpedia/encoding.ts` spells the text back as the bundled fonts and colours do, when an
+ayah is decoded (so for fresh and cached responses alike; old-spelling text is unchanged). The
+Hafs tajweed markup, also respelt, gets the same one-for-one mapping. The Warsh colours are now
+matched ayah by ayah against their fingerprints, allowing the old text's presentation variants
+(tatweel length, composed آ and ئ, shadda before or after its vowel, a no-break space after ۞);
+an ayah that still differs stays in plain ink, and only a surah with no matching ayah reports
+an error. Checked against the live corpus on 2026-11-12: 6,054 of 6,214 ayahs coloured, the
+whole Quran matched in under 0.1 s in a browser, the slowest ayah in 1 ms. The other 160 differ
+in a sign, a space or a letter (21:87 now spells نُنجِي); `bun run verify:quranpedia` lists them.
+A retry clears the decoded colours and the refresh backoff before loading again.
+
+The cache was not at fault: native caches use `expo-sqlite/kv-store`, which reads through
+expo-sqlite's own SQLite binding, not Android's CursorWindow, and the document fonts are read
+from the app bundle into memory, never stored. Sizes: the Warsh corpus response is 2,175,600
+UTF-16 code units as JSON; the Warsh V21 font is 256,132 bytes (341,512 characters as base64)
+and Hafs V22 297,700 bytes (396,936).
+
 Warsh colors apply to both text layouts, practice and the live preview. The user
 chose to leave printed Warsh pages unchanged. Its separately generated **al-Azraq**
 annotations are bundled offline, checked against all 6,214 original ayahs and

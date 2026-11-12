@@ -45,6 +45,17 @@ The `preview` profile in `eas.json` creates a signed, standalone release APK thr
 
 The app uses the existing قرآني name, icon, and splash screen. It needs internet access to download Quranpedia content that has not already been cached. Each installation keeps its own goals, bookmarks, and preferences; Expo Go data is separate from the installed app.
 
+### GitHub builds
+
+`.github/workflows/android-apk.yml` builds a signed release APK on every push to `main` (download it
+from the run's artifacts), on manual runs (Actions → Android APK → Run workflow), and on
+`v1.2.0`-style tags, which also create a GitHub Release with the APK attached. It runs the
+type-check, lint and tests first, generates `android/` with `expo prebuild`, and signs with the
+keystore in the `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and
+`ANDROID_KEY_PASSWORD` repository secrets (`plugins/with-release-signing.js`). The build number is
+the run number, so each APK installs over the previous one. APKs signed with another key (EAS,
+debug) cannot be updated by these; switching needs one uninstall.
+
 ### Subsequent test releases
 
 Run `bun run build:apk` again after your changes and checks. EAS automatically increases Android's build number. Keep the same EAS project, Android package (`com.bsadik.quraani`), and signing keystore so testers can install each new APK as an update without uninstalling and losing their local data.

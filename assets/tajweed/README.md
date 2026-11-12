@@ -67,3 +67,10 @@ profile are recorded in the JSON. Decoder caches are limited to four surahs.
 Warsh V21 and Hafs V22 document fonts are separately cached and embedded so that
 the native joined-text renderer cannot display one edition using the other's
 font. Practice hides/reveals the existing colored words without changing text.
+
+## Quranpedia's 3.0 spelling (2026-11-12)
+
+Quranpedia now serves mushaf 4 in the spelling of its UthmanicWarsh 3.0 font. The app spells it
+back before checking these fingerprints (`src/lib/quranpedia/encoding.ts`) and allows the old
+text's presentation variants; 6,054 of 6,214 ayahs match and are coloured, the rest stay plain.
+Regenerating this file from the new text, and bundling the 3.0 font, would colour all of them.

@@ -2,7 +2,7 @@ import type { Surah } from '@/lib/quranpedia/types';
 import { RIWAYAT } from '../riwayat';
 import { contentStorage } from '../storage/content-storage';
 import { decodeTajweedPrintedSurah, decodeTajweedSurah } from '../utils/tajweed';
-import { loadWarshTajweed } from './warsh-tajweed-service';
+import { forgetWarshTajweed, loadWarshTajweed } from './warsh-tajweed-service';
 
 type Format = 'tajweed' | 'tajweed-uthmani';
 interface Entry { html: string; fetchedAt: number }
@@ -77,6 +77,16 @@ async function load<T>(surah: Surah, format: Format, decode: (html: string, sura
   })().finally(() => { if (pending.get(key) === task) pending.delete(key); });
   pending.set(key, task);
   return task;
+}
+
+/**
+ * A retry starts from scratch: decoded surahs are dropped and a failed refresh is tried again at
+ * once. Saved sources stay; one that no longer fits the corpus is replaced when it is read.
+ */
+export function forgetTajweed() {
+  forgetWarshTajweed();
+  memory.clear();
+  retryAt.clear();
 }
 
 function assertHafs(surah: Surah, mushafId: number) {

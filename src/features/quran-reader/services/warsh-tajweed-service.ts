@@ -3,6 +3,8 @@ import { decodeWarshTajweed, type WarshTajweedData } from '../utils/warsh-tajwee
 import type { TajweedSurah } from '../utils/tajweed';
 
 const cache = new Map<number, { surah: Surah; data: TajweedSurah }>();
+/** Decode again on the next request (a retry starts from scratch). */
+export function forgetWarshTajweed() { cache.clear(); }
 export function loadWarshTajweed(surah: Surah): TajweedSurah {
   const cached = cache.get(surah.number);
   if (cached?.surah === surah) {

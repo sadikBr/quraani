@@ -1,3 +1,4 @@
+import { toBundledSpelling } from '@/lib/quranpedia/encoding';
 import type { Ayah, Surah } from '@/lib/quranpedia/types';
 export interface TajweedRun { text: string; rule?: string }
 export type TajweedSurah = Record<number, TajweedRun[]>;
@@ -42,7 +43,8 @@ export function decodeTajweedSurah(html: string, surah: Surah): TajweedSurah {
         if (!rule || !colors[rule]) throw new Error('Unknown tajweed rule');
       } else if (part === '</tajweed>') rule = undefined;
       else if (part.startsWith('<')) throw new Error('Unexpected tajweed markup');
-      else runs.push({ text: entities(part), ...(rule ? { rule } : {}) });
+      // Spelt as the Hafs corpus is (one character for one), so offsets still line up.
+      else runs.push({ text: toBundledSpelling(entities(part), 2), ...(rule ? { rule } : {}) });
     }
     // Colors must align with the exact original Unicode text, never normalized offsets.
     result[number] = alignTajweed(runs, ayah.text);

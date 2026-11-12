@@ -1,3 +1,4 @@
+import { toBundledSpelling } from "./encoding";
 import { QuranpediaError } from "./errors";
 import type { Ayah, Mushaf, PageAyahRegion, Quran } from "./types";
 
@@ -70,14 +71,15 @@ export function decodeMushaf(value: unknown): Mushaf {
     const source = object(value, "mushaf");
     const rawi = object(source.rawi, "rawi");
     const qiraa = object(rawi.qiraa, "qiraa");
+    const id = integer(source.id, "id");
     return {
-        id: integer(source.id, "id"),
+        id,
         name: text(source.name, "name"),
         description:
             source.description == null
                 ? null
                 : text(source.description, "description"),
-        bismillah: text(source.bismillah, "bismillah"),
+        bismillah: toBundledSpelling(text(source.bismillah, "bismillah"), id),
         riwayah: {
             id: integer(rawi.id, "rawi.id"),
             name: text(rawi.name, "rawi.name"),
@@ -117,7 +119,8 @@ export function decodeAyah(
             "page_number",
             MUSHAF_PAGE_COUNT,
         ),
-        text: originalText,
+        // Spelt as the bundled font and tajweed data spell it (see encoding.ts).
+        text: toBundledSpelling(originalText, mushafId),
         marker: text(source.marker, "marker"),
         availableContent: array(source.options, "options").map((v) =>
             text(v, "options[]"),

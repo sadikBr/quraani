@@ -88,6 +88,7 @@
       "expo-sharing",
       "expo-asset",
       "./plugins/with-android-text-bounds",
+      "./plugins/with-release-signing",
       [
         "expo-image-picker",
         {

@@ -1,0 +1,129 @@
+# Signed release APKs of قرآني (com.bsadik.quraani).
+#
+# - Every push to main: checks, then an APK in the run's artifacts (30 days).
+# - A version tag (v1.2.0): the same, plus a GitHub Release with the APK attached.
+# - Actions → "Android APK" → Run workflow: a manual run on any branch.
+#
+# The native project is generated here (`expo prebuild`); android/ is not committed (.gitignore).
+# Every APK is signed with the same key, from these repository secrets:
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+# (plugins/with-release-signing.js reads them), so each APK installs over the previous one.
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  workflow_dispatch:
+
+# A newer push to the same branch replaces a build still running.
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+env:
+  # The Bun version EAS builds use (eas.json); bun.lock is installed frozen.
+  BUN_VERSION: 1.3.14
+  # What React Native 0.86 (Expo SDK 57) builds with; the runner image has other NDKs.
+  NDK_VERSION: 27.1.12297006
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun run lint
+      - run: bun test tests
+
+  apk:
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: write # to create the release on a tag
+    env:
+      ANDROID_VERSION_CODE: ${{ github.run_number }}
+      # Phones only: building for x86 emulators and 32-bit ARM as well takes much longer.
+      ABIS: arm64-v8a
+      APK_NAME: quraani-${{ github.ref_name }}-${{ github.run_number }}.apk
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Install the NDK
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;$NDK_VERSION" > /dev/null
+
+      - name: Write the signing key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "$(printenv "$name")" ]; then
+              echo "::error::Missing repository secret $name (Settings → Secrets and variables → Actions). Without it the APK would not install over the previous one."
+              exit 1
+            fi
+          done
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+          if [ "$GITHUB_REF_TYPE" = tag ]; then echo "ANDROID_VERSION_NAME=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"; fi
+
+      - run: bun install --frozen-lockfile
+      - run: bunx expo prebuild --platform android --no-install --clean
+
+      - name: Build the release APK
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease -PreactNativeArchitectures="$ABIS"
+          mv app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/$APK_NAME"
+
+      # Refuse an APK signed with anything but the release key.
+      - name: Check the signature
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          "$apksigner" verify --print-certs "$APK_NAME" | tee signature.txt
+          expected="$(keytool -list -v -keystore "$ANDROID_KEYSTORE_FILE" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" \
+            | sed -n 's/^[[:space:]]*SHA256: //p' | tr -d ':' | tr 'A-F' 'a-f')"
+          [ -n "$expected" ] && grep -q "SHA-256 digest: $expected" signature.txt || { echo "::error::APK is not signed with the release key"; exit 1; }
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: quraani-${{ github.ref_name }}-${{ github.run_number }}
+          path: ${{ env.APK_NAME }}
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Create the release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mv "$APK_NAME" "quraani-$GITHUB_REF_NAME.apk"
+          gh release create "$GITHUB_REF_NAME" "quraani-$GITHUB_REF_NAME.apk" \
+            --title "قرآني $GITHUB_REF_NAME" \
+            --notes "ملف تثبيت «قرآني» لأندرويد. يُثبَّت فوق الإصدار السابق، وتبقى بياناتك كما هي."
+
+      - name: Remove the signing key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.keystore"
