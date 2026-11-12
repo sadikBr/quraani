@@ -122,12 +122,24 @@ export function recordProgress(plan: ReadingPlan, receipt: { cycle: number; slot
     completedOn: completed ? today : undefined,
     progress: [...plan.cycle.progress, { date: today, from: next.start, to: receipt.to }] } };
 }
-export function undoProgress(plan: SequentialPlan): SequentialPlan {
-  if (plan.status === 'archived') return plan;
-  const last = plan.cycle.progress.at(-1);
-  if (!last) return plan;
-  return { ...plan, status: plan.status === 'paused' ? 'paused' : 'active', cycle: { ...plan.cycle,
-    cursor: last.from, completedOn: undefined, availableDate: last.date, progress: plan.cycle.progress.slice(0, -1) } };
+/**
+ * The rule every goal follows: only the last thing recorded can be undone, on the day it was
+ * recorded and once (a slip is put right; what was read on earlier days stays read). A finished
+ * goal stays finished: finishing is confirmed first, and is not undone.
+ */
+export function canUndoProgress(plan: SequentialPlan, today: string): boolean {
+  const { progress, undoneAt } = plan.cycle;
+  return (plan.status === 'active' || plan.status === 'paused') && progress.at(-1)?.date === today && undoneAt !== progress.length;
+}
+export function undoProgress(plan: SequentialPlan, today: string): SequentialPlan {
+  if (!canUndoProgress(plan, today)) return plan;
+  const progress = plan.cycle.progress.slice(0, -1), last = plan.cycle.progress.at(-1)!;
+  return { ...plan, cycle: { ...plan.cycle, cursor: last.from, availableDate: last.date, progress, undoneAt: progress.length } };
+}
+/** Whether recording up to `to` finishes the whole goal (asked about first: it is not undone). */
+export function finishesGoal(plan: ReadingPlan, to: number): boolean {
+  if (isMemorizationPlan(plan)) return plan.sessions.length === 1 && plan.sessions[0].ranges.length === 1 && to === plan.sessions[0].ranges[0].end;
+  return isSequentialPlan(plan) && to === plan.totalAyahs;
 }
 export function rollCompletedCycle(plan: SequentialPlan, index: PlanIndex, today: string): SequentialPlan {
   assertPlanIndex(plan, index);

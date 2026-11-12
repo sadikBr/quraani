@@ -69,11 +69,18 @@ export function recordRecurringProgress(plan: RecurringPlan, receipt: { cycle: n
   const updated = { ...occurrence, progress: [...occurrence.progress, { range: next.slot, from: next.start, to: receipt.to }] };
   return { ...plan, occurrences: [...plan.occurrences.filter(o => o.date !== today), updated].sort((a, b) => a.date.localeCompare(b.date)) };
 }
-export function undoRecurringProgress(plan: RecurringPlan, today: string): RecurringPlan {
-  if (plan.status === 'archived') return plan;
+/** Only the last thing recorded today, once (see `canUndoProgress` in engine.ts). */
+export function canUndoRecurringProgress(plan: RecurringPlan, today: string): boolean {
   const occurrence = plan.occurrences.find(o => o.date === today);
-  if (!occurrence?.progress.length) return plan;
-  return { ...plan, occurrences: plan.occurrences.map(o => o.date === today ? { ...o, progress: o.progress.slice(0, -1) } : o).filter(o => o.progress.length) };
+  return plan.status !== 'archived' && !!occurrence?.progress.length && occurrence.undoneAt !== occurrence.progress.length;
+}
+export function undoRecurringProgress(plan: RecurringPlan, today: string): RecurringPlan {
+  if (!canUndoRecurringProgress(plan, today)) return plan;
+  return { ...plan, occurrences: plan.occurrences.map(o => {
+    if (o.date !== today) return o;
+    const progress = o.progress.slice(0, -1);
+    return { ...o, progress, undoneAt: progress.length };
+  }).filter(o => o.progress.length) };
 }
 export function completedOccurrences(plan: RecurringPlan) {
   const last = plan.ranges.length - 1;
@@ -94,7 +101,8 @@ export function validateRecurringPlan(plan: RecurringPlan) {
   }
   let previousDate = '';
   for (const occurrence of plan.occurrences) {
-    if (!occurrence || !validDate(occurrence.date) || occurrence.date < plan.startDate || occurrence.date <= previousDate || !Array.isArray(occurrence.progress) || !occurrence.progress.length) invalid();
+    if (!occurrence || !validDate(occurrence.date) || occurrence.date < plan.startDate || occurrence.date <= previousDate || !Array.isArray(occurrence.progress) || !occurrence.progress.length ||
+      (occurrence.undoneAt !== undefined && (!Number.isInteger(occurrence.undoneAt) || occurrence.undoneAt < 0))) invalid();
     previousDate = occurrence.date;
     let slot = 0, cursor = plan.ranges[0].start;
     for (const log of occurrence.progress) {

@@ -210,7 +210,7 @@ export default {
       edit: 'تعديل محفوظك',
     },
     /** Undoes the last confirmed memorization portion. */
-    undo: 'التراجع عن آخر ما سجّلته',
+    undo: 'التراجع عن آخر ما سجّلته اليوم',
     /** "ربع حزب أسبوعيًا · الاثنين والأربعاء" */
     scheduleSummary: '{{amount}} أسبوعيًا · {{days}}',
     scheduleFooter: 'الموعد المتوقع لإتمام الحفظ: {{date}} · يتغيّر بحسب تقدّمك.',

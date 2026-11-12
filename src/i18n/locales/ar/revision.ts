@@ -213,7 +213,7 @@ export default {
       start: 'ابدأ المراجعة',
       continue: 'تابع المراجعة',
       finishToday: 'أتممت مراجعة اليوم',
-      undo: 'التراجع عن آخر ما سجّلته',
+      undo: 'التراجع عن آخر ما سجّلته اليوم',
       resume: 'استئناف المراجعة',
       pause: 'إيقاف المراجعة مؤقتًا',
       /** {{name}} is the running memorization goal. */

@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { buildPlanIndex, createPlan, nextPortion, recordProgress, undoProgress, rollCompletedCycle, setPlanPaused, reschedulePlan, assertPlanIndex } from '../src/features/plans/engine';
+import { buildPlanIndex, canUndoProgress, createPlan, finishesGoal, nextPortion, recordProgress, undoProgress, rollCompletedCycle, setPlanPaused, reschedulePlan, assertPlanIndex } from '../src/features/plans/engine';
 import { addDays, localDate, validDate, daysBetween } from '../src/features/plans/dates';
 import { createPlansRepository, decodePlans } from '../src/features/plans/repository';
 import { planReminderQueue } from '../src/features/plans/reminder-schedule';
@@ -72,7 +72,8 @@ test('replacement preserves completed history, stops the previous repeat, and bl
   const saved = await repo.load();
   expect(saved[0]).toEqual({ ...finished, repeat: false });
   await expect(repo.update(items => items.map(p => p.id === archived.id ? { ...p, status: 'active' } : p))).rejects.toBeInstanceOf(DuplicateGoalError);
-  await expect(repo.update(items => items.map(p => p.id === finished.id ? undoProgress(p) : p))).rejects.toBeInstanceOf(DuplicateGoalError);
+  // A finished khatma stays finished: undoing it is not a way back in.
+  expect(undoProgress(finished, finished.cycle.completedOn)).toBe(finished);
   await expect(repo.update(items => items.map(p => p.id === finished.id ? { ...p, repeat: true } : p))).rejects.toBeInstanceOf(DuplicateGoalError);
   expect(await repo.load()).toEqual(saved);
   await repo.update(items => items.map(p => p.id === replacement.id ? completedGoal(p) : p));
@@ -123,7 +124,7 @@ test('surah and hizb starts inside a page retain their exact first ayah, includi
       expect(index.ayahs[plan.cycle.start].ayahNumber).toBe(1);
       const next = nextPortion(plan, draft.startDate);
       const progress = recordProgress(plan, { cycle: 1, slot: 0, to: next.end }, draft.startDate);
-      expect(undoProgress(roundTrip(progress)).cycle.cursor).toBe(position);
+      expect(undoProgress(roundTrip(progress), draft.startDate).cycle.cursor).toBe(position);
     }
     expect(startAtPosition(index, 'surah', position + 2)).toEqual({ kind: 'surah', number: 2 });
     expect(filterStartChoices(startChoices(index, 'surah'), index, 'بَقَرَة')).toHaveLength(1);
@@ -161,7 +162,7 @@ test('daily overview counts catch-up portions without treating partial reading a
   p = recordProgress(p, { cycle: 1, slot: 1, to: p.cycle.sessions[1].end }, '2026-10-10');
   expect(goalsOverview([p], '2026-10-10').completedToday).toBe(2);
   expect(goalsOverview([p], '2026-10-11').completedToday).toBe(0);
-  expect(goalsOverview([undoProgress(p)], '2026-10-10').completedToday).toBe(1);
+  expect(goalsOverview([undoProgress(p, '2026-10-10')], '2026-10-10').completedToday).toBe(1);
   expect(goalsOverview([{ ...p, status: 'archived' }], '2026-10-10').completedToday).toBe(0);
 });
 
@@ -212,7 +213,32 @@ test('stale or repeated completion, future dates and out-of-range progress canno
   expect(recordProgress(plan, { ...receipt, cycle: 2 }, '2026-10-09')).toBe(plan);
   const done = recordProgress(plan, receipt, '2026-10-09');
   expect(recordProgress(done, receipt, '2026-10-09')).toBe(done);
-  expect(undoProgress(done).cycle.cursor).toBe(0);
+  expect(undoProgress(done, '2026-10-09').cycle.cursor).toBe(0);
+});
+test('only the last thing recorded can be undone, the same day and once; finishing the goal is final', () => {
+  const day = '2026-10-09', plan = make();
+  expect(canUndoProgress(plan, day)).toBe(false);
+  const first = recordProgress(plan, { cycle: 1, slot: 0, to: 4 }, day);
+  const second = recordProgress(first, { cycle: 1, slot: 0, to: 8 }, day);
+  // The last record goes; the one before it stays, though it is today's too.
+  const undone = undoProgress(second, day);
+  expect(undone.cycle).toMatchObject({ cursor: 4, progress: first.cycle.progress });
+  expect(canUndoProgress(undone, day)).toBe(false);
+  expect(undoProgress(undone, day)).toBe(undone);
+  expect(roundTrip(undone)).toEqual(undone);
+  // A new record can be undone in its turn, but not the next day, nor in the archive.
+  const again = recordProgress(undone, { cycle: 1, slot: 0, to: 8 }, day);
+  expect(undoProgress(again, day).cycle.cursor).toBe(4);
+  expect(canUndoProgress(again, '2026-10-10')).toBe(false);
+  expect(undoProgress(again, '2026-10-10')).toBe(again);
+  expect(undoProgress({ ...again, status: 'archived' }, day).cycle.cursor).toBe(8);
+  expect(undoProgress(setPlanPaused(again, true, day), day).cycle.cursor).toBe(4);
+  // Only the record that reaches the end of the Quran finishes the goal.
+  expect(finishesGoal(plan, 8)).toBe(false);
+  expect(finishesGoal(plan, plan.totalAyahs)).toBe(true);
+  const finished = completedGoal(plan);
+  expect(canUndoProgress(finished, finished.cycle.completedOn)).toBe(false);
+  expect(() => roundTrip({ ...undone, cycle: { ...undone.cycle, undoneAt: -1 } })).toThrow();
 });
 test('khatma keeps missed portions, and explicit catch-up preserves coverage and previous progress', () => {
   let p = make();
@@ -224,7 +250,9 @@ test('khatma keeps missed portions, and explicit catch-up preserves coverage and
     expect(nextPortion(rescheduled, '2026-10-15').date).toBe('2026-10-15');
     expect(rescheduled.cycle.sessions.at(-1).end).toBe(6214);
     expect(roundTrip(rescheduled)).toEqual(rescheduled);
-    expect(roundTrip(undoProgress(rescheduled)).cycle.cursor).toBe(0);
+    // What was read on an earlier day stays read, rescheduled or not.
+    expect(undoProgress(rescheduled, '2026-10-15')).toBe(rescheduled);
+    expect(roundTrip(undoProgress(rescheduled, '2026-10-09')).cycle.cursor).toBe(0);
   }
   expect(reschedulePlan(p, warsh, 'redistribute', '2026-10-15').cycle.sessions.at(-1).date).toBe('2026-11-05');
   expect(() => reschedulePlan(p, warsh, 'redistribute', '2026-12-01')).toThrow();
@@ -236,11 +264,11 @@ test('pause freezes completion and shifts pending dates when resumed', () => {
   expect(p.cycle.sessions[0].date).toBe('2026-10-12');
   expect(roundTrip(p)).toEqual(p);
 });
-test('repeat begins a new cycle only after completion, retains history, and supports undo', () => {
+test('repeat begins a new cycle only after completion and retains history; a finished cycle is not undone', () => {
   let p = make({ goal: { type: 'wird', amount: 604 }, repeat: true });
   p = recordProgress(p, { cycle: 1, slot: 0, to: 6214 }, '2026-10-09');
   expect(p.status).toBe('completed'); expect(rollCompletedCycle(p, warsh, '2026-10-09')).toBe(p);
-  expect(undoProgress(p).status).toBe('active');
+  expect(canUndoProgress(p, '2026-10-09')).toBe(false); expect(undoProgress(p, '2026-10-09')).toBe(p);
   const next = rollCompletedCycle(p, warsh, '2026-10-10');
   expect(next.cycle.number).toBe(2); expect(next.cycle.cursor).toBe(0); expect(next.history).toHaveLength(1);
   expect(nextPortion(next, '2026-10-10').due).toBe(true); expect(roundTrip(next)).toEqual(next);

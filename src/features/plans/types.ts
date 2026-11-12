@@ -15,6 +15,8 @@ export interface PlanCycle {
   availableDate: string;
   completedOn?: string;
   progress: PlanProgress[];
+  /** How long `progress` was after an undo: the entry now last is not undone in turn. */
+  undoneAt?: number;
 }
 interface PlanBase {
   id: string;
@@ -43,6 +45,8 @@ export interface RecurringOccurrence {
   date: string;
   /** Exact edition ordinals, bound to the selected surah within this occurrence. */
   progress: { range: number; from: number; to: number }[];
+  /** How long `progress` was after an undo: the entry now last is not undone in turn. */
+  undoneAt?: number;
 }
 export interface RecurringPlan extends PlanBase {
   goal: { type: 'recurring'; surahs: number[] };

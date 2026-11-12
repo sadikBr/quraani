@@ -33,6 +33,20 @@ with the sequential reading goal and with each other. The same card frame,
 typography, theme palette, geometry, form sections and detail controls are shared
 across goal types.
 
+## Undo and finishing
+
+One rule for every goal (`canUndoProgress` in `engine.ts`, and its counterparts for
+memorization, revision and recurring reading): only the last thing recorded can be undone, on
+the day it was recorded and once. It puts a slip right; what was recorded on earlier days stays
+recorded. Khatma, wird and recurring reading remember an undo by the length of the progress
+after it (`undoneAt`), so the entry before it is not undone in turn; memorization and revision
+keep the state to return to, and drop it once used.
+
+A finished goal stays finished. The record that finishes a whole goal (`finishesGoal`: the last
+wird of a khatma or daily wird, the last passage of a memorization goal) is asked about first
+(`FinishGoalDialog`, from the goal's page and from the reader), and is not undone afterwards.
+Revision and recurring reading never finish: each day or occurrence is its own.
+
 ## Scheduling and progress
 
 `engine.ts` is a pure scheduling layer. `buildPlanIndex` reads actual page, juz,

@@ -12,7 +12,8 @@ import { DetailAction, DetailScreen, PlanSettingsSheet, PortionHeading, Progress
 import { shortDate } from './presentation';
 import { t } from '@/i18n';
 import { PlanSchedule } from './plan-schedule';
-import { assertPlanIndex, nextPortion, rangeLabel, recordProgress, reschedulePlan, setPlanPaused, undoProgress } from './engine';
+import { assertPlanIndex, canUndoProgress, finishesGoal, nextPortion, rangeLabel, recordProgress, reschedulePlan, setPlanPaused, undoProgress } from './engine';
+import { FinishGoalDialog } from './finish-goal-dialog';
 import { dateLabel } from './dates';
 import { usePlanIndex } from './use-plan-index';
 import { PlanDateField } from './plan-date-field';
@@ -51,6 +52,7 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
   const [showCatchUp, setShowCatchUp] = useState(false);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [finishing, setFinishing] = useState(false);
   const [name, setName] = useState(plan.name);
   const [repeat, setRepeat] = useState(plan.repeat);
   const [reminder, setReminder] = useState(plan.reminder.enabled);
@@ -104,6 +106,8 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
   const openConflict = () => {
     if (conflictId) { setEditing(false); router.replace({ pathname: '/plans/[id]', params: { id: conflictId } }); }
   };
+  // The last wird finishes the goal, which is asked about first (it is not undone).
+  const markDone = () => { if (next) void mutate(p => recordProgress(p, { cycle: next.cycle, slot: next.slot, to: next.end }, today)); };
   const partial = !!next && next.start > plan.cycle.sessions[next.slot].start;
   const clock = `${String(plan.reminder.hour).padStart(2, '0')}:${String(plan.reminder.minute).padStart(2, '0')}`;
   return <DetailScreen plan={plan} onBack={() => router.dismissTo('/plans')} onSettings={openSettings}>
@@ -122,7 +126,7 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
       <ReadingBounds index={index} start={next.start} end={next.end} />
       <View style={{ gap: 4 }}>
         <DetailAction primary icon="book" label={partial ? t('goals.continueReading') : next.due ? t('goals.startReading') : t('khatma.detail.next.availableOn', { date: shortDate(next.date) })} disabled={!next.due || busy} onPress={openReading} />
-        {next.due && <DetailAction icon="check" label={t('khatma.detail.next.markDone')} disabled={busy} onPress={() => void mutate(p => recordProgress(p, { cycle: next.cycle, slot: next.slot, to: next.end }, today))} />}
+        {next.due && <DetailAction icon="check" label={t('khatma.detail.next.markDone')} disabled={busy} onPress={() => finishesGoal(plan, next.end) ? setFinishing(true) : markDone()} />}
       </View>
       {plan.goal.type === 'khatma' && next.date < today && <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderColor: palette.border, paddingTop: 8 }}>
         <DetailAction icon="calendar" label={showCatchUp ? t('khatma.detail.catchUp.hide') : t('khatma.detail.catchUp.show')} onPress={() => setShowCatchUp(x => !x)} />
@@ -140,7 +144,7 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
       {plan.status === 'archived' && <><DetailAction primary label={t('goals.actions.restore')} icon="restore" disabled={busy} onPress={() => void archive()} />
         <DetailAction destructive label={t('goals.actions.delete')} icon="trash" disabled={busy} onPress={() => setDeleting(true)} /></>}
     </PlanCard>}
-    {plan.cycle.progress.length > 0 && plan.status !== 'archived' && <DetailAction icon="undo" label={t('khatma.detail.undo')} disabled={busy} onPress={() => { const count = plan.cycle.progress.length; void mutate(p => p.cycle.progress.length === count ? undoProgress(p) : p); }} />}
+    {canUndoProgress(plan, today) && <DetailAction icon="undo" label={t('khatma.detail.undo')} disabled={busy} onPress={() => { const count = plan.cycle.progress.length; void mutate(p => p.cycle.progress.length === count ? undoProgress(p, today) : p); }} />}
     {index && !mismatch && <PlanSchedule plan={plan} index={index} today={today} />}
     <Section title={t('plans.detail.settings')} palette={palette}>
       <RowGroup palette={palette}>
@@ -172,5 +176,6 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
       </RowGroup>
     </PlanSettingsSheet>}
     {deleting && <DeleteArchivedGoalDialog plan={plan} onClose={() => setDeleting(false)} onDeleted={() => router.replace('/plans')} />}
+    {finishing && <FinishGoalDialog memorization={false} onClose={() => setFinishing(false)} onConfirm={() => { setFinishing(false); markDone(); }} />}
   </DetailScreen>;
 }

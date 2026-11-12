@@ -32,7 +32,7 @@ import { indexRouteDestination } from '../../utils/reader-index';
 import { ReaderControls } from './reader-controls';
 import { createPagePractice, practiceVisibility, revealNext } from '../../utils/page-practice';
 import { reserveReadingInsets } from '../../utils/reading-insets';
-import { PlanReadingControls, PlanReadingEnd, PlanReadingOpening, usePlanReadingActions } from '@/features/plans/plan-reading-controls';
+import { PlanReadingControls, PlanReadingEnd, PlanReadingFinish, PlanReadingOpening, usePlanReadingActions } from '@/features/plans/plan-reading-controls';
 import { usePlans } from '@/features/plans/provider';
 import { createReadingSession } from '@/features/plans/reading-session';
 import { RecitationBar } from '@/features/recitation/recitation-bar';
@@ -481,6 +481,7 @@ function RiwayahReaderScreen({ paging }: { paging: ReaderPaging }) {
         </View>
       </ScrollView>
       </View>
+      {session && <PlanReadingFinish session={session} actions={planActions} />}
       {ready && displayPage && content && <ReaderControls visible={actionsVisible} progress={controlsProgress}
         page={displayPage} totalPages={totalPages} surahName={surahName ?? t('common.appName')} palette={palette}
         previous={readerPages?.find((value) => value.number === displayNumber - 1)}

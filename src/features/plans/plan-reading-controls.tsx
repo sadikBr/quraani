@@ -13,6 +13,7 @@ import { rangeLabel } from './engine';
 import { t } from '@/i18n';
 import { localDate } from './dates';
 import { saveReadingSession, sessionPageEnd, type PlanReadingSession } from './reading-session';
+import { FinishGoalDialog } from './finish-goal-dialog';
 
 /** Wording for each kind of goal, so the reader speaks the goal's language. */
 function sessionCopy(session: PlanReadingSession) {
@@ -27,8 +28,10 @@ export function usePlanReadingActions(session: PlanReadingSession | undefined) {
   const saving = useRef(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  /** The end of the portion, held while the user is asked whether to finish the whole goal. */
+  const [finishing, setFinishing] = useState<number>();
   const back = () => session && router.replace({ pathname: '/plans/[id]', params: { id: session.id } });
-  const save = async (to: number) => {
+  const record = async (to: number) => {
     if (!session || saving.current) return;
     saving.current = true;
     setBusy(true); setError('');
@@ -43,7 +46,13 @@ export function usePlanReadingActions(session: PlanReadingSession | undefined) {
       saving.current = false; setBusy(false);
     }
   };
-  return { busy, error, back, save };
+  // The record that finishes the goal is asked about first (it is not undone).
+  const save = async (to: number) => {
+    if (session?.finishesGoal && to === session.portion.end) setFinishing(to);
+    else await record(to);
+  };
+  const confirmFinish = () => { const to = finishing; setFinishing(undefined); if (to !== undefined) void record(to); };
+  return { busy, error, back, save, finishing: finishing !== undefined, confirmFinish, cancelFinish: () => setFinishing(undefined) };
 }
 type Actions = ReturnType<typeof usePlanReadingActions>;
 
@@ -61,6 +70,11 @@ export function PlanReadingControls({ session, pageNumber, actions }: { session:
       onPress={() => void actions.save(sessionPageEnd(session, pageNumber))}>{actions.busy ? t('goals.saving') : last ? completion : copy.page}</Button>
     {!!actions.error && <Text accessibilityRole="alert" style={{ color: palette.destructive, width: '100%' }}>{actions.error}</Text>}
   </View>;
+}
+
+/** The question asked before finishing the whole goal, from the toolbar or the end of the portion. */
+export function PlanReadingFinish({ session, actions }: { session: PlanReadingSession; actions: Actions }) {
+  return actions.finishing ? <FinishGoalDialog memorization={session.memorization} onConfirm={actions.confirmFinish} onClose={actions.cancelFinish} /> : null;
 }
 
 /** These markers scroll with the page, so neither one hides Quran text. */

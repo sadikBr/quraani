@@ -20,6 +20,16 @@ const open = (plan, content, date = today) => {
   return createReadingSession(plan, content, String(next.cycle), String(next.slot), date);
 };
 
+test('only the portion that reaches the end of the Quran is marked as finishing the goal', () => {
+  const content = fixture(4);
+  expect(open(planFor(content), content).finishesGoal).toBe(false);
+  // A wird of the whole remaining Quran in one portion.
+  const whole = planFor(content, { goal: { type: 'wird', amount: 604 } });
+  const session = open(whole, content);
+  expect(session.portion.end).toBe(whole.totalAyahs);
+  expect(session.finishesGoal).toBe(true);
+});
+
 test('a 14-page wird exposes only its assigned pages in either riwayah, retaining original printed artwork identity', () => {
   for (const id of [4, 2]) {
     const content = fixture(id), plan = planFor(content), session = open(plan, content);

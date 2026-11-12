@@ -140,7 +140,9 @@ export function recordMemorizationProgress(plan: MemorizationPlan, receipt: { cy
   if (receipt.to < next.end) ranges.unshift({ start: receipt.to, end: next.end });
   const finished = !ranges.length;
   if (finished) sessions.shift(); else sessions[0] = { ...first, ranges };
-  return { ...plan, sessions, status: sessions.length ? 'active' : 'completed', revision: plan.revision + 1, undoable: true, undoSession: first,
+  // A finished goal stays finished (finishing is confirmed first): nothing to undo then.
+  const completed = !sessions.length;
+  return { ...plan, sessions, status: completed ? 'completed' : 'active', revision: plan.revision + 1, undoable: !completed, undoSession: completed ? undefined : first,
     memorized: mergeSpans([...plan.memorized, { start: next.start, end: receipt.to }]),
     progress: [...plan.progress, { date: today, from: next.start, to: receipt.to, finished }] };
 }
@@ -152,9 +154,13 @@ export function reviseMemorization(plan: MemorizationPlan, index: PlanIndex, mem
     memorized: ranges, sessions, revision: plan.revision + 1, undoable: false, undoSession: undefined,
     status: plan.status === 'archived' ? 'archived' : !sessions.length ? 'completed' : plan.status === 'paused' ? 'paused' : 'active' };
 }
+/** Only the last thing recorded, on the day it was recorded, once (see `canUndoProgress` in engine.ts). */
+export function canUndoMemorizationProgress(plan: MemorizationPlan, today: string): boolean {
+  return (plan.status === 'active' || plan.status === 'paused') && plan.undoable && !!plan.undoSession && plan.progress.at(-1)?.date === today;
+}
 export function undoMemorizationProgress(plan: MemorizationPlan, index: PlanIndex, today: string): MemorizationPlan {
   const last = plan.progress.at(-1);
-  if (plan.status === 'archived' || !plan.undoable || !last || !plan.undoSession) return plan;
+  if (!canUndoMemorizationProgress(plan, today) || !last || !plan.undoSession) return plan;
   if (plan.corpus !== index.corpus || plan.totalAyahs !== index.ayahs.length || index.mushafId !== RIWAYAT[plan.riwayah].mushafId || !validDate(today)) throw new Error(t('memorization.errors.undoMismatch'));
   return { ...plan, status: plan.status === 'paused' ? 'paused' : 'active', revision: plan.revision + 1,
     memorized: subtractSpans(plan.memorized, [{ start: last.from, end: last.to }]),

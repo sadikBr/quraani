@@ -39,7 +39,8 @@ export function decodePlans(raw: string | null): ReadingPlan[] {
     if (!c || !Number.isInteger(c.number) || c.number < 1 || !Number.isInteger(c.start) || c.start < 0 || c.start >= p.totalAyahs ||
       !Number.isInteger(c.cursor) || c.cursor < c.start || c.cursor > p.totalAyahs || !validDate(c.availableDate) ||
       !Array.isArray(c.sessions) || !c.sessions.length || c.sessions.length > 10000 || !Array.isArray(c.progress) || !Array.isArray(p.history) ||
-      (c.completedOn !== undefined && !validDate(c.completedOn))) throw new Error(t('plans.storage.invalidProgress'));
+      (c.completedOn !== undefined && !validDate(c.completedOn)) ||
+      (c.undoneAt !== undefined && (!Number.isInteger(c.undoneAt) || c.undoneAt < 0))) throw new Error(t('plans.storage.invalidProgress'));
     let cursor = c.start;
     for (const s of c.sessions) {
       if (!validDate(s.date) || s.start !== cursor || !Number.isInteger(s.end) || s.end <= cursor || s.end > p.totalAyahs) throw new Error(t('plans.storage.invalidSchedule'));

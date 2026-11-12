@@ -12,7 +12,7 @@ import { usePlans } from './provider';
 import { usePlanIndex } from './use-plan-index';
 import { isRecurringPlan, type RecurringPlan } from './types';
 import { assertPlanIndex, nextPortion, recordProgress, setPlanPaused } from './engine';
-import { completedOccurrences, occurrenceProgress, scheduledOn, undoRecurringProgress, weekdaysLabel } from './recurring';
+import { canUndoRecurringProgress, completedOccurrences, occurrenceProgress, scheduledOn, undoRecurringProgress, weekdaysLabel } from './recurring';
 import { addDays, dateLabel, localDate } from './dates';
 import { shortDate } from './presentation';
 import { formatDate, formatList, t } from '@/i18n';
@@ -110,7 +110,7 @@ export function RecurringDetail({ plan, initialReminderIssue }: { plan: Recurrin
       <DetailAction primary label={plan.status === 'paused' ? t('goals.actions.resume') : t('goals.actions.restore')} disabled={busy} onPress={() => void mutate(current => current.status === 'paused' ? setPlanPaused(current, false, localDate()) : restoreArchivedGoal(current))} />
       {plan.status === 'archived' && <DetailAction destructive icon="trash" label={t('goals.actions.delete')} onPress={() => setDeleting(true)} />}
     </PlanCard>}
-    {!!progress.logs.length && plan.status !== 'archived' && <DetailAction icon="undo" label={t('recurring.detail.undo')} disabled={busy} onPress={() => void mutate(current => undoRecurringProgress(current, localDate()))} />}
+    {canUndoRecurringProgress(plan, localDate()) && <DetailAction icon="undo" label={t('recurring.detail.undo')} disabled={busy} onPress={() => void mutate(current => undoRecurringProgress(current, localDate()))} />}
     <Section title={t('recurring.detail.history.title')} palette={p}>
       {plan.occurrences.length ? <View style={{ gap: 6 }}><RowGroup palette={p}>{[...plan.occurrences].reverse().slice(0, historyLimit).map(occurrence => {
         const state = occurrenceProgress(plan, occurrence.date);

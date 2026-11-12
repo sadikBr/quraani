@@ -12,10 +12,11 @@ import { archiveDeletionDate, restoreArchivedGoal } from './archive';
 import { DeleteArchivedGoalDialog } from './archive-components';
 import { Copy, PlanCard, PlanField, PlanLoading, PlanNotice, SwitchRow } from './components';
 import { dateLabel, localDate } from './dates';
-import { assertPlanIndex, ayahRangeLabel, nextPortion, setPlanPaused } from './engine';
+import { assertPlanIndex, ayahRangeLabel, nextPortion, setPlanPaused, finishesGoal } from './engine';
 import { AmountPicker } from './goal-creation-components';
 import { currentMemorizationGoal } from './goal-limit';
-import { memorizationReplanDate, memorizationSchedule, memoryFor, quarterLabel, recordMemorizationProgress, reviseMemorization, undoMemorizationProgress } from './memorization';
+import { canUndoMemorizationProgress, memorizationReplanDate, memorizationSchedule, memoryFor, quarterLabel, recordMemorizationProgress, reviseMemorization, undoMemorizationProgress } from './memorization';
+import { FinishGoalDialog } from './finish-goal-dialog';
 import { MemorizationHero } from './memorization-components';
 import { MemorizedSelectionSheet } from './memorized-selection-sheet';
 import { PracticeGoalCard } from '../practice/goal-card';
@@ -38,7 +39,7 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
   const { palette: p, update } = useReadingPreferences();
   const { today, commit, plans, memorization, reminderError } = usePlans();
   const { index, error, retry } = usePlanIndex(plan.riwayah);
-  const [editing, setEditing] = useState(false), [choosing, setChoosing] = useState(false), [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false), [choosing, setChoosing] = useState(false), [deleting, setDeleting] = useState(false), [finishing, setFinishing] = useState(false);
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(initialReminderIssue ? savedReminderNotice(initialReminderIssue) : '');
   const saving = useRef(false);
   const [name, setName] = useState(plan.name), [days, setDays] = useState(plan.weekdays), [amount, setAmount] = useState(String(plan.goal.weeklyQuarters));
@@ -101,6 +102,8 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
     ? mutate(current => current.status === 'archived' && index ? restoreArchivedGoal(reviseMemorization(current, index, memoryFor(memorization, current.riwayah, index), replanDate(current))) : current)
     : mutate(current => ({ ...current, status: 'archived' }), false);
   const deletionDate = archiveDeletionDate(plan);
+  // The last passage finishes the goal, which is asked about first (it is not undone).
+  const markDone = () => { if (next) void mutate(current => recordMemorizationProgress(current, { cycle: next.cycle, slot: next.slot, to: next.end }, localDate())); };
   const first = next && index ? index.ayahs[next.start] : undefined, last = next && index ? index.ayahs[next.end - 1] : undefined;
   return <DetailScreen plan={plan} onBack={() => router.dismissTo('/plans')} onSettings={openSettings}>
     <PlanNotice message={message || mismatch || error} retry={error ? retry : undefined} /><PlanNotice message={reminderError} />
@@ -121,7 +124,7 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
       {plan.sessions[0].ranges.length > 1 && <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 21 }}>{t('memorization.detail.next.segments', { count: plan.sessions[0].ranges.length })}</Text>}
       {next.due ? <View style={{ gap: 4 }}>
         <DetailAction primary icon="book" label={t('memorization.detail.next.start')} disabled={busy} onPress={openReading} />
-        <DetailAction icon="check" label={t('memorization.detail.next.done')} disabled={busy} onPress={() => void mutate(current => recordMemorizationProgress(current, { cycle: next.cycle, slot: next.slot, to: next.end }, localDate()))} />
+        <DetailAction icon="check" label={t('memorization.detail.next.done')} disabled={busy} onPress={() => finishesGoal(plan, next.end) ? setFinishing(true) : markDone()} />
         <Text style={{ color: p.mutedForeground, fontSize: 12, textAlign: 'center' }}>{t('memorization.detail.next.confirmNote')}</Text>
       </View> : <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('memorization.detail.next.opensOn', { date: weekdayDateLabel(next.date) })}</Text>}
     </PlanCard>}
@@ -137,7 +140,7 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
           disabled={busy} onPress={() => { setMessage(''); setChoosing(true); }} />
       </RowGroup>}
       {!!ranges.length && plan.status !== 'archived' && <PracticeGoalCard riwayah={plan.riwayah} />}
-      {plan.undoable && plan.status !== 'archived' && !other && <DetailAction icon="undo" label={t('memorization.detail.undo')} disabled={busy} onPress={() => void mutate(current => undoMemorizationProgress(current, index, localDate()))} />}
+      {canUndoMemorizationProgress(plan, today) && !other && <DetailAction icon="undo" label={t('memorization.detail.undo')} disabled={busy} onPress={() => void mutate(current => undoMemorizationProgress(current, index, localDate()))} />}
       {!!schedule.length && plan.status !== 'archived' && <WeeklySchedule index={index} sessions={schedule} today={today} labels={MEMORIZATION_LABELS} summary={t('memorization.detail.scheduleSummary', { amount: quarterLabel(plan.goal.weeklyQuarters), days: weekdaysLabel(plan.weekdays) })} footer={t('memorization.detail.scheduleFooter', { date: dateLabel(schedule.at(-1)!.date) })} />}
       {!!plan.progress.length && <Section title={t('memorization.detail.recent')} palette={p}>
         <RowGroup palette={p}>{plan.progress.slice(-5).reverse().map((log, i) => <Row key={`${log.date}-${i}`} palette={p} icon="check" title={ayahRangeLabel(index, log.from, log.to)} detail={shortDate(log.date)} />)}</RowGroup>
@@ -160,5 +163,6 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
     </PlanSettingsSheet>}
     {choosing && index && <MemorizedSelectionSheet index={index} selected={ranges} busy={busy} error={message} onClose={() => { if (!busy) setChoosing(false); }} onSave={value => void saveMemory(value)} />}
     {deleting && <DeleteArchivedGoalDialog plan={plan} onClose={() => setDeleting(false)} onDeleted={() => router.replace('/plans')} />}
+    {finishing && <FinishGoalDialog memorization onClose={() => setFinishing(false)} onConfirm={() => { setFinishing(false); markDone(); }} />}
   </DetailScreen>;
 }

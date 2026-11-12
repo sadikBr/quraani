@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
-import { buildPlanIndex, createPlan, nextPortion, recordProgress, setPlanPaused } from '../src/features/plans/engine';
-import { createRecurringPlan, occurrenceProgress, completedOccurrences, nextScheduledDate, undoRecurringProgress } from '../src/features/plans/recurring';
+import { buildPlanIndex, createPlan, finishesGoal, nextPortion, recordProgress, setPlanPaused } from '../src/features/plans/engine';
+import { canUndoRecurringProgress, createRecurringPlan, occurrenceProgress, completedOccurrences, nextScheduledDate, undoRecurringProgress } from '../src/features/plans/recurring';
 import { createReadingSession, saveReadingSession, sessionPageEnd } from '../src/features/plans/reading-session';
 import { createPlansRepository, decodePlans } from '../src/features/plans/repository';
 import { currentGoal, DuplicateGoalError } from '../src/features/plans/goal-limit';
@@ -88,6 +88,22 @@ test('old date, duplicate, changed schedule and mismatched edition receipts cann
   const saved = saveReadingSession(plan, session, session.portion.end, friday);
   expect(() => saveReadingSession(saved, session, session.portion.end, friday)).toThrow();
   expect(recordProgress(plan, { cycle: 20261008, slot: 0, to: 9 }, friday)).toBe(plan);
+});
+
+test('only the last thing recorded today can be undone, and once', () => {
+  const two = make({ surahs: [18, 67] });
+  const first = complete(two), both = complete(first);
+  expect(occurrenceProgress(both, friday).done).toBe(true);
+  expect(canUndoRecurringProgress(both, friday)).toBe(true);
+  const undone = undoRecurringProgress(both, friday);
+  expect(occurrenceProgress(undone, friday)).toMatchObject({ completed: 1, done: false });
+  expect(canUndoRecurringProgress(undone, friday)).toBe(false);
+  expect(undoRecurringProgress(undone, friday)).toBe(undone);
+  expect(roundTrip(undone)).toEqual(undone);
+  // Recorded again, it can be undone in its turn; nothing is finished for good here, each date is its own.
+  expect(canUndoRecurringProgress(complete(undone), friday)).toBe(true);
+  expect(finishesGoal(two, two.ranges[1].end) || open(first).finishesGoal).toBe(false);
+  expect(canUndoRecurringProgress(both, '2026-10-10')).toBe(false);
 });
 
 test('undo affects only today; pause, archive, restoration and weekday edits preserve occurrence history', () => {

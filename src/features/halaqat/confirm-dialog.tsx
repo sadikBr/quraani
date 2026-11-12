@@ -10,24 +10,26 @@ import { t } from '@/i18n';
 
 /**
  * Asking before something that cannot be undone: what it is, what follows, and the way out first.
- * `icon` names the act (a bin for deleting, by default).
+ * `icon` names the act (a bin for deleting, by default); `tone` is `primary` when nothing is lost
+ * by it (finishing a goal).
  */
-export function ConfirmDialog({ title, body, confirm, onConfirm, onClose, icon = 'trash' }: {
-  title: string; body: string; confirm: string; onConfirm: () => void; onClose: () => void; icon?: ReaderIconName;
+export function ConfirmDialog({ title, body, confirm, onConfirm, onClose, icon = 'trash', tone = 'destructive' }: {
+  title: string; body: string; confirm: string; onConfirm: () => void; onClose: () => void; icon?: ReaderIconName; tone?: 'destructive' | 'primary';
 }) {
   const { palette: p } = useReadingPreferences();
+  const color = tone === 'primary' ? p.primary : p.destructive;
   const cancel = useRef<View>(null);
   return <Modal visible transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={onClose}
     onShow={() => { if (Platform.OS === 'web') cancel.current?.focus(); else if (cancel.current) AccessibilityInfo.sendAccessibilityEvent(cancel.current, 'focus'); }}>
     <SafeAreaView style={[s.backdrop, { backgroundColor: p.overlay }]}>
       <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel={t('common.cancel')} onPress={onClose} />
-      <View accessibilityViewIsModal onAccessibilityEscape={onClose} style={[s.dialog, { backgroundColor: p.background, borderColor: withAlpha(p.destructive, 0.35) }, readerElevation(4, p)]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
+      <View accessibilityViewIsModal onAccessibilityEscape={onClose} style={[s.dialog, { backgroundColor: p.background, borderColor: withAlpha(color, 0.35) }, readerElevation(4, p)]} {...(Platform.OS === 'web' ? { dir: 'rtl' } : {})}>
         <ScrollView contentContainerStyle={{ padding: 22, gap: 10 }}>
-          <View style={[s.warn, { backgroundColor: withAlpha(p.destructive, 0.1) }]}><ReaderIcon name={icon} color={p.destructive} size={20} /></View>
+          <View style={[s.warn, { backgroundColor: withAlpha(color, 0.1) }]}><ReaderIcon name={icon} color={color} size={20} /></View>
           <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 21, lineHeight: 34, fontFamily: 'ReaderNaskhBold' }}>{title}</Text>
           <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22 }}>{body}</Text>
           <View style={{ gap: 8, marginTop: 12 }}>
-            <Button variant="destructive" size="lg" icon={icon} palette={p} onPress={onConfirm} block>{confirm}</Button>
+            <Button variant={tone === 'primary' ? 'default' : 'destructive'} size="lg" icon={icon} palette={p} onPress={onConfirm} block>{confirm}</Button>
             <Button ref={cancel} variant="outline" size="lg" palette={p} onPress={onClose} block>{t('common.cancel')}</Button>
           </View>
         </ScrollView>

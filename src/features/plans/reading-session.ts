@@ -1,6 +1,6 @@
 import type { AyahReference } from '@/lib/quranpedia/types';
 import type { ReaderContent, QuranPage } from '../quran-reader/types/reader';
-import { assertPlanIndex, buildPlanIndex, nextPortion, recordProgress, type PlanIndex } from './engine';
+import { assertPlanIndex, buildPlanIndex, finishesGoal, nextPortion, recordProgress, type PlanIndex } from './engine';
 import { isMemorizationPlan, isRecurringPlan, isRevisionPlan, type ReadingPlan } from './types';
 import { revisionDay } from './revision';
 import { t } from '@/i18n';
@@ -12,6 +12,8 @@ export interface PlanReadingSession {
   recurring: boolean;
   memorization: boolean;
   revision: boolean;
+  /** Reading to the end of this portion finishes the whole goal: asked about first, as it is not undone. */
+  finishesGoal: boolean;
   /** Surahs (recurring) or separate memorized passages (revision) still to come after this one. */
   remainingSurahs: number;
   index: PlanIndex;
@@ -39,6 +41,7 @@ export function createReadingSession(plan: ReadingPlan, content: ReaderContent, 
   const pages = content.pages.filter(p => p.number >= firstPage && p.number <= lastPage);
   return {
     id: plan.id, name: plan.name, memorization: isMemorizationPlan(plan), revision: isRevisionPlan(plan), recurring: isRecurringPlan(plan),
+    finishesGoal: finishesGoal(plan, portion.end),
     remainingSurahs: isRecurringPlan(plan) ? plan.ranges.length - portion.slot - 1 : isRevisionPlan(plan) ? (revisionDay(plan, today)?.remaining.length ?? 1) - 1 : 0, index, portion, firstPage, lastPage, pages, contains,
     content: {
       ...content,

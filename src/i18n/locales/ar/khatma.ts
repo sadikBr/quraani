@@ -164,7 +164,7 @@ export default {
       archivedUntil: 'تذكيرات هذا الهدف متوقفة. سيُحذف نهائيًا في {{date}}. استعده قبل ذلك للاحتفاظ به.',
       archived: 'تذكيرات هذا الهدف متوقفة. سيُحذف نهائيًا بعد أسبوعين. استعده قبل ذلك للاحتفاظ به.',
     },
-    undo: 'التراجع عن آخر قراءة سجّلتها',
+    undo: 'التراجع عن آخر قراءة سجّلتها اليوم',
     /** One line of facts under the schedule, joined with "·". */
     info: {
       /** Khatma: the unit its portions follow. */

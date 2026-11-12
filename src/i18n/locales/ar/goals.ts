@@ -27,6 +27,19 @@ export default {
     changeOnPhone: 'تُعدَّل التذكيرات من تطبيق الهاتف.',
   },
   archived: { title: 'هذا الهدف في الأرشيف' },
+  /** Asked before the record that finishes a whole goal, which is not undone afterwards. */
+  finish: {
+    reading: {
+      title: 'إتمام الختمة؟',
+      body: 'هذا آخر ورد في ختمتك. بعد تأكيده تكتمل الختمة، ولا يمكن التراجع عن إتمامها.',
+      confirm: 'إتمام الختمة',
+    },
+    memorization: {
+      title: 'إتمام حفظ القرآن؟',
+      body: 'هذا آخر مقطع في هدف الحفظ. بعد تأكيده يكتمل الهدف، ولا يمكن التراجع عن إتمامه.',
+      confirm: 'إتمام الحفظ',
+    },
+  },
   actions: {
     saveSettings: 'حفظ الإعدادات',
     pause: 'إيقاف الهدف مؤقتًا',

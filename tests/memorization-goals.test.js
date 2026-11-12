@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
-import { buildPlanIndex, createPlan, nextPortion, recordProgress, setPlanPaused } from '../src/features/plans/engine';
-import { buildMemorizationSchedule, createMemorizationPlan, memoryFor, mergeSpans, subtractSpans, quarterAmount, spanCount, reviseMemorization, undoMemorizationProgress, memorizationSchedule } from '../src/features/plans/memorization';
+import { buildPlanIndex, createPlan, finishesGoal, nextPortion, recordProgress, setPlanPaused } from '../src/features/plans/engine';
+import { buildMemorizationSchedule, createMemorizationPlan, memoryFor, mergeSpans, subtractSpans, quarterAmount, spanCount, reviseMemorization, canUndoMemorizationProgress, undoMemorizationProgress, memorizationSchedule } from '../src/features/plans/memorization';
 import { createPlansRepository, decodePlans, decodeMemorization } from '../src/features/plans/repository';
 import { createReadingSession, saveReadingSession } from '../src/features/plans/reading-session';
 import { deleteArchivedGoal, restoreArchivedGoal } from '../src/features/plans/archive';
@@ -133,7 +133,13 @@ test('full Quran completion produces no further sessions or reminders and can be
   expect(saved.memorized).toEqual([{ start: 0, end: last + 1 }]);
   expect(nextPortion(saved, monday)).toBeNull();
   expect(planReminderQueue([saved], new Date(`${monday}T08:00:00`))).toEqual([]);
-  expect(undoMemorizationProgress(saved, index, monday).status).toBe('active');
+  // Finishing is confirmed first and is not undone; the record can still be corrected.
+  expect(saved.undoable).toBe(false);
+  expect(canUndoMemorizationProgress(saved, monday)).toBe(false);
+  expect(undoMemorizationProgress(saved, index, monday)).toBe(saved);
+  expect(finishesGoal(plan, last + 1) && open(plan).finishesGoal).toBe(true);
+  expect(finishesGoal(make(), 4) || open(make()).finishesGoal).toBe(false);
+  expect(reviseMemorization(saved, index, [{ start: 0, end: last }], monday).status).toBe('active');
   expect(make({ memorized: [{ start: 0, end: last + 1 }] }).status).toBe('completed');
 });
 
@@ -211,6 +217,18 @@ test('invalid quota, days, ranges and corrupt schedules are rejected', () => {
   for (const changes of [{ weeklyQuarters: 0 }, { weeklyQuarters: 0.25 }, { weeklyQuarters: 241 }, { weekdays: [] }, { weekdays: [8] }, { weekdays: [1, 1] }, { memorized: [{ start: -1, end: 2 }] }, { startDate: 'wrong' }]) expect(() => make(changes)).toThrow();
   for (const changes of [{ sessions: [] }, { status: 'completed' }, { memorized: [{ start: 0, end: 10000 }] }, { undoable: true }, { revision: 0 }]) expect(() => decodePlans(JSON.stringify({ version: 1, plans: [{ ...make(), ...changes }] }))).toThrow();
   expect(() => decodeMemorization(JSON.stringify({ memorization: [{ riwayah: 'warsh', corpus: 'x', totalAyahs: 10, ranges: [{ start: 5, end: 4 }] }] }))).toThrow();
+});
+
+test('only the last passage recorded can be undone, the same day and once', () => {
+  const first = complete(make({ memorized: [{ start: 2, end: 4 }] })), second = complete(first);
+  expect(canUndoMemorizationProgress(second, monday)).toBe(true);
+  // The next day it stays memorized.
+  expect(canUndoMemorizationProgress(second, addDays(monday, 1))).toBe(false);
+  expect(undoMemorizationProgress(second, index, addDays(monday, 1))).toBe(second);
+  // Once: the passage recorded before it stays, though it is today's too.
+  const undone = undoMemorizationProgress(second, index, monday);
+  expect(canUndoMemorizationProgress(undone, monday)).toBe(false);
+  expect(undoMemorizationProgress(undone, index, monday)).toBe(undone);
 });
 
 test('undo restores a split day exactly without assigning an extra daily quota', () => {
