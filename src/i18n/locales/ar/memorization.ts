@@ -202,6 +202,8 @@ export default {
     /** Followed by deletesOn when the deletion date is known. */
     archivedNote: 'يبقى سجلّ محفوظك كما هو عند حذف الهدف.',
     deletesOn: 'يُحذف الهدف في {{date}}.',
+    /** In place of deletesOn for a goal carried to its end: kept for good. */
+    archivedKept: 'يبقى هذا الهدف المكتمل في الأرشيف.',
     resume: 'استئناف الحفظ',
     pause: 'إيقاف الحفظ مؤقتًا',
     record: {
@@ -238,6 +240,17 @@ export default {
     tabs: { surahs: 'سور', juzs: 'أجزاء', hizbs: 'أحزاب', quarters: 'أرباع', ayahs: 'آيات' },
     searchPlaceholder: 'ابحث بالاسم أو الرقم',
     searchLabel: 'البحث في القائمة',
+    /** Asked before saving a record with fewer ayahs than it had; count is the ayahs taken out. */
+    removal: {
+      title: 'إزالة آيات من محفوظك؟',
+      body_zero: 'لن تُزال أي آية من سجلّ محفوظك.',
+      body_one: 'ستُزال آية واحدة من سجلّ محفوظك، وتعود إلى ما لم تحفظه بعد.',
+      body_two: 'ستُزال آيتان من سجلّ محفوظك، وتعودان إلى ما لم تحفظه بعد.',
+      body_few: 'ستُزال {{count, number}} آيات من سجلّ محفوظك، وتعود إلى ما لم تحفظه بعد.',
+      body_many: 'ستُزال {{count, number}} آية من سجلّ محفوظك، وتعود إلى ما لم تحفظه بعد.',
+      body_other: 'ستُزال {{count, number}} آية من سجلّ محفوظك، وتعود إلى ما لم تحفظه بعد.',
+      confirm: 'إزالة الآيات',
+    },
     juz: 'الجزء {{juz, number}}',
     hizb: 'الحزب {{hizb, number}}',
     quarter: 'الحزب {{hizb, number}} · الربع {{quarter, number}}',

@@ -6,7 +6,7 @@ import { planReminderQueue } from '../src/features/plans/reminder-schedule';
 import { goalsOverview } from '../src/features/plans/overview';
 import { currentGoal, DuplicateGoalError } from '../src/features/plans/goal-limit';
 import { resolvePlanStart, startChoices, startAtPosition, filterStartChoices } from '../src/features/plans/start-point';
-import { archiveDeletionDate, maintainArchives, restoreArchivedGoal, deleteArchivedGoal } from '../src/features/plans/archive';
+import { archiveDeletionDate, keptInArchive, maintainArchives, restoreArchivedGoal, deleteArchivedGoal } from '../src/features/plans/archive';
 
 function corpus(id, length) {
   const ayahs = Array.from({ length }, (_, i) => ({ mushafId: id, surahNumber: 1, ayahNumber: i + 1, pageNumber: Math.floor(i * 604 / length) + 1,
@@ -348,6 +348,12 @@ test('cleanup removes only expired archives across calendar boundaries and never
   expect(result.filter(p => p.status === 'archived')).toEqual([recent, future]);
   expect(result.filter(p => p.status !== 'archived').every(p => p.archivedOn === undefined)).toBe(true);
   expect(maintainArchives(result, '2028-03-05')).toBe(result);
+  // A goal with a finished khatma is kept for good; only the user deletes it.
+  const kept = { ...completedGoal(make()), id: 'plan-kept', status: 'archived', archivedOn: '2020-01-01' };
+  expect(keptInArchive(kept)).toBe(true); expect(keptInArchive(expired)).toBe(false);
+  expect(archiveDeletionDate(kept)).toBeUndefined();
+  expect(maintainArchives([kept, expired], '2030-01-01')).toEqual([kept]);
+  expect(deleteArchivedGoal([kept], kept.id)).toEqual([]);
   expect(() => decodePlans(JSON.stringify({ version: 1, plans: [{ ...expired, archivedOn: '2028-02-31' }] }))).toThrow();
 });
 

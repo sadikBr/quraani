@@ -21,7 +21,7 @@ import type { PlanIndex } from '@/features/plans/engine';
 import { formatList, formatNumber, t } from '@/i18n';
 import { useHalaqa, useHalaqat } from './provider';
 import {
-  assignmentFor, entryOf, GRADES, MARK_LIMIT, markCount, newId, NOTE_LIMIT, ordinal, RECITATION_KINDS, samePortion, sessionOn, spanOf, suggestGrade, suggestNext, validPortion,
+  assignmentFor, entryOf, GRADES, MARK_LIMIT, markCount, newId, NOTE_LIMIT, ordinal, RECITATION_KINDS, samePortion, sessionClosed, sessionOn, spanOf, suggestGrade, suggestNext, validPortion,
   type Assignment, type Attendance, type Grade, type Halaqa, type Mark, type MarkKind, type Portion, type QuranShape, type Recitation, type RecitationKind, type Student,
 } from './model';
 import { AttendancePicker, gradeTone, LawhBoard, useHalaqaIndex, useLinkedStudent, displayName } from './shared';
@@ -42,10 +42,16 @@ export function ReciteScreen() {
   const params = useLocalSearchParams<{ halaqa: string; date: string; student: string; session?: string }>();
   const { palette: p } = useReadingPreferences();
   const { halaqa, ready } = useHalaqa(params.halaqa);
+  const { today } = usePlans();
   const student = halaqa?.students.find((s) => s.id === params.student);
   if (!halaqa || !student || !validDate(params.date)) return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <PageBar back={{ label: t('common.back'), onPress: () => router.back() }} palette={p} />
     <View style={page.content}>{ready ? <Empty icon="users" palette={p} title={t('halaqat.notFound')} description={t('halaqat.notFoundDetail')} /> : <ActivityIndicator color={p.mutedForeground} />}</View>
+  </SafeAreaView>;
+  // A closed session is not heard again: its record is on the participant's page.
+  if (sessionClosed(params.date, today)) return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
+    <PageBar back={{ label: t('common.back'), onPress: () => router.back() }} palette={p} />
+    <View style={page.content}><Empty icon="calendar" palette={p} title={t('halaqat.session.closedTitle')} description={t('halaqat.session.closed')} /></View>
   </SafeAreaView>;
   return <Recite halaqa={halaqa} student={student} date={params.date} sessionId={params.session} />;
 }

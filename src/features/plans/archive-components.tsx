@@ -10,7 +10,7 @@ import { Button } from '@/components/ui';
 import { GoalMark, goalKind } from './goal-card';
 import { RIWAYAT } from '../quran-reader/riwayat';
 import { usePlans } from './provider';
-import { ARCHIVE_RETENTION_DAYS, archiveDeletionDate, deleteArchivedGoal, restoreArchivedGoal } from './archive';
+import { ARCHIVE_RETENTION_DAYS, archiveDeletionDate, deleteArchivedGoal, keptInArchive, restoreArchivedGoal } from './archive';
 import { DuplicateGoalError } from './goal-limit';
 import { shortDate } from './presentation';
 import { formatNumber, t } from '@/i18n';
@@ -74,6 +74,8 @@ function ArchivedGoalCard({ plan, onOpen }: { plan: ReadingPlan; onOpen: (id: st
           <Text style={{ color: p.foreground, fontSize: 13, flexShrink: 1 }}>{isMemorizationPlan(plan) ? t('plans.archive.card.memorizationDone', { count: completed }) : isRecurringPlan(plan) ? t('plans.archive.card.recurringDone', { count: completed }) : isRevisionPlan(plan) ? t('plans.archive.card.revisionDone', { count: completed }) : t('plans.progress.completedOfTotal', { completed, count: plan.cycle.sessions.length })}</Text></View>
         {deletionDate && <View style={[s.row, { gap: 7 }]}><ReaderIcon name="archive" color={p.mutedForeground} size={15} />
           <Text style={{ color: p.mutedForeground, fontSize: 13, flexShrink: 1 }}>{t('plans.archive.card.autoDelete', { date: shortDate(deletionDate) })}</Text></View>}
+        {keptInArchive(plan) && <View style={[s.row, { gap: 7 }]}><ReaderIcon name="archive" color={p.mutedForeground} size={15} />
+          <Text style={{ color: p.mutedForeground, fontSize: 13, flexShrink: 1 }}>{t('plans.archive.card.kept')}</Text></View>}
       </View>
     </Pressable>
     {!!error && <View style={{ paddingHorizontal: 14, paddingBottom: 12 }}><PlanNotice message={error} />

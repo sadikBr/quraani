@@ -114,6 +114,8 @@ export default {
     revisionLine: 'المراجعة: {{portion}}',
     heard: 'سمّع',
     hearHint: 'فتح شاشة التسميع',
+    /** On a closed session, where a tap opens the participant's page. */
+    recordHint: 'فتح سجلّ المشارك',
     hear: 'تسميع',
     edit: 'تعديل',
     delete: 'حذف الحصة',
@@ -122,6 +124,9 @@ export default {
     dropConfirmTitle: 'حذف تسميعه اليوم؟',
     dropConfirmBody: 'سبق أن سمّع {{name}} في هذه الحصة. إذا سجّلت غيابه، فسيُحذف تسميعه واللوح المحدد للحصة القادمة، ويعود إلى لوحه السابق.',
     dropConfirm: 'حذف التسميع',
+    /** A week after its day, a session can no longer be changed or deleted. */
+    closedTitle: 'حصة مغلقة',
+    closed: 'مضى أسبوع على هذه الحصة، فلا يمكن تعديلها أو حذفها. تفاصيل تسميع كل مشارك في سجلّه.',
     /** What each seat in the session's ring means. */
     legend: { heard: 'سمّعوا', present: 'حضروا ولم يسمّعوا', waiting: 'لم يُسجَّل حضورهم', away: 'غابوا' },
   },

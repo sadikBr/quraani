@@ -7,15 +7,16 @@ import { ArabicText as Text } from '@/components/arabic-text';
 import { Medallion } from '@/components/craft/marks';
 import { PageBar, PageTitle, Section, page } from '@/components/craft/page';
 import { ArchPanel } from '@/components/craft/panels';
-import { Button, Empty } from '@/components/ui';
+import { Alert, Button, Empty } from '@/components/ui';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
 import { ReaderIcon } from '@/features/quran-reader/components/ui/reader-chrome';
 import { readerShape, withAlpha } from '@/features/quran-reader/design';
 import { validDate } from '@/features/plans/dates';
+import { usePlans } from '@/features/plans/provider';
 import { weekdayDateLabel } from '@/features/plans/presentation';
 import { formatList, formatNumber, t } from '@/i18n';
 import { useHalaqa, useHalaqat } from './provider';
-import { absent, activeStudents, assignmentFor, entryOf, heard, newId, sessionOn, type Attendance, type Entry, type Halaqa, type Student } from './model';
+import { absent, activeStudents, assignmentFor, entryOf, heard, newId, sessionClosed, sessionOn, type Attendance, type Entry, type Halaqa, type Student } from './model';
 import { AttendancePicker, GradeMark, portionLabel, studentNumber, useHalaqaIndex, displayName } from './shared';
 import { ConfirmDialog } from './confirm-dialog';
 import { HalaqaRing, RingCount, SeatLegend, seatsOf, type Seat } from './ring';
@@ -40,8 +41,11 @@ export function SessionScreen() {
 function Session({ halaqa, date }: { halaqa: Halaqa; date: string }) {
   const { palette: p } = useReadingPreferences();
   const { change } = useHalaqat();
+  const { today } = usePlans();
   const { index, shape } = useHalaqaIndex(halaqa.riwayah);
   const session = sessionOn(halaqa, date);
+  // A week after its day the session only shows what was recorded: a tap opens the participant's record.
+  const closed = sessionClosed(date, today);
   // The session is made with its first entry; until then it has this id.
   const [sessionId] = useState(() => session?.id ?? newId('session'));
   const [deleting, setDeleting] = useState(false);
@@ -80,22 +84,24 @@ function Session({ halaqa, date }: { halaqa: Halaqa; date: string }) {
           ]} />
         </View>
       </ArchPanel>}
+      {closed && <Alert palette={p} title={t('halaqat.session.closedTitle')}>{t('halaqat.session.closed')}</Alert>}
       <Section title={t('halaqat.session.students')} palette={p}
-        action={unmarked.length ? <Button size="sm" variant="outline" icon="roll" palette={p} onPress={() => save(unmarked.map((s) => ({ student: s.id, attendance: 'present' as const, recitations: [] })))}>{t('halaqat.session.allPresent')}</Button> : undefined}>
+        action={unmarked.length && !closed ? <Button size="sm" variant="outline" icon="roll" palette={p} onPress={() => save(unmarked.map((s) => ({ student: s.id, attendance: 'present' as const, recitations: [] })))}>{t('halaqat.session.allPresent')}</Button> : undefined}>
         {!students.length && <Text style={{ color: p.mutedForeground, fontSize: 14 }}>{t('halaqat.detail.noStudents')}</Text>}
         <View style={{ gap: 12 }}>
           {students.map((student) => {
             const entry = entryOf(session, student.id);
             const assigned = assignmentFor(halaqa, student, date);
             const missing = absent(entry), done = heard(entry);
-            const hear = () => router.push({ pathname: '/halaqat/recite', params: { halaqa: halaqa.id, date, student: student.id, session: session?.id ?? sessionId } });
+            const hear = () => router.push(closed ? { pathname: '/halaqat/student', params: { halaqa: halaqa.id, student: student.id } }
+              : { pathname: '/halaqat/recite', params: { halaqa: halaqa.id, date, student: student.id, session: session?.id ?? sessionId } });
             const lines = index && shape ? [
               assigned.new && { kind: t('halaqat.lawh.new'), portion: portionLabel(index, shape, assigned.new) },
               assigned.revision && { kind: t('halaqat.lawh.revision'), portion: portionLabel(index, shape, assigned.revision) },
             ].filter((x): x is { kind: string; portion: string } => !!x) : [];
             return <View key={student.id} style={[s.card, { backgroundColor: p.card, borderColor: done ? withAlpha(p.ornament, 0.55) : p.border }]}>
               <Pressable accessibilityRole="button" accessibilityLabel={formatList([student.name, ...(done ? [t('halaqat.session.heard')] : lines.map((l) => formatList([l.kind, l.portion])))])}
-                accessibilityHint={t('halaqat.session.hearHint')} onPress={hear}
+                accessibilityHint={closed ? t('halaqat.session.recordHint') : t('halaqat.session.hearHint')} onPress={hear}
                 style={({ pressed }) => [s.main, { backgroundColor: pressed ? p.accent : 'transparent', opacity: missing ? 0.6 : 1 }]}>
                 <Medallion value={studentNumber(halaqa.students, student.id)} size={40} palette={p} current={done} tone={missing ? p.mutedForeground : undefined} />
                 <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
@@ -109,19 +115,19 @@ function Session({ halaqa, date }: { halaqa: Halaqa; date: string }) {
                     </View>)
                     : <Text style={{ color: p.mutedForeground, fontSize: 13 }}>{t('halaqat.detail.noPortion')}</Text>}
                 </View>
-                {!missing && <View style={[s.hear, { backgroundColor: done ? 'transparent' : p.primary, borderColor: done ? p.input : p.primary }]}>
+                {!missing && !closed && <View style={[s.hear, { backgroundColor: done ? 'transparent' : p.primary, borderColor: done ? p.input : p.primary }]}>
                   <ReaderIcon name={done ? 'pencil' : 'headphones'} color={done ? p.foreground : p.primaryForeground} size={15} />
                   <Text style={{ color: done ? p.foreground : p.primaryForeground, fontSize: 13, fontWeight: '600' }}>{done ? t('halaqat.session.edit') : t('halaqat.session.hear')}</Text>
                 </View>}
               </Pressable>
-              <View style={[s.foot, { borderColor: p.border }]}>
+              {!closed && <View style={[s.foot, { borderColor: p.border }]}>
                 <AttendancePicker compact name={student.name} value={entry?.attendance} onChange={(value) => mark(student, value)} palette={p} />
-              </View>
+              </View>}
             </View>;
           })}
         </View>
       </Section>
-      {session && <Button variant="ghost" icon="trash" tone={p.destructive} palette={p} onPress={() => setDeleting(true)}>{t('halaqat.session.delete')}</Button>}
+      {session && !closed && <Button variant="ghost" icon="trash" tone={p.destructive} palette={p} onPress={() => setDeleting(true)}>{t('halaqat.session.delete')}</Button>}
     </ScrollView>
     {dropping && <ConfirmDialog title={t('halaqat.session.dropConfirmTitle')} body={t('halaqat.session.dropConfirmBody', { name: dropping.student.name })}
       confirm={t('halaqat.session.dropConfirm')} onClose={() => setDropping(null)}

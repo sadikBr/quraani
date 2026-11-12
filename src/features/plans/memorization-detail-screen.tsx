@@ -8,7 +8,7 @@ import { ReaderButton } from '../quran-reader/components/reading/reader-button';
 import { Row, RowGroup, Section } from '@/components/craft/page';
 import { useReadingPreferences } from '../quran-reader/state/reading-preferences-provider';
 import { normalizeArabicSearch } from '../quran-reader/utils/search';
-import { archiveDeletionDate, restoreArchivedGoal } from './archive';
+import { archiveDeletionDate, keptInArchive, restoreArchivedGoal } from './archive';
 import { DeleteArchivedGoalDialog } from './archive-components';
 import { Copy, PlanCard, PlanField, PlanLoading, PlanNotice, SwitchRow } from './components';
 import { dateLabel, localDate } from './dates';
@@ -130,7 +130,7 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
     </PlanCard>}
     {plan.status !== 'active' && <PlanCard>
       <View style={[d.row, { gap: 12 }]}><IconTile name={plan.status === 'completed' ? 'check' : plan.status === 'paused' ? 'pause' : 'archive'} /><View style={d.grow}><Copy title>{plan.status === 'completed' ? t('memorization.detail.completedTitle') : plan.status === 'paused' ? t('memorization.detail.pausedTitle') : t('goals.archived.title')}</Copy></View></View>
-      <Copy muted>{plan.status === 'archived' ? `${t('memorization.detail.archivedNote')} ${deletionDate ? t('memorization.detail.deletesOn', { date: shortDate(deletionDate) }) : ''}` : plan.status === 'paused' ? t('memorization.detail.pausedNote') : t('memorization.detail.completedNote')}</Copy>
+      <Copy muted>{plan.status === 'archived' ? `${t('memorization.detail.archivedNote')} ${deletionDate ? t('memorization.detail.deletesOn', { date: shortDate(deletionDate) }) : keptInArchive(plan) ? t('memorization.detail.archivedKept') : ''}` : plan.status === 'paused' ? t('memorization.detail.pausedNote') : t('memorization.detail.completedNote')}</Copy>
       {plan.status === 'paused' && <DetailAction primary label={t('memorization.detail.resume')} disabled={busy} onPress={() => void mutate(current => setPlanPaused(current, false, today), false)} />}
       {plan.status === 'archived' && <><DetailAction primary label={t('goals.actions.restore')} disabled={busy || !!other || !index || !!mismatch} onPress={() => void archive()} /><DetailAction destructive icon="trash" label={t('goals.actions.delete')} disabled={busy} onPress={() => setDeleting(true)} /></>}
     </PlanCard>}
@@ -161,7 +161,7 @@ export function MemorizationDetail({ plan, initialReminderIssue }: { plan: Memor
           disabled={busy || (plan.status === 'archived' && (!!other || !index || !!mismatch))} onPress={() => void archive().then(saved => { if (saved) setEditing(false); })} />
       </RowGroup>
     </PlanSettingsSheet>}
-    {choosing && index && <MemorizedSelectionSheet index={index} selected={ranges} busy={busy} error={message} onClose={() => { if (!busy) setChoosing(false); }} onSave={value => void saveMemory(value)} />}
+    {choosing && index && <MemorizedSelectionSheet confirmRemoval index={index} selected={ranges} busy={busy} error={message} onClose={() => { if (!busy) setChoosing(false); }} onSave={value => void saveMemory(value)} />}
     {deleting && <DeleteArchivedGoalDialog plan={plan} onClose={() => setDeleting(false)} onDeleted={() => router.replace('/plans')} />}
     {finishing && <FinishGoalDialog memorization onClose={() => setFinishing(false)} onConfirm={() => { setFinishing(false); markDone(); }} />}
   </DetailScreen>;

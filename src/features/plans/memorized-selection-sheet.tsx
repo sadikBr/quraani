@@ -15,6 +15,7 @@ import { ayahRangeLabel, type PlanIndex } from './engine';
 import { coversSpan, mergeSpans, spanCount, subtractSpans } from './memorization';
 import type { AyahSpan } from './types';
 import { PlanField, PlanNotice, sheet } from './components';
+import { ConfirmDialog } from '@/features/halaqat/confirm-dialog';
 import { t } from '@/i18n';
 
 type SelectionTab = 'surahs' | 'juzs' | 'hizbs' | 'quarters' | 'ayahs';
@@ -35,8 +36,9 @@ const sheetTexts = {
   },
 };
 
-export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy = false, error, purpose = 'memorized' }: {
-  index: PlanIndex; selected: AyahSpan[]; onSave: (ranges: AyahSpan[]) => void; onClose: () => void; busy?: boolean; error?: string; purpose?: keyof typeof sheetTexts;
+/** `confirmRemoval`: the sheet edits a kept record, so taking ayahs out of it is asked about first. */
+export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy = false, error, purpose = 'memorized', confirmRemoval = false }: {
+  index: PlanIndex; selected: AyahSpan[]; onSave: (ranges: AyahSpan[]) => void; onClose: () => void; busy?: boolean; error?: string; purpose?: keyof typeof sheetTexts; confirmRemoval?: boolean;
 }) {
   const { palette: p } = useReadingPreferences();
   const texts = sheetTexts[purpose];
@@ -44,6 +46,12 @@ export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy
   const [fromSurah, setFromSurah] = useState('1'), [fromAyah, setFromAyah] = useState('1');
   const [toSurah, setToSurah] = useState('1'), [toAyah, setToAyah] = useState('7');
   const close = useRef<View>(null), list = useRef<FlatList>(null);
+  /** How many ayahs of the record the draft leaves out, while the user is asked about it. */
+  const [removing, setRemoving] = useState(0);
+  const save = () => {
+    const removed = confirmRemoval ? spanCount(subtractSpans(mergeSpans(selected), mergeSpans(draft))) : 0;
+    if (removed) setRemoving(removed); else onSave(draft);
+  };
   const options = useMemo(() => {
     if (tab === 'ayahs') return [];
     if (tab === 'surahs') return Object.entries(index.surahNames).map(([number, label]) => ({ number: Number(number), label,
@@ -102,11 +110,13 @@ export function MemorizedSelectionSheet({ index, selected, onSave, onClose, busy
             }} /></GestureDetector>
           <View style={[sheet.footer, { borderColor: p.border }]}>
             <PlanNotice message={error} /><Text accessibilityLiveRegion="polite" style={{ color: p.mutedForeground, fontSize: 13 }}>{texts.total(spanCount(draft))}</Text>
-            <ReaderButton palette={p} selected disabled={busy} onPress={() => onSave(draft)}>{busy ? t('memorization.selection.saving') : texts.confirm()}</ReaderButton>
+            <ReaderButton palette={p} selected disabled={busy} onPress={save}>{busy ? t('memorization.selection.saving') : texts.confirm()}</ReaderButton>
           </View>
         </AnimatedSafeAreaView></GestureDetector>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    {removing > 0 && <ConfirmDialog icon="check" title={t('memorization.selection.removal.title')} body={t('memorization.selection.removal.body', { count: removing })}
+      confirm={t('memorization.selection.removal.confirm')} onClose={() => setRemoving(0)} onConfirm={() => { setRemoving(0); onSave(draft); }} />}
     </GestureHandlerRootView>
   </Modal>;
 }

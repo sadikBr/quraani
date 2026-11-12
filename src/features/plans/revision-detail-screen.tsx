@@ -183,7 +183,7 @@ export function RevisionDetail({ plan, initialReminderIssue }: { plan: RevisionP
           disabled={busy || (plan.status === 'archived' && (!!other || !index || !!mismatch))} onPress={() => void archive().then(saved => { if (saved) setEditing(false); })} />
       </RowGroup>
     </PlanSettingsSheet>}
-    {choosing && index && !owner && <MemorizedSelectionSheet index={index} selected={plan.memorized} busy={busy} error={message} onClose={() => { if (!busy) setChoosing(false); }} onSave={value => void saveMemory(value)} />}
+    {choosing && index && !owner && <MemorizedSelectionSheet confirmRemoval index={index} selected={plan.memorized} busy={busy} error={message} onClose={() => { if (!busy) setChoosing(false); }} onSave={value => void saveMemory(value)} />}
     {deleting && <DeleteArchivedGoalDialog plan={plan} onClose={() => setDeleting(false)} onDeleted={() => router.replace('/plans')} />}
   </DetailScreen>;
 }

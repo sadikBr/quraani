@@ -1,7 +1,7 @@
 import type { Riwayah } from '@/features/quran-reader/riwayat';
 import type { AyahSpan } from '@/features/plans/types';
 import { coversSpan, mergeSpans } from '@/features/plans/memorization';
-import { validDate } from '@/features/plans/dates';
+import { addDays, validDate } from '@/features/plans/dates';
 import { t } from '@/i18n';
 
 /**
@@ -347,6 +347,13 @@ export function halaqaReminderQueue(state: HalaqatState, now: Date, days = 14, m
 }
 
 /** An entry's state for the session's list: absent, recited (with its grades), or still to hear. */
+/** How long a session stays open to changes, from its day. */
+export const SESSION_OPEN_DAYS = 7;
+/**
+ * A session is closed a week after its day: what was recorded in it (attendance, recitations,
+ * the portions given) then stands, as the points and the portions after it were counted from it.
+ */
+export const sessionClosed = (date: string, today: string) => addDays(date, SESSION_OPEN_DAYS) <= today;
 export const heard = (entry: Entry | undefined) => !!entry && entry.recitations.length > 0;
 export const absent = (entry: Entry | undefined) => entry?.attendance === 'absent' || entry?.attendance === 'excused';
 

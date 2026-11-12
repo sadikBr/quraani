@@ -264,7 +264,7 @@ export default {
       days_many: 'يومًا',
       days_other: 'يوم',
       title: 'أرشيف مؤقت',
-      description: 'تُحذف الأهداف المؤرشفة نهائيًا بعد أسبوعين. استعد منها ما تريد الاحتفاظ به قبل ذلك.',
+      description: 'تُحذف الأهداف غير المكتملة نهائيًا بعد أسبوعين من أرشفتها، فاستعد منها ما تريد الاحتفاظ به. أما الأهداف المكتملة فتبقى هنا.',
     },
     card: {
       openLabel: 'فتح الهدف المؤرشف {{name}}',
@@ -290,6 +290,8 @@ export default {
       revisionDone_many: 'أتممت {{count, number}} يومًا من المراجعة · محفوظك باقٍ',
       revisionDone_other: 'أتممت {{count, number}} يوم من المراجعة · محفوظك باقٍ',
       autoDelete: 'يُحذف تلقائيًا في {{date}}',
+      /** A goal that holds a finished khatma or a finished memorization: never deleted on its own. */
+      kept: 'هدف مكتمل، يبقى في الأرشيف',
       restoreLabel: 'استعادة {{name}}',
       restore: 'استعادة',
       restoring: 'جارٍ الاستعادة…',

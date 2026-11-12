@@ -3,8 +3,18 @@ import { isMemorizationPlan, isSequentialPlan, type ReadingPlan } from './types'
 import { t } from '@/i18n';
 
 export const ARCHIVE_RETENTION_DAYS = 14;
+/**
+ * A goal that holds something finished (a khatma completed, in this cycle or an earlier one, or a
+ * memorization goal carried to its end) is kept in the archive for good: what was finished is not
+ * lost by being put away. It leaves only when the user deletes it.
+ */
+export function keptInArchive(plan: ReadingPlan): boolean {
+  if (isSequentialPlan(plan)) return !!plan.cycle.completedOn || plan.history.length > 0;
+  return isMemorizationPlan(plan) && !plan.sessions.length;
+}
+/** When an archived goal is deleted on its own: unfinished goals only, two weeks after archiving. */
 export function archiveDeletionDate(plan: ReadingPlan): string | undefined {
-  return plan.status === 'archived' && plan.archivedOn ? addDays(plan.archivedOn, ARCHIVE_RETENTION_DAYS) : undefined;
+  return plan.status === 'archived' && plan.archivedOn && !keptInArchive(plan) ? addDays(plan.archivedOn, ARCHIVE_RETENTION_DAYS) : undefined;
 }
 
 /** Old archives get a full grace period on first load. Never infer their age
@@ -20,7 +30,8 @@ export function maintainArchives(plans: ReadingPlan[], today: string): ReadingPl
       return [rest];
     }
     if (!plan.archivedOn) { changed = true; return [{ ...plan, archivedOn: today }]; }
-    if (archiveDeletionDate(plan)! <= today) { changed = true; return []; }
+    const deletion = archiveDeletionDate(plan);
+    if (deletion && deletion <= today) { changed = true; return []; }
     return [plan];
   });
   return changed ? next : plans;

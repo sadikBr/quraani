@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   applyHalaqat, arrivalOf, assignmentFor, attendanceOf, clockText, decodeHalaqat, defaultHalaqatState, halaqaReminderQueue, historyOf, memorizedBy, nextMeeting, nextNew, nextRevision,
-  ordinal, portionAyahs, refAt, spanOf, suggestGrade, suggestNext, validPortion,
+  ordinal, portionAyahs, refAt, sessionClosed, spanOf, suggestGrade, suggestNext, validPortion,
 } from '../src/features/halaqat/model';
 
 // Ayahs per surah in the Hafs count.
@@ -158,6 +158,10 @@ describe('changes and saving', () => {
     expect(h.sessions).toHaveLength(1);
     expect(h.sessions[0].id).toBe('session-1');
     expect(h.sessions[0].entries.map((e) => [e.student, e.attendance])).toEqual([['student-2', 'absent'], ['student-1', 'late']]);
+    // A session stays open for a week from its day, across a month's end.
+    expect(sessionClosed('2026-10-28', '2026-11-03')).toBe(false);
+    expect(sessionClosed('2026-10-28', '2026-11-04')).toBe(true);
+    expect(sessionClosed('2026-10-28', '2026-10-20')).toBe(false);
     // Saved state reads back as it was.
     expect(decodeHalaqat(JSON.stringify(state))).toEqual(state);
     // A student's removal takes their entries, and a session left empty.

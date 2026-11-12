@@ -7,7 +7,7 @@ import { usePlans } from '@/features/plans/provider';
 import { useAccount } from '@/features/account/provider';
 import { AccountError } from '@/features/account/auth-client';
 import type { InviteKind, InvitePreview, JoinResult } from '@/features/account/api';
-import { absent, activeStudents, applyHalaqat, decodeHalaqat, defaultHalaqatState, entryOf, HALAQAT_KEY, heard,
+import { absent, activeStudents, applyHalaqat, decodeHalaqat, defaultHalaqatState, entryOf, HALAQAT_KEY, heard, sessionClosed,
   type Halaqa, type HalaqatChange, type HalaqatState, type MemberReminder, type ReminderLead } from './model';
 import { createMembershipStore, type MembershipState, type MembershipStore, type Person, type TeachingRole } from './membership';
 import { observeHalaqaNotifications, syncHalaqaReminders } from './notifications';
@@ -99,7 +99,11 @@ export function HalaqatProvider({ children }: PropsWithChildren) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, schedule, today, signedIn, membersRead]);
   // The same function for the store's life, so what depends on it doesn't run again at each change.
-  const change = useCallback((next: HalaqatChange) => store.update(next), [store]);
+  // A closed session is not written to, whatever screen asks.
+  const change = useCallback((next: HalaqatChange) => {
+    if ((next.type === 'saveEntries' || next.type === 'deleteSession') && sessionClosed(next.date, today)) return;
+    store.update(next);
+  }, [store, today]);
   const value = useMemo(() => ({ state, ready, error, reminderError, change }), [state, ready, error, reminderError, change]);
   return <Context.Provider value={value}>
     <MembershipProvider signedIn={signedIn} store={membershipStore} membership={membership}>{children}</MembershipProvider>

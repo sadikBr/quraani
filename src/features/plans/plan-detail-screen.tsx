@@ -26,7 +26,8 @@ import { saveWithReminder } from './save-with-reminder';
 import { savedReminderNotice, type ReminderIssue } from './reminder-errors';
 import { DuplicateGoalError } from './goal-limit';
 import { Copy, PlanCard, PlanField, PlanLoading, PlanNotice, PlanScreen, SwitchRow, planStyles as s } from './components';
-import { archiveDeletionDate, restoreArchivedGoal } from './archive';
+import { archiveDeletionDate, keptInArchive, restoreArchivedGoal } from './archive';
+import { ConfirmDialog } from '@/features/halaqat/confirm-dialog';
 import { DeleteArchivedGoalDialog } from './archive-components';
 
 export function PlanDetailScreen() {
@@ -53,6 +54,8 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [finishing, setFinishing] = useState(false);
+  /** The change of schedule asked about: it rewrites every remaining date, and is not undone. */
+  const [rescheduling, setRescheduling] = useState<'extend' | 'redistribute'>();
   const [name, setName] = useState(plan.name);
   const [repeat, setRepeat] = useState(plan.repeat);
   const [reminder, setReminder] = useState(plan.reminder.enabled);
@@ -131,15 +134,15 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
       {plan.goal.type === 'khatma' && next.date < today && <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderColor: palette.border, paddingTop: 8 }}>
         <DetailAction icon="calendar" label={showCatchUp ? t('khatma.detail.catchUp.hide') : t('khatma.detail.catchUp.show')} onPress={() => setShowCatchUp(x => !x)} />
         {showCatchUp && <View style={s.section}><Copy muted>{t('khatma.detail.catchUp.note')}</Copy>
-          <ReaderButton palette={palette} disabled={busy} onPress={() => void mutate(p => reschedulePlan(p, index, 'extend', today))}>{t('khatma.detail.catchUp.extend')}</ReaderButton>
-          <ReaderButton palette={palette} disabled={busy || plan.cycle.sessions.at(-1)!.date < today} onPress={() => void mutate(p => reschedulePlan(p, index, 'redistribute', today))}>{t('khatma.detail.catchUp.redistribute')}</ReaderButton>
+          <ReaderButton palette={palette} disabled={busy} onPress={() => setRescheduling('extend')}>{t('khatma.detail.catchUp.extend')}</ReaderButton>
+          <ReaderButton palette={palette} disabled={busy || plan.cycle.sessions.at(-1)!.date < today} onPress={() => setRescheduling('redistribute')}>{t('khatma.detail.catchUp.redistribute')}</ReaderButton>
         </View>}
       </View>}
     </PlanCard>}
     {plan.status !== 'active' && <PlanCard>
       <View style={[d.row, { gap: 12 }]}><IconTile name={plan.status === 'completed' ? 'check' : plan.status === 'paused' ? 'pause' : 'archive'} />
         <View style={d.grow}><Copy title>{plan.status === 'completed' ? t('khatma.detail.status.completedTitle') : plan.status === 'paused' ? t('khatma.detail.status.pausedTitle') : t('goals.archived.title')}</Copy></View></View>
-      <Copy muted>{plan.status === 'completed' ? plan.repeat ? t('khatma.detail.status.completedRepeat') : t('khatma.detail.status.completedOnce') : plan.status === 'paused' ? t('khatma.detail.status.paused') : deletionDate ? t('khatma.detail.status.archivedUntil', { date: shortDate(deletionDate) }) : t('khatma.detail.status.archived')}</Copy>
+      <Copy muted>{plan.status === 'completed' ? plan.repeat ? t('khatma.detail.status.completedRepeat') : t('khatma.detail.status.completedOnce') : plan.status === 'paused' ? t('khatma.detail.status.paused') : deletionDate ? t('khatma.detail.status.archivedUntil', { date: shortDate(deletionDate) }) : keptInArchive(plan) ? t('khatma.detail.status.archivedKept') : t('khatma.detail.status.archived')}</Copy>
       {plan.status === 'paused' && <DetailAction primary label={t('goals.actions.resume')} icon="book" disabled={busy} onPress={() => void mutate(p => setPlanPaused(p, false, today))} />}
       {plan.status === 'archived' && <><DetailAction primary label={t('goals.actions.restore')} icon="restore" disabled={busy} onPress={() => void archive()} />
         <DetailAction destructive label={t('goals.actions.delete')} icon="trash" disabled={busy} onPress={() => setDeleting(true)} /></>}
@@ -172,10 +175,13 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
         {(plan.status === 'active' || plan.status === 'paused') && <Row icon={plan.status === 'active' ? 'pause' : 'play'} palette={palette} chevron={false} disabled={busy} title={plan.status === 'active' ? t('goals.actions.pause') : t('goals.actions.resume')}
           onPress={() => { const pause = plan.status === 'active'; void mutate(p => setPlanPaused(p, pause, today)).then(saved => { if (saved) setEditing(false); }); }} />}
         <Row icon={plan.status === 'archived' ? 'restore' : 'archive'} palette={palette} chevron={false} disabled={busy} title={plan.status === 'archived' ? t('goals.actions.restore') : t('goals.actions.archive')}
-          detail={plan.status !== 'archived' ? t('khatma.detail.settings.deletionNote') : undefined} onPress={() => void archive().then(saved => { if (saved) setEditing(false); })} />
+          detail={plan.status !== 'archived' ? keptInArchive(plan) ? t('khatma.detail.settings.keptNote') : t('khatma.detail.settings.deletionNote') : undefined} onPress={() => void archive().then(saved => { if (saved) setEditing(false); })} />
       </RowGroup>
     </PlanSettingsSheet>}
     {deleting && <DeleteArchivedGoalDialog plan={plan} onClose={() => setDeleting(false)} onDeleted={() => router.replace('/plans')} />}
+    {rescheduling && index && <ConfirmDialog tone="primary" icon="calendar" title={t(`khatma.detail.catchUp.confirm.${rescheduling}.title`)} body={t(`khatma.detail.catchUp.confirm.${rescheduling}.body`)}
+      confirm={t(`khatma.detail.catchUp.confirm.${rescheduling}.action`)} onClose={() => setRescheduling(undefined)}
+      onConfirm={() => { const mode = rescheduling; setRescheduling(undefined); void mutate(p => reschedulePlan(p, index, mode, today)); }} />}
     {finishing && <FinishGoalDialog memorization={false} onClose={() => setFinishing(false)} onConfirm={() => { setFinishing(false); markDone(); }} />}
   </DetailScreen>;
 }

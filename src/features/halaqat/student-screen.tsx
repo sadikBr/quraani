@@ -16,10 +16,11 @@ import { Trail, type TrailState } from '@/features/plans/goal-card';
 import { formatList, formatNumber, t } from '@/i18n';
 import { useHalaqa, useHalaqat } from './provider';
 import {
-  ATTENDANCE, attendanceOf, currentAssignment, historyOf, markCount, memorizedBy, totalAyahs,
+  ATTENDANCE, attendanceOf, currentAssignment, historyOf, markCount, memorizedBy, sessionClosed, totalAyahs,
   type Attendance, type Halaqa, type Portion, type QuranShape, type RecitationKind, type Student,
 } from './model';
 import type { PlanIndex } from '@/features/plans/engine';
+import { usePlans } from '@/features/plans/provider';
 import { attendanceTone, GradeMark, LawhBoard, portionLabel, useHalaqaIndex, displayName, useLinkedStudent } from './shared';
 import { PortionSheet } from './portion-sheet';
 
@@ -92,7 +93,7 @@ function AttendanceBead({ attendance, palette: p, size = 12 }: { attendance: Att
 /**
  * A participant's record: how much they have memorized (and what share of the Quran), their
  * attendance as a trail of the last sessions, and every recitation with its grade and marks
- * (`editable`: each day opens to change it).
+ * (`editable`: each day opens to change it, while its session is open).
  */
 export function StudentRecord({ halaqa, student, index, shape, editable = false, self = false }: {
   halaqa: Halaqa; student: Student; index: PlanIndex; shape: QuranShape; editable?: boolean;
@@ -100,6 +101,7 @@ export function StudentRecord({ halaqa, student, index, shape, editable = false,
   self?: boolean;
 }) {
   const { palette: p } = useReadingPreferences();
+  const { today } = usePlans();
   const history = historyOf(halaqa, student.id);
   const attendance = attendanceOf(halaqa, student.id);
   // The phone's owner counts what their own record holds too.
@@ -164,7 +166,7 @@ export function StudentRecord({ halaqa, student, index, shape, editable = false,
                 <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 21 }}>{entry.note}</Text>
               </View>}
             </View>
-            {editable && <Pressable accessibilityRole="button" accessibilityLabel={formatList([t('halaqat.student.editEntry'), weekdayDateLabel(session.date)])} onPress={edit}
+            {editable && !sessionClosed(session.date, today) && <Pressable accessibilityRole="button" accessibilityLabel={formatList([t('halaqat.student.editEntry'), weekdayDateLabel(session.date)])} onPress={edit}
               style={({ pressed }) => [s.foot, { borderColor: p.border, backgroundColor: pressed ? p.accent : 'transparent' }]}>
               <ReaderIcon name="pencil" color={p.mutedForeground} size={14} />
               <Text style={{ flex: 1, color: p.mutedForeground, fontSize: 13 }}>{t('halaqat.student.editEntry')}</Text>

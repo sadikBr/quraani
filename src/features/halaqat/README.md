@@ -46,6 +46,10 @@ each of their phones and no one else's.
 - **A session** is one day of a halaqa. Each student's entry holds their attendance, what they
   recited (`new` and/or `revision`, each with its portion, its marks and a grade), the portions
   given for next time (`next`, the student's «لوح»), and a note.
+  A session stays open to changes for a week from its day (`sessionClosed`, `SESSION_OPEN_DAYS`);
+  after that it is only shown, and neither changed nor deleted: the points and the portions that
+  follow were counted from it. The phone enforces this (the screens, and `change` in the
+  provider); the account does not.
 - **Portions** are stored by surah and ayah (`AyahRef`), not by an edition's ordinals, so they
   survive corrections to an edition's page data. `shapeOf(index)` gives the ayah counts that turn
   them into ordinals when needed.
