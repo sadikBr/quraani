@@ -8,6 +8,7 @@ import { MemoryCacheStorage, CORPUS_TTL_MS } from '../src/lib/quranpedia/cache';
 import { decodeQuran, decodeSurahAyahs } from '../src/lib/quranpedia/validation';
 import { prepareReaderContent } from '../src/features/quran-reader/utils/content';
 import { syntheticCorpus } from './helpers/synthetic-corpus';
+import { reactNative } from './helpers/react-native';
 
 // Services use the app's persistent storage and global fetch; replace both before loading them.
 const storage = new MemoryCacheStorage();
@@ -19,7 +20,7 @@ globalThis.fetch = async (url, init) => { calls.push(String(url)); return handle
 // Hooks: the selected riwayah is controlled by the test; AppState is inert.
 let riwayah = 'warsh';
 mock.module('../src/features/quran-reader/state/reading-preferences-provider', () => ({ useReadingPreferences: () => ({ preferences: { riwayah } }) }));
-mock.module('react-native', () => ({ AppState: { addEventListener: () => ({ remove() {} }) } }));
+mock.module('react-native', reactNative);
 // A minimal DOM-less React root: enough to run hooks and effects.
 const fakeWindow = { event: undefined, HTMLIFrameElement: class {} };
 const hadWindow = 'window' in globalThis;

@@ -3,6 +3,7 @@ import { strToU8, zipSync } from 'fflate';
 import { decodeReciters, playsSingleAyahs, reciterNameParts } from '../src/lib/quranpedia/reciters';
 import { ayahAtTime, ayahFileName, needsBasmala, parseTimings, segmentFor, surahFileName, surahStartFor, timingsFromZip } from '../src/features/recitation/sources';
 import { afterFinished, skipTo, startAt } from '../src/features/recitation/queue';
+import { reactNative } from './helpers/react-native';
 
 // The player and catalog reach native modules and the network; replace them before loading.
 let reciterList = [];
@@ -10,7 +11,7 @@ let listFails = false;
 let downloaded = [];
 const missing = new Set();
 let timings = {};
-mock.module('react-native', () => ({ Platform: { OS: 'android', select: (o) => o.android ?? o.native ?? o.default }, AppState: { addEventListener: () => ({ remove() {} }) } }));
+mock.module('react-native', reactNative);
 mock.module('../src/features/recitation/downloads', () => ({
   downloadedReciters: () => downloaded,
   isMissing: (_id, name) => missing.has(name),
