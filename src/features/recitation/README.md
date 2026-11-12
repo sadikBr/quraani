@@ -25,6 +25,15 @@ ayah by ayah with that way's reciter (`useListen`). Practice sessions do the sam
 Whole surahs default to Al-Husary in an edition with timings when there is one; ayah by ayah
 defaults to Quranpedia's Al-Husary editions by id (`catalog.ts`).
 
+## Pausing on its own
+
+The moon in the bar asks the recitation to pause by itself, for falling asleep to it (`setSleep`,
+`sleep` in the player's state): in 15, 30, 45 or 60 minutes, or at the end of the surah being
+recited; each press moves to the next choice, then to none. The time is checked as the recording
+plays (not with a timer of its own, which a sleeping phone may hold back); when it comes the
+recitation pauses where it is. At the end of the surah it stops. It lasts until it comes or the
+recitation is stopped; choosing another ayah keeps it.
+
 ## Hearing a reciter before choosing
 
 Each reciter in the list has a listen button (`sample.ts`): about 20 seconds from the opening of

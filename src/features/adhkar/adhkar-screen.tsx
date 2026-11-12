@@ -76,10 +76,10 @@ export function AdhkarScreen() {
   const now = useAdhkarNow();
   const Frame = embedded ? View : SafeAreaView;
   return <Frame style={{ flex: 1, backgroundColor: p.background }}>
-    {!embedded && <PageBar palette={p} back={{ label: t('common.backToReading'), text: t('common.mushaf'), onPress: () => router.dismissTo('/') }} />}
+    {!embedded && <PageBar title={t('adhkar.title')} palette={p} back={{ label: t('common.backToReading'), text: t('common.mushaf'), onPress: () => router.dismissTo('/') }} />}
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, embedded && { paddingTop: 16 }]}>
       {embedded ? <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22 }}>{t('adhkar.subtitle')}</Text>
-        : <PageTitle title={t('adhkar.title')} subtitle={t('adhkar.subtitle')} palette={p} />}
+        : <PageTitle subtitle={t('adhkar.subtitle')} palette={p} />}
       {error && <Alert variant="destructive" palette={p}>{t('adhkar.storageError')}</Alert>}
       <View style={{ gap: 14 }}>
         <FeaturedCollection id={now} palette={p} />

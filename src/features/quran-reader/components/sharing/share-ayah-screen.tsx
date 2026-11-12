@@ -40,7 +40,7 @@ export function ShareAyahScreen() {
   const ayah = chapter?.ayahs.find((item) => item.ayahNumber === Number(number));
   return <SafeAreaView style={[styles.root, { backgroundColor: palette.background }]}>
     <StatusBar style={dark ? 'light' : 'dark'} hidden={false} />
-    <PageBar back={back} palette={palette} />
+    <PageBar title={t('share.title')} back={back} palette={palette} />
     {loading || (!fontsLoaded && !fontError) ? <View style={styles.center}><ActivityIndicator color={palette.primary} accessibilityLabel={t('share.preparing')} /></View>
       : error || fontError || !ayah || !chapter ? <View style={[styles.center, { gap: 16, padding: 24 }]}>
         <Text accessibilityRole="alert" style={{ color: palette.destructive, textAlign: 'center' }}>{!error && !fontError ? t('share.notFound') : t('share.loadError')}</Text>
@@ -126,7 +126,7 @@ function CardDesigner({ ayah, surahName, palette }: { ayah: Ayah; surahName: str
 
   return <>
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 22 }]}>
-      <PageTitle title={t('share.title')} subtitle={t('share.subtitle')} palette={palette} />
+      <PageTitle subtitle={t('share.subtitle')} palette={palette} />
       {/* Always a native view: blocking touches while sharing makes it one, and unblocking
           would flatten it away again, which, with the content changing at the same time,
           crashed Android's renderer (a view inserted while it still had a parent). */}

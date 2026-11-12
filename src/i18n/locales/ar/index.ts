@@ -1,4 +1,5 @@
 import account from './account';
+import activity from './activity';
 import adhkar from './adhkar';
 import app from './app';
 import common from './common';
@@ -12,6 +13,7 @@ import memorization from './memorization';
 import plans from './plans';
 import practice from './practice';
 import prayers from './prayers';
+import ramadan from './ramadan';
 import reader from './reader';
 import recitation from './recitation';
 import recurring from './recurring';
@@ -25,5 +27,5 @@ import themes from './themes';
  * The Arabic catalog is the source of truth: keys, placeholders and plural forms start here.
  * One namespace per area of the app; `common` and `goals` hold text shared across areas.
  */
-const messages = { account, adhkar, app, common, credits, goals, halaqat, home, khatma, library, memorization, plans, practice, prayers, reader, recitation, recurring, revision, session, settings, share, themes } as const;
+const messages = { account, activity, adhkar, app, common, credits, goals, halaqat, home, khatma, library, memorization, plans, practice, prayers, ramadan, reader, recitation, recurring, revision, session, settings, share, themes } as const;
 export default messages;

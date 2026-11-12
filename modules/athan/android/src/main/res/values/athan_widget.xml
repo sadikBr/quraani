@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The prayer times widget: its colours (the app's green and gold, the same in light and dark) and its words. -->
+<resources>
+  <color name="athan_widget_ground_top">#17574A</color>
+  <color name="athan_widget_ground">#0C2F28</color>
+  <!-- The gold line around the widget and the next prayer's box. -->
+  <color name="athan_widget_edge">#59E6C778</color>
+  <!-- Behind what is lit: the time left, and the next prayer's box. -->
+  <color name="athan_widget_lit">#26E6C778</color>
+  <color name="athan_widget_rule">#24FFFFFF</color>
+  <color name="athan_widget_text">#FFFFFFFF</color>
+  <color name="athan_widget_muted">#B3FFFFFF</color>
+  <!-- Times already past. -->
+  <color name="athan_widget_past">#73FFFFFF</color>
+  <!-- The next prayer. -->
+  <color name="athan_widget_accent">#E6C778</color>
+  <!-- Its name in the launcher's list of widgets. -->
+  <string name="athan_widget_name">مواقيت الصلاة</string>
+  <string name="athan_widget_description">الصلاة القادمة والوقت المتبقي لها ومواقيت اليوم.</string>
+  <!-- Before a place is chosen in the app. -->
+  <string name="athan_widget_empty">افتح «قرآني» وحدّد موقعك لعرض مواقيت الصلاة.</string>
+</resources>

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { ArabicText as Text } from '@/components/arabic-text';
 import type { Quran } from '@/lib/quranpedia/types';
@@ -7,21 +8,41 @@ import { ReaderIcon, type ReaderIconName } from '@/features/quran-reader/compone
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
 import { REPEAT_CHOICES } from '@/features/quran-reader/state/reading-preferences';
 import { t } from '@/i18n';
-import { dismissError, setRepeat, step, toggle, useRecitation } from './player';
+import { dismissError, setRepeat, setSleep, SLEEP_MINUTES, step, toggle, useRecitation, type SleepTimer } from './player';
 import { SeekBar } from './seek-bar';
 
 /** "٣ مرات", or "حتى تُوقفها" for endless repetition. */
 export const repeatTimes = (repeat: number) => repeat === 0 ? t('recitation.repeat.endless') : t('recitation.repeat.times', { count: repeat });
 
+/** When the recitation pauses on its own, in words: «بعد ١٥ دقيقة», «عند نهاية السورة». */
+const sleepText = (sleep: SleepTimer, now: number) => 'surah' in sleep ? t('recitation.sleep.atSurahEnd')
+  : t('recitation.sleep.inMinutes', { count: Math.max(1, Math.ceil((sleep.at - now) / 60_000)) });
+/** The choice after the one in force: each of the minutes, then the end of the surah, then none. */
+function nextSleep(sleep: SleepTimer | null, now: number): number | 'surah' | null {
+  if (!sleep) return SLEEP_MINUTES[0];
+  if ('surah' in sleep) return null;
+  const left = (sleep.at - now) / 60_000;
+  return SLEEP_MINUTES.find((minutes) => minutes > left + 1) ?? 'surah';
+}
+
 /**
  * The listening controls in the reader's bottom toolbar, shown while a recitation is under way.
  * While whole surahs play, the buttons move by surah, the repetition is the surah's, and a seek
- * bar shows where the recording is.
+ * bar shows where the recording is. The moon asks the recitation to pause on its own (in so many
+ * minutes, or at the end of the surah), for falling asleep to it.
  */
 export function RecitationBar({ palette, quran }: { palette: ReaderPalette; quran: Quran }) {
   const recitation = useRecitation();
   const { update } = useReadingPreferences();
-  const { status, kind, current, basmala, repeat, heard, reciter, error } = recitation;
+  const { status, kind, current, basmala, repeat, heard, reciter, error, sleep } = recitation;
+  // The minutes left are counted again as they pass.
+  const [now, setNow] = useState(Date.now);
+  const timed = !!sleep && 'at' in sleep;
+  useEffect(() => {
+    if (!timed) return;
+    const timer = setInterval(() => setNow(Date.now()), 20_000);
+    return () => clearInterval(timer);
+  }, [timed]);
   if (status === 'idle' && !error) return null;
   const whole = kind === 'surah';
   const surahNumber = current?.surahNumber ?? recitation.surah;
@@ -29,7 +50,7 @@ export function RecitationBar({ palette, quran }: { palette: ReaderPalette; qura
   const title = !current ? surah : basmala ? t('recitation.bar.basmala', { surah }) : t('recitation.bar.ayah', { surah, ayah: current.ayahNumber });
   const detail = status === 'loading' ? t('recitation.bar.loading')
     // An ayah's repetitions start after its surah's basmala; a whole surah's include it.
-    : [reciter?.name, (basmala && !whole) || repeat === 1 ? '' : repeat === 0 ? t('recitation.bar.repeatProgressEndless', { heard: heard + 1 })
+    : [sleep ? t('recitation.sleep.pauses', { when: sleepText(sleep, now) }) : reciter?.name, (basmala && !whole) || repeat === 1 ? '' : repeat === 0 ? t('recitation.bar.repeatProgressEndless', { heard: heard + 1 })
       : t('recitation.bar.repeatProgress', { heard: Math.min(heard + 1, repeat), repeat })].filter(Boolean).join(' · ');
   const cycleRepeat = () => {
     const choices = REPEAT_CHOICES as readonly number[];
@@ -69,6 +90,11 @@ export function RecitationBar({ palette, quran }: { palette: ReaderPalette; qura
           {repeat === 0 ? t('recitation.repeat.chipEndless') : t('recitation.repeat.chip', { count: repeat })}
         </Text>
       </Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('recitation.sleep.spoken', { when: sleep ? sleepText(sleep, now) : t('recitation.sleep.off') })}
+        accessibilityHint={t('recitation.sleep.hint')} onPress={() => { const at = Date.now(); setNow(at); setSleep(nextSleep(sleep, at)); }} hitSlop={4}
+        style={({ pressed }) => [styles.sleep, { borderColor: sleep ? palette.primary : palette.input, backgroundColor: pressed ? palette.accent : sleep ? palette.secondary : 'transparent' }]}>
+        <ReaderIcon name="moon" color={sleep ? palette.foreground : palette.mutedForeground} size={15} />
+      </Pressable>
     </View>
     {whole && <SeekBar palette={palette} />}
   </View>;
@@ -80,5 +106,6 @@ const styles = StyleSheet.create({
   info: { flex: 1, minWidth: 0, gap: 1, paddingEnd: 4 },
   control: { width: 40, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.control },
   play: { width: 44, height: 44, borderRadius: readerShape.pill, alignItems: 'center', justifyContent: 'center', marginHorizontal: 2 },
+  sleep: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.pill, borderWidth: 1, marginStart: 4 },
   repeat: { minWidth: 52, height: 32, paddingHorizontal: 8, flexDirection: 'row', gap: 4, alignItems: 'center', justifyContent: 'center', borderRadius: readerShape.pill, borderWidth: 1, marginStart: 4 },
 });

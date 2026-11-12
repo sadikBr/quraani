@@ -13,6 +13,7 @@ import type { QuranPage as Page, ReaderTextLayout } from "../../types/reader";
 import { pageSections } from "../../utils/page-sections";
 import { ayahKey } from "../../utils/references";
 import { ayahWords } from '../../utils/page-practice';
+import { splitSajda } from '../../utils/sajda';
 import { flowingAyahOffset } from '../../utils/flowing-ayah-offset';
 import { AyahTextAction } from './ayah-text-action';
 import { readerTextLineHeight } from '../../utils/reader-typography';
@@ -31,6 +32,8 @@ interface Props {
     selectedAyah: AyahReference | null;
     onTap: (ayah: Ayah) => void;
     onSelect: (ayah: Ayah) => void;
+    /** A coloured part of the tajweed text was tapped. */
+    onRule?: (ayah: Ayah, rule: string, word: number) => void;
     onNavigate?: (page: number) => void;
     onTargetOffset?: (y: number) => void;
     onAyahOffset?: (ayah: Ayah, y: number) => void;
@@ -48,6 +51,7 @@ export const QuranPage = memo(function QuranPage({
     selectedAyah,
     onTap,
     onSelect,
+    onRule,
     onNavigate,
     onTargetOffset,
     onAyahOffset,
@@ -120,6 +124,7 @@ export const QuranPage = memo(function QuranPage({
     const renderAyah = (ayah: Ayah) => {
         const revealed = visibleWords?.get(ayahKey(ayah));
         const words = revealed === undefined ? undefined : ayahWords(ayah.text);
+        const sajda = splitSajda(ayah.text);
         const selected =
             selectedAyah !== null && ayahKey(selectedAyah) === ayahKey(ayah);
         return (
@@ -145,8 +150,13 @@ export const QuranPage = memo(function QuranPage({
                             accessibilityElementsHidden={hidden} importantForAccessibility={hidden ? 'no-hide-descendants' : 'auto'} aria-hidden={hidden}>
                             {display(word)}
                         </Text>;
-                    }) : display(ayah.text)}
+                    }) : display(sajda.text)}
                 </AyahTextAction>
+                {/* An ayah of prostration: its sign in the ornament's colour, opening the ayah's sheet (and the du'a). */}
+                {!words && !!sajda.sign && <AyahTextAction color={palette.ornament} onPress={() => onSelect(ayah)}
+                    label={t('reader.sajda.sign')} hint={t('reader.sajda.signHint')}>
+                    {display(sajda.sign)}
+                </AyahTextAction>}
                 {"\u00A0"}
                 <AyahTextAction color={palette.ornament} onPress={() => onSelect(ayah)}
                     label={t('reader.ayah.actions', { ayah: ayah.ayahNumber, surah: ayah.surahNumber })}>
@@ -178,7 +188,7 @@ export const QuranPage = memo(function QuranPage({
                     }}>
                         <TajweedTextSection ayahs={section.ayahs} pageNumber={page.number} layout={layout} fontSize={fontSize} spacious={spacious}
                             palette={palette} dark={dark} runs={coloring.data[section.surah.number]} selectedAyah={selectedAyah} visibleWords={visibleWords}
-                            onTap={onTap} onSelect={onSelect} onNavigate={onNavigate} onOffset={(ayah, y) => {
+                            onTap={onTap} onSelect={onSelect} onRule={onRule} onNavigate={onNavigate} onOffset={(ayah, y) => {
                                 if (selectedAyah && ayahKey(selectedAyah) === ayahKey(ayah)) { offsets.current.row = y; reportTarget(); }
                                 if (onAyahOffset) { practiceOffsets.current.rows.set(ayahKey(ayah), { ayah, y }); reportPracticeOffsets(); }
                             }} />

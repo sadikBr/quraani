@@ -28,6 +28,22 @@ export default {
     /** Its spoken value: «3:12 من 24:05». */
     time: '{{position}} من {{duration}}',
   },
+  /** Pausing on its own, for falling asleep to the recitation (the moon in the bar). */
+  sleep: {
+    /** Spoken name of the moon button: «إيقاف التلاوة تلقائيًا: بعد ١٥ دقيقة». */
+    spoken: 'إيقاف التلاوة تلقائيًا: {{when}}',
+    hint: 'تغيير موعد الإيقاف',
+    off: 'غير مفعّل',
+    /** Under the title while it is on: «تتوقف بعد ١٥ دقيقة». */
+    pauses: 'تتوقف {{when}}',
+    atSurahEnd: 'عند نهاية السورة',
+    inMinutes_zero: 'الآن',
+    inMinutes_one: 'بعد دقيقة واحدة',
+    inMinutes_two: 'بعد دقيقتين',
+    inMinutes_few: 'بعد {{count, number}} دقائق',
+    inMinutes_many: 'بعد {{count, number}} دقيقة',
+    inMinutes_other: 'بعد {{count, number}} دقيقة',
+  },
   repeat: {
     /** How many times each ayah is recited, in a sentence: "تكرار كل آية: ٣ مرات". */
     spoken: 'تكرار كل آية: {{times}}',

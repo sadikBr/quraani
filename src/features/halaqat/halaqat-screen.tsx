@@ -41,10 +41,10 @@ export function HalaqatScreen() {
   const halaqat = state.halaqat;
   const joined = membership.joined;
   return <Frame style={{ flex: 1, backgroundColor: p.background }}>
-    {!embedded && <PageBar palette={p} back={back}
+    {!embedded && <PageBar title={t('halaqat.list.title')} palette={p} back={back}
       actions={signedIn && <Button icon="plus" palette={p} label={t('halaqat.list.createLabel')} disabled={!ready} onPress={create}>{t('halaqat.list.create')}</Button>} />}
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 18 }, embedded && { paddingTop: 18 }]}>
-      {!embedded && <PageTitle title={t('halaqat.list.title')} subtitle={t('halaqat.list.subtitle')} palette={p} />}
+      {!embedded && <PageTitle subtitle={t('halaqat.list.subtitle')} palette={p} />}
       {signedIn === false ? <Empty icon="users" motif="circle" palette={p} title={t('halaqat.sharing.signedOutTitle')} description={t('halaqat.sharing.signedOutBody')}>
         <Button size="lg" icon="user" palette={p} onPress={() => router.push('/account/sign-in')} block>{t('halaqat.sharing.signIn')}</Button>
       </Empty> : <>

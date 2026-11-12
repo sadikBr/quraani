@@ -127,9 +127,9 @@ function Recite({ halaqa, student: participant, date, sessionId: given }: { hala
   const back = { label: t('common.back'), onPress: () => router.back() };
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <PageBar back={back} palette={p} />
+      <PageBar title={displayName(student)} back={back} palette={p} />
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 22 }]}>
-        <PageTitle title={displayName(student)} subtitle={formatList([weekdayDateLabel(date), halaqa.name])} palette={p} />
+        <PageTitle subtitle={formatList([weekdayDateLabel(date), halaqa.name])} palette={p} />
         <AttendancePicker name={student.name} value={attendance} onChange={setAttendance} palette={p} />
         {error ? <Alert variant="destructive" palette={p} action={<Button variant="outline" size="sm" palette={p} icon="restore" onPress={retry}>{t('common.retry')}</Button>}>{error}</Alert>
           : !index || !shape ? <ActivityIndicator color={p.mutedForeground} style={{ marginVertical: 24 }} />

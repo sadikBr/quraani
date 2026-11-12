@@ -28,6 +28,7 @@ import { DuplicateGoalError } from './goal-limit';
 import { Copy, PlanCard, PlanField, PlanLoading, PlanNotice, PlanScreen, SwitchRow, planStyles as s } from './components';
 import { archiveDeletionDate, keptInArchive, restoreArchivedGoal } from './archive';
 import { ConfirmDialog } from '@/features/halaqat/confirm-dialog';
+import { KhatmDuaDialog } from './khatm-dua-dialog';
 import { DeleteArchivedGoalDialog } from './archive-components';
 
 export function PlanDetailScreen() {
@@ -54,6 +55,8 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [finishing, setFinishing] = useState(false);
+  /** The du'a of finishing the Quran: opened once the khatma is recorded as finished, and from its page after. */
+  const [dua, setDua] = useState(false);
   /** The change of schedule asked about: it rewrites every remaining date, and is not undone. */
   const [rescheduling, setRescheduling] = useState<'extend' | 'redistribute'>();
   const [name, setName] = useState(plan.name);
@@ -143,6 +146,7 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
       <View style={[d.row, { gap: 12 }]}><IconTile name={plan.status === 'completed' ? 'check' : plan.status === 'paused' ? 'pause' : 'archive'} />
         <View style={d.grow}><Copy title>{plan.status === 'completed' ? t('khatma.detail.status.completedTitle') : plan.status === 'paused' ? t('khatma.detail.status.pausedTitle') : t('goals.archived.title')}</Copy></View></View>
       <Copy muted>{plan.status === 'completed' ? plan.repeat ? t('khatma.detail.status.completedRepeat') : t('khatma.detail.status.completedOnce') : plan.status === 'paused' ? t('khatma.detail.status.paused') : deletionDate ? t('khatma.detail.status.archivedUntil', { date: shortDate(deletionDate) }) : keptInArchive(plan) ? t('khatma.detail.status.archivedKept') : t('khatma.detail.status.archived')}</Copy>
+      {plan.status === 'completed' && <DetailAction icon="hand-heart" label={t('khatma.dua.open')} onPress={() => setDua(true)} />}
       {plan.status === 'paused' && <DetailAction primary label={t('goals.actions.resume')} icon="book" disabled={busy} onPress={() => void mutate(p => setPlanPaused(p, false, today))} />}
       {plan.status === 'archived' && <><DetailAction primary label={t('goals.actions.restore')} icon="restore" disabled={busy} onPress={() => void archive()} />
         <DetailAction destructive label={t('goals.actions.delete')} icon="trash" disabled={busy} onPress={() => setDeleting(true)} /></>}
@@ -182,6 +186,8 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
     {rescheduling && index && <ConfirmDialog tone="primary" icon="calendar" title={t(`khatma.detail.catchUp.confirm.${rescheduling}.title`)} body={t(`khatma.detail.catchUp.confirm.${rescheduling}.body`)}
       confirm={t(`khatma.detail.catchUp.confirm.${rescheduling}.action`)} onClose={() => setRescheduling(undefined)}
       onConfirm={() => { const mode = rescheduling; setRescheduling(undefined); void mutate(p => reschedulePlan(p, index, mode, today)); }} />}
-    {finishing && <FinishGoalDialog memorization={false} onClose={() => setFinishing(false)} onConfirm={() => { setFinishing(false); markDone(); }} />}
+    {finishing && <FinishGoalDialog memorization={false} onClose={() => setFinishing(false)} onConfirm={() => { setFinishing(false);
+      if (next) void mutate(p => recordProgress(p, { cycle: next.cycle, slot: next.slot, to: next.end }, today)).then(saved => { if (saved) setDua(true); }); }} />}
+    {dua && <KhatmDuaDialog onClose={() => setDua(false)} />}
   </DetailScreen>;
 }

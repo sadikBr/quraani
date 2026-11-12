@@ -42,9 +42,9 @@ export function PrayersScreen() {
   const Frame = embedded ? View : SafeAreaView;
   const place = ready && state.location ? <PlaceButton onPress={() => setSheet('location')} /> : null;
   return <Frame style={{ flex: 1, backgroundColor: p.background }}>
-    {!embedded && <PageBar palette={p} back={{ label: t('common.backToReading'), text: t('common.mushaf'), onPress: () => router.dismissTo('/') }} />}
+    {!embedded && <PageBar title={t('prayers.title')} palette={p} back={{ label: t('common.backToReading'), text: t('common.mushaf'), onPress: () => router.dismissTo('/') }} />}
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, embedded && { paddingTop: 14 }]}>
-      {embedded ? place : <PageTitle title={t('prayers.title')} palette={p}>{place}</PageTitle>}
+      {embedded ? place : <PageTitle palette={p}>{place}</PageTitle>}
       {error && <Alert variant="destructive" palette={p}>{t('prayers.storageError')}</Alert>}
       {!ready ? null : state.location ? <>
         <DayWindow />

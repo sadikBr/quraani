@@ -111,9 +111,9 @@ export function MisbahaScreen() {
   // The tasbih fills what the totals leave, at its own size at most.
   const scale = area ? Math.max(0.4, Math.min(1.15, (area.width - 32) / W, (area.height - 120) / H)) : 0;
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
-    <PageBar palette={p} back={{ label: t('adhkar.session.back'), onPress: () => router.canGoBack() ? router.back() : router.replace('/adhkar') }}
+    <PageBar title={t('adhkar.misbaha.title')} palette={p} back={{ label: t('adhkar.session.back'), onPress: () => router.canGoBack() ? router.back() : router.replace('/adhkar') }}
       actions={<Button variant="outline" palette={p} icon="restore" label={t('adhkar.misbaha.restartLabel')} disabled={!count} onPress={restart}>{t('adhkar.misbaha.restart')}</Button>} />
-    <View style={s.title}><PageTitle title={t('adhkar.misbaha.title')} subtitle={t('adhkar.misbaha.hint')} palette={p} /></View>
+    <View style={s.title}><PageTitle subtitle={t('adhkar.misbaha.hint')} palette={p} /></View>
     <Pressable accessibilityRole="button" accessibilityLabel={t('adhkar.misbaha.label', { round: inRound, beads: BEADS, count })} accessibilityHint={t('adhkar.misbaha.tapHint')}
       onPress={press} style={s.surface} onLayout={(e) => setArea({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}>
       {scale > 0 && <Animated.View style={{ width: W * scale, height: H * scale, transform: [{ scale: pulse }] }}>

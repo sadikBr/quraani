@@ -38,9 +38,10 @@ internal object AthanTimes {
   private const val FOLLOWING = 2
   private val PRAYERS = listOf("fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha")
 
-  private class Moment(val prayer: String, val at: Long)
-  private class Day(val day: String, val date: String, val times: List<Moment>)
-  private class Times(
+  // Read by the home-screen widget too (PrayerWidget), which is given the same times.
+  internal class Moment(val prayer: String, val at: Long)
+  internal class Day(val day: String, val date: String, val times: List<Moment>)
+  internal class Times(
     val channel: String,
     val tomorrow: String,
     val countdown: String,
@@ -71,7 +72,7 @@ internal object AthanTimes {
     alarms(context).cancel(updateIntent(context))
   }
 
-  private fun parse(json: String): Times {
+  internal fun parse(json: String): Times {
     val root = JSONObject(json)
     val labels = root.getJSONObject("labels")
     val names = root.getJSONObject("names")
@@ -121,10 +122,10 @@ internal object AthanTimes {
   }
 
   /** Clock times in the phone's current zone, like the app ("16:33"). */
-  private fun clock(at: Long): String = SimpleDateFormat("HH:mm", Locale.US).format(Date(at))
-  private fun dayKey(at: Long): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(at))
+  internal fun clock(at: Long): String = SimpleDateFormat("HH:mm", Locale.US).format(Date(at))
+  internal fun dayKey(at: Long): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(at))
 
-  private fun nextMidnight(now: Long): Long {
+  internal fun nextMidnight(now: Long): Long {
     val calendar = Calendar.getInstance()
     calendar.timeInMillis = now
     calendar.add(Calendar.DAY_OF_YEAR, 1)
@@ -135,7 +136,7 @@ internal object AthanTimes {
     return calendar.timeInMillis
   }
 
-  private fun name(times: Times, moment: Moment) = times.names[moment.prayer] ?: moment.prayer
+  internal fun name(times: Times, moment: Moment) = times.names[moment.prayer] ?: moment.prayer
 
   /**
    * The next prayer, its time and the time left (a countdown running in the notification itself).
@@ -212,7 +213,7 @@ internal object AthanTimes {
       .setVisibility(Notification.VISIBILITY_PUBLIC)
     if (times.place.isNotEmpty()) builder.setSubText(times.place)
     accent(context)?.let { builder.setColor(it) }
-    openTimes(context, times.url)?.let { builder.setContentIntent(it) }
+    openTimes(context, times.url, REQUEST_OPEN)?.let { builder.setContentIntent(it) }
     return builder.build()
   }
 
@@ -227,13 +228,13 @@ internal object AthanTimes {
   }
 
   /** The app's prayer times screen by its link, else the app. */
-  private fun openTimes(context: Context, url: String): PendingIntent? {
+  internal fun openTimes(context: Context, url: String, request: Int): PendingIntent? {
     val link = if (url.isNotEmpty()) Intent(Intent.ACTION_VIEW, Uri.parse(url)).setPackage(context.packageName) else null
     val intent = link?.takeIf { it.resolveActivity(context.packageManager) != null }
       ?: context.packageManager.getLaunchIntentForPackage(context.packageName)
       ?: return null
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    return PendingIntent.getActivity(context, REQUEST_OPEN, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+    return PendingIntent.getActivity(context, request, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
   }
 
   private fun alarms(context: Context) = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager

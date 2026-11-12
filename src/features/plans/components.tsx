@@ -14,9 +14,9 @@ import { rtlInput } from '@/lib/ui-text-alignment';
 export function PlanScreen({ title, subtitle, onBack, children }: PropsWithChildren<{ title: string; subtitle?: string; onBack: () => void }>) {
   const { palette } = useReadingPreferences();
   return <SafeAreaView style={{ flex: 1, backgroundColor: palette.background }}>
-    <PageBar palette={palette} back={{ label: t('plans.back'), onPress: onBack }} />
+    <PageBar title={title} palette={palette} back={{ label: t('plans.back'), onPress: onBack }} />
     <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 24 }]}>
-      <PageTitle title={title} subtitle={subtitle} palette={palette} />
+      <PageTitle subtitle={subtitle} palette={palette} />
       {children}
     </ScrollView>
   </SafeAreaView>;

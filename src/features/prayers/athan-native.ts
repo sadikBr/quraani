@@ -10,6 +10,8 @@ interface AthanNativeModule {
   setScreenStyle(json: string): void;
   previewScreen(json: string): boolean;
   hideTimes(): void;
+  setWidgetTimes(json: string): void;
+  pinWidget(): boolean;
   canUseFullScreenIntent(): boolean;
   openFullScreenIntentSettings(): boolean;
   stop(): boolean;
@@ -56,6 +58,10 @@ export interface TimesNotification {
 /** Shows or updates the prayer times notification. Errors go to the caller. */
 export const showTimesNotification = (content: TimesNotification) => { athanModule?.showTimes(JSON.stringify(content)); };
 export const hideTimesNotification = () => attempt((m) => { m.hideTimes(); return true; }, false);
+/** The times the home-screen widget shows (those of the notification), or none without a place. */
+export const setWidgetTimes = (content: TimesNotification | null) => attempt((m) => { m.setWidgetTimes(content ? JSON.stringify(content) : ''); return true; }, false);
+/** Asks the launcher to add the prayer times widget to the home screen. False where it cannot be asked. */
+export const pinPrayerWidget = () => attempt((m) => m.pinWidget(), false);
 /** How the athan's screen looks (see `AthanScreenStyle` in the module). */
 export const setAthanScreenStyle = (style: object) => attempt((m) => { m.setScreenStyle(JSON.stringify(style)); return true; }, false);
 /** Opens the athan's screen now, silent. Resolves whether it opened. */

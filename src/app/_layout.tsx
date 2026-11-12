@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { I18nManager, Platform, Pressable, ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native';
 import type { ErrorBoundaryProps } from 'expo-router';
 import { PlansProvider, PlanNotificationObserver } from '@/features/plans/provider';
+import { ActivityProvider } from '@/features/activity/provider';
 import { AdhkarNotificationObserver, AdhkarProvider } from '@/features/adhkar/provider';
 import { PracticeProvider } from '@/features/practice/provider';
 import { HalaqaNotificationObserver, HalaqatProvider } from '@/features/halaqat/provider';
@@ -33,9 +34,9 @@ export default function RootLayout() {
     {Platform.OS === 'web' && <Head><title>{t('common.appName')}</title></Head>}
     {/* The data providers stay put when the riwayah changes (sync writes into their stores); the
         screens below the bookmarks start afresh with each riwayah. */}
-    <AccountProvider><ReadingPreferencesProvider><PlansProvider><AdhkarProvider><PracticeProvider><HalaqatProvider><PrayersProvider><BookmarksProvider>
+    <AccountProvider><ReadingPreferencesProvider><PlansProvider><ActivityProvider><AdhkarProvider><PracticeProvider><HalaqatProvider><PrayersProvider><BookmarksProvider>
       <RootNavigator />
-    </BookmarksProvider></PrayersProvider></HalaqatProvider></PracticeProvider></AdhkarProvider></PlansProvider></ReadingPreferencesProvider></AccountProvider>
+    </BookmarksProvider></PrayersProvider></HalaqatProvider></PracticeProvider></AdhkarProvider></ActivityProvider></PlansProvider></ReadingPreferencesProvider></AccountProvider>
   </>;
 }
 

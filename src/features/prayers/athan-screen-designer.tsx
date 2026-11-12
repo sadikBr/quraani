@@ -188,9 +188,9 @@ export function AthanScreenDesigner() {
   const set = (change: Partial<AthanScreenStyle>) => update({ screen: { ...style, ...change } });
   const previewWidth = Math.round(Math.min(224, width * 0.56));
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
-    <PageBar palette={p} back={{ label: t('common.back'), onPress: () => { if (router.canGoBack()) router.back(); else router.replace('/prayers'); } }} />
+    <PageBar title={t('prayers.screen.title')} palette={p} back={{ label: t('common.back'), onPress: () => { if (router.canGoBack()) router.back(); else router.replace('/prayers'); } }} />
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={page.content}>
-      <PageTitle title={t('prayers.screen.title')} subtitle={t('prayers.screen.subtitle')} palette={p} />
+      <PageTitle subtitle={t('prayers.screen.subtitle')} palette={p} />
       {!fullAthanSupported ? <View style={s.unavailable}>
         <Niche palette={p} motif="arches" w={72} h={90}><ReaderIcon name="mosque" color={p.ornament} size={24} /></Niche>
         <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22, textAlign: 'center', maxWidth: 280 }}>{t('prayers.screen.unavailable')}</Text>

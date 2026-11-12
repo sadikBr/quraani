@@ -27,6 +27,18 @@
     <receiver
       android:name="expo.modules.athan.AthanAlarmReceiver"
       android:exported="false" />
+    <!-- The prayer times on the home screen. -->
+    <receiver
+      android:name="expo.modules.athan.PrayerWidgetProvider"
+      android:exported="true"
+      android:label="@string/athan_widget_name">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+      <meta-data
+        android:name="android.appwidget.provider"
+        android:resource="@xml/athan_widget_info" />
+    </receiver>
     <receiver
       android:name="expo.modules.athan.AthanBootReceiver"
       android:exported="true">

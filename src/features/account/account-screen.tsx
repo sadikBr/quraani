@@ -38,7 +38,7 @@ export function AccountScreen() {
   const { palette: p } = useReadingPreferences();
   const { user } = useAccount();
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
-    <PageBar back={{ label: t('common.back'), onPress: () => router.back() }} palette={p} />
+    <PageBar title={t('account.title')} back={{ label: t('common.back'), onPress: () => router.back() }} palette={p} />
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 24 }]}>
       {user === undefined ? null : user ? <SignedIn email={user.email} /> : <SignedOut />}
     </ScrollView>
@@ -52,7 +52,7 @@ function SignedOut() {
     ['practice', t('account.signedOut.items.practice')], ['bookmark', t('account.signedOut.items.bookmarks')], ['book', t('account.signedOut.items.preferences')],
   ];
   return <>
-    <PageTitle title={t('account.title')} subtitle={t('account.signedOut.lead')} palette={p} />
+    <PageTitle subtitle={t('account.signedOut.lead')} palette={p} />
     <Section title={t('account.signedOut.what')} palette={p}>
       <View style={[s.list, { backgroundColor: p.card, borderColor: p.border }]}>
         {items.map(([icon, label]) => <View key={label} style={s.item}>

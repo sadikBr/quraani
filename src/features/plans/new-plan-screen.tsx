@@ -41,20 +41,21 @@ export function NewPlanScreen() {
   if (type === 'memorization') return <MemorizationCreationScreen />;
   if (type === 'revision') return <RevisionCreationScreen />;
   if (type === 'recurring') return <RecurringCreationScreen preset={preset === 'kahf' || preset === 'mulk' ? preset : undefined} />;
-  if (type === 'khatma' || type === 'wird') return <GoalCreationForm key={type} initialKind={type} />;
+  // «ختمة رمضان»: a juz' a day, which ends the Quran in the month.
+  if (type === 'khatma' || type === 'wird') return <GoalCreationForm key={type} initialKind={type} ramadan={type === 'wird' && preset === 'ramadan'} />;
   return <GoalChooser />;
 }
-function GoalCreationForm({ initialKind }: { initialKind: SequentialGoal['type'] }) {
+function GoalCreationForm({ initialKind, ramadan = false }: { initialKind: SequentialGoal['type']; ramadan?: boolean }) {
   const { palette: p, preferences } = useReadingPreferences();
   const { commit, plans, today } = usePlans();
   const [id] = useState(() => `plan-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
   const [kind, setKind] = useState<SequentialGoal['type']>(initialKind);
   const [step, setStep] = useState<0 | 1>(0);
-  const [name, setName] = useState('');
+  const [name, setName] = useState(() => ramadan ? t('ramadan.khatma.name') : '');
   const [riwayah, setRiwayah] = useState<Riwayah>(preferences.riwayah);
-  const [unit, setUnit] = useState<PlanUnit>('pages');
+  const [unit, setUnit] = useState<PlanUnit>(ramadan ? 'juzs' : 'pages');
   const [weeks, setWeeks] = useState('4');
-  const [amount, setAmount] = useState('5');
+  const [amount, setAmount] = useState(ramadan ? '1' : '5');
   const [start, setStart] = useState<PlanStart>({ kind: 'page', number: 1 });
   const [startDate, setStartDate] = useState(localDate);
   const [repeat, setRepeat] = useState(false);

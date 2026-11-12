@@ -17,6 +17,7 @@ import { useReadingPreferences } from '../../state/reading-preferences-provider'
 import { useQuranFont } from '../../hooks/use-quran-font';
 import { ayahKey } from '../../utils/references';
 import { ayahShareText } from '../../utils/ayah-actions';
+import { SAJDA_SIGN, splitSajda } from '../../utils/sajda';
 import type { ReaderPalette } from '../../theme';
 import { ReaderIcon, type ReaderIconName } from '../ui/reader-chrome';
 import { calligraphyStyle, surahNameGlyph } from '../../utils/reader-typography';
@@ -34,7 +35,8 @@ const nativeDriver = Platform.OS !== 'web';
 /**
  * What can be done with an ayah, opened by a long press on it. At the head, the ayah itself as
  * the mushaf writes it: its surah's name in calligraphy in the title's frame, where it is, and its
- * text in the Quran's face with its number (a long ayah fades after a few lines). Then what is
+ * text in the Quran's face with its number (a long ayah fades after a few lines); under an ayah of
+ * prostration, what is said in it. Then what is
  * done at once (listening, repeating, a bookmark, a copy, a share) side by side, and the ayah's
  * sciences as an arcade of three arches: each name a door that opens, in the sheet, what
  * Quranpedia holds of it (its tafsir, i'rab, qira'at, the ayahs like it, fatwas…), with the way
@@ -177,15 +179,25 @@ function Hub({ ayah, quran, surahName, palette: p, onListen, wholeSurah, groups,
   const listenDetail = !wholeSurah ? t('recitation.ayahSheet.fromHereDetail') : fromTop ? t('recitation.ayahSheet.wholeSurahDetail') : t('recitation.ayahSheet.fromHereSurahDetail');
   const repeatDetail = repeat > 1 ? t('recitation.ayahSheet.repeatAyahDetail', { count: repeat }) : t('recitation.ayahSheet.repeatAyahEndless');
   const separator = <View style={[styles.separator, { backgroundColor: p.border }]} />;
+  const sajda = splitSajda(ayah.text);
   return <View>
     {font.loaded && <View style={[styles.quote, long && { maxHeight: QUOTE_LINE * QUOTE_LINES }]}>
       {/* Measured whole only until it is cut: once its box is capped, Android measures the text to
           the cap, and deciding again from that would undo the cut, in a loop. */}
       <Text onLayout={(event) => { if (!long && event.nativeEvent.layout.height > QUOTE_LINE * QUOTE_LINES + 4) onLong(); }}
         style={{ fontFamily: font.fontFamily, fontSize: QUOTE, lineHeight: QUOTE_LINE, color: p.foreground, textAlign: 'center', writingDirection: 'rtl' }}>
-        {font.display(ayah.text)}{' '}<NativeText style={{ color: p.ornament }}>{ayah.marker}</NativeText>
+        {font.display(sajda.text)}{!!sajda.sign && <NativeText style={{ color: p.ornament }}>{sajda.sign}</NativeText>}{' '}<NativeText style={{ color: p.ornament }}>{ayah.marker}</NativeText>
       </Text>
       {long && <Fade color={p.background} />}
+    </View>}
+    {!!sajda.sign && <View style={[styles.sajda, { backgroundColor: withAlpha(p.ornament, 0.08), borderColor: withAlpha(p.ornament, 0.4) }]}>
+      <View style={styles.sajdaHead}>
+        {font.loaded && <NativeText aria-hidden style={{ fontFamily: font.fontFamily, fontSize: 22, lineHeight: 34, color: p.ornament }}>{SAJDA_SIGN}</NativeText>}
+        <Text accessibilityRole="header" style={{ flex: 1, color: p.foreground, fontSize: 17, lineHeight: 30, fontFamily: 'ReaderNaskhBold' }}>{t('reader.sajda.title')}</Text>
+      </View>
+      <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 21 }}>{t('reader.sajda.lead')}</Text>
+      <Text selectable style={{ color: p.foreground, fontSize: 18, lineHeight: 34, fontFamily: 'ReaderNaskh', textAlign: 'center' }}>{t('reader.sajda.dua')}</Text>
+      <Text style={{ color: p.mutedForeground, fontSize: 12, lineHeight: 18, textAlign: 'center' }}>{t('reader.sajda.source')}</Text>
     </View>}
     <Rule palette={p} style={styles.rule} />
     <View style={[styles.quickActions, { backgroundColor: p.card, borderColor: p.border }]}>
@@ -266,6 +278,8 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 16, paddingBottom: 28 },
   quote: { overflow: 'hidden', paddingHorizontal: 4 },
   fade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: Math.round(QUOTE_LINE * 0.8) },
+  sajda: { marginTop: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: readerShape.card, paddingHorizontal: 14, paddingVertical: 12, gap: 6 },
+  sajdaHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   rule: { marginVertical: 14, marginHorizontal: 24 },
   quickActions: { flexDirection: 'row', alignItems: 'center', borderRadius: readerShape.card, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   quickAction: { flex: 1, minHeight: 84, paddingHorizontal: 2, paddingVertical: 12, gap: 8, alignItems: 'center', justifyContent: 'center' },

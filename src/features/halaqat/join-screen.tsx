@@ -99,9 +99,9 @@ export function JoinScreen() {
   const facts = found?.data ? halaqaFacts({ riwayah: found.data.riwayah === 'hafs' ? 'hafs' : 'warsh', weekdays: found.data.weekdays ?? [] } as unknown as Halaqa) : '';
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <PageBar back={back} palette={p} />
+      <PageBar title={t('halaqat.sharing.joinTitle')} back={back} palette={p} />
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 20 }]}>
-        <PageTitle title={t('halaqat.sharing.joinTitle')} subtitle={t('halaqat.sharing.joinLead')} palette={p} />
+        <PageTitle subtitle={t('halaqat.sharing.joinLead')} palette={p} />
         <View style={{ gap: 8 }}>
           <Text style={{ color: p.foreground, fontSize: 14, fontWeight: '600' }}>{t('halaqat.sharing.codeField')}</Text>
           <TextInput accessibilityLabel={t('halaqat.sharing.codeField')} value={formatCode(code)} placeholder="XXXX-XXXX" placeholderTextColor={p.mutedForeground}

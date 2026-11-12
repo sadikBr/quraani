@@ -68,9 +68,9 @@ function Session({ halaqa, date }: { halaqa: Halaqa; date: string }) {
   const seats = seatsOf(halaqa, session, students);
   const count = (seat: Seat) => seats.filter((x) => x === seat).length;
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
-    <PageBar back={{ label: t('common.back'), onPress: () => router.back() }} palette={p} />
+    <PageBar title={weekdayDateLabel(date)} back={{ label: t('common.back'), onPress: () => router.back() }} palette={p} />
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 22 }]}>
-      <PageTitle title={weekdayDateLabel(date)} subtitle={halaqa.name} palette={p} />
+      <PageTitle subtitle={halaqa.name} palette={p} />
       {students.length > 0 && <ArchPanel palette={p} rise={40} tone={done === students.length ? p.ornament : undefined} contentStyle={s.hero}>
         <HalaqaRing seats={seats} size={136} palette={p} label={formatList([t('halaqat.detail.heardOf', { done, total: students.length }), ...(away ? [t('halaqat.detail.away', { count: away })] : [])])}>
           <RingCount palette={p} value={formatNumber(done)} caption={t('halaqat.detail.ofTotal', { total: students.length })} />

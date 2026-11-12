@@ -95,9 +95,9 @@ function Members({ halaqa }: { halaqa: Halaqa }) {
   };
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
-    <PageBar back={{ label: t('common.back'), onPress: () => router.back() }} palette={p} />
+    <PageBar title={t('halaqat.detail.people')} back={{ label: t('common.back'), onPress: () => router.back() }} palette={p} />
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 24 }]}>
-      <PageTitle title={t('halaqat.detail.people')} subtitle={halaqa.name} palette={p} />
+      <PageTitle subtitle={halaqa.name} palette={p} />
       {(codeFailed || peopleFailed) && <Alert variant="destructive" palette={p}
         action={<Button size="sm" variant="outline" icon="sync" palette={p} onPress={retry}>{t('common.retry')}</Button>}>
         {codeFailed ? t('halaqat.sharing.codeFailed') : t('halaqat.sharing.peopleFailed')}

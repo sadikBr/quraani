@@ -1,3 +1,5 @@
+import { StreakCard } from '@/features/activity/streak-card';
+import { RamadanCard } from '@/features/ramadan/ramadan-card';
 import { type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -101,9 +103,11 @@ function TodayTab({ onTab }: { onTab: (tab: Tab) => void }) {
   const { palette: p } = useReadingPreferences();
   return <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { paddingTop: 18 }]}>
     <PrayerHomeCard onOpen={() => onTab('prayers')} />
+    <RamadanCard />
     <Section title={t('home.now.title')} palette={p}>
       <NowTiles onTab={onTab} />
     </Section>
+    <StreakCard />
   </ScrollView>;
 }
 

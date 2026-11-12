@@ -118,6 +118,21 @@ restart, an update or a change of the clock. Without exact alarms the refresh ca
 minutes late, so the countdown is hidden and the switch offers the permission. Android 14+ lets
 the user swipe it away; it comes back at the next refresh. Turning it off removes it and its alarm.
 
+## The home-screen widget (`PrayerWidget.kt`, `res/layout/athan_widget.xml`)
+
+A widget of four cells by two for the launcher (Android app): the next prayer large in gold with its
+time, the time left in a pill, the place and the date, and the day's six times in a row (the next one in a lit box), those
+past dimmed; after Isha it shows the next day. It is drawn natively in the app's green and gold
+(the same in light and dark), always right to left, and a tap opens the prayer times.
+
+The app gives it the same 30 days of times as the notification (`setWidgetTimes`, whenever there
+is a place, whether or not the notification is on), and the module redraws it at each prayer and
+at midnight with a non-waking alarm of its own, on the athan's alarm, and after a restart, an
+update or a change of the clock. Without times (no place yet, or the app not opened for a month)
+it says to open the app. «إضافة المواقيت إلى الشاشة الرئيسية» in the settings asks the launcher
+to add it (`pinWidget`, Android 8+); where the launcher cannot be asked, the settings tell how to
+add it by hand.
+
 ## The athan's screen (`AthanActivity.kt`, `athan-screen-designer.tsx`)
 
 When a whole athan plays on a locked phone, its notification's full-screen intent opens a screen

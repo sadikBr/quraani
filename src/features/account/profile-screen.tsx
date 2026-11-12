@@ -84,9 +84,9 @@ export function ProfileScreen() {
 
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <PageBar back={{ label: t('common.back'), onPress: leave }} palette={p} />
+      <PageBar title={t('account.profile.title')} back={{ label: t('common.back'), onPress: leave }} palette={p} />
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 22 }]}>
-        <PageTitle title={t('account.profile.title')} subtitle={t('account.profile.lead')} palette={p} />
+        <PageTitle subtitle={t('account.profile.lead')} palette={p} />
         <ArchPanel palette={p} rise={40} contentStyle={s.portrait}>
           <Avatar size={152} photo={preview} cacheKey={photo === undefined ? profile?.avatar ?? undefined : undefined} initial={initialOf(shownName, email)} palette={p}
             busy={busy === 'photo'} label={hasPhoto ? t('account.profile.photoLabel', { name: shownName.trim() || email }) : t('account.profile.noPhotoLabel')} />

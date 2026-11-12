@@ -31,10 +31,10 @@ function statusLabel(plan: ReadingPlan) {
 export function DetailScreen({ plan, onBack, onSettings, children }: PropsWithChildren<{ plan: ReadingPlan; onBack: () => void; onSettings: () => void }>) {
   const { palette: p } = useReadingPreferences();
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
-    <PageBar palette={p} back={{ label: t('goals.backToGoals'), onPress: onBack }}
+    <PageBar title={plan.name} palette={p} back={{ label: t('goals.backToGoals'), onPress: onBack }}
       actions={<IconButton name="settings" label={t('plans.detail.settings')} palette={p} onPress={onSettings} />} />
     <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={[page.content, { gap: 22 }]}>
-      <PageTitle title={plan.name} palette={p}>
+      <PageTitle palette={p}>
         <View style={[d.row, { gap: 8, marginTop: 2 }]}>
           <View style={[d.state, { backgroundColor: withAlpha(plan.status === 'active' ? p.ornament : p.mutedForeground, 0.12) }]}>
             <View style={[d.dot, { backgroundColor: plan.status === 'active' ? p.ornament : p.mutedForeground }]} />

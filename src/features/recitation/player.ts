@@ -35,10 +35,17 @@ export interface RecitationState {
   heard: number;
   /** Last ayah of a limited stretch (a single ayah, or a goal's portion). */
   end: RecitationAyah | null;
+  /** When the recitation pauses on its own (to fall asleep to it), if asked. */
+  sleep: SleepTimer | null;
   error: string | null;
 }
 
-const idle: RecitationState = { status: 'idle', kind: 'ayah', reciter: null, mushafId: null, current: null, surah: null, basmala: false, repeat: 1, heard: 0, end: null, error: null };
+/** Pausing on its own: at a time (`at`, epoch milliseconds), or when the surah being recited ends. */
+export type SleepTimer = { at: number } | { surah: true };
+/** The minutes offered for it. */
+export const SLEEP_MINUTES = [15, 30, 45, 60] as const;
+
+const idle: RecitationState = { status: 'idle', kind: 'ayah', reciter: null, mushafId: null, current: null, surah: null, basmala: false, repeat: 1, heard: 0, end: null, sleep: null, error: null };
 let state = idle;
 const listeners = new Set<() => void>();
 const publish = (change: Partial<RecitationState>) => { state = { ...state, ...change }; listeners.forEach((l) => l()); };
@@ -230,11 +237,20 @@ function seek(s: Session, ms: number) {
   void Promise.resolve(audio().seekTo(ms / 1000)).catch(() => { if (s.seeking === seeking) s.seeking = null; });
 }
 
+/** The time asked for has come: the recitation pauses where it is, and can be taken up again. */
+function sleepNow() {
+  audio().pause();
+  publish({ sleep: null, status: 'paused' });
+}
+const sleepDue = () => !!state.sleep && 'at' in state.sleep && Date.now() >= state.sleep.at;
+
 function finished(s: AyahSession) {
   if (s.finishing) return;
   s.finishing = true;
   const next = afterFinished(s.ayahs, s.position, s.plan);
   if (!next) { stop(); return; }
+  // Asked to end with the surah: it ends here.
+  if (state.sleep && 'surah' in state.sleep && s.ayahs[next.index].surahNumber !== s.ayahs[s.position.index].surahNumber) { stop(); return; }
   const segment = segmentAt(s, next);
   const repeating = next.index === s.position.index && !s.position.basmala;
   // Within a surah file, the next ayah usually follows on directly: keep playing instead of seeking.
@@ -291,7 +307,7 @@ function surahFinished(s: SurahSession) {
   const heard = s.heard + 1;
   if (s.repeat === 0 || heard < s.repeat) { playSurahFile(s, s.surah, 0, heard); return; }
   const next = surahBeside(s, s.surah, 1);
-  if (next === null) { stop(); return; }
+  if (next === null || (state.sleep && 'surah' in state.sleep)) { stop(); return; }
   playSurahFile(s, next, 0, 0);
 }
 
@@ -331,6 +347,8 @@ function onStatus(status: AudioStatus) {
     return;
   }
   if (!settled(s, status)) return;
+  // Checked as the recording goes by (not with a timer of its own, which a sleeping phone may hold back).
+  if (status.playing && sleepDue()) { sleepNow(); return; }
   const position = status.currentTime * 1000;
   if (s.kind === 'surah') {
     if (status.didJustFinish) { surahFinished(s); return; }
@@ -389,7 +407,8 @@ export async function playFrom({ quran, reciter: choose, from, to, repeat }: Pla
   stopAudio();
   claimAudio('recitation', stop);
   const end = to ? { ...ayahs[endIndex] } : null;
-  publish({ ...idle, status: 'loading', mushafId: quran.id, current: { ...ayahs[start] }, repeat, end });
+  // (Asked to pause on its own, it still does when another ayah is chosen.)
+  publish({ ...idle, status: 'loading', mushafId: quran.id, current: { ...ayahs[start] }, repeat, end, sleep: state.sleep });
   const reciter = await prepare(own, choose, t('recitation.errors.noReciter'));
   if (!reciter) return;
   let timings: SurahTimings | null = null;
@@ -427,7 +446,7 @@ export async function playSurah({ quran, reciter: choose, from, repeat }: SurahP
   const own = ++token;
   stopAudio();
   claimAudio('recitation', stop);
-  publish({ ...idle, kind: 'surah', status: 'loading', mushafId: quran.id, surah: from.surahNumber, repeat });
+  publish({ ...idle, kind: 'surah', status: 'loading', mushafId: quran.id, surah: from.surahNumber, repeat, sleep: state.sleep });
   const reciter = await prepare(own, choose, t('recitation.errors.noSurahReciter'));
   if (!reciter) return;
   // Timings only let the page follow; without them the surah still plays.
@@ -486,6 +505,15 @@ export function setRepeat(repeat: number, kind: RecitationKind = state.kind) {
   if (session?.kind === 'ayah') session.plan = { ...session.plan, repeat };
   else if (session) session.repeat = repeat;
   publish({ repeat });
+}
+
+/**
+ * Asks the recitation under way to pause on its own: in `minutes`, at the end of the surah being
+ * recited (`'surah'`), or not at all (null). It lasts until it comes, or the recitation is stopped.
+ */
+export function setSleep(sleep: number | 'surah' | null) {
+  if (!session && sleep !== null) return;
+  publish({ sleep: sleep === null ? null : sleep === 'surah' ? { surah: true } : { at: Date.now() + sleep * 60_000 } });
 }
 
 function stopAudio() {

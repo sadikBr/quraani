@@ -64,10 +64,10 @@ export function SignInScreen() {
   const ready = plausibleEmail(email) && password.length >= (mode === 'signUp' ? PASSWORD_MIN : 1) && !busy;
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <PageBar back={{ label: t('common.back'), onPress: () => router.back() }} palette={p} />
+      <PageBar title={confirming ? t('account.signIn.confirmTitle') : mode === 'signIn' ? t('account.signIn.title') : t('account.signIn.newTitle')} back={{ label: t('common.back'), onPress: () => router.back() }} palette={p} />
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 20 }]}>
         {confirming ? <>
-          <PageTitle title={t('account.signIn.confirmTitle')} subtitle={t('account.signIn.confirmLead', { email: confirming })} palette={p} />
+          <PageTitle subtitle={t('account.signIn.confirmLead', { email: confirming })} palette={p} />
           <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22 }}>{t('account.signIn.confirmElsewhere')}</Text>
           {!!error && <Alert variant="destructive" palette={p}>{error.text}</Alert>}
           {!!note && !error && <Alert icon="check" palette={p}>{note}</Alert>}
@@ -79,8 +79,7 @@ export function SignInScreen() {
           </View>
           <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 21, textAlign: 'center' }}>{t('account.signIn.spam')}</Text>
         </> : <>
-          <PageTitle title={mode === 'signIn' ? t('account.signIn.title') : t('account.signIn.newTitle')}
-            subtitle={mode === 'signIn' ? t('account.signIn.lead') : t('account.signIn.newLead')} palette={p} />
+          <PageTitle subtitle={mode === 'signIn' ? t('account.signIn.lead') : t('account.signIn.newLead')} palette={p} />
           <Segments palette={p} value={mode} onChange={(value) => { setMode(value); setError(undefined); setNote(''); }}
             options={[{ value: 'signIn', label: t('account.signIn.modes.signIn') }, { value: 'signUp', label: t('account.signIn.modes.signUp') }]} />
           <Field label={t('account.signIn.email')}>

@@ -178,6 +178,16 @@ export default {
     /** Bookmarks stay in memory until the app is closed. */
     bookmarkStorageError: 'تعذّر حفظ العلامات على جهازك. ستبقى متوفرة إلى أن تُغلق التطبيق.',
   },
+  /** An ayah of prostration (سجدة التلاوة): its sign on the page, and a note in the ayah's sheet. */
+  sajda: {
+    /** Spoken on the sign ۩ at the end of the ayah. */
+    sign: 'علامة السجدة',
+    signHint: 'فتح الآية ودعاء سجود التلاوة',
+    title: 'آية سجدة',
+    lead: 'يُشرع السجود عند تلاوة هذه الآية. ومما يُقال في سجود التلاوة:',
+    dua: 'سَجَدَ وَجْهِي لِلَّذِي خَلَقَهُ، وَشَقَّ سَمْعَهُ وَبَصَرَهُ، بِحَوْلِهِ وَقُوَّتِهِ',
+    source: 'رواه الترمذي وأبو داود والنسائي',
+  },
   /**
    * The ayah's sciences in its sheet, as Quranpedia gives them: three arches (its meaning; its
    * revelation and recitation; what was handed down about it), each name opening its content.
@@ -333,6 +343,52 @@ export default {
     ayah: 'الآية {{ayah}}',
     /** Label of the ayah-number marker, which opens the ayah's actions. */
     ayahActions: 'خيارات الآية {{ayah}}',
+  },
+  /**
+   * A tajweed rule, opened by a tap on a coloured part of the text: its name, and what it is in a
+   * sentence or two for someone who has not studied tajweed. `warsh`: the wording for Warsh (by
+   * al-Azraq's way) where the length differs from Hafs's.
+   */
+  tajweedRules: {
+    /** Spoken title of the dialog: «حكم التجويد: قلقلة». */
+    spoken: 'حكم التجويد: {{rule}}',
+    /** Over the word the coloured part is in. */
+    inWord: 'في كلمة',
+    listen: 'استمع إلى الآية',
+    note: 'قد تجتمع في الحرف أحكام متعددة، فيظهر بلون أحدها.',
+    ghunna: { name: 'غنة', text: 'صوت يخرج من الخيشوم مع النون والميم المشدّدتين، ويُمدّ بمقدار حركتين.' },
+    qalqala: { name: 'قلقلة', text: 'اضطراب خفيف في صوت الحرف الساكن حتى تُسمع له نبرة. حروفها خمسة: ق، ط، ب، ج، د.' },
+    idghamGhunna: { name: 'إدغام بغنة', text: 'إدخال النون الساكنة أو التنوين في الحرف الذي بعدهما مع غنة بمقدار حركتين. حروفه: ي، ن، م، و.' },
+    idghamNoGhunna: { name: 'إدغام بغير غنة', text: 'إدخال النون الساكنة أو التنوين في اللام أو الراء بعدهما دون غنة.' },
+    iqlab: { name: 'إقلاب', text: 'قلب النون الساكنة أو التنوين ميمًا مخفاة مع غنة إذا جاءت بعدهما باء.' },
+    ikhfa: { name: 'إخفاء حقيقي', text: 'النطق بالنون الساكنة أو التنوين بين الإظهار والإدغام مع غنة بمقدار حركتين، وذلك عند خمسة عشر حرفًا.' },
+    ikhfaShafawi: { name: 'إخفاء شفوي', text: 'إخفاء الميم الساكنة مع غنة إذا جاءت بعدها باء.' },
+    idghamShafawi: { name: 'إدغام شفوي', text: 'إدغام الميم الساكنة في ميم بعدها مع غنة بمقدار حركتين.' },
+    idghamLetters: { name: 'إدغام حرف في حرف', text: 'يُدغم الحرف في الذي بعده لتماثلهما أو تقاربهما، فلا يُنطق بالأول ويُشدَّد الثاني.' },
+    silent: { name: 'حرف لا يُنطق', text: 'حرف مرسوم في المصحف لا يُنطق به عند القراءة.' },
+    hamzatWasl: { name: 'همزة وصل', text: 'همزة تُنطق عند البدء بالكلمة، وتسقط عند وصل الكلمة بما قبلها.' },
+    maddNatural: { name: 'مد طبيعي', text: 'مدّ حرف المد بمقدار حركتين، دون زيادة.' },
+    maddSeparate: {
+      name: 'مد منفصل',
+      text: 'حرف مد في آخر كلمة بعده همزة في أول الكلمة التالية. يُمدّ عند حفص أربع حركات أو خمسًا.',
+      warsh: 'حرف مد في آخر كلمة بعده همزة في أول الكلمة التالية. يُمدّ عند ورش ست حركات.',
+    },
+    maddConnected: {
+      name: 'مد متصل',
+      text: 'حرف مد بعده همزة في الكلمة نفسها. يُمدّ عند حفص أربع حركات أو خمسًا.',
+      warsh: 'حرف مد بعده همزة في الكلمة نفسها. يُمدّ عند ورش ست حركات.',
+    },
+    maddNecessary: { name: 'مد لازم', text: 'حرف مد بعده حرف ساكن سكونًا أصليًا أو مشدّد. يُمدّ ست حركات.' },
+    maddBadal: { name: 'مد البدل', text: 'حرف مد قبله همزة، مثل «ءَامَنوا». يُمدّ عند ورش حركتين أو أربعًا أو ستًّا.' },
+    maddLeen: { name: 'مد اللين المهموز', text: 'واو أو ياء ساكنة قبلها فتحة وبعدها همزة في الكلمة نفسها، مثل «شَيْء». يُمدّ عند ورش أربع حركات أو ستًّا.' },
+    maddStop: { name: 'مد عارض للسكون', text: 'حرف مد بعده حرف يُسكَّن عند الوقف عليه. يُمدّ حركتين أو أربعًا أو ستًّا.' },
+    naql: { name: 'نقل الهمز', text: 'تُنقل حركة الهمزة إلى الحرف الساكن قبلها وتُحذف الهمزة، مثل «قَدَ افْلَحَ».' },
+    ibdal: { name: 'إبدال الهمز', text: 'تُبدل الهمزة الساكنة حرف مد يناسب حركة ما قبلها، مثل «يُومِنون».' },
+    tashil: { name: 'تسهيل الهمز', text: 'تُنطق الهمزة بينها وبين حرف المد الذي يناسب حركتها، فلا تُحقَّق كاملة.' },
+    taqlil: { name: 'تقليل', text: 'النطق بالألف بين الفتح والإمالة، فتميل قليلًا نحو الياء.' },
+    imala: { name: 'إمالة', text: 'تقريب الفتحة من الكسرة والألف من الياء.' },
+    raTarqiq: { name: 'ترقيق الراء', text: 'تُنطق الراء رقيقة غير مفخّمة. ومن ذلك عند ورش أن تسبقها كسرة أو ياء ساكنة.' },
+    lamTaghliz: { name: 'تغليظ اللام', text: 'تُنطق اللام مفخّمة، وذلك عند ورش إذا كانت مفتوحة وقبلها صاد أو طاء أو ظاء.' },
   },
   warshLegend: {
     /** Expandable row in the settings, under the Warsh tajweed option. */

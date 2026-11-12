@@ -55,6 +55,16 @@ class AthanModule : Module() {
       AthanTimes.hide(context)
     }
 
+    /** The times the home-screen widget shows (the same JSON as showTimes), or none (an empty string). */
+    Function("setWidgetTimes") { json: String ->
+      PrayerWidget.save(context, json)
+    }
+
+    /** Asks the launcher to add the widget to the home screen; false where it cannot be asked. */
+    Function("pinWidget") {
+      PrayerWidget.pin(context)
+    }
+
     /** How the athan's screen looks: `{ "background", "dim", "motion", "date" }`. */
     Function("setScreenStyle") { json: String ->
       AthanScheduler.saveScreenStyle(context, json)

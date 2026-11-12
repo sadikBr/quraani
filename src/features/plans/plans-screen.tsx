@@ -43,10 +43,10 @@ export function PlansScreen() {
   const embedded = useEmbedded();
   const Frame = embedded ? View : SafeAreaView;
   return <Frame style={{ flex: 1, backgroundColor: p.background }}>
-    {!embedded && <PageBar palette={p} back={{ label: t('common.backToReading'), text: t('common.mushaf'), onPress: () => router.dismissTo('/') }}
+    {!embedded && <PageBar title={t('plans.list.title')} palette={p} back={{ label: t('common.backToReading'), text: t('common.mushaf'), onPress: () => router.dismissTo('/') }}
       actions={<Button icon="plus" palette={p} label={t('plans.list.createLabel')} disabled={!canCreate} onPress={create}>{t('goals.newGoal')}</Button>} />}
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 22 }, embedded && { paddingTop: 18 }]}>
-      {!embedded && <PageTitle title={t('plans.list.title')} subtitle={t('plans.list.subtitle')} palette={p} />}
+      {!embedded && <PageTitle subtitle={t('plans.list.subtitle')} palette={p} />}
       <PlanNotice message={error} retry={retry} /><PlanNotice message={reminderError} />
       {!ready ? !error && <PlanLoading /> : <>
         {view !== 'archived' && <DailyOverview today={today} due={overview.due.length} completed={overview.completedToday} hasGoals={!!overview.all.length} />}

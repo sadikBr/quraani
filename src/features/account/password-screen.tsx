@@ -36,9 +36,9 @@ export function PasswordScreen() {
   const ready = password.length >= PASSWORD_MIN && (!!reset || !!current) && !busy && !done;
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <PageBar back={{ label: t('common.back'), onPress: leave }} palette={p} />
+      <PageBar title={t('account.password.title')} back={{ label: t('common.back'), onPress: leave }} palette={p} />
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 20 }]}>
-        <PageTitle title={t('account.password.title')} subtitle={reset ? t('account.password.resetLead') : t('account.password.lead')} palette={p} />
+        <PageTitle subtitle={reset ? t('account.password.resetLead') : t('account.password.lead')} palette={p} />
         {!reset && <PasswordField label={t('account.password.current')} value={current} onChange={setCurrent} isNew={false} />}
         <PasswordField label={t('account.password.new')} value={password} onChange={setPassword} isNew onSubmit={() => { if (ready) void submit(); }} />
         {!!error && <Alert variant="destructive" palette={p}>{error}</Alert>}

@@ -59,13 +59,13 @@ function HalaqaDetail({ halaqa }: { halaqa: Halaqa }) {
   });
   const openStudent = (student: Student) => router.push({ pathname: '/halaqat/student', params: { halaqa: halaqa.id, student: student.id } });
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
-    <PageBar back={{ label: t('common.back'), onPress: backOrHalaqat }} palette={p}
+    <PageBar title={halaqa.name} back={{ label: t('common.back'), onPress: backOrHalaqat }} palette={p}
       actions={<>
         <IconButton name="users" label={t('halaqat.detail.people')} palette={p} onPress={invite} />
         <IconButton name="settings" label={t('halaqat.detail.settings')} palette={p} onPress={() => router.push({ pathname: '/halaqat/new', params: { id: halaqa.id } })} />
       </>} />
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 24 }]}>
-      <PageTitle title={halaqa.name} subtitle={facts} palette={p} />
+      <PageTitle subtitle={facts} palette={p} />
       {error && <Alert variant="destructive" palette={p} action={<Button variant="outline" size="sm" palette={p} icon="restore" onPress={retry}>{t('common.retry')}</Button>}>{error}</Alert>}
       <TodayDoor halaqa={halaqa} today={today} />
       <Section title={t('halaqat.detail.students')} detail={students.length ? t('halaqat.studentCount', { count: students.length }) : undefined} palette={p}>

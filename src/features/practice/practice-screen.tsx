@@ -102,9 +102,9 @@ export function PracticeScreen() {
 
   const Frame = embedded ? View : SafeAreaView;
   return <Frame style={{ flex: 1, backgroundColor: p.background }}>
-    {!embedded && <PageBar back={{ label: t('common.backToReading'), text: t('common.mushaf'), onPress: () => router.dismissTo('/') }} palette={p} />}
+    {!embedded && <PageBar title={t('practice.title')} back={{ label: t('common.backToReading'), text: t('common.mushaf'), onPress: () => router.dismissTo('/') }} palette={p} />}
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[s.content, embedded && { paddingTop: 16 }]}>
-      {!embedded && <PageTitle title={t('practice.title')} palette={p} />}
+      {!embedded && <PageTitle palette={p} />}
       <View style={{ gap: 8 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Text style={{ color: p.foreground, fontSize: 15, fontWeight: '600' }}>{t('practice.helper.title')}</Text>

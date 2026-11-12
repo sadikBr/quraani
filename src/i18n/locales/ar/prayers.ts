@@ -306,6 +306,14 @@ export default {
     unavailable: 'تتوفر شاشة الأذان في تطبيق أندرويد المثبّت.',
   },
   /** The prayer times notification, always shown (Android app). */
+  /** The prayer times widget on the phone's home screen (Android). */
+  widget: {
+    title: 'الشاشة الرئيسية',
+    add: 'إضافة المواقيت إلى الشاشة الرئيسية',
+    detail: 'أداة تعرض الصلاة القادمة والوقت المتبقي لها ومواقيت اليوم دون فتح التطبيق.',
+    /** When the launcher cannot be asked to add it. */
+    manual: 'اضغط مطولًا على موضع فارغ في الشاشة الرئيسية، ثم اختر «الأدوات»، وابحث عن «قرآني».',
+  },
   timesNotification: {
     title: 'إشعار المواقيت',
     label: 'المواقيت في الإشعارات',

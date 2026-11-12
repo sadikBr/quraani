@@ -52,6 +52,10 @@ wird of a khatma or daily wird, the last passage of a memorization goal) is aske
 (`FinishGoalDialog`, from the goal's page and from the reader), and is not undone afterwards.
 Revision and recurring reading never finish: each day or occurrence is its own.
 
+Finishing a khatma from its page opens a du'a for the end of the Quran (`KhatmDuaDialog`), which
+stays a tap away on the page while the khatma is completed. No one du'a is prescribed: the words
+say so.
+
 ## Scheduling and progress
 
 `engine.ts` is a pure scheduling layer. `buildPlanIndex` reads actual page, juz,

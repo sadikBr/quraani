@@ -16,31 +16,39 @@ import { formatList } from '@/i18n';
 /** The way back: to the mushaf (with its name, `text`), or to the page before (an arrow alone). */
 export interface Back { label: string; text?: string; onPress: () => void }
 
-/** The bar at the top of a page: the way back at the start, the page's actions at the end. */
-export function PageBar({ back, actions, palette: p, style }: { back?: Back; actions?: ReactNode; palette: ReaderPalette; style?: StyleProp<ViewStyle> }) {
+/**
+ * The bar at the top of a page: the way back at the start, the page's title beside it (in Naskh,
+ * on one line), and the page's actions at the end. It stays in place while the page scrolls.
+ */
+export function PageBar({ back, title, actions, palette: p, style }: { back?: Back; title?: string; actions?: ReactNode; palette: ReaderPalette; style?: StyleProp<ViewStyle> }) {
   return <View style={[s.bar, style]}>
-    {back && <Button variant="outline" icon="back" label={back.label} palette={p} onPress={back.onPress}>{back.text}</Button>}
-    <View style={{ flex: 1 }} />
+    {/* Beside a title the way back is the arrow alone (its name is still spoken): the title needs the room. */}
+    {back && <Button variant="outline" icon="back" label={back.label} palette={p} onPress={back.onPress}>{title ? undefined : back.text}</Button>}
+    {title ? <Text accessibilityRole="header" numberOfLines={1} style={{ flex: 1, minWidth: 0, color: p.foreground, fontSize: 22, lineHeight: 38, fontFamily: 'ReaderNaskhBold' }}>{title}</Text> : <View style={{ flex: 1 }} />}
     {actions}
   </View>;
 }
 
-/** A page's title, in Naskh, and a line under it. */
-export function PageTitle({ title, subtitle, palette: p, children }: { title: string; subtitle?: string; palette: ReaderPalette; children?: ReactNode }) {
+/**
+ * What comes under the bar's title: a line about the page, and anything else that belongs with
+ * it. A `title` given here is set large on its own line, for a page without a bar of its own.
+ */
+export function PageTitle({ title, subtitle, palette: p, children }: { title?: string; subtitle?: string; palette: ReaderPalette; children?: ReactNode }) {
+  if (!title && !subtitle && !children) return null;
   return <View style={{ gap: 2 }}>
-    <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 28, lineHeight: 46, fontFamily: 'ReaderNaskhBold' }}>{title}</Text>
+    {!!title && <Text accessibilityRole="header" style={{ color: p.foreground, fontSize: 28, lineHeight: 46, fontFamily: 'ReaderNaskhBold' }}>{title}</Text>}
     {!!subtitle && <Text style={{ color: p.mutedForeground, fontSize: 14, lineHeight: 22 }}>{subtitle}</Text>}
     {children}
   </View>;
 }
 
-/** The bar and the title together, for a page whose title stays in place above a list. */
+/** The bar with the title, and the line under it, for a page whose head stays in place above a list. */
 export function PageHeader({ back, actions, title, subtitle, palette: p, children }: {
   back?: Back; actions?: ReactNode; title: string; subtitle?: string; palette: ReaderPalette; children?: ReactNode;
 }) {
   return <View style={s.header}>
-    <PageBar back={back} actions={actions} palette={p} style={{ paddingHorizontal: 0 }} />
-    <PageTitle title={title} subtitle={subtitle} palette={p}>{children}</PageTitle>
+    <PageBar back={back} title={title} actions={actions} palette={p} style={{ paddingHorizontal: 0 }} />
+    <PageTitle subtitle={subtitle} palette={p}>{children}</PageTitle>
   </View>;
 }
 

@@ -56,10 +56,10 @@ function StudentDetail({ halaqa, student }: { halaqa: Halaqa; student: Student }
     else change({ type: 'saveStudent', halaqa: halaqa.id, student: { ...student, first: clean } });
   };
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
-    <PageBar back={{ label: t('common.back'), onPress: () => router.back() }} palette={p}
+    <PageBar title={displayName(student)} back={{ label: t('common.back'), onPress: () => router.back() }} palette={p}
       actions={<IconButton name="settings" label={t('halaqat.student.settings')} palette={p} onPress={() => router.push({ pathname: '/halaqat/student-form', params: { halaqa: halaqa.id, student: student.id } })} />} />
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 24 }]}>
-      <PageTitle title={displayName(student)} subtitle={formatList([halaqa.name, t(`halaqat.directions.${student.direction}`), ...(student.leftOn ? [t('halaqat.detail.leftOn', { date: weekdayDateLabel(student.leftOn) })] : [])])} palette={p} />
+      <PageTitle subtitle={formatList([halaqa.name, t(`halaqat.directions.${student.direction}`), ...(student.leftOn ? [t('halaqat.detail.leftOn', { date: weekdayDateLabel(student.leftOn) })] : [])])} palette={p} />
       {error ? <Alert variant="destructive" palette={p} action={<Button variant="outline" size="sm" palette={p} icon="restore" onPress={retry}>{t('common.retry')}</Button>}>{error}</Alert>
         : !index || !shape ? <ActivityIndicator color={p.mutedForeground} style={{ marginVertical: 24 }} /> : <>
         <Section title={t('halaqat.student.current')} palette={p}>

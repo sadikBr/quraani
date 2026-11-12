@@ -8,6 +8,7 @@ import { loadedQuranDocumentFont, loadQuranDocumentFont } from '../../services/q
 import { editionForMushaf } from '../../riwayat';
 import { tajweedTextDocument, tajweedTextState } from '../../utils/tajweed-text-document';
 import { ayahKey } from '../../utils/references';
+import { tajweedRuleKey } from '../../utils/tajweed-rules';
 import { TajweedSurface } from './tajweed-surface';
 import { ArabicText } from '@/components/arabic-text';
 import { ReaderButton } from './reader-button';
@@ -25,10 +26,12 @@ interface Props {
   ayahs: Ayah[]; pageNumber: number; layout: ReaderTextLayout; fontSize: number; spacious: boolean; palette: ReaderPalette; dark: boolean;
   runs?: TajweedSurah; selectedAyah: AyahReference | null; visibleWords?: ReadonlyMap<string, number>;
   preview?: boolean;
+  /** A coloured part was tapped: its rule, and the word it is in (by its place in the ayah). */
+  onRule?: (ayah: Ayah, rule: string, word: number) => void;
   onTap?: (ayah: Ayah) => void; onSelect?: (ayah: Ayah) => void; onOffset?: (ayah: Ayah, y: number) => void; onNavigate?: (page: number) => void;
 }
 
-export const TajweedTextSection = memo(function TajweedTextSection({ ayahs, pageNumber, layout, fontSize, spacious, palette, dark, runs, selectedAyah, visibleWords, preview = false, onTap, onSelect, onOffset, onNavigate }: Props) {
+export const TajweedTextSection = memo(function TajweedTextSection({ ayahs, pageNumber, layout, fontSize, spacious, palette, dark, runs, selectedAyah, visibleWords, preview = false, onRule, onTap, onSelect, onOffset, onNavigate }: Props) {
   const mushafId = ayahs[0].mushafId;
   const edition = editionForMushaf(mushafId);
   // The font follows the chosen letters (the Warsh text can be drawn with the Madinah font).
@@ -63,6 +66,12 @@ export const TajweedTextSection = memo(function TajweedTextSection({ ayahs, page
         }
       } else if (message.type === 'error') setError(true);
       else if (message.type === 'tap') onTap?.(ayahs[0]);
+      else if (message.type === 'rule') {
+        // The rule is one the app knows, and the word one of the ayah's: nothing else is taken from the message.
+        const ayah = ayahs.find((a) => a.surahNumber === message.surah && a.ayahNumber === message.ayah);
+        if (ayah && onRule && !visibleWords && tajweedRuleKey(message.rule) && Number.isInteger(message.word) && message.word >= 0) onRule(ayah, message.rule, message.word);
+        else onTap?.(ayahs[0]);
+      }
       else if (message.type === 'swipe' && [1, -1].includes(message.delta)) onNavigate?.(pageNumber + message.delta);
       else if (message.type === 'select') {
         const ayah = ayahs.find((a) => a.surahNumber === message.surah && a.ayahNumber === message.ayah);

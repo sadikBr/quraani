@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The prayer times widget: four cells by two, redrawn by the module at each prayer (Android's own half-hourly update is only a fallback). -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+  android:minWidth="250dp"
+  android:minHeight="110dp"
+  android:targetCellWidth="4"
+  android:targetCellHeight="2"
+  android:minResizeWidth="250dp"
+  android:minResizeHeight="110dp"
+  android:resizeMode="horizontal|vertical"
+  android:updatePeriodMillis="1800000"
+  android:initialLayout="@layout/athan_widget"
+  android:previewLayout="@layout/athan_widget"
+  android:description="@string/athan_widget_description"
+  android:widgetCategory="home_screen" />

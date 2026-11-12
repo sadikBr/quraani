@@ -72,9 +72,9 @@ export function HalaqaFormScreen() {
   const back = { label: t('common.back'), onPress: () => router.back() };
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <PageBar back={back} palette={p} />
+      <PageBar title={existing ? t('halaqat.form.editTitle') : t('halaqat.form.newTitle')} back={back} palette={p} />
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 24 }]}>
-        <PageTitle title={existing ? t('halaqat.form.editTitle') : t('halaqat.form.newTitle')} subtitle={t('halaqat.form.subtitle')} palette={p} />
+        <PageTitle subtitle={t('halaqat.form.subtitle')} palette={p} />
         <NamePlate value={name} onChange={setName} palette={p} facts={halaqaFacts({ riwayah, weekdays: days, time })} />
         <Section title={t('halaqat.form.riwayah')} palette={p}>
           {locked ? <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 21 }}>{t('halaqat.form.riwayahLocked')}</Text>

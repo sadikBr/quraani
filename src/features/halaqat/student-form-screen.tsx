@@ -80,9 +80,9 @@ export function StudentFormScreen() {
   };
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.background }}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <PageBar back={back} palette={p} />
+      <PageBar title={existing ? t('halaqat.studentForm.editTitle') : t('halaqat.studentForm.newTitle')} back={back} palette={p} />
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { gap: 24 }]}>
-        <PageTitle title={existing ? t('halaqat.studentForm.editTitle') : t('halaqat.studentForm.newTitle')} subtitle={halaqa.name} palette={p} />
+        <PageTitle subtitle={halaqa.name} palette={p} />
         <PlanField label={t('halaqat.studentForm.name')} value={name} onChange={setName} placeholder={t('halaqat.studentForm.namePlaceholder')} />
         <Section title={t('halaqat.studentForm.direction')} palette={p}>
           <Tabs role="radio" palette={p} label={t('halaqat.studentForm.direction')} value={direction} onChange={setDirection}

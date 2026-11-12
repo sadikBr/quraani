@@ -7,7 +7,7 @@ import { Alert, Button, SwitchMark, Tabs } from '@/components/ui';
 import { ReaderIcon } from '@/features/quran-reader/components/ui/reader-chrome';
 import { useReadingPreferences } from '@/features/quran-reader/state/reading-preferences-provider';
 import { formatList, t } from '@/i18n';
-import { athanModule, athanPlaying, canScheduleExactAlarms, canUseFullScreenIntent, ignoresBatteryOptimizations, openBatteryOptimizationSettings, openExactAlarmSettings, openFullScreenIntentSettings, stopAthan } from './athan-native';
+import { pinPrayerWidget, athanModule, athanPlaying, canScheduleExactAlarms, canUseFullScreenIntent, ignoresBatteryOptimizations, openBatteryOptimizationSettings, openExactAlarmSettings, openFullScreenIntentSettings, stopAthan } from './athan-native';
 import { upcomingAthan } from './athan-screen';
 import { alertIcons, effectiveAlert, hijriLabel, signedMinutes } from './format';
 import { alertsSupported, athanSoundsSupported, fullAthanSupported, TEST_SECONDS, testPrayerAlert } from './notifications';
@@ -33,6 +33,7 @@ export function PrayerSettings() {
   return <View style={s.page}>
     <Alerts onVoice={() => setSheet('voice')} onTakbir={() => setSheet('takbir')} onAlert={(prayer) => setSheet({ alert: prayer })} />
     {timesNotificationSupported && <TimesNotification />}
+    {timesNotificationSupported && <HomeWidget />}
     <Calculation onMethod={() => setSheet('method')} onAdjust={() => setSheet('adjust')} />
     {sheet === 'method' && <MethodSheet onClose={() => setSheet(null)} />}
     {sheet === 'adjust' && <AdjustmentsSheet onClose={() => setSheet(null)} />}
@@ -55,6 +56,21 @@ function Part({ title, description, children }: { title: string; description?: s
 function Note({ children }: { children: string }) {
   const { palette: p } = useReadingPreferences();
   return <Text style={{ color: p.mutedForeground, fontSize: 13, lineHeight: 20, paddingHorizontal: 4, marginTop: -4 }}>{children}</Text>;
+}
+
+/**
+ * The prayer times widget for the phone's home screen (Android app): the launcher is asked to add
+ * it; where it cannot be asked, the way to add it by hand is told.
+ */
+function HomeWidget() {
+  const { palette: p } = useReadingPreferences();
+  const [manual, setManual] = useState(false);
+  return <Part title={t('prayers.widget.title')}>
+    <RowGroup palette={p}>
+      <Row palette={p} icon="home" title={t('prayers.widget.add')} detail={t('prayers.widget.detail')} onPress={() => setManual(!pinPrayerWidget())} />
+    </RowGroup>
+    {manual && <Alert palette={p}>{t('prayers.widget.manual')}</Alert>}
+  </Part>;
 }
 
 /** The prayer times kept in the phone's notifications (Android app). */

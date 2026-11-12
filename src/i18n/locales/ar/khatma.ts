@@ -132,6 +132,14 @@ export default {
   },
   /** Repeat switch, in creation and in the goal settings. A new round starts from the beginning of the mushaf. */
   repeat: 'تكرار الختمة عند الإتمام',
+  /** On finishing the Quran: no one du'a is prescribed, so the words say so and offer one often said. */
+  dua: {
+    open: 'دعاء ختم القرآن',
+    title: 'دعاء ختم القرآن',
+    lead: 'ادعُ عند ختم القرآن بما تيسّر لك. ومما يُدعى به:',
+    text: 'اللَّهُمَّ ارْحَمْنِي بِالْقُرْآنِ، وَاجْعَلْهُ لِي إِمَامًا وَنُورًا وَهُدًى وَرَحْمَةً. اللَّهُمَّ ذَكِّرْنِي مِنْهُ مَا نُسِّيتُ، وَعَلِّمْنِي مِنْهُ مَا جَهِلْتُ، وَارْزُقْنِي تِلَاوَتَهُ آنَاءَ اللَّيْلِ وَأَطْرَافَ النَّهَارِ، وَاجْعَلْهُ لِي حُجَّةً يَا رَبَّ الْعَالَمِينَ.',
+    close: 'آمين',
+  },
   detail: {
     /** Screen title while the goal loads or when it does not exist. */
     title: 'الهدف',
