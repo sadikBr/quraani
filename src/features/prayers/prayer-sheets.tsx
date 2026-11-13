@@ -13,6 +13,7 @@ import { t } from '@/i18n';
 import { CITIES, type City } from './cities';
 import { LocateError, locate } from './location';
 import { athanSoundsSupported, fullAthanSupported } from './notifications';
+import { ensureVoice, useVoiceStates } from './athan-voices';
 import { cityName, countryName, placeName } from './place';
 import { playPreview, stopPreview, usePreview, type PreviewKey } from './preview';
 import { usePrayers } from './provider';
@@ -160,9 +161,16 @@ export function VoiceSheet({ onClose }: { onClose: () => void }) {
   const { state, update } = usePrayers();
   const preview = usePreview();
   const close = () => { stopPreview(); onClose(); };
+  // A recording that does not come with the app is fetched when it is chosen (and again on a later choice, if that failed).
+  const voiceStateOf = useVoiceStates();
+  const fetching = voiceStateOf(state.voice);
   return <PrayerSheet title={t('prayers.voices.title')} subtitle={t('prayers.voices.subtitle')} onClose={close}>
-    <SoundChoices<VoiceId> groups={voiceGroups()} chosen={state.voice} onChoose={(voice) => update({ voice })} previewKey={(voice) => `athan:${voice}`}
-      name={(voice) => t(`prayers.voices.${voice}.name`)} detail={(voice) => t(`prayers.voices.${voice}.source`)} />
+    <SoundChoices<VoiceId> groups={voiceGroups()} chosen={state.voice} onChoose={(voice) => { update({ voice }); void ensureVoice(voice); }} previewKey={(voice) => `athan:${voice}`}
+      name={(voice) => t(`prayers.voices.${voice}.name`)}
+      detail={(voice) => { const has = voiceStateOf(voice); return has === 'ready' ? t(`prayers.voices.${voice}.source`) : `${t(`prayers.voices.${voice}.source`)} · ${t(`prayers.voices.download.${has}`)}`; }} />
+    {fetching === 'downloading' && <Alert palette={p} icon="download">{t('prayers.voices.download.note')}</Alert>}
+    {fetching === 'failed' && <Alert variant="destructive" palette={p}
+      action={<Button size="sm" variant="outline" palette={p} icon="restore" onPress={() => { void ensureVoice(state.voice); }}>{t('common.retry')}</Button>}>{t('prayers.voices.download.failedNote')}</Alert>}
     {preview.error && <Alert variant="destructive" palette={p}>{t('prayers.voices.playFailed')}</Alert>}
   </PrayerSheet>;
 }

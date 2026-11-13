@@ -7,6 +7,7 @@ import { usePlans } from '@/features/plans/provider';
 import { applyPrayers, decodePrayers, defaultPrayerState, PRAYERS_KEY, type AlertKind, type PrayerChange, type PrayerState } from './settings';
 import { observePrayerNotifications, PrayerAlertError, requestNotifications, requestPrayerAlerts, syncPrayerAlerts } from './notifications';
 import { syncTimesNotification } from './times-notification';
+import { ensureVoice } from './athan-voices';
 import { syncScreenStyle } from './athan-screen';
 import type { PrayerId } from './times';
 
@@ -62,6 +63,11 @@ export function PrayersProvider({ children }: PropsWithChildren) {
     const timer = setTimeout(() => { syncTimesNotification(state); syncScreenStyle(state.screen); }, 400);
     return () => clearTimeout(timer);
   }, [ready, state, today, revision]);
+
+  // The chosen athan's recording, when it does not come with the app, is fetched if it is not on
+  // the phone yet (chosen on another version of the app, or a fetch that failed): tried on each return.
+  const voice = state.voice;
+  useEffect(() => { if (ready) void ensureVoice(voice); }, [ready, voice, revision]);
 
   const update = useCallback((change: PrayerChange) => store.update(change), [store]);
   const setEnabled = useCallback(async (enabled: boolean) => {

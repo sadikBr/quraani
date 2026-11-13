@@ -14,6 +14,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
+import java.io.File
 
 /**
  * Plays a whole athan in the foreground (the system lets an exact alarm start it), on the alarm
@@ -88,22 +89,15 @@ class AthanService : Service() {
       if (audio.requestAudioFocus(request) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) return false
       focus = request
     }
-    // Each named, so that resource shrinking keeps them all.
+    // Two recordings come with the app (each named, so that resource shrinking keeps them). The
+    // others are fetched by the app when chosen and kept in its files (`athan-voices.ts`); one
+    // not there yet, or unreadable, gives way to the first that comes with the app.
     val resource = when (voice) {
       "madinah" -> R.raw.athan_full_madinah
-      "aqsa" -> R.raw.athan_full_aqsa
-      "alafasy" -> R.raw.athan_full_alafasy
-      "alafasy2" -> R.raw.athan_full_alafasy2
-      "nufais" -> R.raw.athan_full_nufais
-      "zahrani" -> R.raw.athan_full_zahrani
-      "qatami" -> R.raw.athan_full_qatami
-      "dosari" -> R.raw.athan_full_dosari
-      "kurdi" -> R.raw.athan_full_kurdi
-      "abdulbasit" -> R.raw.athan_full_abdulbasit
-      "ozcan" -> R.raw.athan_full_ozcan
       else -> R.raw.athan_full_makkah
     }
-    val created = MediaPlayer.create(this, resource, attributes, audio.generateAudioSessionId()) ?: return false
+    val session = audio.generateAudioSessionId()
+    val created = fetched(voice, attributes, session) ?: MediaPlayer.create(this, resource, attributes, session) ?: return false
     created.setWakeMode(applicationContext, PowerManager.PARTIAL_WAKE_LOCK)
     created.setOnCompletionListener { finish(completed = true) }
     created.setOnErrorListener { _, _, _ ->
@@ -115,6 +109,24 @@ class AthanService : Service() {
     created.start()
     handler.postDelayed(timeout, MAX_PLAY_MS)
     return true
+  }
+
+  /** A player on the recording the app fetched for this voice, if it is on the phone and plays. */
+  private fun fetched(voice: String, attributes: AudioAttributes, session: Int): MediaPlayer? {
+    if (!voice.matches(Regex("[a-z0-9]{1,24}"))) return null
+    val file = File(File(filesDir, "athan"), "athan_full_$voice.ogg")
+    if (!file.isFile || file.length() == 0L) return null
+    val player = MediaPlayer()
+    return try {
+      player.setAudioAttributes(attributes)
+      player.audioSessionId = session
+      player.setDataSource(file.absolutePath)
+      player.prepare()
+      player
+    } catch (e: Exception) {
+      player.release()
+      null
+    }
   }
 
   private fun release() {

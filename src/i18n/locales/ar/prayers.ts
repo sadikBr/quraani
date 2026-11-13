@@ -169,6 +169,15 @@ export default {
     playLabel: 'الاستماع إلى {{voice}}',
     stopLabel: 'إيقاف {{voice}}',
     playFailed: 'تعذّر تشغيل المقطع. أعد المحاولة.',
+    /** A recording that does not come with the app: fetched once, when it is chosen. */
+    download: {
+      /** After the source, under a voice not on the phone yet. */
+      absent: 'يُنزَّل عند اختياره',
+      downloading: 'جارٍ التنزيل…',
+      failed: 'لم يُنزَّل',
+      note: 'جارٍ تنزيل الأذان. إلى أن يكتمل، يُشغَّل أذان مكة المكرمة.',
+      failedNote: 'تعذّر تنزيل الأذان. تحقق من اتصالك ثم أعد المحاولة. إلى ذلك الحين يُشغَّل أذان مكة المكرمة.',
+    },
     /** The voices in groups, the athans of the three mosques first. */
     groups: { mosques: 'الحرمان والأقصى', muezzins: 'بأصوات المؤذنين' },
     makkah: { name: 'المسجد الحرام', source: 'أذان مكة المكرمة · ثلاث دقائق ونصف' },

@@ -80,6 +80,11 @@ and each return to the app:
   or in a call, and shows the notification only; if Android refuses the service (an inexact alarm
   on Android 12+), the takbir notification comes instead. Without the module (Expo Go),
   «الأذان كاملًا» acts as «تكبير».
+- **The recordings** (`athan-voices.ts`): `makkah` and `madinah` come with the app; the other
+  voices are fetched the first time they are chosen (about 1.5 MB each, from the repository's
+  `assets/athan/full/`), saved under `documents/athan/`, and found there by the module. The voice
+  sheet says which are not on the phone yet, and that the Makkah athan plays until a fetch is
+  done; a fetch that failed is tried again on each return to the app.
 - **Test** («تجربة التنبيه», alerts on): sends the next prayer's takbir, or its whole athan, in
   10 seconds by the same path as at prayer time (an expo notification on the takbir's channel; the
   module's alarm, `AthanModule.test`), so the user can lock the phone and see the athan's screen.

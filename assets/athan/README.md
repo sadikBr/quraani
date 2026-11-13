@@ -9,9 +9,13 @@ takbir), chosen in the prayer settings. The pickers group them: the athans of th
   `app.json`), where each has its own notification channel (`prayer-takbir2-<id>`), since a
   channel keeps its sound. The channels of the earlier recordings (`prayer-takbir-<id>`,
   `prayer-athan-<voice>`) are deleted when the app next syncs its alerts.
-- `athan_full_<voice>.ogg` (`modules/athan/android/src/main/res/raw/`): the whole athan, played by
-  the app's own Android module (`AthanService.kt`, which names each file so resource shrinking
-  keeps them) for «الأذان كاملًا», with its screen and a button to stop it.
+- `athan_full_<voice>.ogg`: the whole athan, played by the app's own Android module
+  (`AthanService.kt`) for «الأذان كاملًا», with its screen and a button to stop it. Two come with
+  the app (`makkah` and `madinah`, in `modules/athan/android/src/main/res/raw/`, named in the
+  module so resource shrinking keeps them). The other ten are in `full/` here and are not built
+  into the app (they were 14 MB of it): the app fetches one the first time it is chosen, from
+  this repository's `main` branch (`src/features/prayers/athan-voices.ts`), and keeps it on the
+  phone. **Moving or renaming `full/` breaks that for the apps already installed.**
 - `preview_<voice>.m4a` and `preview_takbir_<id>.m4a` (this folder): the athan's opening and each
   takbir as AAC, so the pickers can play them on every platform.
 
