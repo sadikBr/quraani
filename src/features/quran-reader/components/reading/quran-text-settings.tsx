@@ -26,7 +26,7 @@ const toSize = (step: number) => readerFontSteps[Math.max(0, Math.min(readerFont
  */
 export function QuranTextSettings({ palette: p }: { palette: ReaderPalette }) {
   const { preferences, update, dark } = useReadingPreferences();
-  const { mode, textLayout, riwayah, warshScript, spacious, fontSize, tajweed } = preferences;
+  const { mode, textLayout, riwayah, warshScript, spacious, fontSize, tajweed, tajweedRules } = preferences;
   // A size being dragged shows in the preview at once and is saved on release, so the reader and
   // storage don't update on every gesture event. A change made elsewhere still wins.
   const [draft, setDraft] = useState({ saved: fontSize, size: snapReaderFontSize(fontSize) });
@@ -48,6 +48,9 @@ export function QuranTextSettings({ palette: p }: { palette: ReaderPalette }) {
       <Row key="tajweed" title={t('settings.tajweed.title')} detail={riwayah === 'warsh' ? t('settings.tajweed.warshDetail') : t('settings.tajweed.hafsDetail')}
         label={t('settings.tajweed.title')} role="switch" selected={tajweed} onPress={() => update({ tajweed: !tajweed })}
         leading={<TajweedInks palette={p} dark={dark} />} trailing={<SwitchMark checked={tajweed} palette={p} />} palette={p} />
+      {tajweed && textMode && <Row key="rules" title={t('settings.tajweed.rules')} detail={t('settings.tajweed.rulesDetail')}
+        label={t('settings.tajweed.rules')} role="switch" selected={tajweedRules} onPress={() => update({ tajweedRules: !tajweedRules })}
+        trailing={<SwitchMark checked={tajweedRules} palette={p} />} palette={p} />}
       {riwayah === 'warsh' && tajweed && <View key="legend" style={[settingsStyles.block, { paddingVertical: 4, paddingBottom: 14 }]}>
         <WarshTajweedLegend palette={p} dark={dark} />
         <Text style={{ color: p.mutedForeground, fontSize: 12, lineHeight: 19 }}>{t('settings.tajweed.stopNote')}</Text>

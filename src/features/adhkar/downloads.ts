@@ -67,10 +67,14 @@ export async function downloadAudio() {
       while (next < missing.length && !controller.signal.aborted) {
         const id = missing[next++];
         const target = fileFor(id);
+        // Saved under another name until it is whole: a download cut short is never taken for the recording.
+        const part = new File(folder(), `${id}.mp3.part`);
         try {
-          await File.downloadFileAsync(audioUrl(id), target, { idempotent: true, signal: controller.signal });
+          await File.downloadFileAsync(audioUrl(id), part, { idempotent: true, signal: controller.signal });
+          if (target.exists) target.delete();
+          part.move(target);
         } catch (error) {
-          try { if (target.exists) target.delete(); } catch { /* Replaced next time. */ }
+          try { if (part.exists) part.delete(); } catch { /* Replaced next time. */ }
           if (controller.signal.aborted) return;
           throw error;
         }

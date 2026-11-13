@@ -154,10 +154,15 @@ export async function downloadSurahs(reciter: Reciter, surahs: number[], plan: D
           const file = files[next++];
           if (controller.signal.aborted) return;
           const target = fileIn(reciter.id, file.name);
+          // Saved under another name until it is whole: a download cut short (the app closed) is
+          // never taken for the recording.
+          const part = fileIn(reciter.id, `${file.name}.part`);
           try {
-            await File.downloadFileAsync(file.url, target, { idempotent: true, signal: controller.signal });
+            await File.downloadFileAsync(file.url, part, { idempotent: true, signal: controller.signal });
+            if (target.exists) target.delete();
+            part.move(target);
           } catch (error) {
-            try { if (target.exists) target.delete(); } catch { /* Replaced on the next attempt. */ }
+            try { if (part.exists) part.delete(); } catch { /* Replaced on the next attempt. */ }
             if (controller.signal.aborted) return;
             if (/\b404\b/.test(String(error))) { manifest.missing.push(file.name); missingFiles.delete(reciter.id); }
             else throw error;

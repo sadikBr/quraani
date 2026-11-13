@@ -4,7 +4,7 @@ import type { ReaderTextLayout } from '../types/reader';
 import { ayahKey } from './references';
 import { ayahWords } from './page-practice';
 import { readerTextLineHeight } from './reader-typography';
-import { sliceTajweed, tajweedColor, type TajweedSurah } from './tajweed';
+import { sliceTajweed, tajweedColor, type TajweedRun, type TajweedSurah } from './tajweed';
 import { tajweedRuleKey } from './tajweed-rules';
 import { SAJDA_SIGN } from './sajda';
 import { t } from '@/i18n';
@@ -60,8 +60,25 @@ if(${!preview}){
 let start=null,timer=null,long=false;function clear(){clearTimeout(timer);timer=null}function ref(e){const a=e.target.closest('.ayah');return a?{surah:Number(a.dataset.surah),ayah:Number(a.dataset.ayah)}:{}}
 document.addEventListener('pointerdown',e=>{start={x:e.clientX,y:e.clientY};long=false;const a=ref(e);if(a.ayah)timer=setTimeout(()=>{long=true;send('select',a)},500)});
 document.addEventListener('pointermove',e=>{if(start&&Math.hypot(e.clientX-start.x,e.clientY-start.y)>8)clear()});document.addEventListener('pointercancel',()=>{clear();start=null});
-document.addEventListener('pointerup',e=>{clear();if(!start)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;start=null;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.5){send('swipe',{delta:dx>0?1:-1});return}if(long||Math.hypot(dx,dy)>8)return;const rule=e.target.closest('[data-rule]');if(rule&&!e.target.closest('.marker')){const w=rule.closest('.word');send('rule',{...ref(e),rule:rule.dataset.rule,word:[...w.parentNode.querySelectorAll('.word')].indexOf(w)});return}send(e.target.closest('.marker')?'select':'tap',ref(e))});
+document.addEventListener('pointerup',e=>{clear();if(!start)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;start=null;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy)*1.5){send('swipe',{delta:dx>0?1:-1});return}if(long||Math.hypot(dx,dy)>8)return;const rule=e.target.closest('[data-rule]');if(rule&&!e.target.closest('.marker')){const w=rule.closest('.word');send('rule',{...ref(e),rule:rule.dataset.rule,word:[...w.parentNode.querySelectorAll('.word')].indexOf(w),run:[...w.children].indexOf(rule)});return}send(e.target.closest('.marker')?'select':'tap',ref(e))});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('.marker,.verse')){e.preventDefault();send(e.target.matches('.marker')?'select':'tap',ref(e))}});document.addEventListener('contextmenu',e=>e.preventDefault());
 }
 </script></body></html>`;
+}
+
+/**
+ * One word in its tajweed colours, for the page that explains a rule: drawn by the browser like
+ * the text itself (so the letters join across the colours), with the part that was tapped
+ * (`tapped`, its place among the word's runs) on a ground of its own colour.
+ */
+export function tajweedWordDocument(runs: readonly TajweedRun[], tapped: number, font: string, fontSize: number, dark: boolean, palette: ReaderPalette, display: (text: string) => string = (text) => text) {
+  const word = runs.map((run, i) => {
+    const color = tajweedColor(run.rule, dark, palette.foreground);
+    return `<span style="color:${color}${i === tapped ? `;background:${color}2e;border-radius:6px;box-shadow:0 0 0 2px ${color}2e` : ''}">${escape(display(run.text.replace(SAJDA_SIGN, '')))}</span>`;
+  }).join('');
+  return `<!doctype html><html dir="rtl" lang="ar"><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src data:; style-src 'unsafe-inline'"><style>
+@font-face{font-family:quran;src:url('${font}') format('truetype');font-display:block}
+html,body{margin:0;padding:0;height:100%;background:${palette.card};overflow:hidden;-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
+body{display:flex;align-items:center;justify-content:center;font:400 ${fontSize}px/2 quran;color:${palette.foreground};direction:rtl;white-space:pre}
+</style></head><body><span>${word}</span></body></html>`;
 }

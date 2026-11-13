@@ -161,7 +161,11 @@ function Members({ halaqa }: { halaqa: Halaqa }) {
       title={confirm.person.role === 'member' ? t('halaqat.sharing.removeMemberTitle') : t('halaqat.sharing.removeTeacherTitle')}
       body={t(confirm.person.role === 'member' ? 'halaqat.sharing.removeMemberBody' : 'halaqat.sharing.removeTeacherBody', { name: confirm.name })}
       onClose={() => setConfirm(undefined)}
-      onConfirm={() => { const person = confirm.person; setConfirm(undefined); void act(() => removePerson(halaqa.id, person.user!), t('halaqat.sharing.removeFailed')); }} />}
+      onConfirm={() => { const person = confirm.person; setConfirm(undefined); void act(async () => {
+        await removePerson(halaqa.id, person.user!);
+        // The code they joined with would let them back in: a member taken out, the halaqa gets a new one.
+        if (person.role === 'member') await invite(halaqa.id, 'member', true).then((c) => setCode(c.code), () => {});
+      }, t('halaqat.sharing.removeFailed')); }} />}
     {confirm?.kind === 'leave' && <ConfirmDialog icon="log-out" title={t('halaqat.sharing.leaveTitle')} body={t('halaqat.sharing.leaveTeacherBody', { name: halaqa.name })}
       confirm={t('halaqat.sharing.leave')} onClose={() => setConfirm(undefined)}
       onConfirm={() => { setConfirm(undefined); void act(async () => { await leave(halaqa.id); pastHalaqa(2); }, t('halaqat.sharing.leaveFailed')); }} />}

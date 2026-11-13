@@ -32,7 +32,8 @@ import { KhatmDuaDialog } from './khatm-dua-dialog';
 import { DeleteArchivedGoalDialog } from './archive-components';
 
 export function PlanDetailScreen() {
-  const { id, reminderIssue } = useLocalSearchParams<{ id: string; reminderIssue?: string }>();
+  // `finished`: the khatma was just finished from the mushaf.
+  const { id, reminderIssue, finished } = useLocalSearchParams<{ id: string; reminderIssue?: string; finished?: string }>();
   const { plans, ready, error, retry } = usePlans();
   const plan = plans.find(p => p.id === id);
   if (!ready || !plan) return <PlanScreen title={t('khatma.detail.title')} onBack={() => router.replace('/plans')}>
@@ -41,9 +42,9 @@ export function PlanDetailScreen() {
   if (isMemorizationPlan(plan)) return <MemorizationDetail key={plan.id} plan={plan} initialReminderIssue={reminderIssue === 'permission' || reminderIssue === 'unavailable' ? reminderIssue : undefined} />;
   if (isRecurringPlan(plan)) return <RecurringDetail key={plan.id} plan={plan} initialReminderIssue={reminderIssue === 'permission' || reminderIssue === 'unavailable' ? reminderIssue : undefined} />;
   if (isRevisionPlan(plan)) return <RevisionDetail key={plan.id} plan={plan} initialReminderIssue={reminderIssue === 'permission' || reminderIssue === 'unavailable' ? reminderIssue : undefined} />;
-  return <PlanDetail key={plan.id} plan={plan} initialReminderIssue={reminderIssue === 'permission' || reminderIssue === 'unavailable' ? reminderIssue : undefined} />;
+  return <PlanDetail key={plan.id} plan={plan} initialDua={finished === '1' && plan.status === 'completed'} initialReminderIssue={reminderIssue === 'permission' || reminderIssue === 'unavailable' ? reminderIssue : undefined} />;
 }
-function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; initialReminderIssue?: ReminderIssue }) {
+function PlanDetail({ plan, initialReminderIssue, initialDua = false }: { plan: SequentialPlan; initialReminderIssue?: ReminderIssue; initialDua?: boolean }) {
   const { palette, update } = useReadingPreferences();
   const { commit, today, reminderError } = usePlans();
   const { index, error, retry } = usePlanIndex(plan.riwayah);
@@ -56,7 +57,7 @@ function PlanDetail({ plan, initialReminderIssue }: { plan: SequentialPlan; init
   const [deleting, setDeleting] = useState(false);
   const [finishing, setFinishing] = useState(false);
   /** The du'a of finishing the Quran: opened once the khatma is recorded as finished, and from its page after. */
-  const [dua, setDua] = useState(false);
+  const [dua, setDua] = useState(initialDua);
   /** The change of schedule asked about: it rewrites every remaining date, and is not undone. */
   const [rescheduling, setRescheduling] = useState<'extend' | 'redistribute'>();
   const [name, setName] = useState(plan.name);

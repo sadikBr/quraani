@@ -26,8 +26,8 @@ interface Props {
   ayahs: Ayah[]; pageNumber: number; layout: ReaderTextLayout; fontSize: number; spacious: boolean; palette: ReaderPalette; dark: boolean;
   runs?: TajweedSurah; selectedAyah: AyahReference | null; visibleWords?: ReadonlyMap<string, number>;
   preview?: boolean;
-  /** A coloured part was tapped: its rule, and the word it is in (by its place in the ayah). */
-  onRule?: (ayah: Ayah, rule: string, word: number) => void;
+  /** A coloured part was tapped: its rule, the word it is in (by its place in the ayah), and its place among the word's runs. */
+  onRule?: (ayah: Ayah, rule: string, word: number, run: number) => void;
   onTap?: (ayah: Ayah) => void; onSelect?: (ayah: Ayah) => void; onOffset?: (ayah: Ayah, y: number) => void; onNavigate?: (page: number) => void;
 }
 
@@ -69,7 +69,7 @@ export const TajweedTextSection = memo(function TajweedTextSection({ ayahs, page
       else if (message.type === 'rule') {
         // The rule is one the app knows, and the word one of the ayah's: nothing else is taken from the message.
         const ayah = ayahs.find((a) => a.surahNumber === message.surah && a.ayahNumber === message.ayah);
-        if (ayah && onRule && !visibleWords && tajweedRuleKey(message.rule) && Number.isInteger(message.word) && message.word >= 0) onRule(ayah, message.rule, message.word);
+        if (ayah && onRule && !visibleWords && tajweedRuleKey(message.rule) && Number.isInteger(message.word) && message.word >= 0) onRule(ayah, message.rule, message.word, Number.isInteger(message.run) ? message.run : -1);
         else onTap?.(ayahs[0]);
       }
       else if (message.type === 'swipe' && [1, -1].includes(message.delta)) onNavigate?.(pageNumber + message.delta);

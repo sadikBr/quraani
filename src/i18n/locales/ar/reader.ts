@@ -354,6 +354,8 @@ export default {
     spoken: 'حكم التجويد: {{rule}}',
     /** Over the word the coloured part is in. */
     inWord: 'في كلمة',
+    /** Under a word with several coloured parts, beside a swatch of the ground the tapped one is drawn on. */
+    tapped: 'الحرف الذي ضغطته',
     listen: 'استمع إلى الآية',
     note: 'قد تجتمع في الحرف أحكام متعددة، فيظهر بلون أحدها.',
     ghunna: { name: 'غنة', text: 'صوت يخرج من الخيشوم مع النون والميم المشدّدتين، ويُمدّ بمقدار حركتين.' },

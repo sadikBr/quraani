@@ -12,6 +12,8 @@ export type ListeningMode = 'ayah' | 'surah';
 export interface ReadingPreferences {
   riwayah: Riwayah;
   tajweed: boolean;
+  /** A tap on a coloured part of the tajweed text explains its rule (otherwise it shows or hides the tools, like any tap). */
+  tajweedRules: boolean;
   appearance: ReaderAppearance;
   mode: ReaderMode;
   textLayout: ReaderTextLayout;
@@ -37,7 +39,7 @@ export interface ReadingPreferences {
 export const REPEAT_CHOICES = [1, 2, 3, 5, 7, 10, 0] as const;
 
 export const defaultReadingPreferences: ReadingPreferences = {
-  riwayah: 'warsh', tajweed: false, appearance: 'system', mode: 'page', textLayout: 'ayah', fontSize: READER_FONT_DEFAULT, spacious: false,
+  riwayah: 'warsh', tajweed: false, tajweedRules: true, appearance: 'system', mode: 'page', textLayout: 'ayah', fontSize: READER_FONT_DEFAULT, spacious: false,
   reciters: {}, repeat: 1, listening: 'ayah', surahReciters: {}, surahRepeat: 1, warshScript: 'maghribi', thumunPages: false,
 };
 
@@ -53,6 +55,7 @@ export function decodeReadingPreferences(raw: string | null): ReadingPreferences
     return {
       riwayah: value.riwayah === 'hafs' ? 'hafs' : 'warsh',
       tajweed: value.tajweed === true,
+      tajweedRules: value.tajweedRules !== false,
       appearance: isReaderAppearance(value.appearance) ? value.appearance : 'system',
       // Preserve the former ayah-by-ayah choice when upgrading saved preferences.
       mode: value.mode === 'text' || value.mode === 'ayah' ? 'text' : 'page',

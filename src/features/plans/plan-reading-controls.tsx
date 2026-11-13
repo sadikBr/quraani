@@ -31,7 +31,7 @@ export function usePlanReadingActions(session: PlanReadingSession | undefined) {
   /** The end of the portion, held while the user is asked whether to finish the whole goal. */
   const [finishing, setFinishing] = useState<number>();
   const back = () => session && router.replace({ pathname: '/plans/[id]', params: { id: session.id } });
-  const record = async (to: number) => {
+  const record = async (to: number, finished = false) => {
     if (!session || saving.current) return;
     saving.current = true;
     setBusy(true); setError('');
@@ -40,7 +40,8 @@ export function usePlanReadingActions(session: PlanReadingSession | undefined) {
         if (!items.some(p => p.id === session.id)) throw new Error(t('goals.unavailable'));
         return items.map(p => p.id === session.id ? saveReadingSession(p, session, to, localDate()) : p);
       });
-      router.replace({ pathname: '/plans/[id]', params: { id: session.id } });
+      // A khatma finished from the mushaf: its page opens on the du'a of finishing the Quran.
+      router.replace({ pathname: '/plans/[id]', params: { id: session.id, ...(finished && !session.memorization && !session.recurring ? { finished: '1' } : {}) } });
     } catch (e) {
       setError(e instanceof Error ? e.message : t('session.reader.errors.saveProgress'));
       saving.current = false; setBusy(false);
@@ -51,7 +52,7 @@ export function usePlanReadingActions(session: PlanReadingSession | undefined) {
     if (session?.finishesGoal && to === session.portion.end) setFinishing(to);
     else await record(to);
   };
-  const confirmFinish = () => { const to = finishing; setFinishing(undefined); if (to !== undefined) void record(to); };
+  const confirmFinish = () => { const to = finishing; setFinishing(undefined); if (to !== undefined) void record(to, true); };
   return { busy, error, back, save, finishing: finishing !== undefined, confirmFinish, cancelFinish: () => setFinishing(undefined) };
 }
 type Actions = ReturnType<typeof usePlanReadingActions>;

@@ -14,6 +14,7 @@ import { pageSections } from "../../utils/page-sections";
 import { ayahKey } from "../../utils/references";
 import { ayahWords } from '../../utils/page-practice';
 import { splitSajda } from '../../utils/sajda';
+import { sliceTajweed, type TajweedRun } from '../../utils/tajweed';
 import { flowingAyahOffset } from '../../utils/flowing-ayah-offset';
 import { AyahTextAction } from './ayah-text-action';
 import { readerTextLineHeight } from '../../utils/reader-typography';
@@ -32,8 +33,8 @@ interface Props {
     selectedAyah: AyahReference | null;
     onTap: (ayah: Ayah) => void;
     onSelect: (ayah: Ayah) => void;
-    /** A coloured part of the tajweed text was tapped. */
-    onRule?: (ayah: Ayah, rule: string, word: number) => void;
+    /** A coloured part of the tajweed text was tapped: its rule, its word as coloured runs, and its place among them. */
+    onRule?: (ayah: Ayah, rule: string, runs: TajweedRun[], tapped: number) => void;
     onNavigate?: (page: number) => void;
     onTargetOffset?: (y: number) => void;
     onAyahOffset?: (ayah: Ayah, y: number) => void;
@@ -188,7 +189,14 @@ export const QuranPage = memo(function QuranPage({
                     }}>
                         <TajweedTextSection ayahs={section.ayahs} pageNumber={page.number} layout={layout} fontSize={fontSize} spacious={spacious}
                             palette={palette} dark={dark} runs={coloring.data[section.surah.number]} selectedAyah={selectedAyah} visibleWords={visibleWords}
-                            onTap={onTap} onSelect={onSelect} onRule={onRule} onNavigate={onNavigate} onOffset={(ayah, y) => {
+                            onTap={onTap} onSelect={onSelect} onRule={onRule && ((ayah, rule, word, run) => {
+                                // The word's runs, cut from the ayah as the page drew them; the tapped one is checked against its rule.
+                                const words = ayahWords(ayah.text);
+                                if (word >= words.length) return;
+                                const start = words.slice(0, word).reduce((n, w) => n + w.length, 0);
+                                const runs = sliceTajweed(coloring.data[section.surah.number]?.[ayah.ayahNumber], ayah.text, start, start + words[word].length);
+                                onRule(ayah, rule, runs, runs[run]?.rule === rule ? run : runs.findIndex((r) => r.rule === rule));
+                            })} onNavigate={onNavigate} onOffset={(ayah, y) => {
                                 if (selectedAyah && ayahKey(selectedAyah) === ayahKey(ayah)) { offsets.current.row = y; reportTarget(); }
                                 if (onAyahOffset) { practiceOffsets.current.rows.set(ayahKey(ayah), { ayah, y }); reportPracticeOffsets(); }
                             }} />

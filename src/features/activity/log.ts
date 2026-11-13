@@ -24,7 +24,8 @@ export function decodeActivity(raw: string | null): ActivityState {
 
 /**
  * What the goals themselves say of each day: every progress recorded in a khatma or daily wird, a
- * memorization or a revision, on its date; a recurring reading on the day of its occurrence.
+ * memorization or a revision, on its date; a recurring reading on the day of its occurrence (it
+ * can only be recorded on that day).
  */
 export function activityOf(plans: readonly ReadingPlan[]): Record<string, number> {
   const days: Record<string, number> = {};

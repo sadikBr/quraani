@@ -49,7 +49,8 @@ each of their phones and no one else's.
   A session stays open to changes for a week from its day (`sessionClosed`, `SESSION_OPEN_DAYS`);
   after that it is only shown, and neither changed nor deleted: the points and the portions that
   follow were counted from it. The phone enforces this (the screens, and `change` in the
-  provider); the account does not.
+  provider), and so does the account (`supabase/migrations/…_closed_sessions.sql`: a change to an
+  entry more than eight days old is left out, without an error).
 - **Portions** are stored by surah and ayah (`AyahRef`), not by an edition's ordinals, so they
   survive corrections to an edition's page data. `shapeOf(index)` gives the ayah counts that turn
   them into ordinals when needed.

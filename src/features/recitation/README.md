@@ -32,7 +32,8 @@ The moon in the bar asks the recitation to pause by itself, for falling asleep t
 recited; each press moves to the next choice, then to none. The time is checked as the recording
 plays (not with a timer of its own, which a sleeping phone may hold back); when it comes the
 recitation pauses where it is. At the end of the surah it stops. It lasts until it comes or the
-recitation is stopped; choosing another ayah keeps it.
+recitation is stopped; choosing another ayah keeps it. A time that came while the recitation was
+paused is dropped when it is taken up again.
 
 ## Hearing a reciter before choosing
 

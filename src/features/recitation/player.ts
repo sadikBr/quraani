@@ -466,6 +466,8 @@ export async function playSurah({ quran, reciter: choose, from, repeat }: SurahP
 export function pause() { if (session) audio().pause(); }
 export function resume() {
   if (!session) return;
+  // A time that came while the recitation was paused is over: taking it up again is the listener's choice.
+  if (sleepDue()) publish({ sleep: null });
   audio().play();
   publish({ error: null });
 }

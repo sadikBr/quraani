@@ -55,6 +55,9 @@ export default {
     warshDetail: 'وفق رواية ورش من طريق الأزرق',
     hafsDetail: 'ألوان مصحف التجويد، في الصفحات والنص معًا',
     stopNote: 'تُعرض أحكام التجويد على أساس الوقف عند نهاية كل آية.',
+    /** A switch under the colours, in the text view: a tap on a coloured letter explains its rule. */
+    rules: 'شرح الحكم عند الضغط',
+    rulesDetail: 'اضغط حرفًا ملوّنًا لمعرفة حكمه. عند إيقافه، يُظهر الضغط أدوات القراءة كالمعتاد.',
   },
   footer: {
     /** Avoids «تُحفظ», which reads as memorizing. */

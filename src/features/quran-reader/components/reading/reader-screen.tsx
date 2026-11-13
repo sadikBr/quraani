@@ -20,6 +20,7 @@ import type { ReaderPalette } from '../../theme';
 import { ReaderIcon, type ReaderIconName } from '../ui/reader-chrome';
 import { AyahActionSheet } from './ayah-action-sheet';
 import { TajweedRuleDialog } from './tajweed-rule-dialog';
+import type { TajweedRun } from '../../utils/tajweed';
 import { ayahKey } from '../../utils/references';
 import type { Ayah, AyahReference } from '@/lib/quranpedia/types';
 import { QuranPage } from './quran-page';
@@ -90,13 +91,13 @@ function RiwayahReaderScreen({ paging }: { paging: ReaderPaging }) {
   const firstPage = session?.firstPage ?? 1;
   const lastPageNumber = session?.lastPage ?? data?.pages.at(-1)?.number ?? 604;
   const font = useQuranFont();
-  const { preferences: { mode, textLayout, fontSize, spacious, tajweed, riwayah, repeat }, palette, dark } = useReadingPreferences();
+  const { preferences: { mode, textLayout, fontSize, spacious, tajweed, tajweedRules, riwayah, repeat }, palette, dark } = useReadingPreferences();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [actionsVisible, setActionsVisible] = useState(false);
   const [controlsProgress] = useState(() => new Animated.Value(0));
   const [actionAyah, setActionAyah] = useState<Ayah | null>(null);
   // The tajweed rule being explained: a coloured part of the text was tapped.
-  const [ruleAt, setRuleAt] = useState<{ ayah: Ayah; rule: string; word: number } | null>(null);
+  const [ruleAt, setRuleAt] = useState<{ ayah: Ayah; rule: string; runs: TajweedRun[]; tapped: number } | null>(null);
   const [practice, setPractice] = useState<{ pageNumber: number; revealed: number } | null>(null);
   const practiceScrollY = useRef(0);
   const readingScrollY = useRef(0);
@@ -477,7 +478,7 @@ function RiwayahReaderScreen({ paging }: { paging: ReaderPaging }) {
               selectedAyah={isCurrent ? position.ayah : null} onTap={tapAyah} onSelect={select} onTargetOffset={isCurrent ? targetOffset : undefined} /> :
               <QuranPage key={`${displayPage.number}:${jumpRevision}:${mode === 'page' ? 'practice' : textLayout}`} page={practicing && practicePlan ? practicePlan.page : textPage!} quran={content.data.quran} layout={mode === 'page' ? 'ayah' : textLayout} fontFamily={font.fontFamily}
                 visibleWords={practicing ? visibleWords : undefined} fontSize={fontSize} spacious={spacious} palette={palette} selectedAyah={isCurrent ? position.ayah : null}
-                onTap={tapAyah} onSelect={select} onRule={(ayah, rule, word) => setRuleAt({ ayah, rule, word })} onNavigate={navigate} onTargetOffset={isCurrent ? targetOffset : undefined}
+                onTap={tapAyah} onSelect={select} onRule={tajweedRules ? (ayah, rule, runs, tapped) => setRuleAt({ ayah, rule, runs, tapped }) : undefined} onNavigate={navigate} onTargetOffset={isCurrent ? targetOffset : undefined}
                 onAyahOffset={isCurrent ? recordPracticeOffset : undefined} />
           ) : <ReaderStatus palette={palette} icon="alert" title={t('reader.screen.pageUnavailable')} alert />}
           {ready && session && displayNumber === lastPageNumber && <PlanReadingEnd session={session} actions={planActions} />}
@@ -503,8 +504,8 @@ function RiwayahReaderScreen({ paging }: { paging: ReaderPaging }) {
       </Animated.View>;
       })}
       </View>
-      {ruleAt && <TajweedRuleDialog ayah={ruleAt.ayah} rule={ruleAt.rule} word={ruleAt.word} onClose={() => setRuleAt(null)}
-        onListen={() => { const { ayah } = ruleAt; setRuleAt(null); listenFrom(ayah, true); }} />}
+      {ruleAt && <TajweedRuleDialog ayah={ruleAt.ayah} rule={ruleAt.rule} runs={ruleAt.runs} tapped={ruleAt.tapped} onClose={() => setRuleAt(null)}
+        onListen={() => { const { ayah } = ruleAt; setRuleAt(null); setActionsVisible(true); void listen(ayah, { to: ayah, repeat: 1 }); }} />}
       {actionAyah && content && <AyahActionSheet key={ayahKey(actionAyah)} ayah={actionAyah} quran={content.data.quran} palette={palette} onClose={() => setActionAyah(null)} onListen={listenFrom} wholeSurah={wholeSurahs}
         onOpenAyah={session ? undefined : openAyah}
         location={thumun ? t('reader.thumun.ayahLocation', { ayah: actionAyah.ayahNumber, position: thumunName(actionAyah.pageNumber) }) : undefined} />}
