@@ -65,6 +65,7 @@ class AthanAlarmReceiver : BroadcastReceiver() {
       }
       AthanTimes.ACTION_UPDATE -> AthanTimes.refresh(context)
       PrayerWidget.ACTION_UPDATE -> PrayerWidget.refresh(context)
+      WirdWidget.ACTION_UPDATE -> WirdWidget.refresh(context)
       AthanScheduler.ACTION_STOP -> AthanService.stop(context)
       AthanScheduler.ACTION_TEST -> AthanScheduler.testAthan(context)?.let { AthanPlayer.start(context, it, checkSilence = false) }
     }
@@ -81,6 +82,7 @@ class AthanBootReceiver : BroadcastReceiver() {
     AthanScheduler.arm(context)
     AthanTimes.refresh(context)
     PrayerWidget.refresh(context)
+    WirdWidget.refresh(context)
   }
 
   private companion object {

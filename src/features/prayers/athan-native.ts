@@ -11,7 +11,8 @@ interface AthanNativeModule {
   previewScreen(json: string): boolean;
   hideTimes(): void;
   setWidgetTimes(json: string): void;
-  pinWidget(): boolean;
+  setWirdWidget(json: string): void;
+  pinWidget(kind: string): boolean;
   canUseFullScreenIntent(): boolean;
   openFullScreenIntentSettings(): boolean;
   stop(): boolean;
@@ -60,8 +61,19 @@ export const showTimesNotification = (content: TimesNotification) => { athanModu
 export const hideTimesNotification = () => attempt((m) => { m.hideTimes(); return true; }, false);
 /** The times the home-screen widget shows (those of the notification), or none without a place. */
 export const setWidgetTimes = (content: TimesNotification | null) => attempt((m) => { m.setWidgetTimes(content ? JSON.stringify(content) : ''); return true; }, false);
-/** Asks the launcher to add the prayer times widget to the home screen. False where it cannot be asked. */
-export const pinPrayerWidget = () => attempt((m) => m.pinWidget(), false);
+/** Asks the launcher to add one of the app's widgets to the home screen. False where it cannot be asked. */
+export type WidgetKind = 'prayer' | 'prayer-small' | 'wird';
+export const pinWidget = (kind: WidgetKind) => attempt((m) => m.pinWidget(kind), false);
+/** What the wird widget says on `day` (`today`) and on the days after it (`later`): see `WirdWidget.save` in the module. */
+export interface WirdWidgetContent {
+  day: string;
+  today: { heading: string; title: string; detail: string };
+  later: { heading: string; title: string; detail: string };
+  streak: string;
+  streakUntil: string;
+  url: string;
+}
+export const setWirdWidget = (content: WirdWidgetContent | null) => attempt((m) => { m.setWirdWidget(content ? JSON.stringify(content) : ''); return true; }, false);
 /** How the athan's screen looks (see `AthanScreenStyle` in the module). */
 export const setAthanScreenStyle = (style: object) => attempt((m) => { m.setScreenStyle(JSON.stringify(style)); return true; }, false);
 /** Opens the athan's screen now, silent. Resolves whether it opened. */

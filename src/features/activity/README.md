@@ -12,9 +12,12 @@ The days the user read, memorized or revised, and the run of days in a row they 
 - `provider.tsx`: keeps the days as the goals change. With an account they come to a phone that
   has none of its own (`restore`), and each phone then keeps its own from the same goals, so no
   choice between copies is ever asked.
+- `src/features/widgets/wird-widget.tsx` gives the run of days to the home-screen wird widget.
 - `streak-card.tsx`: the home screen's card (the flame, the last seven days, a word to keep going).
 - `activity-screen.tsx` (`/activity`): the run, the longest run and the total, any month as a
   calendar, and the hadith on steady deeds.
 
-Reading in the mushaf without recording it in a goal does not count: only recorded progress does.
+A day also counts when the mushaf was open for a few minutes in it (`READING_SECONDS`, counted
+by `useCountsAsReading` in the reader while it is in front; `read` in the saved state), goal or
+no goal.
 There is no notification for it; the goals' own reminders are what bring the user back each day.

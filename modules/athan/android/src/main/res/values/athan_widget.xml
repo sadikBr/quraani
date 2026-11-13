@@ -16,6 +16,14 @@
   <color name="athan_widget_accent">#E6C778</color>
   <!-- Its name in the launcher's list of widgets. -->
   <string name="athan_widget_name">مواقيت الصلاة</string>
+  <string name="athan_widget_small_name">الصلاة القادمة</string>
+  <string name="athan_widget_small_description">الصلاة القادمة ووقتها والوقت المتبقي لها.</string>
+  <!-- Over the next prayer's name. -->
+  <string name="athan_widget_next">الصلاة القادمة</string>
+  <!-- The wird widget: its name, and what it says before the app has a goal to show. -->
+  <string name="wird_widget_name">ورد اليوم</string>
+  <string name="wird_widget_description">وردك من القرآن اليوم وأيام مواظبتك.</string>
+  <string name="wird_widget_empty">افتح «قرآني» وأنشئ هدفًا ليظهر وردك هنا.</string>
   <string name="athan_widget_description">الصلاة القادمة والوقت المتبقي لها ومواقيت اليوم.</string>
   <!-- Before a place is chosen in the app. -->
   <string name="athan_widget_empty">افتح «قرآني» وحدّد موقعك لعرض مواقيت الصلاة.</string>

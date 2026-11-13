@@ -4,7 +4,7 @@
  */
 export default {
   title: 'مواظبتك',
-  subtitle: 'الأيام التي سجّلت فيها قراءة أو حفظًا أو مراجعة.',
+  subtitle: 'الأيام التي قرأت فيها أو حفظت أو راجعت.',
   /** Spoken on the home card: «مواظبتك: ٥ أيام متتالية. فتح سجلّ الأيام». */
   open: 'فتح سجلّ الأيام',
   /** The run of days, as a count under the flame. */
@@ -23,11 +23,11 @@ export default {
   reach_other: '{{count, number}} يوم متتالٍ',
   message: {
     /** Nothing recorded yet, ever. */
-    start: 'سجّل وردك اليوم في أحد أهدافك، ليبدأ عدّ أيامك.',
+    start: 'اقرأ اليوم في المصحف أو سجّل وردك، ليبدأ عدّ أيامك.',
     /** Today is done. */
-    done: 'سجّلت قراءة اليوم، بارك الله لك. واصل غدًا لتبلغ {{reach}}.',
+    done: 'قرأت اليوم، بارك الله لك. واصل غدًا لتبلغ {{reach}}.',
     /** A run is under way, and today is still to come. */
-    keep: 'اقرأ وردك اليوم لتبلغ {{reach}}، ولا تنقطع مواظبتك.',
+    keep: 'اقرأ اليوم لتبلغ {{reach}}، ولا تنقطع مواظبتك.',
     /** No run under way, after earlier days. */
     again: 'ابدأ اليوم من جديد، ولو بورد قصير.',
   },
@@ -50,14 +50,14 @@ export default {
     previous: 'الشهر السابق',
     next: 'الشهر التالي',
     /** Under the month's name: how many of its days have something recorded. */
-    count: 'سجّلت فيه {{days}}',
-    none: 'لم تسجّل فيه شيئًا',
+    count: 'قرأت فيه {{days}}',
+    none: 'لا أيام فيه بعد',
     /** Spoken on a day of the calendar. */
-    done: '{{date}}: سجّلت فيه',
+    done: '{{date}}: قرأت فيه',
     notDone: '{{date}}',
     today: 'اليوم',
   },
   /** Spoken on the home card's strip of the last seven days. */
-  week: 'آخر سبعة أيام: سجّلت في {{days}}',
-  note: 'يُحتسب اليوم إذا سجّلت فيه تقدّمًا في أحد أهدافك: ختمة أو ورد يومي أو حفظ أو مراجعة أو سور متكررة.',
+  week: 'آخر سبعة أيام: قرأت في {{days}}',
+  note: 'يُحتسب اليوم إذا سجّلت فيه تقدّمًا في أحد أهدافك، أو قرأت في المصحف بضع دقائق.',
 } as const;

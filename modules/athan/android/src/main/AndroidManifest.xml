@@ -40,6 +40,29 @@
         android:resource="@xml/athan_widget_info" />
     </receiver>
     <receiver
+      android:name="expo.modules.athan.PrayerSmallWidgetProvider"
+      android:exported="true"
+      android:label="@string/athan_widget_small_name">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+      <meta-data
+        android:name="android.appwidget.provider"
+        android:resource="@xml/athan_widget_small_info" />
+    </receiver>
+    <!-- The day's wird on the home screen. -->
+    <receiver
+      android:name="expo.modules.athan.WirdWidgetProvider"
+      android:exported="true"
+      android:label="@string/wird_widget_name">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+      <meta-data
+        android:name="android.appwidget.provider"
+        android:resource="@xml/wird_widget_info" />
+    </receiver>
+    <receiver
       android:name="expo.modules.athan.AthanBootReceiver"
       android:exported="true">
       <intent-filter>

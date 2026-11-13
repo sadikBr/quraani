@@ -123,20 +123,32 @@ restart, an update or a change of the clock. Without exact alarms the refresh ca
 minutes late, so the countdown is hidden and the switch offers the permission. Android 14+ lets
 the user swipe it away; it comes back at the next refresh. Turning it off removes it and its alarm.
 
-## The home-screen widget (`PrayerWidget.kt`, `res/layout/athan_widget.xml`)
+## The home-screen widgets (`PrayerWidget.kt`, `WirdWidget.kt`, `res/layout/*_widget*.xml`)
 
-A widget of four cells by two for the launcher (Android app): the next prayer large in gold with its
-time, the time left in a pill, the place and the date, and the day's six times in a row (the next one in a lit box), those
-past dimmed; after Isha it shows the next day. It is drawn natively in the app's green and gold
-(the same in light and dark), always right to left, and a tap opens the prayer times.
+Three widgets for the launcher (Android app), drawn natively in the app's green and gold (the
+same in light and dark), always right to left:
 
-The app gives it the same 30 days of times as the notification (`setWidgetTimes`, whenever there
-is a place, whether or not the notification is on), and the module redraws it at each prayer and
-at midnight with a non-waking alarm of its own, on the athan's alarm, and after a restart, an
-update or a change of the clock. Without times (no place yet, or the app not opened for a month)
-it says to open the app. «إضافة المواقيت إلى الشاشة الرئيسية» in the settings asks the launcher
-to add it (`pinWidget`, Android 8+); where the launcher cannot be asked, the settings tell how to
-add it by hand.
+- **«مواقيت الصلاة»** (four cells by two): the next prayer in gold with its time, the time left
+  in a pill, the place and the date, and the day's six times in a row (the next one in a lit box,
+  those past dimmed); after Isha it shows the next day. Its layout follows its height
+  (`OPTION_APPWIDGET_MAX_HEIGHT`): from 180 dp (Xiaomi's launcher gives two tall rows) the next
+  prayer is set large and centred to fill it (`athan_widget_tall.xml`), below that on one line
+  (`athan_widget.xml`).
+- **«الصلاة القادمة»** (two by two, `athan_widget_small.xml`): the next prayer, its time and the
+  time left.
+- **«ورد اليوم»** (two by two, `wird_widget.xml`): what is due today in the user's goals (or that
+  it is done), the portion, the goal, and the run of days. The app writes every word
+  (`src/features/widgets/wird-widget.tsx`, `setWirdWidget`): today's, and those of the days after
+  for as long as the app is not opened again; the module shows the right ones and redraws at
+  midnight.
+
+The app gives the prayer widgets the same 30 days of times as the notification (`setWidgetTimes`,
+whenever there is a place, whether or not the notification is on), and the module redraws them at
+each prayer and at midnight with a non-waking alarm of its own, on the athan's alarm, and after a
+restart, an update or a change of the clock. Without times (no place yet, or the app not opened
+for a month) they say to open the app. A tap opens the prayer times, or the goal. «أدوات الشاشة
+الرئيسية» in the prayer settings asks the launcher to add each (`pinWidget`, Android 8+); where
+the launcher cannot be asked, the settings tell how to add one by hand.
 
 ## The athan's screen (`AthanActivity.kt`, `athan-screen-designer.tsx`)
 

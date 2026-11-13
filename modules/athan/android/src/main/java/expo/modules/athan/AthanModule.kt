@@ -60,9 +60,21 @@ class AthanModule : Module() {
       PrayerWidget.save(context, json)
     }
 
-    /** Asks the launcher to add the widget to the home screen; false where it cannot be asked. */
-    Function("pinWidget") {
-      PrayerWidget.pin(context)
+    /** What the wird widget shows (see WirdWidget.save), or nothing (an empty string). */
+    Function("setWirdWidget") { json: String ->
+      WirdWidget.save(context, json)
+    }
+
+    /**
+     * Asks the launcher to add a widget to the home screen (`prayer`, `prayer-small` or `wird`);
+     * false where it cannot be asked.
+     */
+    Function("pinWidget") { kind: String ->
+      when (kind) {
+        "wird" -> PrayerWidget.pin(context, WirdWidgetProvider::class.java)
+        "prayer-small" -> PrayerWidget.pin(context, PrayerSmallWidgetProvider::class.java)
+        else -> PrayerWidget.pin(context, PrayerWidgetProvider::class.java)
+      }
     }
 
     /** How the athan's screen looks: `{ "background", "dim", "motion", "date" }`. */

@@ -104,10 +104,10 @@ function TodayTab({ onTab }: { onTab: (tab: Tab) => void }) {
   return <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[page.content, { paddingTop: 18 }]}>
     <PrayerHomeCard onOpen={() => onTab('prayers')} />
     <RamadanCard />
+    <StreakCard />
     <Section title={t('home.now.title')} palette={p}>
       <NowTiles onTab={onTab} />
     </Section>
-    <StreakCard />
   </ScrollView>;
 }
 
@@ -267,7 +267,8 @@ function NoGoalTile({ width, hasGoals, completed, later, onTab }: { width: numbe
     label={t('home.today.allGoals')} onPress={() => onTab('goals')} />;
 }
 
-function describePortion(plan: ReadingPlan, index: PlanIndex, start: number, end: number) {
+/** A portion in words: its pages, hizbs or juz' (a khatma or daily wird), and its ayahs. */
+export function describePortion(plan: ReadingPlan, index: PlanIndex, start: number, end: number) {
   if (!isSequentialPlan(plan)) return ayahRangeLabel(index, start, end);
   return `${rangeLabel(index, start, end)} · ${ayahRangeLabel(index, start, end)}`;
 }

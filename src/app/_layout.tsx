@@ -10,6 +10,7 @@ import { I18nManager, Platform, Pressable, ScrollView, StyleSheet, Text, View, u
 import type { ErrorBoundaryProps } from 'expo-router';
 import { PlansProvider, PlanNotificationObserver } from '@/features/plans/provider';
 import { ActivityProvider } from '@/features/activity/provider';
+import { WirdWidgetObserver } from '@/features/widgets/wird-widget';
 import { AdhkarNotificationObserver, AdhkarProvider } from '@/features/adhkar/provider';
 import { PracticeProvider } from '@/features/practice/provider';
 import { HalaqaNotificationObserver, HalaqatProvider } from '@/features/halaqat/provider';
@@ -70,6 +71,7 @@ function RootNavigator() {
           <HalaqaNotificationObserver />
           <MemberRecordObserver />
           <PrayerNotificationObserver />
+          <WirdWidgetObserver />
         </ThemeProvider>
       </View>
     </LocaleProvider>

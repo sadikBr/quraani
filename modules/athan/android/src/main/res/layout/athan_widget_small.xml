@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The small prayer widget (two cells by two), always right to left: the next prayer, its time and the time left, one under the other. Filled by PrayerWidget. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/athan_widget_root"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:orientation="vertical"
+  android:gravity="center"
+  android:layoutDirection="rtl"
+  android:background="@drawable/athan_widget_background"
+  android:padding="12dp">
+  <TextView
+    android:id="@+id/athan_widget_empty"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:lineSpacingExtra="4dp"
+    android:text="@string/athan_widget_empty"
+    android:textColor="@color/athan_widget_text"
+    android:textSize="12sp" />
+  <LinearLayout
+    android:id="@+id/athan_widget_content"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:visibility="gone">
+    <TextView
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:singleLine="true"
+      android:text="@string/athan_widget_next"
+      android:textColor="@color/athan_widget_muted"
+      android:textSize="11sp" />
+    <TextView
+      android:id="@+id/athan_widget_next_name"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:singleLine="true"
+      android:textColor="@color/athan_widget_accent"
+      android:textSize="26sp"
+      android:textStyle="bold" />
+    <TextView
+      android:id="@+id/athan_widget_next_time"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:singleLine="true"
+      android:textColor="@color/athan_widget_text"
+      android:fontFamily="sans-serif-light"
+      android:fontFeatureSettings="tnum"
+      android:textSize="28sp" />
+    <Chronometer
+      android:id="@+id/athan_widget_countdown"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="4dp"
+      android:background="@drawable/athan_widget_pill"
+      android:paddingStart="12dp"
+      android:paddingEnd="12dp"
+      android:paddingTop="3dp"
+      android:paddingBottom="4dp"
+      android:singleLine="true"
+      android:textDirection="rtl"
+      android:textColor="@color/athan_widget_accent"
+      android:fontFamily="sans-serif-medium"
+      android:fontFeatureSettings="tnum"
+      android:textSize="12sp" />
+  </LinearLayout>
+</LinearLayout>

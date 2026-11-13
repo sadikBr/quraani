@@ -40,12 +40,15 @@ import { createReadingSession } from '@/features/plans/reading-session';
 import { RecitationBar } from '@/features/recitation/recitation-bar';
 import { stop as stopRecitation, useRecitation } from '@/features/recitation/player';
 import { useListen, useWholeSurahs } from '@/features/recitation/use-listen';
+import { useCountsAsReading } from '@/features/activity/provider';
 import { t } from '@/i18n';
 
 export function ReaderScreen() {
   useKeepAwakeWhileShown('reader');
   // Under the settings, the pages are not laid out again at every step of a size or letter change.
   const focused = useIsFocused();
+  // A few minutes in the mushaf make the day one of the user's days («مواظبتك»).
+  useCountsAsReading(focused);
   return <HoldTextPreferences held={!focused}><PagedReaderScreen /></HoldTextPreferences>;
 }
 

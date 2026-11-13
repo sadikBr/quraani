@@ -8,6 +8,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.Bundle
 import android.os.SystemClock
 import android.view.View
 import android.widget.RemoteViews
@@ -22,18 +23,42 @@ class PrayerWidgetProvider : AppWidgetProvider() {
     PrayerWidget.refresh(context)
   }
 
+  /** Resized: its layout follows its height. */
+  override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, id: Int, options: Bundle) {
+    PrayerWidget.refresh(context)
+  }
+
+  override fun onDisabled(context: Context) {
+    PrayerWidget.disarm(context)
+  }
+}
+
+/** The small widget (two cells by two): the next prayer alone. */
+class PrayerSmallWidgetProvider : AppWidgetProvider() {
+  override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
+    PrayerWidget.refresh(context)
+  }
+
+  override fun onEnabled(context: Context) {
+    PrayerWidget.refresh(context)
+  }
+
   override fun onDisabled(context: Context) {
     PrayerWidget.disarm(context)
   }
 }
 
 /**
- * The prayer times on the home screen: the next prayer large in gold with its time, the time left
- * in a pill beside it, the place and the date, then the day's six times in a row, the next one
- * lit in a box of its own and those past dimmed. It is given the
- * same times as the prayer times notification (see AthanTimes.show), keeps them, and redraws at
- * each prayer and at midnight, on the athan's own alarm, and after a restart, an update or a
- * change of the clock. Always right to left, in the app's own colours. A tap opens the prayer times.
+ * The prayer times on the home screen, in two widgets. The wide one: the next prayer in gold with
+ * its time, the time left in a pill, the place and the date, then the day's six times in a row,
+ * the next one lit in a box of its own and those past dimmed; where its cell is tall (Xiaomi's
+ * launcher gives two tall rows) it is laid out to fill the height, the next prayer large and
+ * centred. The small one: the next prayer, its time and the time left.
+ *
+ * Both are given the same times as the prayer times notification (see AthanTimes.show), keep
+ * them, and redraw at each prayer and at midnight, on the athan's own alarm, and after a restart,
+ * an update or a change of the clock. Always right to left, in the app's own colours. A tap opens
+ * the prayer times.
  */
 internal object PrayerWidget {
   const val ACTION_UPDATE = "expo.modules.athan.WIDGET_UPDATE"
@@ -56,7 +81,21 @@ internal object PrayerWidget {
 
   private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
   private fun alarms(context: Context) = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-  private fun provider(context: Context) = ComponentName(context, PrayerWidgetProvider::class.java)
+  /** From this height (dp) the wide widget is laid out to fill it. */
+  private const val TALL_DP = 180
+
+  private fun ids(context: Context, manager: AppWidgetManager, provider: Class<*>): IntArray = try {
+    manager.getAppWidgetIds(ComponentName(context, provider))
+  } catch (e: Exception) {
+    IntArray(0)
+  }
+
+  /** The widget's height in portrait (dp), or 0 when the launcher does not say. */
+  private fun heightOf(manager: AppWidgetManager, id: Int): Int = try {
+    manager.getAppWidgetOptions(id).getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
+  } catch (e: Exception) {
+    0
+  }
 
   /** Keeps the times (the JSON of AthanTimes.show), or forgets them when given none, and redraws. */
   fun save(context: Context, json: String) {
@@ -70,12 +109,12 @@ internal object PrayerWidget {
     refresh(context)
   }
 
-  /** Asks the launcher to offer the widget for the home screen (Android 8+, where the launcher allows it). */
-  fun pin(context: Context): Boolean {
+  /** Asks the launcher to offer a widget for the home screen (Android 8+, where the launcher allows it). */
+  fun pin(context: Context, provider: Class<*>): Boolean {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
     val manager = AppWidgetManager.getInstance(context)
     return try {
-      manager.isRequestPinAppWidgetSupported && manager.requestPinAppWidget(provider(context), null, null)
+      manager.isRequestPinAppWidgetSupported && manager.requestPinAppWidget(ComponentName(context, provider), null, null)
     } catch (e: Exception) {
       false
     }
@@ -84,12 +123,9 @@ internal object PrayerWidget {
   /** Draws every widget on the home screen as the times stand now, and arms the next redraw. */
   fun refresh(context: Context) {
     val manager = AppWidgetManager.getInstance(context)
-    val ids = try {
-      manager.getAppWidgetIds(provider(context))
-    } catch (e: Exception) {
-      return
-    }
-    if (ids.isEmpty()) return
+    val wide = ids(context, manager, PrayerWidgetProvider::class.java)
+    val small = ids(context, manager, PrayerSmallWidgetProvider::class.java)
+    if (wide.isEmpty() && small.isEmpty()) return
     val times = prefs(context).getString(KEY_TIMES, null)?.let {
       try {
         AthanTimes.parse(it)
@@ -100,7 +136,20 @@ internal object PrayerWidget {
     val now = System.currentTimeMillis()
     val day = times?.days?.firstOrNull { d -> d.times.any { it.at > now } }
     val next = day?.times?.firstOrNull { it.at > now }
-    val views = RemoteViews(context.packageName, R.layout.athan_widget)
+    for (id in wide) {
+      val layout = if (heightOf(manager, id) >= TALL_DP) R.layout.athan_widget_tall else R.layout.athan_widget
+      draw(context, manager, id, layout, true, times, day, next, now)
+    }
+    for (id in small) draw(context, manager, id, R.layout.athan_widget_small, false, times, day, next, now)
+    if (next != null) arm(context, minOf(next.at, AthanTimes.nextMidnight(now)))
+  }
+
+  /** One widget in `layout`; `whole`: with the date and the day's six times (the wide widget). */
+  private fun draw(
+    context: Context, manager: AppWidgetManager, id: Int, layout: Int, whole: Boolean,
+    times: AthanTimes.Times?, day: AthanTimes.Day?, next: AthanTimes.Moment?, now: Long,
+  ) {
+    val views = RemoteViews(context.packageName, layout)
     if (times == null || day == null || next == null) {
       // No place chosen yet, or the app was not opened for weeks: it says to open the app.
       views.setViewVisibility(R.id.athan_widget_content, View.GONE)
@@ -118,33 +167,34 @@ internal object PrayerWidget {
       } else {
         views.setViewVisibility(R.id.athan_widget_countdown, View.GONE)
       }
-      // After Isha it shows the next day.
-      val date = if (day.day > AthanTimes.dayKey(now) && times.tomorrow.isNotEmpty()) "${times.tomorrow} · ${day.date}" else day.date
-      views.setTextViewText(R.id.athan_widget_date, if (times.place.isNotEmpty()) "${times.place} · $date" else date)
-      val accent = context.getColor(R.color.athan_widget_accent)
-      val text = context.getColor(R.color.athan_widget_text)
-      val past = context.getColor(R.color.athan_widget_past)
-      for (moment in day.times) {
-        val cell = CELLS[moment.prayer] ?: continue
-        val color = when {
-          moment === next -> accent
-          moment.at <= now -> past
-          else -> text
+      if (whole) {
+        // After Isha it shows the next day.
+        val date = if (day.day > AthanTimes.dayKey(now) && times.tomorrow.isNotEmpty()) "${times.tomorrow} · ${day.date}" else day.date
+        views.setTextViewText(R.id.athan_widget_date, if (times.place.isNotEmpty()) "${times.place} · $date" else date)
+        val accent = context.getColor(R.color.athan_widget_accent)
+        val text = context.getColor(R.color.athan_widget_text)
+        val past = context.getColor(R.color.athan_widget_past)
+        for (moment in day.times) {
+          val cell = CELLS[moment.prayer] ?: continue
+          val color = when {
+            moment === next -> accent
+            moment.at <= now -> past
+            else -> text
+          }
+          views.setTextViewText(cell.name, AthanTimes.name(times, moment))
+          views.setTextViewText(cell.time, AthanTimes.clock(moment.at))
+          views.setTextColor(cell.name, color)
+          views.setTextColor(cell.time, color)
+          views.setInt(cell.box, "setBackgroundResource", if (moment === next) R.drawable.athan_widget_next else 0)
         }
-        views.setTextViewText(cell.name, AthanTimes.name(times, moment))
-        views.setTextViewText(cell.time, AthanTimes.clock(moment.at))
-        views.setTextColor(cell.name, color)
-        views.setTextColor(cell.time, color)
-        views.setInt(cell.box, "setBackgroundResource", if (moment === next) R.drawable.athan_widget_next else 0)
       }
     }
     AthanTimes.openTimes(context, times?.url ?: "", REQUEST_OPEN)?.let { views.setOnClickPendingIntent(R.id.athan_widget_root, it) }
     try {
-      manager.updateAppWidget(ids, views)
+      manager.updateAppWidget(id, views)
     } catch (e: Exception) {
       // The launcher refused it: the next redraw tries again.
     }
-    if (next != null) arm(context, minOf(next.at, AthanTimes.nextMidnight(now)))
   }
 
   private fun updateIntent(context: Context): PendingIntent {
@@ -152,9 +202,12 @@ internal object PrayerWidget {
     return PendingIntent.getBroadcast(context, REQUEST_UPDATE, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
   }
 
-  /** The last widget was taken off the home screen: nothing left to redraw. */
+  /** A kind of widget is off the home screen: with none of either left, nothing is redrawn. */
   fun disarm(context: Context) {
-    alarms(context).cancel(updateIntent(context))
+    val manager = AppWidgetManager.getInstance(context)
+    if (ids(context, manager, PrayerWidgetProvider::class.java).isEmpty() && ids(context, manager, PrayerSmallWidgetProvider::class.java).isEmpty()) {
+      alarms(context).cancel(updateIntent(context))
+    }
   }
 
   /** The next redraw: it does not wake the phone, and is never an "allow while idle" alarm (those are the athan's). */

@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { activityOf, decodeActivity, defaultActivityState, mergeActivity, monthWeeks, recentDays, shiftMonth, streakOf } from '../src/features/activity/log';
+import { activityOf, countedDays, decodeActivity, defaultActivityState, markRead, mergeActivity, monthWeeks, recentDays, shiftMonth, streakOf } from '../src/features/activity/log';
 
 const state = (days) => ({ version: 1, days });
 
@@ -49,4 +49,17 @@ test('a month is laid out in weeks from Monday, and months follow one another ac
   expect(monthWeeks('2028-02').flat().filter(Boolean)).toHaveLength(29);
   expect(shiftMonth('2026-12', 1)).toBe('2027-01');
   expect(shiftMonth('2027-01', -1)).toBe('2026-12');
+});
+
+test('a day read in the mushaf counts with the goals\' days, once, and survives what the goals say', () => {
+  const read = markRead(defaultActivityState, '2026-11-12');
+  expect(markRead(read, '2026-11-12')).toBe(read);
+  expect(markRead(read, 'nope')).toBe(read);
+  expect(countedDays(read)).toEqual({ '2026-11-12': 1 });
+  expect(countedDays(defaultActivityState)).toBe(defaultActivityState.days);
+  // The goals say nothing of today: the day read stays.
+  const merged = mergeActivity(markRead({ version: 1, days: { '2026-11-11': 2 } }, '2026-11-12'), { '2026-11-11': 2 }, '2026-11-12');
+  expect(streakOf(countedDays(merged), '2026-11-12')).toMatchObject({ current: 2, today: true });
+  expect(decodeActivity(JSON.stringify(merged))).toEqual(merged);
+  expect(decodeActivity(JSON.stringify({ version: 1, days: {}, read: ['2026-11-12', '2026-11-12', 'x', 5] })).read).toEqual(['2026-11-12']);
 });

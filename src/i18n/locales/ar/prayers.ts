@@ -317,9 +317,24 @@ export default {
   /** The prayer times notification, always shown (Android app). */
   /** The prayer times widget on the phone's home screen (Android). */
   widget: {
-    title: 'الشاشة الرئيسية',
-    add: 'إضافة المواقيت إلى الشاشة الرئيسية',
-    detail: 'أداة تعرض الصلاة القادمة والوقت المتبقي لها ومواقيت اليوم دون فتح التطبيق.',
+    title: 'أدوات الشاشة الرئيسية',
+    add: 'مواقيت الصلاة',
+    detail: 'الصلاة القادمة والوقت المتبقي لها ومواقيت اليوم.',
+    small: 'الصلاة القادمة',
+    smallDetail: 'أداة صغيرة: الصلاة القادمة ووقتها والوقت المتبقي.',
+    wird: 'ورد اليوم',
+    wirdDetail: 'وردك من القرآن اليوم وأيام مواظبتك.',
+    /** The wird widget's words (it is drawn by the phone: every word is given to it). */
+    wirdWidget: {
+      due: 'ورد اليوم',
+      overdue: 'ورد فائت',
+      done: 'أتممت ورد اليوم',
+      doneTitle: 'تقبّل الله منك',
+      /** Nothing is due on the day shown. */
+      free: 'لا ورد مقرر اليوم',
+      /** Under it, what comes next: «ختمتي · 15 نونبر». */
+      next: '{{name}} · {{date}}',
+    },
     /** When the launcher cannot be asked to add it. */
     manual: 'اضغط مطولًا على موضع فارغ في الشاشة الرئيسية، ثم اختر «الأدوات»، وابحث عن «قرآني».',
   },

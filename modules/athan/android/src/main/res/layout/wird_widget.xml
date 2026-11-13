@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The wird widget, always right to left: what is due today in the user's goals (or that it is done), where it starts, and the run of days. Filled by WirdWidget; until then (and without a goal) it says to open the app. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/wird_widget_root"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:orientation="vertical"
+  android:gravity="center"
+  android:layoutDirection="rtl"
+  android:background="@drawable/athan_widget_background"
+  android:padding="14dp">
+  <TextView
+    android:id="@+id/wird_widget_heading"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center"
+    android:singleLine="true"
+    android:ellipsize="end"
+    android:text="@string/wird_widget_name"
+    android:textColor="@color/athan_widget_accent"
+    android:textSize="13sp"
+    android:textStyle="bold" />
+  <TextView
+    android:id="@+id/wird_widget_title"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="4dp"
+    android:gravity="center"
+    android:maxLines="2"
+    android:ellipsize="end"
+    android:text="@string/wird_widget_empty"
+    android:textColor="@color/athan_widget_text"
+    android:textSize="20sp"
+    android:textStyle="bold" />
+  <TextView
+    android:id="@+id/wird_widget_detail"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="2dp"
+    android:gravity="center"
+    android:maxLines="2"
+    android:ellipsize="end"
+    android:textColor="@color/athan_widget_muted"
+    android:textSize="12sp"
+    android:visibility="gone" />
+  <TextView
+    android:id="@+id/wird_widget_streak"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:background="@drawable/athan_widget_pill"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="3dp"
+    android:paddingBottom="4dp"
+    android:singleLine="true"
+    android:textColor="@color/athan_widget_accent"
+    android:textSize="12sp"
+    android:visibility="gone" />
+</LinearLayout>

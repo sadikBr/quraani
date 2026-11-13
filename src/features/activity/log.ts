@@ -3,10 +3,18 @@ import { isMemorizationPlan, isRecurringPlan, isRevisionPlan, type ReadingPlan }
 
 /**
  * The days the user read, memorized or revised: for each calendar day, how many times progress
- * was recorded in a goal. It is taken from the goals as they change and kept apart from them, so
- * a day stays in it after its goal is finished, archived or deleted.
+ * was recorded in a goal (taken from the goals as they change and kept apart from them, so a day
+ * stays in it after its goal is finished, archived or deleted), and the days read in the mushaf
+ * without a goal.
  */
-export interface ActivityState { version: 1; days: Record<string, number> }
+export interface ActivityState {
+  version: 1;
+  days: Record<string, number>;
+  /** Days spent reading in the mushaf itself, outside any goal (a few minutes at least): they count too. */
+  read?: string[];
+}
+/** How long the mushaf is to be open, in a day, for the day to count without a goal (seconds). */
+export const READING_SECONDS = 180;
 export const ACTIVITY_KEY = 'activity:v1';
 export const defaultActivityState: ActivityState = { version: 1, days: {} };
 /** The most a day counts (a bound on saved data, far above a real day). */
@@ -19,7 +27,8 @@ export function decodeActivity(raw: string | null): ActivityState {
   try { saved = JSON.parse(raw); } catch { return defaultActivityState; }
   if (!saved || saved.version !== 1 || !saved.days || typeof saved.days !== 'object' || Array.isArray(saved.days)) return defaultActivityState;
   const days = Object.entries(saved.days).filter(([date, count]) => validDate(date) && Number.isInteger(count) && count > 0 && count <= DAY_LIMIT);
-  return { version: 1, days: Object.fromEntries(days.sort(([a], [b]) => a.localeCompare(b))) };
+  const read = Array.isArray(saved.read) ? [...new Set(saved.read.filter(validDate))].sort() : [];
+  return { version: 1, days: Object.fromEntries(days.sort(([a], [b]) => a.localeCompare(b))), ...(read.length ? { read } : {}) };
 }
 
 /**
@@ -57,7 +66,21 @@ export function mergeActivity(state: ActivityState, fromGoals: Record<string, nu
     if (now) days[today] = now; else delete days[today];
     changed = true;
   }
-  return changed ? { version: 1, days: Object.fromEntries(Object.entries(days).sort(([a], [b]) => a.localeCompare(b))) } : state;
+  return changed ? { ...state, days: Object.fromEntries(Object.entries(days).sort(([a], [b]) => a.localeCompare(b))) } : state;
+}
+
+/** Notes a day read in the mushaf. The same state when it is noted already. */
+export function markRead(state: ActivityState, day: string): ActivityState {
+  if (!validDate(day) || state.read?.includes(day)) return state;
+  return { ...state, read: [...(state.read ?? []), day].sort() };
+}
+
+/** Every day that counts: those the goals recorded, and those read in the mushaf (as one). */
+export function countedDays(state: ActivityState): Record<string, number> {
+  if (!state.read?.length) return state.days;
+  const days = { ...state.days };
+  for (const day of state.read) days[day] ??= 1;
+  return Object.fromEntries(Object.entries(days).sort(([a], [b]) => a.localeCompare(b)));
 }
 
 export interface Streak {
